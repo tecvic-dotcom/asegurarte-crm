@@ -8,7 +8,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const ajustes = await getAjustes().catch(() => null);
   const negocio = ajustes?.negocio_nombre || CONTENIDO.negocio;
   return {
-    title: `${negocio} — Aparta tu lugar`,
+    title: `${negocio} — Agenda tu asesoría gratis`,
     description: CONTENIDO.hero.subtitulo,
   };
 }
