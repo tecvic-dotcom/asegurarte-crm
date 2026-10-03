@@ -1,0 +1,363 @@
+@import "tailwindcss";
+
+/* ============================================================
+   SISTEMA DE DISEÑO — AI Cash Machine (marca LEGENDAR·IA)
+   Azul royal eléctrico #2a22f5 + vidrio iridiscente (Liquid
+   Glass), fondo azul-noche, Montserrat (títulos) + Inter (texto).
+   Pensado para audiencia 35-60 que mira desde el móvil:
+   textos grandes, alto contraste, cero hex hardcodeado (tokens).
+   ============================================================ */
+
+:root {
+  /* Fondos azul-noche (no negro: la marca es azul) */
+  --bg: #06070f;
+  --bg-2: #0a0c1c;
+  --bg-3: #101536;
+
+  /* Tinta (texto) en blanco azulado */
+  --ink: #f2f4ff;
+  --ink-soft: #b8bedd;
+  --ink-mute: #7d83a8;
+
+  /* Marca */
+  --brand: #2a22f5;     /* royal eléctrico (fill, botones) */
+  --brand-2: #5b7bff;   /* azul claro para glow / gradientes */
+  --brand-deep: #0102e8; /* azul oficial del logo */
+  --plata: #aaadba;
+
+  /* Acentos data-viz / estados (paleta del CRM, on-brand, sin dorado) */
+  --green: #2bd4a0;   /* éxito / ganado */
+  --amber: #ffc24b;   /* atención / propuesta */
+  --violet: #9a6bff;  /* IA / contactado */
+  --sky: #57c7ff;     /* info / nuevo */
+
+  /* Líneas y vidrio (tinte azul) */
+  --line: rgba(180, 192, 255, 0.10);
+  --line-strong: rgba(180, 192, 255, 0.20);
+  --glass: rgba(120, 140, 255, 0.05);
+  --glass-2: rgba(120, 140, 255, 0.09);
+
+  --radius: 22px;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-2: var(--bg-2);
+  --color-bg-3: var(--bg-3);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-mute: var(--ink-mute);
+  --color-brand: var(--brand);
+  --color-brand-2: var(--brand-2);
+  --color-brand-deep: var(--brand-deep);
+  --color-plata: var(--plata);
+  --color-green: var(--green);
+  --color-amber: var(--amber);
+  --color-violet: var(--violet);
+  --color-sky: var(--sky);
+  --color-line: var(--line);
+  --color-glass: var(--glass);
+
+  --font-display: var(--font-montserrat);
+  --font-sans: var(--font-inter);
+  --font-logo-black: var(--font-anton);
+
+  --radius-glass: 22px;
+}
+
+* {
+  border-color: var(--line);
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+/* Fondo ambiental con halos azul royal */
+.bg-ambient {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(900px 620px at 10% -12%, rgba(42, 34, 245, 0.30), transparent 60%),
+    radial-gradient(820px 640px at 100% 6%, rgba(91, 123, 255, 0.18), transparent 60%),
+    radial-gradient(1000px 820px at 50% 122%, rgba(154, 107, 255, 0.12), transparent 60%),
+    var(--bg);
+}
+.bg-grid {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(rgba(180, 192, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(180, 192, 255, 0.05) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(circle at 50% 38%, black, transparent 78%);
+}
+
+/* ---------- Vidrio (Liquid Glass) ---------- */
+.glass {
+  background: linear-gradient(160deg, var(--glass-2), var(--glass));
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  border: 1px solid var(--line);
+  box-shadow:
+    0 1px 0 0 rgba(180, 192, 255, 0.08) inset,
+    0 24px 60px -28px rgba(0, 0, 0, 0.75);
+}
+.glass-soft {
+  background: var(--glass);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--line);
+}
+.glass-strong {
+  background: linear-gradient(160deg, rgba(120, 140, 255, 0.14), rgba(120, 140, 255, 0.06));
+  backdrop-filter: blur(30px) saturate(155%);
+  -webkit-backdrop-filter: blur(30px) saturate(155%);
+  border: 1px solid var(--line-strong);
+}
+
+/* ---------- Tipografía display ---------- */
+.font-display {
+  font-family: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.text-gradient-brand {
+  background: linear-gradient(100deg, #ffffff, var(--brand-2) 55%, #c3ccff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.text-gradient-blue {
+  background: linear-gradient(100deg, var(--brand-2), var(--violet));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ---------- Chips, botones, campos ---------- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--glass);
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.95rem 1.6rem;
+  border-radius: 14px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(180deg, var(--brand-2), var(--brand));
+  box-shadow: 0 14px 34px -14px rgba(42, 34, 245, 0.85);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+.btn-primary:hover { transform: translateY(-1px); filter: brightness(1.05); }
+.btn-primary:active { transform: translateY(0); }
+.btn-primary:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.4rem;
+  border-radius: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  background: var(--glass);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.btn-ghost:hover { background: var(--glass-2); border-color: var(--brand-2); }
+
+.field-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  margin-bottom: 0.4rem;
+}
+.field-input {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  background: rgba(10, 12, 28, 0.6);
+  border: 1px solid var(--line-strong);
+  color: var(--ink);
+  font-size: 1rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.field-input::placeholder { color: var(--ink-mute); }
+.field-input:focus {
+  outline: none;
+  border-color: var(--brand-2);
+  box-shadow: 0 0 0 3px rgba(91, 123, 255, 0.18);
+}
+.field-input[aria-invalid="true"] {
+  border-color: #ff7a7a;
+  box-shadow: 0 0 0 3px rgba(255, 122, 122, 0.16);
+}
+
+/* ---------- Utilidades ---------- */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+@keyframes float-soft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.animate-float { animation: float-soft 6s ease-in-out infinite; }
+.anim-floaty { animation: float-soft 6s ease-in-out infinite; }
+
+/* ---------- Vidrio con brillo superior (variante más luminosa) ---------- */
+.glass-highlight {
+  position: relative;
+  background: linear-gradient(160deg, rgba(120, 140, 255, 0.14), rgba(120, 140, 255, 0.06));
+  backdrop-filter: blur(26px) saturate(150%);
+  -webkit-backdrop-filter: blur(26px) saturate(150%);
+  border: 1px solid var(--line-strong);
+  overflow: hidden;
+}
+.glass-highlight::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, rgba(255, 255, 255, 0.22), transparent 42%);
+  pointer-events: none;
+}
+
+/* ---------- Tarjeta con inclinación 3D al pasar el mouse ---------- */
+.card-3d {
+  transform-style: preserve-3d;
+  perspective: 900px;
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+@media (hover: hover) {
+  .card-3d:hover {
+    transform: rotateX(4deg) rotateY(-4deg) translateY(-4px);
+    box-shadow: 0 30px 70px -30px rgba(42, 34, 245, 0.45);
+  }
+}
+
+/* ---------- Texto holográfico (para el dato gigante) ---------- */
+@keyframes holo-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+.holo-text {
+  background: linear-gradient(110deg, var(--brand-2), #ffffff 30%, var(--violet) 55%, var(--sky) 75%, var(--brand-2));
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: holo-shift 6s ease-in-out infinite;
+}
+
+/* ---------- Barrido de luz (scanbeam) ---------- */
+@keyframes scan-sweep {
+  0% { transform: translateX(-120%) skewX(-18deg); }
+  100% { transform: translateX(220%) skewX(-18deg); }
+}
+.scanbeam { position: relative; overflow: hidden; }
+.scanbeam::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.22), transparent);
+  animation: scan-sweep 2.6s ease-in-out infinite;
+}
+.scanbeam-once { position: relative; overflow: hidden; }
+.scanbeam-once::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.28), transparent);
+  animation: scan-sweep 1.4s ease-out 0.3s 1 both;
+}
+
+/* ---------- Glow pulsante (llamados a la acción) ---------- */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 14px 34px -14px rgba(42, 34, 245, 0.85), 0 0 0 0 rgba(91, 123, 255, 0.45); }
+  50% { box-shadow: 0 14px 34px -14px rgba(42, 34, 245, 0.85), 0 0 0 10px rgba(91, 123, 255, 0); }
+}
+.anim-pulse-glow { animation: pulse-glow 2.4s ease-in-out infinite; }
+
+/* ---------- Punto "en línea" ---------- */
+@keyframes dot-ping {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(43, 212, 160, 0.55); }
+  50% { box-shadow: 0 0 0 5px rgba(43, 212, 160, 0); }
+}
+.dot-online {
+  position: relative;
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--green);
+  animation: dot-ping 1.8s ease-in-out infinite;
+}
+
+/* ---------- Elevar al pasar el mouse ---------- */
+.lift { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+@media (hover: hover) {
+  .lift:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 20px 45px -22px rgba(0, 0, 0, 0.7);
+  }
+}
+
+/* ---------- Pulso que recorre el borde (flow-pulse) ---------- */
+@keyframes flow-pulse-move {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+.flow-pulse { position: relative; }
+.flow-pulse::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(90deg, transparent, var(--brand-2), var(--violet), var(--sky), transparent);
+  background-size: 200% 100%;
+  animation: flow-pulse-move 3.5s linear infinite;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
