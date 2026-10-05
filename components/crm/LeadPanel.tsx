@@ -6,8 +6,9 @@ import { Icon } from "@iconify/react";
 import { crmLead, crmMover, crmActualizar, crmAgregarActividad, crmPlantillas } from "@/lib/api";
 import { ETAPAS, etapa as etapaPorId, ICONO_ACTIVIDAD } from "@/lib/crm-data";
 import { aplicarPlantilla } from "@/lib/plantillas";
+import { RAMOS } from "@/lib/ramos";
 import { DictadoBoton } from "./DictadoBoton";
-import type { Lead, Actividad, EtapaId, TipoActividad, Genero, PlantillaMensaje } from "@/lib/types";
+import type { Lead, Actividad, EtapaId, TipoActividad, Genero, PlantillaMensaje, Ramo } from "@/lib/types";
 
 interface LeadPanelProps {
   id: string;
@@ -27,6 +28,7 @@ export function LeadPanel({ id, onClose, onCambio }: LeadPanelProps) {
   const [guardando, setGuardando] = useState(false);
   const [plantillas, setPlantillas] = useState<PlantillaMensaje[]>([]);
   const [mostrarPlantillas, setMostrarPlantillas] = useState(false);
+  const [errorRamo, setErrorRamo] = useState<string | null>(null);
 
   function cargarDesde(l: Lead) {
     setLead(l);
@@ -72,6 +74,21 @@ export function LeadPanel({ id, onClose, onCambio }: LeadPanelProps) {
     void cargar();
   }
 
+  /** El ramo se guarda al momento (como la etapa): cuenta para tu meta del Panel. */
+  async function cambiarRamo(r: Ramo | null) {
+    if (!lead) return;
+    const antes = lead.ramo;
+    setLead({ ...lead, ramo: r });
+    setErrorRamo(null);
+    try {
+      await crmActualizar(id, { ramo: r });
+      onCambio();
+    } catch (e) {
+      setLead((l) => (l ? { ...l, ramo: antes } : l));
+      setErrorRamo((e as Error).message);
+    }
+  }
+
   async function guardar() {
     setGuardando(true);
     try {
@@ -114,7 +131,7 @@ export function LeadPanel({ id, onClose, onCambio }: LeadPanelProps) {
       >
         <div className="mb-4 flex items-center justify-between">
           <button onClick={onClose} className="text-ink-mute hover:text-ink">
-            <Icon icon="flat-color-icons:back" width={26} />
+            <Icon icon="flat-color-icons:previous" width={26} />
           </button>
           {e && (
             <span
@@ -158,6 +175,38 @@ export function LeadPanel({ id, onClose, onCambio }: LeadPanelProps) {
                 </option>
               ))}
             </select>
+
+            {/* Ramo: cuenta para tu meta de pólizas por ramo (Panel de Mando) */}
+            <label className="field-label mt-4" htmlFor="lead-ramo">Ramo</label>
+            <select
+              id="lead-ramo"
+              value={lead.ramo ?? ""}
+              onChange={(ev) => cambiarRamo((ev.target.value || null) as Ramo | null)}
+              className="field-input"
+            >
+              <option value="">Sin definir</option>
+              {RAMOS.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.nombre}
+                </option>
+              ))}
+            </select>
+            {lead.etapa === "ganado" && !lead.ramo && !errorRamo && (
+              <p className="mt-1.5 flex items-start gap-1.5 text-xs" style={{ color: "var(--amber)" }}>
+                <Icon icon="flat-color-icons:medium-priority" width={14} className="mt-px shrink-0" aria-hidden />
+                <span><strong>Atención:</strong> asígnale el ramo para que esta póliza cuente en tu meta.</span>
+              </p>
+            )}
+            {lead.etapa === "ganado" && lead.cerrado_en && (
+              <p className="mt-1.5 text-xs text-ink-mute">
+                Cerrado el {new Date(lead.cerrado_en).toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" })}
+              </p>
+            )}
+            {errorRamo && (
+              <p className="mt-1.5 text-xs" style={{ color: "var(--red)" }} role="alert">
+                {errorRamo}
+              </p>
+            )}
 
             {/* Valor */}
             <label className="field-label mt-4">Valor estimado (MXN)</label>

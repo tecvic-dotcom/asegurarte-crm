@@ -11,6 +11,9 @@ import { Contactos } from "./Contactos";
 import { Seguimiento } from "./Seguimiento";
 import { Campanas } from "./Campanas";
 import { Reportes } from "./Reportes";
+import { PanelMando } from "./PanelMando";
+import { ManagerIA } from "./ManagerIA";
+import { SlotRoro } from "./SlotRoro";
 import type { Lead, Sesion, EtapaId } from "@/lib/types";
 
 interface CRMAppProps {
@@ -20,7 +23,7 @@ interface CRMAppProps {
 }
 
 type Vista = "kanban" | "tabla";
-type Pestana = "tablero" | "contactos" | "seguimiento" | "campanas" | "reportes";
+type Pestana = "tablero" | "contactos" | "seguimiento" | "campanas" | "reportes" | "panel" | "roro";
 
 const PESTANAS: [Pestana, string, string][] = [
   ["tablero", "Tablero", "flat-color-icons:flow-chart"],
@@ -28,6 +31,12 @@ const PESTANAS: [Pestana, string, string][] = [
   ["seguimiento", "Hoy", "flat-color-icons:alarm-clock"],
   ["campanas", "Campañas", "flat-color-icons:advertising"],
   ["reportes", "Reportes", "flat-color-icons:statistics"],
+];
+
+/** Módulo 3 (AI Manager): tus finanzas y tu gerente digital son solo para el administrador. */
+const PESTANAS_ADMIN: [Pestana, string, string][] = [
+  ["panel", "Panel de Mando", "flat-color-icons:combo-chart"],
+  ["roro", "RORO", "flat-color-icons:assistant"],
 ];
 
 export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
@@ -82,6 +91,16 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
 
   const pipeline = useMemo(() => leads.filter((l) => l.etapa === "ganado"), [leads]);
   const valorGanado = pipeline.reduce((s, l) => s + l.valor, 0);
+  const esAdmin = sesion.rol === "admin";
+  const pestanas = esAdmin ? [...PESTANAS, ...PESTANAS_ADMIN] : PESTANAS;
+
+  /** Desde el Panel: muestra en tabla las pólizas ganadas para asignarles su ramo. */
+  function verGanadasSinRamo() {
+    setPestana("tablero");
+    setVista("tabla");
+    setFiltroEtapa("ganado");
+    setBusca("");
+  }
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6">
@@ -111,24 +130,15 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
         <Metrica icono="flat-color-icons:money-transfer" label="Ganado" valor={moneda(valorGanado)} />
       </div>
 
-      {/* Slot de "empleados digitales" (Módulo 3 — próximamente) */}
-      <div className="mb-5 flex items-center gap-3 rounded-2xl border border-dashed border-line bg-glass px-4 py-3">
-        <div className="flex -space-x-2">
-          {["flat-color-icons:assistant", "flat-color-icons:manager", "flat-color-icons:support"].map((ic, i) => (
-            <span key={ic} className="animate-float grid h-9 w-9 place-items-center rounded-full bg-bg-3" style={{ animationDelay: `${i * 0.4}s` }}>
-              <Icon icon={ic} width={22} />
-            </span>
-          ))}
-        </div>
-        <div className="text-sm">
-          <p className="font-semibold text-ink">Tus empleados digitales</p>
-          <p className="text-ink-mute">Llegan en el Módulo 3 (AI Manager): agentes que trabajan por ti.</p>
-        </div>
-      </div>
+      {/* Empleados digitales (Módulo 3 · AI Manager): RORO con tu reporte de hoy.
+          En las pestañas Panel y RORO no se repite (ahí ya está). */}
+      {esAdmin && pestana !== "panel" && pestana !== "roro" && (
+        <SlotRoro onPanel={() => setPestana("panel")} onRoro={() => setPestana("roro")} />
+      )}
 
       {/* Pestañas */}
       <nav className="mb-4 flex flex-wrap gap-2">
-        {PESTANAS.map(([id, label, icono]) => (
+        {pestanas.map(([id, label, icono]) => (
           <button
             key={id}
             onClick={() => setPestana(id)}
@@ -183,6 +193,8 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
       {pestana === "seguimiento" && <Seguimiento leads={leads} onAbrir={setSeleccion} />}
       {pestana === "campanas" && <Campanas leads={leads} />}
       {pestana === "reportes" && <Reportes leads={leads} />}
+      {esAdmin && pestana === "panel" && <PanelMando onVerSinRamo={verGanadasSinRamo} />}
+      {esAdmin && pestana === "roro" && <ManagerIA sesion={sesion} />}
 
       {seleccion && (
         <LeadPanel id={seleccion} onClose={() => setSeleccion(null)} onCambio={recargar} />

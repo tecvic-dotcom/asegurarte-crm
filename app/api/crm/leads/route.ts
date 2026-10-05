@@ -1,6 +1,7 @@
 import { sesionDesdeRequest } from "@/lib/auth";
 import { listLeads, getLead, listActividad, actualizarLead, agregarActividad } from "@/lib/db";
-import type { EtapaId, TipoActividad, Genero } from "@/lib/types";
+import { esRamo } from "@/lib/ramos";
+import type { EtapaId, TipoActividad, Genero, Ramo } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -48,6 +49,7 @@ export async function POST(req: Request): Promise<Response> {
       genero?: Genero | null;
       fecha_nacimiento?: string | null;
       codigo_postal?: string | null;
+      ramo?: Ramo | null;
     };
   };
   try {
@@ -65,6 +67,9 @@ export async function POST(req: Request): Promise<Response> {
       return Response.json({ ok: true, lead });
     }
     if (body.accion === "editar" && body.id && body.patch) {
+      if (body.patch.ramo !== undefined && body.patch.ramo !== null && !esRamo(body.patch.ramo)) {
+        return Response.json({ error: "Ramo no válido." }, { status: 400 });
+      }
       const lead = await actualizarLead(body.id, body.patch, autor, soloMio);
       if (!lead) return Response.json({ error: "No encontrado" }, { status: 404 });
       return Response.json({ ok: true, lead });

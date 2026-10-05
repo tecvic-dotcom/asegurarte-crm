@@ -15,6 +15,7 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import { Icon } from "@iconify/react";
 import { ETAPAS_ACTIVAS, moneda } from "@/lib/crm-data";
+import { infoRamo } from "@/lib/ramos";
 import type { Lead, EtapaId } from "@/lib/types";
 
 /**
@@ -195,10 +196,17 @@ function CardVisual({
           </button>
         )}
       </div>
-      <div className="mt-2.5 flex items-center justify-between">
-        <span className="rounded-full bg-white/5 px-2 py-0.5 text-[10px] text-ink-mute">{lead.origen}</span>
+      <div className="mt-2.5 flex items-center justify-between gap-2">
+        <span className="flex min-w-0 items-center gap-1">
+          <span className="truncate rounded-full bg-white/5 px-2 py-0.5 text-[10px] text-ink-mute">{lead.origen}</span>
+          {lead.ramo && (
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/5 px-2 py-0.5 text-[10px] text-ink-soft">
+              <Icon icon={infoRamo(lead.ramo).icono} width={11} aria-hidden /> {infoRamo(lead.ramo).corto}
+            </span>
+          )}
+        </span>
         {lead.utm_source && (
-          <span className="text-[10px] text-ink-mute">via {lead.utm_source}</span>
+          <span className="shrink-0 text-[10px] text-ink-mute">via {lead.utm_source}</span>
         )}
       </div>
     </div>

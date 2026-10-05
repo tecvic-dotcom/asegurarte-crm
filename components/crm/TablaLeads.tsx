@@ -2,6 +2,7 @@
 
 import { Icon } from "@iconify/react";
 import { etapa as etapaPorId, moneda } from "@/lib/crm-data";
+import { infoRamo } from "@/lib/ramos";
 import type { Lead } from "@/lib/types";
 
 /**
@@ -27,12 +28,13 @@ export function TablaLeads({ leads, onAbrir }: TablaLeadsProps) {
   }
   return (
     <div className="no-scrollbar overflow-x-auto rounded-2xl border border-line">
-      <table className="w-full min-w-[680px] border-collapse text-sm">
+      <table className="w-full min-w-[760px] border-collapse text-sm">
         <thead>
           <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-ink-mute">
             <th className="px-4 py-3 font-semibold">Nombre</th>
             <th className="px-4 py-3 font-semibold">Contacto</th>
             <th className="px-4 py-3 font-semibold">Etapa</th>
+            <th className="px-4 py-3 font-semibold">Ramo</th>
             <th className="px-4 py-3 font-semibold">Origen</th>
             <th className="px-4 py-3 text-right font-semibold">Valor</th>
             <th className="px-4 py-3 font-semibold">Llegó</th>
@@ -61,6 +63,17 @@ export function TablaLeads({ leads, onAbrir }: TablaLeadsProps) {
                     <span className="h-1.5 w-1.5 rounded-full" style={{ background: e.color }} />
                     {e.nombre}
                   </span>
+                </td>
+                <td className="px-4 py-3 text-ink-soft">
+                  {l.ramo ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Icon icon={infoRamo(l.ramo).icono} width={15} aria-hidden /> {infoRamo(l.ramo).corto}
+                    </span>
+                  ) : l.etapa === "ganado" ? (
+                    <span className="text-xs font-semibold" style={{ color: "var(--amber)" }}>⚠ Sin ramo</span>
+                  ) : (
+                    <span className="text-ink-mute">—</span>
+                  )}
                 </td>
                 <td className="px-4 py-3 text-ink-soft">
                   {l.origen}

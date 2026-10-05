@@ -30,6 +30,13 @@
   --amber: #ffc24b;   /* atención / propuesta */
   --violet: #9a6bff;  /* IA / contactado */
   --sky: #57c7ff;     /* info / nuevo */
+  --red: #ff7a7a;     /* alerta (siempre con ícono + palabra, nunca solo color) */
+
+  /* Series de las gráficas del Panel de Mando (validadas para daltonismo y
+     contraste sobre el fondo azul-noche). "Entró" y "Salió" siempre llevan
+     el mismo color en todas las gráficas. */
+  --serie-entro: #5b7bff;
+  --serie-salio: #d55181;
 
   /* Líneas y vidrio (tinte azul) */
   --line: rgba(180, 192, 255, 0.10);
@@ -55,6 +62,7 @@
   --color-amber: var(--amber);
   --color-violet: var(--violet);
   --color-sky: var(--sky);
+  --color-red: var(--red);
   --color-line: var(--line);
   --color-glass: var(--glass);
 
@@ -350,6 +358,68 @@ body {
   mask-composite: exclude;
   pointer-events: none;
 }
+
+/* ---------- RORO, tu gerente digital (avatar) ----------
+   Animaciones baratas (solo transform y opacity): fluidas en celular. */
+@keyframes roro-flotar {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-4px) scale(1.02); }
+}
+.roro-flota { animation: roro-flotar 5s ease-in-out infinite; }
+
+@keyframes roro-parpadeo {
+  0%, 92%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.1); }
+}
+.roro-ojos {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: roro-parpadeo 4.5s ease-in-out infinite;
+}
+
+@keyframes roro-hablar {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(2.4); }
+}
+.roro-boca-habla {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: roro-hablar 0.32s ease-in-out infinite;
+}
+
+@keyframes roro-foco {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.roro-foco { animation: roro-foco 2s ease-in-out infinite; }
+
+.roro-en-linea {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--green);
+  border: 2px solid var(--bg-2);
+}
+.roro-en-linea::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  border: 2px solid var(--green);
+  animation: roro-pulso 1.8s ease-out infinite;
+}
+@keyframes roro-pulso {
+  0% { transform: scale(1); opacity: 0.7; }
+  100% { transform: scale(2.1); opacity: 0; }
+}
+
+/* "Pensando…": tres puntos que se encienden por turnos (solo opacidad) */
+@keyframes roro-punto {
+  0%, 80%, 100% { opacity: 0.25; }
+  40% { opacity: 1; }
+}
+.roro-punto { animation: roro-punto 1.2s ease-in-out infinite; }
 
 @media (prefers-reduced-motion: reduce) {
   *,

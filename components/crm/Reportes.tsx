@@ -35,7 +35,8 @@ export function Reportes({ leads }: { leads: Lead[] }) {
     return leads
       .filter((l) => {
         if (l.etapa !== "ganado") return false;
-        const f = new Date(l.actualizado_en);
+        // La fecha real de cierre (AI Manager); si aún no existe, la última actualización.
+        const f = new Date(l.cerrado_en ?? l.actualizado_en);
         return f.getFullYear() === hoy.getFullYear() && f.getMonth() === hoy.getMonth();
       })
       .reduce((s, l) => s + l.valor, 0);

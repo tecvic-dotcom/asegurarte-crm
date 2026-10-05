@@ -16,6 +16,8 @@ import { adminDb, cloudReady } from "./supabase-admin";
 import { normCorreo, normWhatsapp, normCodigoPostal } from "./normalize";
 import { validarLead } from "./validacion";
 import { hashPassword, verifyPassword } from "./auth";
+import { faltaMigracion, MENSAJE_MIGRACION } from "./migracion";
+import { esRamo } from "./ramos";
 import type {
   Lead,
   Actividad,
@@ -29,6 +31,7 @@ import type {
   EtapaId,
   Genero,
   PlantillaMensaje,
+  Ramo,
 } from "./types";
 
 export function isCloud(): boolean {
@@ -115,6 +118,8 @@ function seed(): Store {
     genero: null,
     fecha_nacimiento: null,
     codigo_postal: null,
+    ramo: null,
+    cerrado_en: etapa === "ganado" ? isoHoursAgo(horas) : null,
     creado_en: isoHoursAgo(horas),
     actualizado_en: isoHoursAgo(horas),
   });
@@ -128,7 +133,12 @@ function seed(): Store {
     lead("ld_6", "Héctor Domínguez", "hector.dom@gmail.com", "5566778899", "cita", 20000, "Google", "google", 5),
     lead("ld_7", "Patricia Guzmán", "paty.guzman@gmail.com", "4412345566", "perdido", 0, "Instagram", "instagram", 336),
     lead("ld_8", "Andrés Salinas", "andres@salinas.mx", "8113344556", "propuesta", 68000, "Recomendación", "", 48),
+    lead("ld_9", "Lucía Herrera", "lucia.herrera@gmail.com", "8187654321", "ganado", 14000, "Recomendación", "", 30),
+    lead("ld_10", "Ernesto Vela", "ernesto.vela@gmail.com", "8123456789", "ganado", 9500, "Landing", "google", 50),
   ];
+  // Ramos de muestra para que el Panel de Mando del demo tenga algo que medir.
+  const ramosDemo: Record<string, Ramo> = { ld_1: "gmm", ld_2: "vida", ld_3: "gmm", ld_6: "vida", ld_8: "ahorro", ld_9: "vida", ld_10: "autos" };
+  for (const l of leads) l.ramo = ramosDemo[l.id] ?? null;
 
   const actividad: Actividad[] = leads.map((l, i) => ({
     id: `ac_${i}`,
@@ -269,6 +279,8 @@ export async function crearLead(input: NuevoLead, geo?: Partial<Geo>): Promise<C
   const lead: Lead = {
     id,
     asignado_a: null,
+    ramo: null,
+    cerrado_en: null,
     creado_en: nowISO(),
     actualizado_en: nowISO(),
     ...fila,
@@ -286,6 +298,14 @@ export async function crearLead(input: NuevoLead, geo?: Partial<Geo>): Promise<C
 }
 
 /**
+ * Completa los campos del AI Manager (ramo, cerrado_en) en filas de la nube:
+ * si la migración 0003 aún no corre, esas columnas no vienen y quedan en null.
+ */
+function conCamposManager(fila: Lead): Lead {
+  return { ...fila, ramo: esRamo(fila.ramo) ? fila.ramo : null, cerrado_en: fila.cerrado_en ?? null };
+}
+
+/**
  * Lista leads. Si `asignadoA` viene, filtra solo lo de ese vendedor — así un
  * vendedor nunca ve la cartera de otro (RLS no aplica porque el servidor usa
  * la service_role; este filtro es la barrera real de "quién ve qué").
@@ -296,7 +316,7 @@ export async function listLeads(asignadoA?: string): Promise<Lead[]> {
     if (asignadoA) q = q.eq("asignado_a", asignadoA);
     const { data, error } = await q;
     if (error) throw new Error(error.message);
-    return (data as Lead[]) ?? [];
+    return ((data as Lead[]) ?? []).map(conCamposManager);
   }
   const leads = [...store().leads].sort((a, b) => b.creado_en.localeCompare(a.creado_en));
   return asignadoA ? leads.filter((l) => l.asignado_a === asignadoA) : leads;
@@ -306,7 +326,7 @@ export async function getLead(id: string, asignadoA?: string): Promise<Lead | nu
   if (cloudReady && adminDb) {
     const { data, error } = await adminDb.from("leads").select("*").eq("id", id).limit(1);
     if (error) throw new Error(error.message);
-    const lead = (data?.[0] as Lead) ?? null;
+    const lead = data?.[0] ? conCamposManager(data[0] as Lead) : null;
     if (lead && asignadoA && lead.asignado_a !== asignadoA) return null;
     return lead;
   }
@@ -324,6 +344,7 @@ export interface LeadPatch {
   genero?: Genero | null;
   fecha_nacimiento?: string | null;
   codigo_postal?: string | null;
+  ramo?: Ramo | null;
 }
 
 export async function actualizarLead(
@@ -346,11 +367,23 @@ export async function actualizarLead(
   if (patch.genero !== undefined) limpio.genero = patch.genero;
   if (patch.fecha_nacimiento !== undefined) limpio.fecha_nacimiento = patch.fecha_nacimiento;
   if (patch.codigo_postal !== undefined) limpio.codigo_postal = patch.codigo_postal ? normCodigoPostal(patch.codigo_postal) : null;
+  if (patch.ramo !== undefined) limpio.ramo = patch.ramo;
+  // La fecha de cierre alimenta tu meta: se pone al pasar a "ganado" y se borra si regresa.
+  if (patch.etapa !== undefined) limpio.cerrado_en = patch.etapa === "ganado" ? nowISO() : null;
 
   if (cloudReady && adminDb) {
-    const { data, error } = await adminDb.from("leads").update(limpio).eq("id", id).select("*").limit(1);
+    let { data, error } = await adminDb.from("leads").update(limpio).eq("id", id).select("*").limit(1);
+    if (error && faltaMigracion(error)) {
+      // Sin la migración 0003 tu CRM sigue funcionando igual que antes: guardamos
+      // todo menos los campos nuevos. Solo el ramo necesita la migración.
+      if (patch.ramo !== undefined) throw new Error(MENSAJE_MIGRACION);
+      const { ramo: _r, cerrado_en: _c, ...sinCamposNuevos } = limpio;
+      void _r;
+      void _c;
+      ({ data, error } = await adminDb.from("leads").update(sinCamposNuevos).eq("id", id).select("*").limit(1));
+    }
     if (error) throw new Error(error.message);
-    const lead = (data?.[0] as Lead) ?? null;
+    const lead = data?.[0] ? conCamposManager(data[0] as Lead) : null;
     if (lead && patch.etapa !== undefined) {
       await adminDb.from("actividad").insert({
         lead_id: id,
@@ -455,13 +488,13 @@ function csvCampo(v: string): string {
 export async function exportarLeadsCSV(): Promise<string> {
   const leads = await listLeads();
   const cab = [
-    "nombre", "correo", "whatsapp", "genero", "fecha_nacimiento", "codigo_postal", "etapa", "valor", "origen",
+    "nombre", "correo", "whatsapp", "genero", "fecha_nacimiento", "codigo_postal", "etapa", "ramo", "valor", "origen",
     "utm_source", "utm_medium", "utm_campaign", "pais", "ciudad", "dispositivo", "creado_en",
   ];
   const filas = leads.map((l) =>
     [
       l.nombre, l.correo, l.whatsapp, l.genero ?? "", l.fecha_nacimiento ?? "", l.codigo_postal ?? "",
-      l.etapa, String(l.valor), l.origen,
+      l.etapa, l.ramo ?? "", String(l.valor), l.origen,
       l.utm_source, l.utm_medium, l.utm_campaign, l.pais ?? "", l.ciudad ?? "", l.dispositivo ?? "", l.creado_en,
     ]
       .map(csvCampo)

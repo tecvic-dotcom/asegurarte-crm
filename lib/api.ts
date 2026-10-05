@@ -16,6 +16,16 @@ import type {
   TipoActividad,
   Genero,
   PlantillaMensaje,
+  Ramo,
+  PeriodoPanel,
+  PanelSnapshot,
+  Movimiento,
+  NuevoMovimiento,
+  ManagerEstado,
+  ManagerConfig,
+  ManagerUso,
+  RespuestaManager,
+  TurnoManager,
 } from "./types";
 
 async function jsonOrThrow(res: Response): Promise<unknown> {
@@ -99,6 +109,7 @@ export async function crmActualizar(
     genero?: Genero | null;
     fecha_nacimiento?: string | null;
     codigo_postal?: string | null;
+    ramo?: Ramo | null;
   },
 ): Promise<Lead> {
   const data = (await jsonOrThrow(
@@ -150,6 +161,76 @@ export async function crmEliminarPlantilla(id: string): Promise<void> {
       body: JSON.stringify({ accion: "eliminar", id }),
     }),
   );
+}
+
+// ---- AI Manager: Panel de Mando, finanzas y RORO (solo admin) ----
+
+/** Error del CRM que además dice si falta la migración 0003 o la llave de IA. */
+export class ErrorCRM extends Error {
+  constructor(
+    message: string,
+    public status: number,
+    public migracion = false,
+    public sinLlave = false,
+  ) {
+    super(message);
+    this.name = "ErrorCRM";
+  }
+}
+
+async function jsonOErrorCRM(res: Response): Promise<unknown> {
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const d = data as { error?: string; migracion?: boolean; sinLlave?: boolean };
+    throw new ErrorCRM(d.error ?? `Error ${res.status}`, res.status, Boolean(d.migracion), Boolean(d.sinLlave));
+  }
+  return data;
+}
+
+function postJSON(url: string, body: unknown): Promise<Response> {
+  return fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+}
+
+export async function crmPanel(periodo: PeriodoPanel): Promise<PanelSnapshot> {
+  const res = await fetch(`/api/crm/panel?periodo=${periodo}`, { cache: "no-store" });
+  return (await jsonOErrorCRM(res)) as PanelSnapshot;
+}
+
+export async function crmMovimientos(desde: string, hasta: string): Promise<Movimiento[]> {
+  const res = await fetch(`/api/crm/finanzas?desde=${desde}&hasta=${hasta}`, { cache: "no-store" });
+  return ((await jsonOErrorCRM(res)) as { movimientos: Movimiento[] }).movimientos;
+}
+
+export async function crmCrearMovimientos(movimientos: NuevoMovimiento[]): Promise<Movimiento[]> {
+  const data = await jsonOErrorCRM(await postJSON("/api/crm/finanzas", { accion: "crear", movimientos }));
+  return (data as { movimientos: Movimiento[] }).movimientos;
+}
+
+export async function crmEditarMovimiento(id: string, cambios: Partial<NuevoMovimiento>): Promise<Movimiento> {
+  const data = await jsonOErrorCRM(await postJSON("/api/crm/finanzas", { accion: "editar", id, cambios }));
+  return (data as { movimiento: Movimiento }).movimiento;
+}
+
+export async function crmEliminarMovimiento(id: string): Promise<void> {
+  await jsonOErrorCRM(await postJSON("/api/crm/finanzas", { accion: "eliminar", id }));
+}
+
+export async function crmManager(): Promise<ManagerEstado> {
+  const res = await fetch("/api/crm/manager", { cache: "no-store" });
+  return (await jsonOErrorCRM(res)) as ManagerEstado;
+}
+
+export async function crmPreguntarManager(
+  pregunta: string,
+  historial: TurnoManager[],
+): Promise<{ respuesta: RespuestaManager; uso: ManagerUso }> {
+  const data = await jsonOErrorCRM(await postJSON("/api/crm/manager", { accion: "preguntar", pregunta, historial }));
+  return data as { respuesta: RespuestaManager; uso: ManagerUso };
+}
+
+export async function crmGuardarManagerConfig(config: ManagerConfig): Promise<ManagerConfig> {
+  const data = await jsonOErrorCRM(await postJSON("/api/crm/manager", { accion: "guardar-config", config }));
+  return (data as { config: ManagerConfig }).config;
 }
 
 // ---- Admin (requiere código x-admin-code) ----

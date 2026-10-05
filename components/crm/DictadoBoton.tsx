@@ -76,7 +76,7 @@ export function DictadoBoton({ onTexto }: DictadoBotonProps) {
         escuchando ? "bg-brand/20 text-brand-2" : "bg-glass text-ink-mute hover:text-ink"
       }`}
     >
-      <Icon icon={escuchando ? "flat-color-icons:multiple-inputs" : "flat-color-icons:microphone"} width={20} />
+      <Icon icon={escuchando ? "flat-color-icons:multiple-inputs" : "flat-color-icons:voice-presentation"} width={20} />
     </button>
   );
 }
