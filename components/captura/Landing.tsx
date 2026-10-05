@@ -149,19 +149,21 @@ export function Landing({ negocio, popupActivo, heroTitulo, heroCta }: LandingPr
           <motion.div
             key={t.nombre}
             {...aparecer}
-            className="glass-highlight mx-auto mt-10 max-w-3xl rounded-[28px] p-8 sm:p-12"
+            className="glass-highlight mx-auto mt-10 max-w-4xl rounded-[28px] p-5 sm:p-10 md:grid md:grid-cols-[300px_1fr] md:items-start md:gap-10"
           >
-            <Icon icon="flat-color-icons:feedback" width={36} className="opacity-80" />
-            <TextoTestimonio texto={t.texto} />
-            <div className="mt-6 flex items-center gap-4">
-              <Image
-                src={t.foto}
-                alt={`${t.nombre}, familia asegurada`}
-                width={64}
-                height={64}
-                className="h-16 w-16 rounded-full object-cover ring-2 ring-[var(--line-strong)]"
-              />
-              <div>
+            {/* La foto completa (sin recortar): arriba en el celular, a la izquierda en la compu */}
+            <Image
+              src={t.foto}
+              alt={`${t.nombre}, familia asegurada`}
+              width={t.fotoAncho}
+              height={t.fotoAlto}
+              sizes="(min-width: 768px) 300px, 100vw"
+              className="h-auto w-full rounded-2xl ring-1 ring-[var(--line-strong)] md:sticky md:top-6"
+            />
+            <div className="px-1 pt-5 sm:px-0 md:pt-0">
+              <Icon icon="flat-color-icons:feedback" width={36} className="opacity-80" />
+              <TextoTestimonio texto={t.texto} />
+              <div className="mt-6 border-t border-[var(--line)] pt-4">
                 <p className="font-display text-ink">{t.nombre}</p>
                 <p className="text-sm text-ink-mute">Protegidos con una póliza de gastos médicos mayores</p>
               </div>
