@@ -54,6 +54,10 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
+  // Tarjeta digital (archivo estático en public/tarjeta/): /tarjeta muestra su index.html.
+  async rewrites() {
+    return [{ source: "/tarjeta", destination: "/tarjeta/index.html" }];
+  },
 };
 
 export default nextConfig;
