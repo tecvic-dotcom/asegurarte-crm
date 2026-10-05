@@ -60,6 +60,8 @@ const nextConfig: NextConfig = {
     return [
       { source: "/roberto", destination: "/tarjeta/index.html" },
       { source: "/tarjeta", destination: "/tarjeta/index.html" },
+      // Calculadora "Tu Escudo Familiar" (suma asegurada de vida)
+      { source: "/escudo", destination: "/tarjeta/escudo.html" },
     ];
   },
 };
