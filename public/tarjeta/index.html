@@ -162,15 +162,22 @@ a{color:inherit}
 .promise .ic{width:16px;height:16px;color:var(--wa);stroke-width:2.2}
 
 /* ---------- Navegación por secciones ---------- */
-.secnav{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;margin-inline:-20px;padding:10px 20px;
-  background:rgba(6,7,15,.82);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid var(--line);
-  overflow-x:auto;scrollbar-width:none}
-.secnav::-webkit-scrollbar{display:none}
-.secnav .in{display:flex;gap:8px;max-width:680px;margin:0 auto}
-.secnav a{flex:none;display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--line-strong);
-  background:var(--glass);color:var(--ink-soft);font:600 14.5px/1 var(--body);text-decoration:none;transition:background .15s,color .15s,border-color .15s}
-.secnav a:hover{border-color:var(--brand-2);color:var(--ink)}
-.secnav a[aria-current="true"]{background:linear-gradient(180deg,var(--brand-2),var(--brand));border-color:transparent;color:#fff}
+/* Barra segmentada: todos los botones caben en una sola fila desde 320px, sin scroll lateral. */
+.secnav{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;margin-inline:-20px;padding:8px 12px;
+  background:rgba(6,7,15,.84);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.secnav .in{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;max-width:680px;margin:0 auto;padding:4px;
+  border-radius:16px;border:1px solid var(--line-strong);background:var(--glass)}
+.secnav a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:0;min-height:52px;padding:6px 2px;
+  border-radius:12px;color:var(--ink-soft);font:600 clamp(10.5px,3.1vw,13px)/1.1 var(--body);text-align:center;white-space:nowrap;
+  text-decoration:none;transition:background .15s,color .15s}
+.secnav a .ic{width:19px;height:19px;stroke-width:1.9}
+.secnav a:hover{color:var(--ink);background:var(--glass-2)}
+.secnav a[aria-current="true"]{background:linear-gradient(180deg,var(--brand-2),var(--brand));color:#fff}
+@media (min-width:600px){
+  .secnav{padding:10px 20px}
+  .secnav a{flex-direction:row;gap:8px;min-height:46px;font-size:14px}
+  .secnav a .ic{width:18px;height:18px}
+}
 
 /* ---------- Secciones ---------- */
 main{padding-inline:20px;padding-bottom:52px}
@@ -347,6 +354,8 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
     <symbol id="i-linkedin" viewBox="0 0 24 24"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></symbol>
     <symbol id="i-tiktok" viewBox="0 0 24 24"><path d="M12.5 3v12.2a3.6 3.6 0 1 1-3.6-3.6"/><path d="M12.5 3c.3 2.9 2.4 5 5.5 5.2"/></symbol>
     <symbol id="i-youtube" viewBox="0 0 24 24"><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17"/><path d="m10 15 5-3-5-3z"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></symbol>
     <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
   </defs>
 </svg>
@@ -377,12 +386,11 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
     <main>
       <nav class="secnav" aria-label="Secciones">
         <div class="in">
-          <a href="#quien">Quién soy</a>
-          <a href="#seguros">Seguros</a>
-          <a href="#asesoria">Asesoría</a>
-          <a href="#opiniones">Opiniones</a>
-          <a href="#recursos" id="navRecursos">Aprende</a>
-          <a href="#contacto">Contacto</a>
+          <a href="#quien"><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg>Quién soy</a>
+          <a href="#seguros"><svg class="ic" aria-hidden="true"><use href="#i-medical"/></svg>Seguros</a>
+          <a href="#asesoria"><svg class="ic" aria-hidden="true"><use href="#i-wa"/></svg>Asesoría</a>
+          <a href="#opiniones"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg>Opiniones</a>
+          <a href="#contacto"><svg class="ic" aria-hidden="true"><use href="#i-phone"/></svg>Contacto</a>
         </div>
       </nav>
 
@@ -631,7 +639,7 @@ const CONFIG = {
         <span class="t"><strong>${esc(r.titulo)}</strong>${r.texto ? `<span>${esc(r.texto)}</span>` : ""}</span>
         <svg class="ic go" aria-hidden="true"><use href="#i-arrow"/></svg>
       </a>`).join("");
-  } else { $("#recursos").hidden = true; $("#navRecursos").hidden = true; }
+  } else { $("#recursos").hidden = true; }
 
   // Datos de contacto
   const filas = [
@@ -750,8 +758,6 @@ const CONFIG = {
     if (id === actual) return;
     actual = id;
     links.forEach((a) => a.setAttribute("aria-current", String(a.hash === "#" + id)));
-    const act = links.find((a) => a.hash === "#" + id);
-    if (act) nav.scrollTo({ left: act.offsetLeft - 20, behavior: "smooth" });
   };
   const espiar = () => {
     if (bloqueo) return;
