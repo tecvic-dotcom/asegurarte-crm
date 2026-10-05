@@ -78,6 +78,9 @@
 }
 
 html {
+  /* El sitio es oscuro: así las listas desplegables, calendarios y barras del
+     navegador también se pintan oscuras (si no, salen blancas con letra blanca). */
+  color-scheme: dark;
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
 }
@@ -224,6 +227,13 @@ body {
 .field-input[aria-invalid="true"] {
   border-color: #ff7a7a;
   box-shadow: 0 0 0 3px rgba(255, 122, 122, 0.16);
+}
+
+/* Opciones de las listas desplegables: fondo oscuro y letra clara, siempre legibles. */
+option,
+optgroup {
+  background-color: var(--bg-2);
+  color: var(--ink);
 }
 
 /* ---------- Utilidades ---------- */
