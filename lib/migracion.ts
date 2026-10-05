@@ -10,6 +10,9 @@ export const MENSAJE_MIGRACION =
 export const MENSAJE_MIGRACION_COBRANZA =
   "Falta un paso para encender a Valeri: abre Supabase → SQL Editor → New query, pega el archivo supabase/migrations/0004_cobranza.sql y dale Run.";
 
+export const MENSAJE_MIGRACION_PRODUCCION =
+  "Falta un paso para encender tu pestaña de Crecimiento: abre Supabase → SQL Editor → New query, pega el archivo supabase/migrations/0005_produccion.sql y dale Run.";
+
 export class MigracionPendienteError extends Error {
   constructor(
     message = MENSAJE_MIGRACION,

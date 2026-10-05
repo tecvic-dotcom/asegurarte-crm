@@ -11,6 +11,9 @@
 | **Agente-Manager** | Pestaña **RORO**: tu gerente digital con avatar. Lee los mismos números del Panel y te responde con recomendación + porqué + riesgo + qué hacer hoy. | El copiloto |
 | Extra para tu meta | Cada prospecto tiene **Ramo** (vida, GMM, ahorro, autos, hogar) y fecha de cierre automática al pasarlo a “Cliente ganado”. | El odómetro de tu meta |
 | **Valeri (cobranza)** | Pestaña **Valeri · Cobranza**: tu cartera de pólizas y, cada día, a quién cobrarle primero (vencidas, por vencer, promesas, renovaciones) con el WhatsApp listo. Botones: **Pagó** (avanza al siguiente recibo), **Promesa** y **Ya le recordé**. No usa IA: cuesta $0. | El cobrador que nunca olvida |
+| **Crecimiento** | Pestaña **Crecimiento**: prima pagada, comisión o número de pagos por año y mes a mes, por ramo, comparando el año en curso contra los **mismos meses** del anterior. Se alimenta de los reportes de prima pagada de la aseguradora (tabla `produccion_mensual`, migración `0005_produccion.sql`, solo totales sin clientes). Las comisiones de esos reportes también entran a tus finanzas (“Cuánto entró”). | El historial del odómetro |
+
+Para actualizarla cada mes: descarga el reporte de prima pagada por ramo y pídele a Claude Code *“carga mi producción del mes en Crecimiento”*.
 
 Solo el **administrador** ve el Panel, a RORO y a Valeri. Un vendedor de tu equipo no ve tus números ni tu cartera.
 

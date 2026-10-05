@@ -37,6 +37,8 @@
      el mismo color en todas las gráficas. */
   --serie-entro: #5b7bff;
   --serie-salio: #d55181;
+  /* Crecimiento: el periodo que importa en azul de marca; el de comparación, gris de contexto. */
+  --serie-anterior: #6b6f80;
 
   /* Líneas y vidrio (tinte azul) */
   --line: rgba(180, 192, 255, 0.10);

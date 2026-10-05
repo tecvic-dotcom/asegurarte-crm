@@ -358,6 +358,26 @@ export type DatosPoliza = Pick<
 
 export type EstadoCobro = "vencida" | "promesa_vencida" | "promesa" | "por_vencer" | "al_corriente" | "sin_fecha" | "cancelada";
 
+// ----------------------------------------------------------------------------
+// CRECIMIENTO: producción por mes y ramo (de los reportes de prima pagada)
+// ----------------------------------------------------------------------------
+
+/** Totales de UN mes y UN ramo (sin clientes). */
+export interface ProduccionMes {
+  /** AAAA-MM (mes en que se aplicó el pago) */
+  mes: string;
+  aseguradora: string;
+  ramo: Ramo;
+  subramo: string;
+  moneda: "MN" | "DLS";
+  pagos: number;
+  prima: number;
+  comision: number;
+  ultimo_dia: string | null;
+}
+
+export type MetricaCrecimiento = "prima" | "comision" | "pagos";
+
 /** Resumen de cobranza (solo totales, sin datos de clientes). */
 export interface ResumenCobranza {
   polizas: number;

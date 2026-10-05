@@ -15,6 +15,8 @@ import { listLeads, isCloud } from "./db";
 import { listarMovimientos } from "./finanzas";
 import { listarPolizas } from "./cobranza";
 import { resumenCobranza } from "./cobranza-reglas";
+import { listarProduccion } from "./produccion";
+import { acumulado, corteDeDatos, crecimiento as crecPct, porAnio } from "./crecimiento-reglas";
 import { getManagerConfig } from "./manager-config";
 import { RAMOS, infoRamo } from "./ramos";
 import { ETAPAS, moneda } from "./crm-data";
@@ -48,6 +50,7 @@ import type {
   RangoFechas,
   TipoMovimiento,
   AvanceRamo,
+  Ramo,
 } from "./types";
 
 const MESES_GRAFICA = 6;
@@ -571,7 +574,38 @@ export async function numerosParaManager(config: ManagerConfig): Promise<Record<
     cobranza = { disponible: false, motivo: "Valeri (cobranza) aún no tiene su tabla en Supabase (falta correr 0004_cobranza.sql)." };
   }
 
+  // Crecimiento (reportes de prima pagada): solo totales por ramo, comparando parejo.
+  let crecimiento_produccion: Record<string, unknown>;
+  try {
+    const prod = await listarProduccion();
+    const corte = corteDeDatos(prod);
+    if (!corte) {
+      crecimiento_produccion = { disponible: false, motivo: "Aún no hay reportes de producción cargados." };
+    } else {
+      const a = corte.anio;
+      const fila = (r: Ramo | null) => {
+        const pAct = acumulado(prod, "prima", r, a, corte.mesCorte);
+        const pAnt = acumulado(prod, "prima", r, a - 1, corte.mesCorte);
+        const cAct = acumulado(prod, "comision", r, a, corte.mesCorte);
+        const cAnt = acumulado(prod, "comision", r, a - 1, corte.mesCorte);
+        return { prima: pAct, prima_antes: pAnt, crecimiento_prima_pct: crecPct(pAct, pAnt), comision: cAct, comision_antes: cAnt, crecimiento_comision_pct: crecPct(cAct, cAnt) };
+      };
+      crecimiento_produccion = {
+        periodo_comparado: `${a} vs ${a - 1}, de enero a ${nombreMes(`${a}-${String(corte.mesCorte).padStart(2, "0")}-01`)}`,
+        datos_hasta: corte.ultimoDia,
+        total: fila(null),
+        por_ramo: Object.fromEntries(RAMOS.filter((r) => prod.some((f) => f.ramo === r.id)).map((r) => [r.corto, fila(r.id)])),
+        anios_completos: porAnio(prod, "prima", null)
+          .filter((x) => x.anio < a)
+          .map((x) => ({ anio: x.anio, prima: x.total, comision: porAnio(prod, "comision", null).find((y) => y.anio === x.anio)?.total ?? 0 })),
+      };
+    }
+  } catch {
+    crecimiento_produccion = { disponible: false, motivo: "La tabla de producción aún no existe (falta 0005_produccion.sql)." };
+  }
+
   return {
+    crecimiento_produccion,
     cobranza,
     hoy: ctx.hoy,
     meta: {

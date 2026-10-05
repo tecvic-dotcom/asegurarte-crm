@@ -29,6 +29,7 @@ import type {
   Poliza,
   DatosPoliza,
   ResumenCobranza,
+  ProduccionMes,
 } from "./types";
 
 async function jsonOrThrow(res: Response): Promise<unknown> {
@@ -266,6 +267,13 @@ export const crmPolizaPagada = (id: string) => accionCobranza({ accion: "pagada"
 export const crmPolizaPromesa = (id: string, fecha: string) => accionCobranza({ accion: "promesa", id, fecha });
 export const crmPolizaRecordada = (id: string) => accionCobranza({ accion: "recordada", id });
 export const crmPolizaCancelar = (id: string, cancelada: boolean) => accionCobranza({ accion: "cancelar", id, cancelada });
+
+// ---- Crecimiento (solo admin) ----
+
+export async function crmCrecimiento(): Promise<{ filas: ProduccionMes[]; cloud: boolean }> {
+  const res = await fetch("/api/crm/crecimiento", { cache: "no-store" });
+  return (await jsonOErrorCRM(res)) as { filas: ProduccionMes[]; cloud: boolean };
+}
 
 export async function crmEliminarPoliza(id: string): Promise<void> {
   await jsonOErrorCRM(await postJSON("/api/crm/cobranza", { accion: "eliminar", id }));

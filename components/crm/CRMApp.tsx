@@ -14,6 +14,7 @@ import { Reportes } from "./Reportes";
 import { PanelMando } from "./PanelMando";
 import { ManagerIA } from "./ManagerIA";
 import { Cobranza } from "./Cobranza";
+import { Crecimiento } from "./Crecimiento";
 import { SlotRoro } from "./SlotRoro";
 import type { Lead, Sesion, EtapaId, DatosPoliza } from "@/lib/types";
 
@@ -24,7 +25,7 @@ interface CRMAppProps {
 }
 
 type Vista = "kanban" | "tabla";
-type Pestana = "tablero" | "contactos" | "seguimiento" | "campanas" | "reportes" | "panel" | "roro" | "valeri";
+type Pestana = "tablero" | "contactos" | "seguimiento" | "campanas" | "reportes" | "panel" | "crecimiento" | "roro" | "valeri";
 
 const PESTANAS: [Pestana, string, string][] = [
   ["tablero", "Tablero", "flat-color-icons:flow-chart"],
@@ -37,6 +38,7 @@ const PESTANAS: [Pestana, string, string][] = [
 /** Módulo 3 (AI Manager): tus finanzas y tu equipo digital son solo para el administrador. */
 const PESTANAS_ADMIN: [Pestana, string, string][] = [
   ["panel", "Panel de Mando", "flat-color-icons:combo-chart"],
+  ["crecimiento", "Crecimiento", "flat-color-icons:line-chart"],
   ["roro", "RORO", "flat-color-icons:assistant"],
   ["valeri", "Valeri · Cobranza", "flat-color-icons:debt"],
 ];
@@ -221,6 +223,7 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
       {pestana === "campanas" && <Campanas leads={leads} />}
       {pestana === "reportes" && <Reportes leads={leads} />}
       {esAdmin && pestana === "panel" && <PanelMando onVerSinRamo={verGanadasSinRamo} />}
+      {esAdmin && pestana === "crecimiento" && <Crecimiento />}
       {esAdmin && pestana === "roro" && <ManagerIA sesion={sesion} onValeri={() => setPestana("valeri")} />}
       {esAdmin && pestana === "valeri" && (
         <Cobranza
