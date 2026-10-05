@@ -443,3 +443,45 @@ optgroup {
     scroll-behavior: auto !important;
   }
 }
+
+/* Clara: "Imprimir / PDF" saca SOLO el reporte, en tinta oscura sobre papel blanco */
+@media print {
+  @page { margin: 14mm; }
+  html,
+  body {
+    background: #fff !important;
+  }
+  body * {
+    visibility: hidden;
+  }
+  .clara-imprimible,
+  .clara-imprimible * {
+    visibility: visible;
+  }
+  .clara-imprimible {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    --ink: #111322;
+    --ink-soft: #2e3247;
+    --ink-mute: #565b73;
+    --line: #c9ccd8;
+    --green: #08744f;
+    --red: #b42318;
+    --amber: #8a5a00;
+    --brand-2: #2a22f5;
+    color: var(--ink);
+  }
+  .clara-imprimible * {
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    background: transparent !important;
+  }
+  .clara-imprimible section,
+  .clara-imprimible header,
+  .clara-imprimible .glass {
+    border: 1px solid #c9ccd8 !important;
+    break-inside: avoid;
+  }
+}

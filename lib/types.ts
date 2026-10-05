@@ -378,6 +378,50 @@ export interface ProduccionMes {
 
 export type MetricaCrecimiento = "prima" | "comision" | "pagos";
 
+// ----------------------------------------------------------------------------
+// REPORTES: Clara, tu empleada digital de reportes (semanal y mensual)
+// ----------------------------------------------------------------------------
+
+export type TipoReporte = "semana" | "mes";
+
+/** Una cifra grande del reporte (ya formateada). */
+export interface CifraReporte {
+  titulo: string;
+  valor: string;
+  detalle: string;
+  /** "▲ 12% vs la semana anterior" (null = sin comparación). */
+  cambio: string | null;
+  tono: "bien" | "mal" | "neutral";
+}
+
+export interface SeccionReporte {
+  id: string;
+  titulo: string;
+  icono: string;
+  lineas: string[];
+}
+
+export interface ReporteClara {
+  tipo: TipoReporte;
+  desde: string;
+  /** Último día que cubre (si va en curso, es hoy). */
+  hasta: string;
+  titulo: string;
+  enCurso: boolean;
+  /** Con qué se compara ("la semana anterior", "agosto (1–4)"). */
+  comparadoCon: string;
+  /** Fecha para pedir el periodo anterior / siguiente (null = no hay). */
+  anterior: string | null;
+  siguiente: string | null;
+  frase: string;
+  cifras: CifraReporte[];
+  focos: string[];
+  secciones: SeccionReporte[];
+  avisos: string[];
+  generado_en: string;
+  cloud: boolean;
+}
+
 /** Resumen de cobranza (solo totales, sin datos de clientes). */
 export interface ResumenCobranza {
   polizas: number;

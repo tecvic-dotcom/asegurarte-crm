@@ -150,7 +150,8 @@ export function listaDeHoy(polizas: Poliza[], hoy: string): PendienteCobro[] {
 
 const PALABRAS_CHICAS = new Set(["de", "del", "la", "las", "los", "y", "e"]);
 
-function capitalizarPalabras(texto: string): string {
+/** "JOAN DANIEL OLIVA" → "Joan Daniel Oliva" */
+export function capitalizarPalabras(texto: string): string {
   return texto
     .toLowerCase()
     .split(" ")

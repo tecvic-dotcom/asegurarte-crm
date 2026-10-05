@@ -2,11 +2,12 @@
 
 import { useId } from "react";
 
-export type VarianteAvatar = "roro" | "valeri";
+export type VarianteAvatar = "roro" | "valeri" | "clara";
 
 const ESTILO: Record<VarianteAvatar, { claro: string; oscuro: string; ojos: string; nombre: string }> = {
   roro: { claro: "var(--brand-2)", oscuro: "var(--brand)", ojos: "var(--sky)", nombre: "RORO, tu gerente digital" },
   valeri: { claro: "var(--violet)", oscuro: "var(--brand)", ojos: "var(--ink)", nombre: "Valeri, tu cobranza digital" },
+  clara: { claro: "var(--sky)", oscuro: "var(--brand-deep)", ojos: "var(--ink)", nombre: "Clara, tus reportes" },
 };
 
 interface AvatarEmpleadoProps {
@@ -19,7 +20,8 @@ interface AvatarEmpleadoProps {
 
 /**
  * La cara de tus empleados digitales: flotan, parpadean y "hablan".
- * RORO (gerente) lleva corbata; Valeri (cobranza) lleva audífonos para sus llamadas.
+ * RORO (gerente) lleva corbata; Valeri (cobranza) lleva audífonos para sus llamadas;
+ * Clara (reportes) lleva lentes y su portapapeles con la gráfica.
  * Solo SVG + animaciones baratas (transform/opacity): fluido en el celular.
  */
 export function AvatarEmpleado({ variante = "roro", tamano = 72, hablando = false, enLinea = true }: AvatarEmpleadoProps) {
@@ -41,9 +43,12 @@ export function AvatarEmpleado({ variante = "roro", tamano = 72, hablando = fals
             <line x1="50" y1="16" x2="50" y2="8" strokeWidth="3" strokeLinecap="round" style={{ stroke: e.claro }} />
             <circle cx="50" cy="6.5" r="4.5" className="roro-foco" style={{ fill: "var(--green)" }} />
           </>
-        ) : (
+        ) : variante === "valeri" ? (
           // Diadema de los audífonos
           <path d="M17 34 Q17 6 50 6 Q83 6 83 34" fill="none" strokeWidth="4" strokeLinecap="round" style={{ stroke: "var(--ink-soft)" }} />
+        ) : (
+          // Chongo de Clara
+          <circle cx="50" cy="13" r="8" style={{ fill: e.oscuro }} />
         )}
 
         {/* Cabeza y visor */}
@@ -67,9 +72,27 @@ export function AvatarEmpleado({ variante = "roro", tamano = 72, hablando = fals
           style={{ fill: "var(--ink)" }}
         />
 
+        {variante === "clara" && (
+          // Lentes
+          <g fill="none" strokeWidth="2.5" style={{ stroke: "var(--ink)" }}>
+            <rect x="27" y="33" width="21" height="19" rx="8" />
+            <rect x="52" y="33" width="21" height="19" rx="8" />
+            <path d="M48 41 H52" />
+          </g>
+        )}
+
         {variante === "roro" ? (
           // Corbata de asesor
           <path d="M44 79 H56 L53 85 L57 95 L50 99 L43 95 L47 85 Z" style={{ fill: "var(--brand-deep)" }} />
+        ) : variante === "clara" ? (
+          // Portapapeles con su gráfica de barras
+          <g>
+            <rect x="35" y="79" width="30" height="20" rx="3" style={{ fill: "var(--plata)" }} />
+            <rect x="44" y="76.5" width="12" height="5" rx="2" style={{ fill: "var(--ink-soft)" }} />
+            <rect x="40" y="91" width="4" height="5" rx="1" style={{ fill: "var(--brand)" }} />
+            <rect x="48" y="87" width="4" height="9" rx="1" style={{ fill: "var(--brand)" }} />
+            <rect x="56" y="84" width="4" height="12" rx="1" className="roro-foco" style={{ fill: "var(--green)" }} />
+          </g>
         ) : (
           <>
             {/* Audífonos con micrófono */}

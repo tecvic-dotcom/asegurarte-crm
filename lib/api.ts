@@ -30,6 +30,8 @@ import type {
   DatosPoliza,
   ResumenCobranza,
   ProduccionMes,
+  ReporteClara,
+  TipoReporte,
 } from "./types";
 
 async function jsonOrThrow(res: Response): Promise<unknown> {
@@ -273,6 +275,18 @@ export const crmPolizaCancelar = (id: string, cancelada: boolean) => accionCobra
 export async function crmCrecimiento(): Promise<{ filas: ProduccionMes[]; cloud: boolean }> {
   const res = await fetch("/api/crm/crecimiento", { cache: "no-store" });
   return (await jsonOErrorCRM(res)) as { filas: ProduccionMes[]; cloud: boolean };
+}
+
+// ---- Reportes: Clara (solo admin) ----
+
+export async function crmReporte(tipo: TipoReporte, fecha?: string | null): Promise<ReporteClara> {
+  const res = await fetch(`/api/crm/reportes?tipo=${tipo}${fecha ? `&fecha=${fecha}` : ""}`, { cache: "no-store" });
+  return (await jsonOErrorCRM(res)) as ReporteClara;
+}
+
+export async function crmFraseClara(): Promise<{ frase: string; tipo: TipoReporte }> {
+  const res = await fetch("/api/crm/reportes?resumen=1", { cache: "no-store" });
+  return (await jsonOErrorCRM(res)) as { frase: string; tipo: TipoReporte };
 }
 
 export async function crmEliminarPoliza(id: string): Promise<void> {

@@ -12,10 +12,11 @@
 | Extra para tu meta | Cada prospecto tiene **Ramo** (vida, GMM, ahorro, autos, hogar) y fecha de cierre automática al pasarlo a “Cliente ganado”. | El odómetro de tu meta |
 | **Valeri (cobranza)** | Pestaña **Valeri · Cobranza**: tu cartera de pólizas y, cada día, a quién cobrarle primero (vencidas, por vencer, promesas, renovaciones) con el WhatsApp listo. Botones: **Pagó** (avanza al siguiente recibo), **Promesa** y **Ya le recordé**. No usa IA: cuesta $0. | El cobrador que nunca olvida |
 | **Crecimiento** | Pestaña **Crecimiento**: prima pagada, comisión o número de pagos por año y mes a mes, por ramo, comparando el año en curso contra los **mismos meses** del anterior. Se alimenta de los reportes de prima pagada de la aseguradora (tabla `produccion_mensual`, migración `0005_produccion.sql`, solo totales sin clientes). Las comisiones de esos reportes también entran a tus finanzas (“Cuánto entró”). | El historial del odómetro |
+| **Clara (reportes)** | Pestaña **Clara · Reportes**: cada **lunes** el cierre de la semana y cada **día 1** el del mes (ventas vs meta, prospectos, dinero, cobranza, producción de la aseguradora y **3 focos**). Botones **Copiar**, **WhatsApp** y **PDF**. Puedes ver semanas y meses anteriores. No usa IA: cuesta $0. | La secretaria que te deja el resumen en el escritorio |
 
 Para actualizarla cada mes: descarga el reporte de prima pagada por ramo y pídele a Claude Code *“carga mi producción del mes en Crecimiento”*.
 
-Solo el **administrador** ve el Panel, a RORO y a Valeri. Un vendedor de tu equipo no ve tus números ni tu cartera.
+Solo el **administrador** ve el Panel, a RORO, a Valeri y a Clara. Un vendedor de tu equipo no ve tus números ni tu cartera.
 
 ---
 
@@ -40,6 +41,7 @@ Solo el **administrador** ve el Panel, a RORO y a Valeri. Un vendedor de tu equi
 3. ¿Te pagaron una comisión o gastaste? **Panel → Registrar** (10 segundos).
 4. ¿Dudas para decidir? Pregúntale a **RORO**. Él propone; tú decides.
 5. Abre **Valeri · Cobranza**: envía los WhatsApp que te deja listos (los mandas tú) y marca **Pagó** o **Promesa** según te contesten. ¿Cerraste una venta? En el expediente del cliente ganado toca **“Agregar su póliza a cobranza”**.
+6. **Lunes:** abre **Clara · Reportes**, lee los 3 focos de la semana y, si quieres, mándatelo o compártelo con **WhatsApp**. **Día 1:** cambia a **Mensual** para el cierre del mes (carga antes el reporte de prima pagada del mes para que salga tu producción).
 
 ### Una vez al mes: tu Director Financiero (prompt fijo para Claude Code)
 
@@ -80,7 +82,7 @@ Dile a Claude Code, por ejemplo: *“Agrégame al Panel de Mando una tarjeta con
 
 ## Cómo creo mi siguiente empleado digital
 
-Valeri (cobranza) ya está trabajando. Ejemplo para el siguiente, **reportes**: *“Créame mi empleado digital de reportes junto a RORO y Valeri: que cada lunes me deje un resumen de la semana listo para leer”*. Hay un lugar reservado en la pestaña de RORO (“Tu equipo digital”).
+Valeri (cobranza) y Clara (reportes) ya están trabajando. Para el siguiente, pídele a Claude Code algo como: *“Créame mi empleado digital de seguimiento a prospectos, que viva junto a RORO”*.
 
 ¿Tienes tu cartera en Excel? Pídele a Claude Code: *“carga mi cartera de este Excel en Valeri”*. Te preguntará qué columnas usar antes de guardar nada.
 
@@ -92,6 +94,9 @@ Valeri (cobranza) ya está trabajando. Ejemplo para el siguiente, **reportes**: 
 |---|---|
 | “Falta 1 paso para encender tu AI Manager” | Corre el SQL del paso 1. |
 | “Falta 1 paso para encender a Valeri” | Corre `0004_cobranza.sql` (paso 4). |
+| Clara dice “sin registrar” en Lo que te quedó | No hay comisiones ni gastos en ese periodo: regístralos en el Panel. |
+| Clara dice “Aún no está cargado el reporte de prima pagada” | Pásale a Claude Code el reporte del mes: *“carga mi producción del mes en Crecimiento”*. |
+| Las pólizas cerradas de Clara salen en 0 | Clara cuenta los prospectos que pasas a **Cliente ganado** (con su fecha de cierre). |
 | Valeri no muestra el botón de WhatsApp | A esa póliza le falta el WhatsApp: toca “Agregar WhatsApp”. |
 | “RORO todavía no tiene su llave de IA” | Paso 2 (y vuelve a publicar si fue en Vercel). |
 | “Tu cuenta de IA se quedó sin saldo” | Recarga en console.anthropic.com → Billing. |
@@ -112,4 +117,5 @@ Valeri (cobranza) ya está trabajando. Ejemplo para el siguiente, **reportes**: 
 - `lib/manager.ts`, `lib/manager-config.ts` — RORO (llamada a Claude, cerebro, tope de uso).
 - `app/api/crm/panel`, `app/api/crm/finanzas`, `app/api/crm/manager` — rutas del servidor (solo admin).
 - `supabase/migrations/0004_cobranza.sql`, `lib/cobranza.ts`, `lib/cobranza-reglas.ts`, `app/api/crm/cobranza` — Valeri (cartera, reglas de cobro y mensajes).
-- `components/crm/PanelMando.tsx`, `components/crm/panel/*`, `components/crm/ManagerIA.tsx`, `components/crm/Cobranza.tsx`, `components/crm/cobranza/*`, `components/crm/AvatarEmpleado.tsx`, `components/crm/SlotRoro.tsx` — pantallas.
+- `lib/reportes-reglas.ts`, `lib/reportes.ts`, `app/api/crm/reportes` — Clara (reportes semanal y mensual; sin tabla nueva: lee las que ya existen).
+- `components/crm/PanelMando.tsx`, `components/crm/panel/*`, `components/crm/ManagerIA.tsx`, `components/crm/Cobranza.tsx`, `components/crm/cobranza/*`, `components/crm/ReportesClara.tsx`, `components/crm/AvatarEmpleado.tsx`, `components/crm/SlotRoro.tsx` — pantallas.

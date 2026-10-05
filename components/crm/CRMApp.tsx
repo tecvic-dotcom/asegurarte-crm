@@ -15,6 +15,7 @@ import { PanelMando } from "./PanelMando";
 import { ManagerIA } from "./ManagerIA";
 import { Cobranza } from "./Cobranza";
 import { Crecimiento } from "./Crecimiento";
+import { ReportesClara } from "./ReportesClara";
 import { SlotRoro } from "./SlotRoro";
 import type { Lead, Sesion, EtapaId, DatosPoliza } from "@/lib/types";
 
@@ -25,7 +26,7 @@ interface CRMAppProps {
 }
 
 type Vista = "kanban" | "tabla";
-type Pestana = "tablero" | "contactos" | "seguimiento" | "campanas" | "reportes" | "panel" | "crecimiento" | "roro" | "valeri";
+type Pestana = "tablero" | "contactos" | "seguimiento" | "campanas" | "reportes" | "panel" | "crecimiento" | "roro" | "valeri" | "clara";
 
 const PESTANAS: [Pestana, string, string][] = [
   ["tablero", "Tablero", "flat-color-icons:flow-chart"],
@@ -41,10 +42,11 @@ const PESTANAS_ADMIN: [Pestana, string, string][] = [
   ["crecimiento", "Crecimiento", "flat-color-icons:line-chart"],
   ["roro", "RORO", "flat-color-icons:assistant"],
   ["valeri", "Valeri · Cobranza", "flat-color-icons:debt"],
+  ["clara", "Clara · Reportes", "flat-color-icons:document"],
 ];
 
 /** En estas pestañas no se repite el reporte de arriba (ahí ya está). */
-const SIN_SLOT: Pestana[] = ["panel", "roro", "valeri"];
+const SIN_SLOT: Pestana[] = ["panel", "roro", "valeri", "clara"];
 
 export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
   const [leads, setLeads] = useState<Lead[]>(inicial);
@@ -155,13 +157,14 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
         <Metrica icono="flat-color-icons:money-transfer" label="Ganado" valor={moneda(valorGanado)} />
       </div>
 
-      {/* Tu equipo digital (Módulo 3 · AI Manager): RORO y Valeri con su reporte de hoy.
+      {/* Tu equipo digital (Módulo 3 · AI Manager): RORO, Valeri y Clara con su reporte de hoy.
           En sus propias pestañas no se repite (ahí ya está). */}
       {esAdmin && !SIN_SLOT.includes(pestana) && (
         <SlotRoro
           onPanel={() => setPestana("panel")}
           onRoro={() => setPestana("roro")}
           onValeri={() => setPestana("valeri")}
+          onClara={() => setPestana("clara")}
         />
       )}
 
@@ -224,7 +227,7 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
       {pestana === "reportes" && <Reportes leads={leads} />}
       {esAdmin && pestana === "panel" && <PanelMando onVerSinRamo={verGanadasSinRamo} />}
       {esAdmin && pestana === "crecimiento" && <Crecimiento />}
-      {esAdmin && pestana === "roro" && <ManagerIA sesion={sesion} onValeri={() => setPestana("valeri")} />}
+      {esAdmin && pestana === "roro" && <ManagerIA sesion={sesion} onValeri={() => setPestana("valeri")} onClara={() => setPestana("clara")} />}
       {esAdmin && pestana === "valeri" && (
         <Cobranza
           key={vezPoliza}
@@ -232,6 +235,8 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
           onPrefillUsado={() => setPolizaNueva(null)}
         />
       )}
+
+      {esAdmin && pestana === "clara" && <ReportesClara />}
 
       {seleccion && (
         <LeadPanel

@@ -2,23 +2,25 @@
 
 import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
-import { crmPanel, crmResumenCobranza, ErrorCRM } from "@/lib/api";
+import { crmFraseClara, crmPanel, crmResumenCobranza, ErrorCRM } from "@/lib/api";
 import { AvatarEmpleado, type VarianteAvatar } from "./AvatarEmpleado";
 
 interface SlotRoroProps {
   onPanel: () => void;
   onRoro: () => void;
   onValeri: () => void;
+  onClara: () => void;
 }
 
 /**
  * Arriba de tu CRM: tu equipo digital con su reporte de hoy.
- * RORO te dice cómo va tu dinero y tu meta; Valeri, a quién cobrarle.
+ * RORO te dice cómo va tu dinero y tu meta; Valeri, a quién cobrarle; Clara, cómo cerró la semana (o el mes).
  * Es el gancho diario: entras al CRM y en 20 segundos ya sabes qué hacer.
  */
-export function SlotRoro({ onPanel, onRoro, onValeri }: SlotRoroProps) {
+export function SlotRoro({ onPanel, onRoro, onValeri, onClara }: SlotRoroProps) {
   const [frase, setFrase] = useState<string | null>(null);
   const [cobranza, setCobranza] = useState<string | null>(null);
+  const [reporte, setReporte] = useState<{ frase: string; tipo: "semana" | "mes" } | null>(null);
 
   useEffect(() => {
     let vivo = true;
@@ -42,6 +44,9 @@ export function SlotRoro({ onPanel, onRoro, onValeri }: SlotRoroProps) {
             : "No pude revisar tu cartera ahorita. Ábreme para reintentar.",
         );
       });
+    crmFraseClara()
+      .then((r) => vivo && setReporte(r))
+      .catch(() => vivo && setReporte({ frase: "No pude armar tu reporte ahorita. Ábreme para reintentar.", tipo: "semana" }));
     return () => {
       vivo = false;
     };
@@ -61,6 +66,17 @@ export function SlotRoro({ onPanel, onRoro, onValeri }: SlotRoroProps) {
       <Fila variante="valeri" nombre="Valeri, tu cobranza digital" etiqueta="cobranza de hoy" texto={cobranza}>
         <button type="button" onClick={onValeri} className="btn-ghost flex-1 px-3 py-2.5 text-sm sm:flex-none">
           <Icon icon="flat-color-icons:debt" width={18} aria-hidden /> Cobrar
+        </button>
+      </Fila>
+      <div className="border-t border-line" />
+      <Fila
+        variante="clara"
+        nombre="Clara, tus reportes"
+        etiqueta={reporte?.tipo === "mes" ? "cierre del mes" : "cierre de la semana"}
+        texto={reporte?.frase ?? null}
+      >
+        <button type="button" onClick={onClara} className="btn-ghost flex-1 px-3 py-2.5 text-sm sm:flex-none">
+          <Icon icon="flat-color-icons:document" width={18} aria-hidden /> Ver reporte
         </button>
       </Fila>
     </div>
