@@ -13,8 +13,9 @@ import { Campanas } from "./Campanas";
 import { Reportes } from "./Reportes";
 import { PanelMando } from "./PanelMando";
 import { ManagerIA } from "./ManagerIA";
+import { Cobranza } from "./Cobranza";
 import { SlotRoro } from "./SlotRoro";
-import type { Lead, Sesion, EtapaId } from "@/lib/types";
+import type { Lead, Sesion, EtapaId, DatosPoliza } from "@/lib/types";
 
 interface CRMAppProps {
   sesion: Sesion;
@@ -23,7 +24,7 @@ interface CRMAppProps {
 }
 
 type Vista = "kanban" | "tabla";
-type Pestana = "tablero" | "contactos" | "seguimiento" | "campanas" | "reportes" | "panel" | "roro";
+type Pestana = "tablero" | "contactos" | "seguimiento" | "campanas" | "reportes" | "panel" | "roro" | "valeri";
 
 const PESTANAS: [Pestana, string, string][] = [
   ["tablero", "Tablero", "flat-color-icons:flow-chart"],
@@ -33,11 +34,15 @@ const PESTANAS: [Pestana, string, string][] = [
   ["reportes", "Reportes", "flat-color-icons:statistics"],
 ];
 
-/** Módulo 3 (AI Manager): tus finanzas y tu gerente digital son solo para el administrador. */
+/** Módulo 3 (AI Manager): tus finanzas y tu equipo digital son solo para el administrador. */
 const PESTANAS_ADMIN: [Pestana, string, string][] = [
   ["panel", "Panel de Mando", "flat-color-icons:combo-chart"],
   ["roro", "RORO", "flat-color-icons:assistant"],
+  ["valeri", "Valeri · Cobranza", "flat-color-icons:debt"],
 ];
+
+/** En estas pestañas no se repite el reporte de arriba (ahí ya está). */
+const SIN_SLOT: Pestana[] = ["panel", "roro", "valeri"];
 
 export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
   const [leads, setLeads] = useState<Lead[]>(inicial);
@@ -47,6 +52,9 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
   const [filtroEtapa, setFiltroEtapa] = useState<EtapaId | "todas">("todas");
   const [seleccion, setSeleccion] = useState<string | null>(null);
   const [negocio, setNegocio] = useState("Tu CRM");
+  // Póliza prellenada desde un cliente ganado ("Agregar a cobranza"). "vez" reinicia la pestaña de Valeri solo al llegar una nueva.
+  const [polizaNueva, setPolizaNueva] = useState<Partial<DatosPoliza> | null>(null);
+  const [vezPoliza, setVezPoliza] = useState(0);
 
   useEffect(() => {
     getAjustesPublicas()
@@ -102,6 +110,21 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
     setBusca("");
   }
 
+  /** Desde el expediente de un cliente ganado: lo lleva con Valeri con su póliza ya prellenada. */
+  function agregarACobranza(lead: Lead) {
+    setPolizaNueva({
+      asegurado: lead.nombre,
+      whatsapp: lead.whatsapp,
+      correo: lead.correo,
+      ramo: lead.ramo,
+      prima_anual: lead.valor,
+      lead_id: lead.id,
+    });
+    setVezPoliza((v) => v + 1);
+    setSeleccion(null);
+    setPestana("valeri");
+  }
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-6">
       {/* Barra superior */}
@@ -130,10 +153,14 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
         <Metrica icono="flat-color-icons:money-transfer" label="Ganado" valor={moneda(valorGanado)} />
       </div>
 
-      {/* Empleados digitales (Módulo 3 · AI Manager): RORO con tu reporte de hoy.
-          En las pestañas Panel y RORO no se repite (ahí ya está). */}
-      {esAdmin && pestana !== "panel" && pestana !== "roro" && (
-        <SlotRoro onPanel={() => setPestana("panel")} onRoro={() => setPestana("roro")} />
+      {/* Tu equipo digital (Módulo 3 · AI Manager): RORO y Valeri con su reporte de hoy.
+          En sus propias pestañas no se repite (ahí ya está). */}
+      {esAdmin && !SIN_SLOT.includes(pestana) && (
+        <SlotRoro
+          onPanel={() => setPestana("panel")}
+          onRoro={() => setPestana("roro")}
+          onValeri={() => setPestana("valeri")}
+        />
       )}
 
       {/* Pestañas */}
@@ -194,10 +221,22 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
       {pestana === "campanas" && <Campanas leads={leads} />}
       {pestana === "reportes" && <Reportes leads={leads} />}
       {esAdmin && pestana === "panel" && <PanelMando onVerSinRamo={verGanadasSinRamo} />}
-      {esAdmin && pestana === "roro" && <ManagerIA sesion={sesion} />}
+      {esAdmin && pestana === "roro" && <ManagerIA sesion={sesion} onValeri={() => setPestana("valeri")} />}
+      {esAdmin && pestana === "valeri" && (
+        <Cobranza
+          key={vezPoliza}
+          prefill={polizaNueva}
+          onPrefillUsado={() => setPolizaNueva(null)}
+        />
+      )}
 
       {seleccion && (
-        <LeadPanel id={seleccion} onClose={() => setSeleccion(null)} onCambio={recargar} />
+        <LeadPanel
+          id={seleccion}
+          onClose={() => setSeleccion(null)}
+          onCambio={recargar}
+          onAgregarCobranza={esAdmin ? agregarACobranza : undefined}
+        />
       )}
     </div>
   );

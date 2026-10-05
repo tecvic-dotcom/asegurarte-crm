@@ -7,9 +7,16 @@ import "server-only";
 export const MENSAJE_MIGRACION =
   "Falta un paso para activar tu AI Manager: abre Supabase → SQL Editor → New query, pega el archivo supabase/migrations/0003_ai_manager.sql y dale Run.";
 
+export const MENSAJE_MIGRACION_COBRANZA =
+  "Falta un paso para encender a Valeri: abre Supabase → SQL Editor → New query, pega el archivo supabase/migrations/0004_cobranza.sql y dale Run.";
+
 export class MigracionPendienteError extends Error {
-  constructor() {
-    super(MENSAJE_MIGRACION);
+  constructor(
+    message = MENSAJE_MIGRACION,
+    /** El archivo de supabase/migrations que falta correr. */
+    public archivo = "0003_ai_manager.sql",
+  ) {
+    super(message);
     this.name = "MigracionPendienteError";
   }
 }

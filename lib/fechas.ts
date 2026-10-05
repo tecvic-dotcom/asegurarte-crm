@@ -46,6 +46,18 @@ export function diasIncluidos(desde: string, hasta: string): number {
   return Math.round((aUTC(hasta) - aUTC(desde)) / 86_400_000) + 1;
 }
 
+/** Días que faltan de `a` a `b` (negativo si `b` ya pasó). 4 oct → 7 oct = 3. */
+export function diasEntre(a: string, b: string): number {
+  return Math.round((aUTC(b) - aUTC(a)) / 86_400_000);
+}
+
+/** Suma meses respetando el fin de mes (31 ene + 1 mes = 28/29 feb). */
+export function sumarMeses(f: string, n: number): string {
+  const [y, m, d] = f.split("-").map(Number);
+  const ultimoDia = new Date(Date.UTC(y, m - 1 + n + 1, 0)).getUTCDate();
+  return deUTC(Date.UTC(y, m - 1 + n, Math.min(d, ultimoDia)));
+}
+
 export function primeroDeMes(f: string): string {
   return `${f.slice(0, 7)}-01`;
 }
@@ -92,6 +104,11 @@ export function mesCorto(f: string): string {
 /** "4 oct" */
 export function fechaCorta(f: string): string {
   return `${Number(f.slice(8, 10))} ${mesCorto(f)}`;
+}
+
+/** "4 de noviembre" (para mensajes a clientes) */
+export function fechaLarga(f: string): string {
+  return `${Number(f.slice(8, 10))} de ${nombreMes(f)}`;
 }
 
 export function capitalizar(s: string): string {

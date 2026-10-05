@@ -13,6 +13,8 @@ import "server-only";
  */
 import { listLeads, isCloud } from "./db";
 import { listarMovimientos } from "./finanzas";
+import { listarPolizas } from "./cobranza";
+import { resumenCobranza } from "./cobranza-reglas";
 import { getManagerConfig } from "./manager-config";
 import { RAMOS, infoRamo } from "./ramos";
 import { ETAPAS, moneda } from "./crm-data";
@@ -549,7 +551,28 @@ export async function numerosParaManager(config: ManagerConfig): Promise<Record<
   }
   if (meta.sinRamo > 0) avisos.push(`${meta.sinRamo} pólizas ganadas dentro de la meta no tienen ramo asignado (no cuentan por ramo).`);
 
+  // Lo que ve Valeri (cobranza), solo en totales. Si su tabla aún no existe, RORO lo sabe y no se rompe.
+  let cobranza: Record<string, unknown>;
+  try {
+    const r = resumenCobranza(await listarPolizas(), ctx.hoy);
+    cobranza = {
+      polizas_en_cartera: r.polizas,
+      vencidas: r.vencidas,
+      monto_vencido: r.montoVencido,
+      por_vencer_15_dias: r.porVencer,
+      monto_por_vencer: r.montoPorVencer,
+      promesas_de_pago: r.promesas,
+      renuevan_30_dias: r.renuevan,
+      sin_whatsapp: r.sinWhatsapp,
+      recordadas_hoy: r.recordadasHoy,
+    };
+    if (!r.polizas) avisos.push("La cartera de cobranza (Valeri) está vacía: todavía no hay pólizas registradas para cobrar.");
+  } catch {
+    cobranza = { disponible: false, motivo: "Valeri (cobranza) aún no tiene su tabla en Supabase (falta correr 0004_cobranza.sql)." };
+  }
+
   return {
+    cobranza,
     hoy: ctx.hoy,
     meta: {
       estado: meta.estado,

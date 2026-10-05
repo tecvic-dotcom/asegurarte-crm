@@ -14,9 +14,11 @@ interface LeadPanelProps {
   id: string;
   onClose: () => void;
   onCambio: () => void;
+  /** Solo admin: lleva al cliente ganado con Valeri para dar de alta su póliza en cobranza. */
+  onAgregarCobranza?: (lead: Lead) => void;
 }
 
-export function LeadPanel({ id, onClose, onCambio }: LeadPanelProps) {
+export function LeadPanel({ id, onClose, onCambio, onAgregarCobranza }: LeadPanelProps) {
   const [lead, setLead] = useState<Lead | null>(null);
   const [actividad, setActividad] = useState<Actividad[]>([]);
   const [notas, setNotas] = useState("");
@@ -206,6 +208,11 @@ export function LeadPanel({ id, onClose, onCambio }: LeadPanelProps) {
               <p className="mt-1.5 text-xs" style={{ color: "var(--red)" }} role="alert">
                 {errorRamo}
               </p>
+            )}
+            {lead.etapa === "ganado" && onAgregarCobranza && (
+              <button type="button" onClick={() => onAgregarCobranza(lead)} className="btn-ghost mt-3 w-full py-2.5 text-sm">
+                <Icon icon="flat-color-icons:debt" width={18} aria-hidden /> Agregar su póliza a cobranza (Valeri)
+              </button>
             )}
 
             {/* Valor */}

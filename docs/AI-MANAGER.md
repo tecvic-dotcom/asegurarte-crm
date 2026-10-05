@@ -10,8 +10,9 @@
 | **Panel de Mando** | Pestaña **Panel de Mando**: reporte de una frase, 4 números grandes (pólizas vs meta, cuánto entró, cuánto salió, lo que te quedó), tu meta por ramo, entró vs salió por mes y en qué se te va el dinero. Se actualiza solo cada minuto. | El tablero |
 | **Agente-Manager** | Pestaña **RORO**: tu gerente digital con avatar. Lee los mismos números del Panel y te responde con recomendación + porqué + riesgo + qué hacer hoy. | El copiloto |
 | Extra para tu meta | Cada prospecto tiene **Ramo** (vida, GMM, ahorro, autos, hogar) y fecha de cierre automática al pasarlo a “Cliente ganado”. | El odómetro de tu meta |
+| **Valeri (cobranza)** | Pestaña **Valeri · Cobranza**: tu cartera de pólizas y, cada día, a quién cobrarle primero (vencidas, por vencer, promesas, renovaciones) con el WhatsApp listo. Botones: **Pagó** (avanza al siguiente recibo), **Promesa** y **Ya le recordé**. No usa IA: cuesta $0. | El cobrador que nunca olvida |
 
-Solo el **administrador** ve el Panel y a RORO. Un vendedor de tu equipo no ve tus números.
+Solo el **administrador** ve el Panel, a RORO y a Valeri. Un vendedor de tu equipo no ve tus números ni tu cartera.
 
 ---
 
@@ -23,6 +24,7 @@ Solo el **administrador** ve el Panel y a RORO. Un vendedor de tu equipo no ve t
    - en tu `.env.local`, en el renglón `ANTHROPIC_API_KEY=` (ya está listo, solo pega), y
    - en **Vercel → Settings → Environment Variables** como `ANTHROPIC_API_KEY` (y opcional `RORO_TOPE_MENSUAL=200`).
 3. **Publicar:** pídele a Claude Code *“sube a GitHub los cambios del AI Manager”*. Vercel lo publica solo.
+4. **Valeri (2 min):** igual que el paso 1, pero con el archivo `supabase/migrations/0004_cobranza.sql`. Mientras no lo corras, la pestaña de Valeri te muestra este mismo paso.
 
 **✔ Checkpoint:** abres tu CRM y arriba ves a RORO con “reporte de hoy”. En **Panel de Mando** ves tus 4 números. En **RORO** tocas “¿Voy a llegar a mi meta…?” y te contesta con tus cifras.
 
@@ -34,6 +36,7 @@ Solo el **administrador** ve el Panel y a RORO. Un vendedor de tu equipo no ve t
 2. ¿Cerraste una venta? Pásala a **Cliente ganado** y ponle su **Ramo** (si no, no cuenta para tu meta; el Panel te avisa).
 3. ¿Te pagaron una comisión o gastaste? **Panel → Registrar** (10 segundos).
 4. ¿Dudas para decidir? Pregúntale a **RORO**. Él propone; tú decides.
+5. Abre **Valeri · Cobranza**: envía los WhatsApp que te deja listos (los mandas tú) y marca **Pagó** o **Promesa** según te contesten. ¿Cerraste una venta? En el expediente del cliente ganado toca **“Agregar su póliza a cobranza”**.
 
 ### Una vez al mes: tu Director Financiero (prompt fijo para Claude Code)
 
@@ -74,7 +77,9 @@ Dile a Claude Code, por ejemplo: *“Agrégame al Panel de Mando una tarjeta con
 
 ## Cómo creo mi siguiente empleado digital
 
-Ejemplo para **cobranza**: *“Créame mi empleado digital de cobranza junto a RORO: que lea mis pólizas con pago o renovación cercana, me diga a quién cobrarle hoy y me deje el mensaje de WhatsApp listo para que yo lo envíe”*. Ya hay un lugar reservado para él en la pestaña de RORO (“Tu equipo digital”).
+Valeri (cobranza) ya está trabajando. Ejemplo para el siguiente, **reportes**: *“Créame mi empleado digital de reportes junto a RORO y Valeri: que cada lunes me deje un resumen de la semana listo para leer”*. Hay un lugar reservado en la pestaña de RORO (“Tu equipo digital”).
+
+¿Tienes tu cartera en Excel? Pídele a Claude Code: *“carga mi cartera de este Excel en Valeri”*. Te preguntará qué columnas usar antes de guardar nada.
 
 ---
 
@@ -83,6 +88,8 @@ Ejemplo para **cobranza**: *“Créame mi empleado digital de cobranza junto a R
 | Lo que ves | Qué hacer |
 |---|---|
 | “Falta 1 paso para encender tu AI Manager” | Corre el SQL del paso 1. |
+| “Falta 1 paso para encender a Valeri” | Corre `0004_cobranza.sql` (paso 4). |
+| Valeri no muestra el botón de WhatsApp | A esa póliza le falta el WhatsApp: toca “Agregar WhatsApp”. |
 | “RORO todavía no tiene su llave de IA” | Paso 2 (y vuelve a publicar si fue en Vercel). |
 | “Tu cuenta de IA se quedó sin saldo” | Recarga en console.anthropic.com → Billing. |
 | “Llegaste al tope de preguntas” | Espera al mes siguiente o sube `RORO_TOPE_MENSUAL`. |
@@ -101,4 +108,5 @@ Ejemplo para **cobranza**: *“Créame mi empleado digital de cobranza junto a R
 - `lib/finanzas.ts`, `lib/finanzas-reglas.ts` — movimientos y su validación.
 - `lib/manager.ts`, `lib/manager-config.ts` — RORO (llamada a Claude, cerebro, tope de uso).
 - `app/api/crm/panel`, `app/api/crm/finanzas`, `app/api/crm/manager` — rutas del servidor (solo admin).
-- `components/crm/PanelMando.tsx`, `components/crm/panel/*`, `components/crm/ManagerIA.tsx`, `components/crm/AvatarRoro.tsx`, `components/crm/SlotRoro.tsx` — pantallas.
+- `supabase/migrations/0004_cobranza.sql`, `lib/cobranza.ts`, `lib/cobranza-reglas.ts`, `app/api/crm/cobranza` — Valeri (cartera, reglas de cobro y mensajes).
+- `components/crm/PanelMando.tsx`, `components/crm/panel/*`, `components/crm/ManagerIA.tsx`, `components/crm/Cobranza.tsx`, `components/crm/cobranza/*`, `components/crm/AvatarEmpleado.tsx`, `components/crm/SlotRoro.tsx` — pantallas.

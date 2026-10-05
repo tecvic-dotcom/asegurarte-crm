@@ -303,3 +303,72 @@ export interface TurnoManager {
   rol: "usuario" | "roro";
   texto: string;
 }
+
+// ----------------------------------------------------------------------------
+// COBRANZA: Valeri, tu empleado digital de cobranza
+// ----------------------------------------------------------------------------
+
+export type FormaPago = "anual" | "semestral" | "trimestral" | "mensual";
+
+/** Una póliza de tu cartera (lo que Valeri vigila para cobrar). */
+export interface Poliza {
+  id: string;
+  numero: string;
+  asegurado: string;
+  whatsapp: string;
+  correo: string;
+  ramo: Ramo | null;
+  aseguradora: string;
+  /** Lo que paga el cliente en cada recibo (0 = sin dato). */
+  monto_pago: number;
+  prima_anual: number;
+  forma_pago: FormaPago;
+  inicio: string | null;
+  renovacion: string | null;
+  /** Fecha límite del recibo que toca pagar (AAAA-MM-DD). */
+  fecha_limite_pago: string | null;
+  estatus_manual: "promesa" | "cancelada" | null;
+  promesa_fecha: string | null;
+  ultimo_pago: string | null;
+  ultimo_recordatorio: string | null;
+  lead_id: string | null;
+  notas: string;
+  creado_en: string;
+  actualizado_en: string;
+}
+
+/** Lo que se puede capturar o editar de una póliza. */
+export type DatosPoliza = Pick<
+  Poliza,
+  | "numero"
+  | "asegurado"
+  | "whatsapp"
+  | "correo"
+  | "ramo"
+  | "aseguradora"
+  | "monto_pago"
+  | "prima_anual"
+  | "forma_pago"
+  | "inicio"
+  | "renovacion"
+  | "fecha_limite_pago"
+  | "notas"
+  | "lead_id"
+>;
+
+export type EstadoCobro = "vencida" | "promesa_vencida" | "promesa" | "por_vencer" | "al_corriente" | "sin_fecha" | "cancelada";
+
+/** Resumen de cobranza (solo totales, sin datos de clientes). */
+export interface ResumenCobranza {
+  polizas: number;
+  vencidas: number;
+  montoVencido: number;
+  porVencer: number;
+  montoPorVencer: number;
+  promesas: number;
+  renuevan: number;
+  sinWhatsapp: number;
+  recordadasHoy: number;
+  /** La línea diaria de Valeri. */
+  frase: string;
+}

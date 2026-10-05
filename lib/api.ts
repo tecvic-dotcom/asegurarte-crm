@@ -26,6 +26,9 @@ import type {
   ManagerUso,
   RespuestaManager,
   TurnoManager,
+  Poliza,
+  DatosPoliza,
+  ResumenCobranza,
 } from "./types";
 
 async function jsonOrThrow(res: Response): Promise<unknown> {
@@ -165,13 +168,15 @@ export async function crmEliminarPlantilla(id: string): Promise<void> {
 
 // ---- AI Manager: Panel de Mando, finanzas y RORO (solo admin) ----
 
-/** Error del CRM que además dice si falta la migración 0003 o la llave de IA. */
+/** Error del CRM que además dice si falta una migración (y cuál) o la llave de IA. */
 export class ErrorCRM extends Error {
   constructor(
     message: string,
     public status: number,
     public migracion = false,
     public sinLlave = false,
+    /** Archivo de supabase/migrations que falta correr. */
+    public archivo = "0003_ai_manager.sql",
   ) {
     super(message);
     this.name = "ErrorCRM";
@@ -181,8 +186,14 @@ export class ErrorCRM extends Error {
 async function jsonOErrorCRM(res: Response): Promise<unknown> {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const d = data as { error?: string; migracion?: boolean; sinLlave?: boolean };
-    throw new ErrorCRM(d.error ?? `Error ${res.status}`, res.status, Boolean(d.migracion), Boolean(d.sinLlave));
+    const d = data as { error?: string; migracion?: boolean; sinLlave?: boolean; archivo?: string };
+    throw new ErrorCRM(
+      d.error ?? `Error ${res.status}`,
+      res.status,
+      Boolean(d.migracion),
+      Boolean(d.sinLlave),
+      d.archivo ?? "0003_ai_manager.sql",
+    );
   }
   return data;
 }
@@ -231,6 +242,33 @@ export async function crmPreguntarManager(
 export async function crmGuardarManagerConfig(config: ManagerConfig): Promise<ManagerConfig> {
   const data = await jsonOErrorCRM(await postJSON("/api/crm/manager", { accion: "guardar-config", config }));
   return (data as { config: ManagerConfig }).config;
+}
+
+// ---- Cobranza: Valeri (solo admin) ----
+
+export async function crmPolizas(): Promise<Poliza[]> {
+  const res = await fetch("/api/crm/cobranza", { cache: "no-store" });
+  return ((await jsonOErrorCRM(res)) as { polizas: Poliza[] }).polizas;
+}
+
+export async function crmResumenCobranza(): Promise<ResumenCobranza> {
+  const res = await fetch("/api/crm/cobranza?resumen=1", { cache: "no-store" });
+  return ((await jsonOErrorCRM(res)) as { resumen: ResumenCobranza }).resumen;
+}
+
+async function accionCobranza(cuerpo: Record<string, unknown>): Promise<Poliza> {
+  return ((await jsonOErrorCRM(await postJSON("/api/crm/cobranza", cuerpo))) as { poliza: Poliza }).poliza;
+}
+
+export const crmCrearPoliza = (poliza: DatosPoliza) => accionCobranza({ accion: "crear", poliza });
+export const crmEditarPoliza = (id: string, poliza: Partial<DatosPoliza>) => accionCobranza({ accion: "editar", id, poliza });
+export const crmPolizaPagada = (id: string) => accionCobranza({ accion: "pagada", id });
+export const crmPolizaPromesa = (id: string, fecha: string) => accionCobranza({ accion: "promesa", id, fecha });
+export const crmPolizaRecordada = (id: string) => accionCobranza({ accion: "recordada", id });
+export const crmPolizaCancelar = (id: string, cancelada: boolean) => accionCobranza({ accion: "cancelar", id, cancelada });
+
+export async function crmEliminarPoliza(id: string): Promise<void> {
+  await jsonOErrorCRM(await postJSON("/api/crm/cobranza", { accion: "eliminar", id }));
 }
 
 // ---- Admin (requiere código x-admin-code) ----

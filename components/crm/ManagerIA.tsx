@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
 import { crmGuardarManagerConfig, crmManager, crmPreguntarManager, ErrorCRM } from "@/lib/api";
-import { AvatarRoro } from "./AvatarRoro";
+import { AvatarEmpleado } from "./AvatarEmpleado";
 import { DictadoBoton } from "./DictadoBoton";
 import { AvisoMigracion } from "./panel/AvisoMigracion";
 import type { ManagerConfig, ManagerEstado, RespuestaManager, Sesion, TurnoManager } from "@/lib/types";
@@ -49,7 +49,7 @@ function historialPara(mensajes: Mensaje[]): TurnoManager[] {
  * te recomienda qué hacer, con el porqué, el riesgo y la acción de hoy.
  * Él propone; tú decides.
  */
-export function ManagerIA({ sesion }: { sesion: Sesion }) {
+export function ManagerIA({ sesion, onValeri }: { sesion: Sesion; onValeri: () => void }) {
   const [estado, setEstado] = useState<ManagerEstado | null>(null);
   const [errorCarga, setErrorCarga] = useState<ErrorCRM | Error | null>(null);
   const [mensajes, setMensajes] = useState<Mensaje[]>(leerChat);
@@ -146,7 +146,7 @@ export function ManagerIA({ sesion }: { sesion: Sesion }) {
     <section className="space-y-4">
       {/* Cabecera: el gerente con cara */}
       <div className="glass-strong flex items-center gap-4 rounded-2xl p-4 sm:p-5">
-        <AvatarRoro tamano={76} hablando={pensando || hablando} />
+        <AvatarEmpleado variante="roro" tamano={76} hablando={pensando || hablando} />
         <div className="min-w-0 flex-1">
           <p className="font-display text-xl text-ink">{config?.nombre ?? "RORO"}</p>
           <p className="text-sm text-ink-soft">
@@ -288,7 +288,7 @@ export function ManagerIA({ sesion }: { sesion: Sesion }) {
 
       {estado && <EditorCerebro estado={estado} onGuardado={(c) => setEstado({ ...estado, config: c })} />}
 
-      <EquipoDigital nombre={config?.nombre ?? "RORO"} />
+      <EquipoDigital nombre={config?.nombre ?? "RORO"} onValeri={onValeri} />
     </section>
   );
 }
@@ -461,22 +461,26 @@ function EditorCerebro({ estado, onGuardado }: { estado: ManagerEstado; onGuarda
   );
 }
 
-function EquipoDigital({ nombre }: { nombre: string }) {
+function EquipoDigital({ nombre, onValeri }: { nombre: string; onValeri: () => void }) {
   return (
     <div className="glass rounded-2xl p-4 sm:p-5">
       <p className="font-semibold text-ink">Tu equipo digital</p>
-      <p className="mb-3 text-xs text-ink-mute">Hoy tienes a tu gerente. Aquí llegan los siguientes.</p>
+      <p className="mb-3 text-xs text-ink-mute">Tu gerente y tu cobranza ya trabajan juntos. Aquí llegan los siguientes.</p>
       <div className="grid grid-cols-3 gap-2 text-center text-xs">
         <div className="flex flex-col items-center gap-1.5 rounded-xl border border-brand-2/50 bg-brand/10 p-3">
-          <AvatarRoro tamano={40} />
+          <AvatarEmpleado variante="roro" tamano={40} />
           <span className="font-semibold text-ink">{nombre}</span>
           <span className="text-ink-mute">Gerente · activo</span>
         </div>
-        <div className="flex flex-col items-center gap-1.5 rounded-xl border border-dashed border-line p-3 opacity-75">
-          <Icon icon="flat-color-icons:debt" width={36} aria-hidden />
-          <span className="font-semibold text-ink-soft">Cobranza</span>
-          <span className="text-ink-mute">Próximamente</span>
-        </div>
+        <button
+          type="button"
+          onClick={onValeri}
+          className="flex flex-col items-center gap-1.5 rounded-xl border border-brand-2/50 bg-brand/10 p-3 hover:border-brand-2"
+        >
+          <AvatarEmpleado variante="valeri" tamano={40} />
+          <span className="font-semibold text-ink">Valeri</span>
+          <span className="text-ink-mute">Cobranza · en línea</span>
+        </button>
         <div className="flex flex-col items-center gap-1.5 rounded-xl border border-dashed border-line p-3 opacity-75">
           <Icon icon="flat-color-icons:document" width={36} aria-hidden />
           <span className="font-semibold text-ink-soft">Reportes</span>
@@ -484,7 +488,7 @@ function EquipoDigital({ nombre }: { nombre: string }) {
         </div>
       </div>
       <p className="mt-3 text-xs text-ink-mute">
-        Para sumar uno, pídeselo a Claude Code: “créame mi empleado digital de cobranza, que viva junto a {nombre}”.
+        Para sumar otro, pídeselo a Claude Code: “créame mi empleado digital de reportes, que viva junto a {nombre}”.
       </p>
     </div>
   );
