@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { Icon } from "@iconify/react";
@@ -142,7 +143,7 @@ export function Landing({ negocio, popupActivo, heroTitulo, heroCta }: LandingPr
       {/* 6. PRUEBA SOCIAL */}
       <section className="pt-24">
         <motion.h2 {...aparecer} className="text-center font-display text-3xl sm:text-4xl">
-          Esto no es una promesa. Es lo que vivió esta familia.
+          Esto no es una promesa. Es lo que vivieron estas familias.
         </motion.h2>
         {c.testimonios.map((t) => (
           <motion.div
@@ -151,7 +152,7 @@ export function Landing({ negocio, popupActivo, heroTitulo, heroCta }: LandingPr
             className="glass-highlight mx-auto mt-10 max-w-3xl rounded-[28px] p-8 sm:p-12"
           >
             <Icon icon="flat-color-icons:feedback" width={36} className="opacity-80" />
-            <blockquote className="mt-4 text-lg leading-relaxed text-ink-soft">“{t.texto}”</blockquote>
+            <TextoTestimonio texto={t.texto} />
             <div className="mt-6 flex items-center gap-4">
               <Image
                 src={t.foto}
@@ -243,5 +244,39 @@ export function Landing({ negocio, popupActivo, heroTitulo, heroCta }: LandingPr
 
       <PopupActividad activo={popupActivo} />
     </main>
+  );
+}
+
+/** Párrafos que se ven antes de "Leer la historia completa" (las historias largas no tapan la página en el celular). */
+const PARRAFOS_VISIBLES = 4;
+
+function TextoTestimonio({ texto }: { texto: string }) {
+  const parrafos = texto.split(/\n\s*\n/);
+  const largo = parrafos.length > PARRAFOS_VISIBLES;
+  const [abierto, setAbierto] = useState(false);
+  const cortado = largo && !abierto;
+  const visibles = cortado ? parrafos.slice(0, PARRAFOS_VISIBLES) : parrafos;
+  return (
+    <>
+      <blockquote className="mt-4 space-y-4 whitespace-pre-line text-lg leading-relaxed text-ink-soft">
+        {visibles.map((p, i) => (
+          <p key={i}>
+            {i === 0 && "“"}
+            {cortado && i === visibles.length - 1 ? `${p.replace(/[.…]+$/, "")}…` : p}
+            {i === visibles.length - 1 && !cortado && "”"}
+          </p>
+        ))}
+      </blockquote>
+      {largo && (
+        <button
+          type="button"
+          onClick={() => setAbierto((v) => !v)}
+          aria-expanded={abierto}
+          className="mt-4 text-sm font-semibold text-brand-2 underline underline-offset-4 hover:text-ink"
+        >
+          {abierto ? "Ver menos" : "Leer la historia completa"}
+        </button>
+      )}
+    </>
   );
 }
