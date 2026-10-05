@@ -62,6 +62,8 @@ const nextConfig: NextConfig = {
       { source: "/tarjeta", destination: "/tarjeta/index.html" },
       // Calculadora "Tu Escudo Familiar" (suma asegurada de vida)
       { source: "/escudo", destination: "/tarjeta/escudo.html" },
+      // Guías de seguros agrupadas por ramo (imágenes en public/tarjeta/guias/)
+      { source: "/guias", destination: "/tarjeta/guias.html" },
     ];
   },
 };
