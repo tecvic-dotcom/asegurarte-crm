@@ -17,6 +17,7 @@ import { Cobranza } from "./Cobranza";
 import { Crecimiento } from "./Crecimiento";
 import { ReportesClara } from "./ReportesClara";
 import { SlotRoro } from "./SlotRoro";
+import { MenuLateral, opcionDe, type Pestana } from "./MenuLateral";
 import type { Lead, Sesion, EtapaId, DatosPoliza } from "@/lib/types";
 
 interface CRMAppProps {
@@ -26,25 +27,6 @@ interface CRMAppProps {
 }
 
 type Vista = "kanban" | "tabla";
-type Pestana = "tablero" | "contactos" | "seguimiento" | "campanas" | "reportes" | "panel" | "crecimiento" | "roro" | "valeri" | "clara";
-
-const PESTANAS: [Pestana, string, string][] = [
-  ["tablero", "Tablero", "flat-color-icons:flow-chart"],
-  ["contactos", "Contactos", "flat-color-icons:grid"],
-  ["seguimiento", "Hoy", "flat-color-icons:alarm-clock"],
-  ["campanas", "Campañas", "flat-color-icons:advertising"],
-  ["reportes", "Reportes", "flat-color-icons:statistics"],
-];
-
-/** Módulo 3 (AI Manager): tus finanzas y tu equipo digital son solo para el administrador. */
-const PESTANAS_ADMIN: [Pestana, string, string][] = [
-  ["panel", "Panel de Mando", "flat-color-icons:combo-chart"],
-  ["crecimiento", "Crecimiento", "flat-color-icons:line-chart"],
-  ["roro", "RORO", "flat-color-icons:assistant"],
-  ["valeri", "Valeri · Cobranza", "flat-color-icons:debt"],
-  ["clara", "Clara · Reportes", "flat-color-icons:document"],
-];
-
 /** En estas pestañas no se repite el reporte de arriba (ahí ya está). */
 const SIN_SLOT: Pestana[] = ["panel", "roro", "valeri", "clara"];
 
@@ -59,6 +41,19 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
   // Póliza prellenada desde un cliente ganado ("Agregar a cobranza"). "vez" reinicia la pestaña de Valeri solo al llegar una nueva.
   const [polizaNueva, setPolizaNueva] = useState<Partial<DatosPoliza> | null>(null);
   const [vezPoliza, setVezPoliza] = useState(0);
+  // Celular: el menú vive escondido a la izquierda y se abre con el botón "Menú".
+  const [menuAbierto, setMenuAbierto] = useState(false);
+
+  useEffect(() => {
+    if (!menuAbierto) return;
+    const alTeclear = (e: KeyboardEvent) => e.key === "Escape" && setMenuAbierto(false);
+    window.addEventListener("keydown", alTeclear);
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", alTeclear);
+      document.body.style.overflow = "";
+    };
+  }, [menuAbierto]);
 
   useEffect(() => {
     getAjustesPublicas()
@@ -104,7 +99,13 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
   const pipeline = useMemo(() => leads.filter((l) => l.etapa === "ganado"), [leads]);
   const valorGanado = pipeline.reduce((s, l) => s + l.valor, 0);
   const esAdmin = sesion.rol === "admin";
-  const pestanas = esAdmin ? [...PESTANAS, ...PESTANAS_ADMIN] : PESTANAS;
+  const actual = opcionDe(pestana);
+
+  function elegir(id: Pestana) {
+    setPestana(id);
+    setMenuAbierto(false);
+    window.scrollTo({ top: 0 });
+  }
 
   /** Desde el Panel: muestra en tabla las pólizas ganadas para asignarles su ramo. */
   function verGanadasSinRamo() {
@@ -129,123 +130,137 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
     setPestana("valeri");
   }
 
+  const menu = (onCerrar?: () => void) => (
+    <MenuLateral
+      negocio={negocio}
+      nombre={sesion.nombre}
+      esAdmin={esAdmin}
+      activa={pestana}
+      onElegir={elegir}
+      onSalir={salir}
+      onCerrar={onCerrar}
+    />
+  );
+
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6">
-      {/* Barra superior */}
-      <header className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="font-display text-2xl text-ink">{negocio}</h1>
-          <p className="text-sm text-ink-mute">
-            Hola, {sesion.nombre} · {sesion.rol === "admin" ? "Administrador" : "Vendedor"}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <a href="/admin" className="btn-ghost px-3 py-2 text-sm">
-            <Icon icon="flat-color-icons:settings" width={18} /> Admin
-          </a>
-          <button onClick={salir} className="btn-ghost px-3 py-2 text-sm">
-            <Icon icon="flat-color-icons:export" width={18} /> Salir
-          </button>
-        </div>
-      </header>
+    <div className="lg:flex">
+      {/* Menú a la izquierda (compu): siempre a la vista */}
+      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 border-r border-line bg-bg-2/80 lg:block">{menu()}</aside>
 
-      {/* Métricas rápidas */}
-      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Metrica icono="flat-color-icons:business-contact" label="Prospectos" valor={String(leads.length)} />
-        <Metrica icono="flat-color-icons:calendar" label="En cita" valor={String(leads.filter((l) => l.etapa === "cita").length)} />
-        <Metrica icono="flat-color-icons:approval" label="Clientes" valor={String(pipeline.length)} />
-        <Metrica icono="flat-color-icons:money-transfer" label="Ganado" valor={moneda(valorGanado)} />
+      {/* Celular: barra con el botón Menú y la sección en la que estás */}
+      <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-line bg-bg/90 px-4 py-2.5 backdrop-blur lg:hidden">
+        <button type="button" onClick={() => setMenuAbierto(true)} className="btn-ghost px-3 py-2 text-sm" aria-expanded={menuAbierto} aria-label="Abrir menú">
+          <Icon icon="flat-color-icons:menu" width={20} aria-hidden /> Menú
+        </button>
+        <span className="flex min-w-0 items-center gap-2 font-semibold text-ink">
+          <Icon icon={actual.icono} width={22} aria-hidden />
+          <span className="min-w-0 leading-tight">
+            <span className="block truncate">{actual.nombre}</span>
+            <span className="block truncate text-xs font-normal text-ink-mute">{actual.pista}</span>
+          </span>
+        </span>
       </div>
-
-      {/* Tu equipo digital (Módulo 3 · AI Manager): RORO, Valeri y Clara con su reporte de hoy.
-          En sus propias pestañas no se repite (ahí ya está). */}
-      {esAdmin && !SIN_SLOT.includes(pestana) && (
-        <SlotRoro
-          onPanel={() => setPestana("panel")}
-          onRoro={() => setPestana("roro")}
-          onValeri={() => setPestana("valeri")}
-          onClara={() => setPestana("clara")}
-        />
+      {menuAbierto && (
+        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Menú">
+          <button type="button" className="absolute inset-0 bg-black/60" aria-label="Cerrar menú" onClick={() => setMenuAbierto(false)} />
+          <aside className="relative h-full w-72 max-w-[85%] overflow-y-auto border-r border-line bg-bg-2 shadow-2xl">{menu(() => setMenuAbierto(false))}</aside>
+        </div>
       )}
 
-      {/* Pestañas */}
-      <nav className="mb-4 flex flex-wrap gap-2">
-        {pestanas.map(([id, label, icono]) => (
-          <button
-            key={id}
-            onClick={() => setPestana(id)}
-            className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm transition-colors ${
-              pestana === id ? "border-brand-2 bg-brand/15 text-ink" : "border-line bg-glass text-ink-mute hover:text-ink"
-            }`}
-          >
-            <Icon icon={icono} width={18} /> {label}
-          </button>
-        ))}
-      </nav>
+      <main className="min-w-0 flex-1">
+        <div className="mx-auto max-w-6xl px-4 py-6">
+          {/* Dónde estás */}
+          <header className="mb-5 hidden lg:block">
+            <h1 className="flex items-center gap-2 font-display text-2xl text-ink">
+              <Icon icon={actual.icono} width={28} aria-hidden /> {actual.nombre}
+            </h1>
+            <p className="text-sm text-ink-mute">{actual.pista}</p>
+          </header>
 
-      {(pestana === "tablero" || pestana === "contactos") && (
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-2 rounded-xl border border-line bg-glass px-3 py-2">
-            <Icon icon="flat-color-icons:search" width={18} />
-            <input
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-              placeholder="Buscar por nombre, correo o WhatsApp…"
-              className="w-56 bg-transparent text-sm text-ink outline-none placeholder:text-ink-mute"
-            />
+          {/* Métricas rápidas */}
+          <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <Metrica icono="flat-color-icons:business-contact" label="Prospectos" valor={String(leads.length)} />
+            <Metrica icono="flat-color-icons:calendar" label="En cita" valor={String(leads.filter((l) => l.etapa === "cita").length)} />
+            <Metrica icono="flat-color-icons:approval" label="Clientes" valor={String(pipeline.length)} />
+            <Metrica icono="flat-color-icons:money-transfer" label="Ganado" valor={moneda(valorGanado)} />
           </div>
-          <select
-            value={filtroEtapa}
-            onChange={(e) => setFiltroEtapa(e.target.value as EtapaId | "todas")}
-            className="rounded-xl border border-line bg-glass px-3 py-2 text-sm text-ink"
-          >
-            <option value="todas">Todas las etapas</option>
-            {ETAPAS.map((et) => (
-              <option key={et.id} value={et.id}>
-                {et.nombre}
-              </option>
-            ))}
-          </select>
-          {pestana === "tablero" && (
-            <div className="ml-auto flex rounded-xl border border-line bg-glass p-1">
-              <Toggle activo={vista === "kanban"} onClick={() => setVista("kanban")} icono="flat-color-icons:flow-chart" label="Tablero" />
-              <Toggle activo={vista === "tabla"} onClick={() => setVista("tabla")} icono="flat-color-icons:grid" label="Tabla" />
+
+          {/* Tu equipo digital (Módulo 3 · AI Manager): RORO, Valeri y Clara con su reporte de hoy.
+              En sus propias pestañas no se repite (ahí ya está). */}
+          {esAdmin && !SIN_SLOT.includes(pestana) && (
+            <SlotRoro
+              onPanel={() => elegir("panel")}
+              onRoro={() => elegir("roro")}
+              onValeri={() => elegir("valeri")}
+              onClara={() => elegir("clara")}
+            />
+          )}
+
+          {(pestana === "tablero" || pestana === "contactos") && (
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-2 rounded-xl border border-line bg-glass px-3 py-2">
+                <Icon icon="flat-color-icons:search" width={18} />
+                <input
+                  value={busca}
+                  onChange={(e) => setBusca(e.target.value)}
+                  placeholder="Buscar por nombre, correo o WhatsApp…"
+                  className="w-56 bg-transparent text-sm text-ink outline-none placeholder:text-ink-mute"
+                />
+              </div>
+              <select
+                value={filtroEtapa}
+                onChange={(e) => setFiltroEtapa(e.target.value as EtapaId | "todas")}
+                className="rounded-xl border border-line bg-glass px-3 py-2 text-sm text-ink"
+              >
+                <option value="todas">Todas las etapas</option>
+                {ETAPAS.map((et) => (
+                  <option key={et.id} value={et.id}>
+                    {et.nombre}
+                  </option>
+                ))}
+              </select>
+              {pestana === "tablero" && (
+                <div className="ml-auto flex rounded-xl border border-line bg-glass p-1">
+                  <Toggle activo={vista === "kanban"} onClick={() => setVista("kanban")} icono="flat-color-icons:flow-chart" label="Tablero" />
+                  <Toggle activo={vista === "tabla"} onClick={() => setVista("tabla")} icono="flat-color-icons:grid" label="Tabla" />
+                </div>
+              )}
             </div>
           )}
+
+          {pestana === "tablero" &&
+            (vista === "kanban" ? (
+              <Pipeline leads={filtrados} onMover={mover} onAbrir={setSeleccion} />
+            ) : (
+              <TablaLeads leads={filtrados} onAbrir={setSeleccion} />
+            ))}
+          {pestana === "contactos" && <Contactos leads={filtrados} onAbrir={setSeleccion} onCambio={recargar} />}
+          {pestana === "seguimiento" && <Seguimiento leads={leads} onAbrir={setSeleccion} />}
+          {pestana === "campanas" && <Campanas leads={leads} />}
+          {pestana === "reportes" && <Reportes leads={leads} />}
+          {esAdmin && pestana === "panel" && <PanelMando onVerSinRamo={verGanadasSinRamo} />}
+          {esAdmin && pestana === "crecimiento" && <Crecimiento />}
+          {esAdmin && pestana === "roro" && <ManagerIA sesion={sesion} onValeri={() => elegir("valeri")} onClara={() => elegir("clara")} />}
+          {esAdmin && pestana === "valeri" && (
+            <Cobranza
+              key={vezPoliza}
+              prefill={polizaNueva}
+              onPrefillUsado={() => setPolizaNueva(null)}
+            />
+          )}
+
+          {esAdmin && pestana === "clara" && <ReportesClara />}
+
+          {seleccion && (
+            <LeadPanel
+              id={seleccion}
+              onClose={() => setSeleccion(null)}
+              onCambio={recargar}
+              onAgregarCobranza={esAdmin ? agregarACobranza : undefined}
+            />
+          )}
         </div>
-      )}
-
-      {pestana === "tablero" &&
-        (vista === "kanban" ? (
-          <Pipeline leads={filtrados} onMover={mover} onAbrir={setSeleccion} />
-        ) : (
-          <TablaLeads leads={filtrados} onAbrir={setSeleccion} />
-        ))}
-      {pestana === "contactos" && <Contactos leads={filtrados} onAbrir={setSeleccion} onCambio={recargar} />}
-      {pestana === "seguimiento" && <Seguimiento leads={leads} onAbrir={setSeleccion} />}
-      {pestana === "campanas" && <Campanas leads={leads} />}
-      {pestana === "reportes" && <Reportes leads={leads} />}
-      {esAdmin && pestana === "panel" && <PanelMando onVerSinRamo={verGanadasSinRamo} />}
-      {esAdmin && pestana === "crecimiento" && <Crecimiento />}
-      {esAdmin && pestana === "roro" && <ManagerIA sesion={sesion} onValeri={() => setPestana("valeri")} onClara={() => setPestana("clara")} />}
-      {esAdmin && pestana === "valeri" && (
-        <Cobranza
-          key={vezPoliza}
-          prefill={polizaNueva}
-          onPrefillUsado={() => setPolizaNueva(null)}
-        />
-      )}
-
-      {esAdmin && pestana === "clara" && <ReportesClara />}
-
-      {seleccion && (
-        <LeadPanel
-          id={seleccion}
-          onClose={() => setSeleccion(null)}
-          onCambio={recargar}
-          onAgregarCobranza={esAdmin ? agregarACobranza : undefined}
-        />
-      )}
+      </main>
     </div>
   );
 }
