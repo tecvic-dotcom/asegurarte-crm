@@ -54,9 +54,13 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
-  // Tarjeta digital (archivo estático en public/tarjeta/): /tarjeta muestra su index.html.
+  // Tarjeta digital (archivo estático en public/tarjeta/). /roberto es la dirección para
+  // compartir (y la del QR); /tarjeta se conserva para los enlaces que ya se enviaron.
   async rewrites() {
-    return [{ source: "/tarjeta", destination: "/tarjeta/index.html" }];
+    return [
+      { source: "/roberto", destination: "/tarjeta/index.html" },
+      { source: "/tarjeta", destination: "/tarjeta/index.html" },
+    ];
   },
 };
 
