@@ -7,7 +7,6 @@ import { Icon } from "@iconify/react";
 import { CONTENIDO } from "@/lib/landing-content";
 import { FormularioCaptura } from "./FormularioCaptura";
 import { PopupActividad } from "./PopupActividad";
-import { GlowOrb } from "./GlowOrb";
 import { Logo } from "@/components/ui/Logo";
 
 interface LandingProps {
@@ -63,7 +62,20 @@ export function Landing({ negocio, popupActivo, heroTitulo, heroCta }: LandingPr
         </motion.div>
 
         <motion.div {...aparecer} className="order-first lg:order-last">
-          <GlowOrb />
+          {/* Video vertical 9:16 sin audio; ancho limitado para que en celular se vea completo */}
+          <div className="glass relative mx-auto aspect-[9/16] w-full max-w-[280px] overflow-hidden rounded-[28px] sm:max-w-[320px] lg:max-w-[340px]">
+            <video
+              src="/video/maternidad.mp4"
+              poster="/video/maternidad-poster.jpg"
+              className="h-full w-full object-cover"
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="metadata"
+              aria-hidden
+            />
+          </div>
         </motion.div>
       </section>
 
