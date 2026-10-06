@@ -31,7 +31,7 @@ export function Landing({ negocio, popupActivo, heroTitulo, heroCta }: LandingPr
   const cta = heroCta || c.hero.cta;
 
   return (
-    <main className="relative mx-auto max-w-6xl px-5 pb-24 pt-10 sm:pt-16">
+    <main className="relative mx-auto max-w-6xl px-5 pb-24 pt-6 sm:pt-16">
       {/* Marca */}
       <header className="flex items-center justify-between gap-3">
         <Logo compacto />
@@ -41,7 +41,7 @@ export function Landing({ negocio, popupActivo, heroTitulo, heroCta }: LandingPr
       </header>
 
       {/* 1. HÉROE */}
-      <section className="grid items-center gap-10 pt-12 lg:grid-cols-2 lg:pt-16">
+      <section className="grid items-center gap-5 pt-6 sm:gap-10 sm:pt-12 lg:grid-cols-2 lg:pt-16">
         <motion.div {...aparecer}>
           <span className="chip">
             <Icon icon="flat-color-icons:like" width={16} /> {c.eyebrow}
@@ -62,12 +62,13 @@ export function Landing({ negocio, popupActivo, heroTitulo, heroCta }: LandingPr
         </motion.div>
 
         <motion.div {...aparecer} className="order-first lg:order-last">
-          {/* Video vertical 9:16 sin audio; ancho limitado para que en celular se vea completo */}
-          <div className="glass relative mx-auto aspect-[9/16] w-full max-w-[280px] overflow-hidden rounded-[28px] sm:max-w-[320px] lg:max-w-[340px]">
+          {/* Video sin audio. Celular/tablet: franja a lo ancho cuyo alto se ajusta a la
+              pantalla (svh) para que el título se lea sin hacer scroll. Desktop: vertical 9:16. */}
+          <div className="glass relative mx-auto h-[clamp(130px,calc(100svh-445px),420px)] w-full overflow-hidden rounded-[28px] sm:max-w-xl lg:aspect-[9/16] lg:h-auto lg:max-w-[340px]">
             <video
               src="/video/maternidad.mp4"
               poster="/video/maternidad-poster.jpg"
-              className="h-full w-full object-cover"
+              className="h-full w-full object-cover object-[50%_38%] lg:object-center"
               autoPlay
               muted
               loop
