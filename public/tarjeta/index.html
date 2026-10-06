@@ -146,6 +146,19 @@ a{color:inherit}
 .btn-primary:hover{transform:translateY(-1px);filter:brightness(1.07)}
 .btn-caps{letter-spacing:.06em;text-transform:uppercase;font-size:15.5px}
 .btn-big{min-height:58px;font-size:16.5px}
+/* Guardar contacto en la portada: azul de marca, dos líneas y un brillo que pasa cada pocos segundos */
+.btn-save{position:relative;overflow:hidden;min-height:62px;gap:12px;color:#fff;background:linear-gradient(180deg,var(--brand-2),var(--brand));
+  border-color:rgba(195,204,255,.35);box-shadow:0 16px 38px -14px rgba(42,34,245,.9)}
+.btn-save:hover{filter:brightness(1.08)}
+.btn-save .ic{width:24px;height:24px}
+.btn-save .two{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left}
+.btn-save{padding:0 16px}
+.btn-save strong{font:800 clamp(14px,4.3vw,16px)/1.1 var(--display);letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+.btn-save small{font:500 13.5px/1.1 var(--body);color:rgba(255,255,255,.85)}
+.btn-save::after{content:"";position:absolute;top:0;bottom:0;left:-60%;width:45%;pointer-events:none;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.28),transparent);transform:skewX(-18deg)}
+@media (prefers-reduced-motion:no-preference){ .btn-save::after{animation:brillo 5.5s ease-in-out 1.2s infinite} }
+@keyframes brillo{0%{left:-60%}22%{left:130%}100%{left:130%}}
 .block{display:flex;width:100%}
 
 /* ---------- Portada ---------- */
@@ -383,6 +396,7 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
         <p class="tagline" data-c="frase"></p>
         <div class="hero-ctas" id="heroCtas">
           <a class="btn btn-wa" id="waHero" target="_blank" rel="noopener"><svg class="ic"><use href="#i-wa"/></svg>Escríbeme por WhatsApp</a>
+          <button class="btn btn-save" id="saveHero" type="button"><svg class="ic"><use href="#i-userplus"/></svg><span class="two"><strong>Guarda mi contacto</strong><small>Lo vas a necesitar</small></span></button>
           <div class="duo">
             <a class="btn btn-ghost" id="callHero"><svg class="ic"><use href="#i-phone"/></svg>Llamar</a>
             <a class="btn btn-ghost" id="agendaHero" target="_blank" rel="noopener"><svg class="ic"><use href="#i-cal"/></svg>Agendar cita</a>
@@ -513,6 +527,7 @@ const CONFIG = {
   sitioWeb: "https://www.especialistaenasegurarte.lat",
   avisoPrivacidad: "https://www.especialistaenasegurarte.lat/privacidad",
   urlTarjeta: "https://www.especialistaenasegurarte.lat/roberto",   // a dónde apunta el QR
+  vcardUrl: "/tarjeta/roberto-rodriguez.vcf",                      // archivo .vcf publicado; vacío = el contacto se arma en el momento
   agendaUrl: "https://calendar.app.google/dxf4aRZFHkux6MqL8",   // Agenda de citas de Google Calendar (45 min, L-V); vacío = pide la cita por WhatsApp
   cedulaCNSF: "V394637",                  // número de cédula de agente; aparece en el aviso legal
 
@@ -569,6 +584,26 @@ const CONFIG = {
   redes: { instagram: "https://www.instagram.com/robertordzglz/", facebook: "https://www.facebook.com/robertordzgzz", linkedin: "https://www.linkedin.com/in/robertorodriguezgzz", tiktok: "", youtube: "" }
 };
 
+/* Contacto para el teléfono (vCard 3.0). Lo usa el botón y también el archivo .vcf que se publica. */
+function vcardTexto() {
+  const C = CONFIG;
+  const [nom, ...ap] = C.nombre.split(" ");
+  const fold = (line) => line.match(/.{1,74}/g).join("\r\n ");
+  return [
+    "BEGIN:VCARD", "VERSION:3.0",
+    `N:${ap.join(" ")};${nom};;;`, `FN:${C.nombre}`,
+    `ORG:${C.marca}`, `TITLE:${C.cargo}`,
+    `TEL;TYPE=CELL,VOICE:${C.telefonoIntl}`,
+    C.correo && `EMAIL;TYPE=INTERNET:${C.correo}`,
+    C.sitioWeb && `URL:${C.sitioWeb}`,
+    `ADR;TYPE=WORK:;;;${C.ciudad.split(",")[0]};${(C.ciudad.split(",")[1] || "").trim()};;México`,
+    `NOTE:${C.productos.map((p) => p.titulo).join(", ")}. Tarjeta: ${C.urlTarjeta}`,
+    IMG.vcard && fold("PHOTO;ENCODING=b;TYPE=JPEG:" + IMG.vcard.split(",")[1]),
+    "END:VCARD"
+  ].filter(Boolean).join("\r\n") + "\r\n";
+}
+</script>
+<script>
 /* ===================== De aquí para abajo no hace falta tocar ===================== */
 (function () {
   const C = CONFIG;
@@ -704,30 +739,24 @@ const CONFIG = {
     const b = e.target.closest("[data-copy]"); if (b) copiar(b.dataset.copy, b.getAttribute("aria-label").replace("Copiar ", "").replace(/^./, (c) => c.toUpperCase()));
   });
 
-  // Guardar contacto (vCard)
-  $("#saveContact").addEventListener("click", () => {
-    const [nom, ...ap] = C.nombre.split(" ");
-    const fold = (line) => line.match(/.{1,74}/g).join("\r\n ");
-    const lines = [
-      "BEGIN:VCARD", "VERSION:3.0",
-      `N:${ap.join(" ")};${nom};;;`, `FN:${C.nombre}`,
-      `ORG:${C.marca}`, `TITLE:${C.cargo}`,
-      `TEL;TYPE=CELL,VOICE:${C.telefonoIntl}`,
-      C.correo && `EMAIL;TYPE=INTERNET:${C.correo}`,
-      C.sitioWeb && `URL:${C.sitioWeb}`,
-      `ADR;TYPE=WORK:;;;${C.ciudad.split(",")[0]};${(C.ciudad.split(",")[1] || "").trim()};;México`,
-      `NOTE:${C.productos.map((p) => p.titulo).join(", ")}. Tarjeta: ${C.urlTarjeta}`,
-      IMG.vcard && fold("PHOTO;ENCODING=b;TYPE=JPEG:" + IMG.vcard.split(",")[1]),
-      "END:VCARD"
-    ].filter(Boolean);
-    const blob = new Blob([lines.join("\r\n")], { type: "text/vcard;charset=utf-8" });
+  // Guardar contacto (vCard). En el dominio abre el archivo .vcf publicado (funciona mejor dentro de
+  // WhatsApp, Instagram y Facebook); sin él, lo arma en el momento.
+  function guardarContacto() {
+    if (C.vcardUrl) {
+      location.href = C.vcardUrl;
+      toast("Toca «Agregar a contactos» o «Guardar» para tenerme siempre a la mano.");
+      return;
+    }
+    const blob = new Blob([vcardTexto()], { type: "text/vcard;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url; a.download = C.nombre.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, "-") + ".vcf";
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 5000);
     toast("Abre el archivo para guardar el contacto. Si no aparece, usa los botones de copiar.");
-  });
+  }
+  $("#saveContact").addEventListener("click", guardarContacto);
+  $("#saveHero").addEventListener("click", guardarContacto);
 
   // QR
   $("#cardUrl").textContent = C.urlTarjeta.replace(/^https?:\/\/(www\.)?/, "");

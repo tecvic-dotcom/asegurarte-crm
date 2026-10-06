@@ -52,7 +52,17 @@ const nextConfig: NextConfig = {
     minimumCacheTTL: 2678400, // 31 días
   },
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      // Contacto de la tarjeta: el celular lo abre como "Agregar a contactos"
+      {
+        source: "/tarjeta/roberto-rodriguez.vcf",
+        headers: [
+          { key: "Content-Type", value: "text/vcard; charset=utf-8" },
+          { key: "Content-Disposition", value: 'inline; filename="Roberto-Rodriguez.vcf"' },
+        ],
+      },
+    ];
   },
   // Tarjeta digital (archivo estático en public/tarjeta/). /roberto es la dirección para
   // compartir (y la del QR); /tarjeta se conserva para los enlaces que ya se enviaron.
