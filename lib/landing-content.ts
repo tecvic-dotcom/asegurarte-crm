@@ -133,6 +133,13 @@ export const CONTENIDO: LandingContent = {
 
   testimonios: [
     {
+      nombre: "Istmenia y Carlos, papás de Carlitos",
+      foto: "/img/testimonio-carlitos.jpg",
+      fotoAncho: 960,
+      fotoAlto: 1280,
+      texto: "Hoy quiero compartir algo que aprendí de la manera más especial: cuando se trata de salud, estar protegido hace toda la diferencia. ❤️\n\nDurante mi primer embarazo, mi ginecólogo me informó que necesitaba realizarme un procedimiento llamado cerclaje cervical. En ese momento, escuchar que necesitaba una operación fue algo inesperado y que, sinceramente, me tomó por sorpresa.\n\nPero hubo algo que me dio tranquilidad: ya contaba con una póliza de Gastos Médicos Mayores.\n\nGracias a mi seguro, los gastos relacionados con la operación —doctores, hospital, medicamentos y demás— estuvieron cubiertos, teniendo que pagar únicamente una diferencia mínima en comparación con la cantidad tan alta que representaba la cuenta.\n\nMeses después nació mi bebé y, gracias a Dios, todo salió muy bien. ❤️ Además, mi seguro me otorgó una cantidad por el nacimiento de mi hijo, que aunque no cubrió el total de los gastos, fue una gran ayuda en ese momento tan importante para nuestra familia.\n\nHoy, con mucha tranquilidad y confianza, estoy esperando a mi segundo bebé. Nuevamente será necesario realizar el mismo procedimiento y, hasta ahora, todo marcha perfectamente, tal como ocurrió en mi primera experiencia.\n\nPor eso quiero hacer una mención especial a Roberto Rodríguez, mi asesor de seguros, por su excelente atención y seguimiento durante todo el proceso. Tener un asesor que te acompañe cuando más lo necesitas también hace una gran diferencia.\n\nComparto mi experiencia porque muchas veces pensamos:\n\n“A mí no me va a pasar.”\n“Seguramente nunca lo voy a necesitar.”\n“Después contrato un seguro.”\n\nPero la realidad es que la salud no avisa, no espera y muchas veces las situaciones llegan cuando menos las imaginamos.\n\nSi eres mamá, estás planeando tener hijos o simplemente quieres proteger lo que más amas, considera contar con una póliza de Gastos Médicos Mayores.\n\nPorque un seguro no solamente protege tu bolsillo...\n\nTambién te da tranquilidad para enfrentar los momentos difíciles y la posibilidad de concentrarte en lo verdaderamente importante: cuidar de ti y de tu familia. ❤️\n\nHoy agradezco haber tomado aquella decisión a tiempo. Mañana, esa decisión podría hacer toda la diferencia para alguien más.",
+    },
+    {
       nombre: "Tere y Mauricio, papás de Mateo",
       foto: "/img/testimonio-mateo.jpg",
       fotoAncho: 1280,
