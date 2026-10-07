@@ -198,6 +198,7 @@ export function PolizasAdjuntas() {
   const esGmm = ramo === "gmm";
   const mostrarAsegurados = ramo === null || esGmm;
   const nombreRamo = ramo ? infoRamo(ramo).corto : "todos los ramos";
+  const visibles = (polizas ?? []).filter((p) => ramo === null || p.ramo === ramo);
   const pendientes = items.filter((i) => i.estado !== "guardada");
 
   return (
@@ -488,9 +489,12 @@ export function PolizasAdjuntas() {
           )}
 
           <section className="glass rounded-2xl p-4 sm:p-5">
-            <h3 className="font-semibold text-ink">Pólizas cargadas ({polizas.length})</h3>
+            <h3 className="font-semibold text-ink">
+              Pólizas cargadas · {nombreRamo} ({visibles.length})
+            </h3>
+            {visibles.length === 0 && <p className="mt-2 text-sm text-ink-mute">No hay pólizas de {nombreRamo} cargadas.</p>}
             <ul className="mt-2 divide-y divide-line/60">
-              {polizas.slice(0, 60).map((p) => (
+              {visibles.slice(0, 60).map((p) => (
                 <li key={p.id} className="flex items-center gap-3 py-2 text-sm">
                   <Icon icon={infoRamo(p.ramo).icono} width={20} aria-hidden />
                   <div className="min-w-0 flex-1">
@@ -512,7 +516,7 @@ export function PolizasAdjuntas() {
                 </li>
               ))}
             </ul>
-            {polizas.length > 60 && <p className="mt-2 text-xs text-ink-mute">Se muestran las 60 más recientes; los reportes usan todas.</p>}
+            {visibles.length > 60 && <p className="mt-2 text-xs text-ink-mute">Se muestran las 60 más recientes; los reportes usan todas.</p>}
           </section>
         </>
       )}
