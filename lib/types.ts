@@ -484,4 +484,4 @@ export interface NuevoLeadManual {
 }
 
 /** De dónde viene un prospecto capturado a mano. */
-export const ORIGENES_MANUAL = ["Manual", "Referido", "Llamada", "Redes sociales", "Evento", "Cliente actual"] as const;
+export const ORIGENES_MANUAL = ["Manual", "Referido", "Llamada", "Redes sociales", "Grupos de ventas WA", "Evento", "Cliente actual"] as const;
