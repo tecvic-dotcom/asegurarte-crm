@@ -1,7 +1,7 @@
 import { sesionDesdeRequest } from "@/lib/auth";
-import { listLeads, getLead, listActividad, actualizarLead, agregarActividad } from "@/lib/db";
+import { listLeads, getLead, listActividad, actualizarLead, agregarActividad, crearLeadManual } from "@/lib/db";
 import { esRamo } from "@/lib/ramos";
-import type { EtapaId, TipoActividad, Genero, Ramo } from "@/lib/types";
+import type { EtapaId, TipoActividad, Genero, Ramo, NuevoLeadManual } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -41,6 +41,7 @@ export async function POST(req: Request): Promise<Response> {
     etapa?: string;
     texto?: string;
     tipo?: string;
+    lead?: Partial<NuevoLeadManual>;
     patch?: {
       nombre?: string;
       notas?: string;
@@ -61,6 +62,28 @@ export async function POST(req: Request): Promise<Response> {
   const autor = s.nombre;
   const soloMio = s.rol === "vendedor" ? s.id : undefined;
   try {
+    if (body.accion === "crear" && body.lead) {
+      const l = body.lead;
+      const r = await crearLeadManual(
+        {
+          nombre: String(l.nombre ?? ""),
+          whatsapp: String(l.whatsapp ?? ""),
+          correo: String(l.correo ?? ""),
+          etapa: l.etapa as EtapaId,
+          ramo: (l.ramo ?? null) as Ramo | null,
+          valor: Number(l.valor) || 0,
+          origen: String(l.origen ?? "Manual"),
+          notas: String(l.notas ?? ""),
+        },
+        s.nombre,
+        // Un vendedor captura ya asignado a él; así lo ve en su cartera.
+        s.rol === "vendedor" ? s.id : null,
+      );
+      if (!r.ok) {
+        return Response.json({ errores: r.errores, error: Object.values(r.errores ?? {})[0] ?? "Revisa los datos." }, { status: 422 });
+      }
+      return Response.json({ ok: true, duplicado: r.duplicado, id: r.id });
+    }
     if (body.accion === "mover" && body.id && body.etapa) {
       const lead = await actualizarLead(body.id, { etapa: body.etapa as EtapaId }, autor, soloMio);
       if (!lead) return Response.json({ error: "No encontrado" }, { status: 404 });

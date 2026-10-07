@@ -470,3 +470,18 @@ export interface LecturaPoliza {
   datos: DatosAdjunta;
   avisos: string[];
 }
+
+/** Prospecto capturado a mano por Roberto o su equipo (con su etapa desde el inicio). */
+export interface NuevoLeadManual {
+  nombre: string;
+  whatsapp: string;
+  correo: string;
+  etapa: EtapaId;
+  ramo: Ramo | null;
+  valor: number;
+  origen: string;
+  notas: string;
+}
+
+/** De dónde viene un prospecto capturado a mano. */
+export const ORIGENES_MANUAL = ["Manual", "Referido", "Llamada", "Redes sociales", "Evento", "Cliente actual"] as const;

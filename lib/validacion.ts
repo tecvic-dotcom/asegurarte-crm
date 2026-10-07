@@ -52,3 +52,18 @@ export function validarLead(input: NuevoLead): ResultadoValidacion {
 
   return { ok: Object.keys(errores).length === 0, errores };
 }
+
+/**
+ * Valida un prospecto capturado a mano. Aquí el correo es opcional (muchos solo
+ * tienen WhatsApp), pero hace falta al menos un medio de contacto.
+ */
+export function validarLeadManual(input: { nombre: string; whatsapp: string; correo: string }): ResultadoValidacion {
+  const errores: Record<string, string> = {};
+  if (!validarNombre(input.nombre)) errores.nombre = "Escribe el nombre (al menos 2 letras).";
+  const tieneWa = normWhatsapp(input.whatsapp).length > 0;
+  const tieneCorreo = normCorreo(input.correo).length > 0;
+  if (tieneWa && !validarWhatsappMX(input.whatsapp)) errores.whatsapp = "El WhatsApp debe tener 10 dígitos (puedes incluir +52).";
+  if (tieneCorreo && !validarCorreo(input.correo)) errores.correo = "Revisa el correo (ejemplo: nombre@correo.com).";
+  if (!tieneWa && !tieneCorreo) errores.whatsapp = "Pon al menos un WhatsApp o un correo para poder contactarlo.";
+  return { ok: Object.keys(errores).length === 0, errores };
+}

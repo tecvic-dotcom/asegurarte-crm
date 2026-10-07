@@ -14,7 +14,7 @@ import "server-only";
  */
 import { adminDb, cloudReady } from "./supabase-admin";
 import { normCorreo, normWhatsapp, normCodigoPostal } from "./normalize";
-import { validarLead } from "./validacion";
+import { validarLead, validarLeadManual } from "./validacion";
 import { hashPassword, verifyPassword } from "./auth";
 import { faltaMigracion, MENSAJE_MIGRACION } from "./migracion";
 import { esRamo } from "./ramos";
@@ -26,6 +26,7 @@ import type {
   RolUsuario,
   Ajustes,
   NuevoLead,
+  NuevoLeadManual,
   Geo,
   Metricas,
   EtapaId,
@@ -294,6 +295,83 @@ export async function crearLead(input: NuevoLead, geo?: Partial<Geo>): Promise<C
     autor: "Sistema",
     creado_en: nowISO(),
   });
+  return { ok: true, duplicado: false, id };
+}
+
+const ETAPAS_VALIDAS: EtapaId[] = ["nuevo", "contactado", "cita", "propuesta", "ganado", "perdido"];
+
+/**
+ * Prospecto capturado a mano desde el CRM (sin formulario público, sin consentimiento en pantalla:
+ * quien captura es tu equipo, ya con la persona). Entra con la etapa que elijas.
+ * Un vendedor lo captura ya asignado a él, para verlo en su cartera.
+ */
+export async function crearLeadManual(input: NuevoLeadManual, autor: string, asignadoA: string | null): Promise<CrearLeadResultado> {
+  const v = validarLeadManual(input);
+  if (!v.ok) return { ok: false, duplicado: false, errores: v.errores };
+  if (!ETAPAS_VALIDAS.includes(input.etapa)) return { ok: false, duplicado: false, errores: { etapa: "Elige una etapa." } };
+  if (input.ramo !== null && !esRamo(input.ramo)) return { ok: false, duplicado: false, errores: { ramo: "Elige un ramo válido." } };
+
+  const correo = normCorreo(input.correo);
+  const whatsapp = normWhatsapp(input.whatsapp);
+  const ahora = nowISO();
+  const fila = {
+    nombre: input.nombre.trim().slice(0, 160),
+    correo,
+    whatsapp,
+    mensaje: "",
+    etapa: input.etapa,
+    valor: Math.max(0, Math.round(Number(input.valor) || 0)),
+    origen: (input.origen || "Manual").trim().slice(0, 60) || "Manual",
+    utm_source: "",
+    utm_medium: "",
+    utm_campaign: "",
+    utm_term: "",
+    utm_content: "",
+    pais: null,
+    ciudad: null,
+    region: null,
+    dispositivo: null,
+    notas: (input.notas ?? "").slice(0, 4000),
+    genero: null as Genero | null,
+    fecha_nacimiento: null as string | null,
+    codigo_postal: null as string | null,
+    asignado_a: asignadoA,
+    ramo: input.ramo,
+    cerrado_en: input.etapa === "ganado" ? ahora : null,
+  };
+  const textoActividad = `Capturado a mano por ${autor} (${fila.origen}) en la etapa "${fila.etapa}".`;
+
+  if (cloudReady && adminDb) {
+    // Mismas consultas parametrizadas que la captura pública.
+    if (correo) {
+      const { data } = await adminDb.from("leads").select("id").eq("correo", correo).limit(1);
+      if (data && data.length) return { ok: true, duplicado: true, id: (data[0] as { id: string }).id };
+    }
+    if (whatsapp) {
+      const { data } = await adminDb.from("leads").select("id").eq("whatsapp", whatsapp).limit(1);
+      if (data && data.length) return { ok: true, duplicado: true, id: (data[0] as { id: string }).id };
+    }
+    let { data, error } = await adminDb.from("leads").insert(fila).select("id").limit(1);
+    if (error && faltaMigracion(error)) {
+      // Sin la migración 0003 no existen ramo ni cerrado_en: el prospecto entra igual, sin ramo.
+      if (input.ramo !== null) throw new Error(MENSAJE_MIGRACION);
+      const { ramo: _r, cerrado_en: _c, ...sinCamposNuevos } = fila;
+      void _r;
+      void _c;
+      ({ data, error } = await adminDb.from("leads").insert(sinCamposNuevos).select("id").limit(1));
+    }
+    if (error) throw new Error(error.message);
+    const id = (data?.[0] as { id: string } | undefined)?.id;
+    if (id) await adminDb.from("actividad").insert({ lead_id: id, tipo: "nota", texto: textoActividad, autor });
+    return { ok: true, duplicado: false, id };
+  }
+
+  const s = store();
+  const existe = s.leads.find((l) => (correo && l.correo === correo) || (whatsapp && l.whatsapp === whatsapp));
+  if (existe) return { ok: true, duplicado: true, id: existe.id };
+  const id = uid("ld");
+  s.leads.unshift({ id, creado_en: ahora, actualizado_en: ahora, ...fila });
+  s.actividad.unshift({ id: uid("ac"), lead_id: id, tipo: "nota", texto: textoActividad, autor, creado_en: ahora });
   return { ok: true, duplicado: false, id };
 }
 

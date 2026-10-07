@@ -35,6 +35,7 @@ import type {
   DatosAdjunta,
   LecturaPoliza,
   TipoAdjunta,
+  NuevoLeadManual,
   TipoReporte,
 } from "./types";
 
@@ -130,6 +131,18 @@ export async function crmActualizar(
     }),
   )) as { lead: Lead };
   return data.lead;
+}
+
+/** Captura un prospecto a mano. Si ya existía (mismo WhatsApp o correo) devuelve duplicado:true y su id. */
+export async function crmCrearLead(lead: NuevoLeadManual): Promise<{ id: string | undefined; duplicado: boolean }> {
+  const data = (await jsonOrThrow(
+    await fetch("/api/crm/leads", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ accion: "crear", lead }),
+    }),
+  )) as { id?: string; duplicado: boolean };
+  return { id: data.id, duplicado: data.duplicado };
 }
 
 export async function crmAgregarActividad(id: string, tipo: TipoActividad, texto: string): Promise<void> {
