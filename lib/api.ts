@@ -39,6 +39,8 @@ import type {
   TipoReporte,
 } from "./types";
 
+import type { MotivoCobro } from "./cobranza-reglas";
+
 async function jsonOrThrow(res: Response): Promise<unknown> {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
@@ -269,6 +271,17 @@ export async function crmGuardarManagerConfig(config: ManagerConfig): Promise<Ma
 export async function crmPolizas(): Promise<Poliza[]> {
   const res = await fetch("/api/crm/cobranza", { cache: "no-store" });
   return ((await jsonOErrorCRM(res)) as { polizas: Poliza[] }).polizas;
+}
+
+/** Tus mensajes de cobranza personalizados (solo las situaciones que cambiaste). */
+export async function crmMensajesCobro(): Promise<Partial<Record<MotivoCobro, string>>> {
+  const res = await fetch("/api/crm/cobranza/mensajes", { cache: "no-store" });
+  return ((await jsonOErrorCRM(res)) as { mensajes: Partial<Record<MotivoCobro, string>> }).mensajes;
+}
+
+/** Guarda tu texto para una situación; con texto null vuelve al base de Valeri. */
+export async function crmGuardarMensajeCobro(motivo: MotivoCobro, texto: string | null): Promise<void> {
+  await jsonOErrorCRM(await postJSON("/api/crm/cobranza/mensajes", { motivo, texto }));
 }
 
 export async function crmResumenCobranza(): Promise<ResumenCobranza> {

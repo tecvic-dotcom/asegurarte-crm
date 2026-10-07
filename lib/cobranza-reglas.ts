@@ -193,25 +193,81 @@ function laPoliza(p: Poliza): string {
   return `tu póliza${numero}${ramo}`;
 }
 
-/** El mensaje listo para WhatsApp: respetuoso pero firme. */
-export function mensajeCobro(p: Poliza, motivo: MotivoCobro): string {
-  const hola = saludoPara(p.asegurado);
-  const poliza = laPoliza(p);
-  const monto = p.monto_pago > 0 ? ` por ${moneda(p.monto_pago)}` : "";
-  const limite = p.fecha_limite_pago ? fechaLarga(p.fecha_limite_pago) : "";
-  const promesa = p.promesa_fecha ? fechaLarga(p.promesa_fecha) : "";
-  switch (motivo) {
-    case "vencida":
-      return `${hola}, te escribo por el pago de ${poliza}${monto}: la fecha límite fue el ${limite} y todavía lo veo pendiente. Para que tu protección no se suspenda, ¿te ayudo a dejarlo pagado hoy? Quedo atento.`;
-    case "promesa_vencida":
-      return `${hola}, ¿cómo vas? Quedamos en que el pago de ${poliza}${monto} quedaba el ${promesa} y aún no lo veo reflejado. ¿Te comparto los datos para hacerlo hoy? Quedo atento.`;
-    case "promesa":
-      return `${hola}, solo para recordarte que quedamos en el pago de ${poliza}${monto} para el ${promesa}. ¿Te comparto los datos para dejarlo listo? ¡Gracias!`;
-    case "por_vencer":
-      return `${hola}, te recuerdo que el pago de ${poliza}${monto} vence el ${limite}. Así mantienes tu protección sin interrupciones. Si necesitas la línea de pago o ayuda, aquí estoy. ¡Gracias!`;
-    case "renovacion":
-      return `${hola}, ${poliza} renueva el ${p.renovacion ? fechaLarga(p.renovacion) : "pronto"}. Antes de esa fecha me gustaría revisar contigo que siga cubriendo lo que necesitas. ¿Qué día te acomoda una llamada de 10 minutos?`;
+/** Texto base de cada situación (el que Valeri usa mientras no escribas el tuyo). */
+export const PLANTILLAS_BASE: Record<MotivoCobro, string> = {
+  vencida:
+    "{saludo}, te escribo por el pago de {poliza} {monto}: la fecha límite fue el {fecha_limite} y todavía lo veo pendiente. Para que tu protección no se suspenda, ¿te ayudo a dejarlo pagado hoy? Quedo atento.",
+  promesa_vencida:
+    "{saludo}, ¿cómo vas? Quedamos en que el pago de {poliza} {monto} quedaba el {fecha_promesa} y aún no lo veo reflejado. ¿Te comparto los datos para hacerlo hoy? Quedo atento.",
+  promesa:
+    "{saludo}, solo para recordarte que quedamos en el pago de {poliza} {monto} para el {fecha_promesa}. ¿Te comparto los datos para dejarlo listo? ¡Gracias!",
+  por_vencer:
+    "{saludo}, te recuerdo que el pago de {poliza} {monto} vence el {fecha_limite}. Así mantienes tu protección sin interrupciones. Si necesitas la línea de pago o ayuda, aquí estoy. ¡Gracias!",
+  renovacion:
+    "{saludo}, {poliza} renueva {fecha_renovacion}. Antes de esa fecha me gustaría revisar contigo que siga cubriendo lo que necesitas. ¿Qué día te acomoda una llamada de 10 minutos?",
+};
+
+export const MOTIVOS_MENSAJE: { id: MotivoCobro; nombre: string; cuando: string }[] = [
+  { id: "vencida", nombre: "Vencida", cuando: "Ya pasó la fecha límite de pago" },
+  { id: "por_vencer", nombre: "Por vencer", cuando: "Faltan pocos días para la fecha límite" },
+  { id: "promesa", nombre: "Promesa de pago", cuando: "Quedó de pagar un día y aún no llega" },
+  { id: "promesa_vencida", nombre: "Promesa incumplida", cuando: "Pasó el día que prometió pagar" },
+  { id: "renovacion", nombre: "Renovación", cuando: "La póliza renueva pronto" },
+];
+
+/** Lo que puedes poner entre llaves en tu mensaje, y qué se escribe en su lugar. */
+export const VARIABLES_MENSAJE: { clave: string; ejemplo: string; descripcion: string }[] = [
+  { clave: "saludo", ejemplo: "Hola Joan", descripcion: "Saludo con el nombre del cliente" },
+  { clave: "nombre", ejemplo: "Joan", descripcion: "Solo el nombre de pila" },
+  { clave: "poliza", ejemplo: "tu póliza 93177V04 de gastos médicos", descripcion: "Cuál póliza (con número y ramo)" },
+  { clave: "monto", ejemplo: "por $4,644", descripcion: "El monto del recibo (se omite si no lo has capturado)" },
+  { clave: "fecha_limite", ejemplo: "14 de septiembre", descripcion: "Fecha límite de pago" },
+  { clave: "fecha_promesa", ejemplo: "20 de octubre", descripcion: "Día que prometió pagar" },
+  { clave: "fecha_renovacion", ejemplo: "el 3 de noviembre", descripcion: "Cuándo renueva (si no hay fecha, dice \"pronto\")" },
+];
+
+const CLAVES_VALIDAS = new Set(VARIABLES_MENSAJE.map((v) => v.clave));
+
+/** Variables entre llaves que no existen (para avisar en vez de mandarlas tal cual al cliente). */
+export function variablesDesconocidas(texto: string): string[] {
+  return [...new Set([...texto.matchAll(/\{([^{}]*)\}/g)].map((m) => m[1]).filter((c) => !CLAVES_VALIDAS.has(c)))];
+}
+
+export type ResultadoMensaje = { ok: true; texto: string } | { ok: false; error: string };
+
+export function validarMensajeCobro(entrada: unknown): ResultadoMensaje {
+  const texto = typeof entrada === "string" ? entrada.trim() : "";
+  if (texto.length < 10) return { ok: false, error: "Escribe un mensaje de al menos 10 letras." };
+  if (texto.length > 1000) return { ok: false, error: "El mensaje es muy largo (máximo 1,000 letras)." };
+  const raras = variablesDesconocidas(texto);
+  if (raras.length) {
+    return { ok: false, error: `No conozco ${raras.map((r) => `{${r}}`).join(", ")}. Usa solo: ${VARIABLES_MENSAJE.map((v) => `{${v.clave}}`).join(" ")}.` };
   }
+  return { ok: true, texto };
+}
+
+/** Rellena una plantilla con los datos de la póliza. */
+export function rellenarMensaje(plantilla: string, p: Poliza): string {
+  const saludo = saludoPara(p.asegurado);
+  const valores: Record<string, string> = {
+    saludo,
+    nombre: saludo.replace(/^Hola,? /, ""),
+    poliza: laPoliza(p),
+    monto: p.monto_pago > 0 ? `por ${moneda(p.monto_pago)}` : "",
+    fecha_limite: p.fecha_limite_pago ? fechaLarga(p.fecha_limite_pago) : "",
+    fecha_promesa: p.promesa_fecha ? fechaLarga(p.promesa_fecha) : "",
+    fecha_renovacion: p.renovacion ? `el ${fechaLarga(p.renovacion)}` : "pronto",
+  };
+  return plantilla
+    .replace(/\{([^{}]*)\}/g, (todo, clave: string) => (clave in valores ? valores[clave] : todo))
+    .replace(/\s+([,.:;!?])/g, "$1")
+    .replace(/ {2,}/g, " ")
+    .trim();
+}
+
+/** El mensaje listo para WhatsApp: tu texto si lo personalizaste; si no, el base (respetuoso pero firme). */
+export function mensajeCobro(p: Poliza, motivo: MotivoCobro, personalizadas: Partial<Record<MotivoCobro, string>> = {}): string {
+  return rellenarMensaje(personalizadas[motivo] || PLANTILLAS_BASE[motivo], p);
 }
 
 /** Liga directa a WhatsApp con el mensaje escrito. Null si la póliza no tiene WhatsApp. */

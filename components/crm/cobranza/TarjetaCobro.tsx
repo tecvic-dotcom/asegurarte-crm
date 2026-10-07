@@ -12,11 +12,14 @@ import {
   etiquetaEstado,
   ligaWhatsApp,
   mensajeCobro,
+  type MotivoCobro,
   type PendienteCobro,
 } from "@/lib/cobranza-reglas";
 
 interface TarjetaCobroProps {
   pendiente: PendienteCobro;
+  /** Tus mensajes personalizados (si no hay, se usa el texto base). */
+  plantillas: Partial<Record<MotivoCobro, string>>;
   onWhatsApp: () => void;
   onPagada: () => void;
   onPromesa: (fecha: string) => void;
@@ -35,12 +38,16 @@ const TITULO_MOTIVO = {
 } as const;
 
 /** Un cobro pendiente: quién, cuánto, por qué y el mensaje listo para mandar. */
-export function TarjetaCobro({ pendiente, onWhatsApp, onPagada, onPromesa, onCancelada, onRecordada, onEditar, onCopiado }: TarjetaCobroProps) {
+export function TarjetaCobro({ pendiente, plantillas, onWhatsApp, onPagada, onPromesa, onCancelada, onRecordada, onEditar, onCopiado }: TarjetaCobroProps) {
   const { poliza: p, estado, dias, motivo, recordadaHoy } = pendiente;
   const [promesaAbierta, setPromesaAbierta] = useState(false);
   const [mensajeCompleto, setMensajeCompleto] = useState(false);
+  // Retoque solo para este envío: no cambia tu texto guardado.
+  const [editado, setEditado] = useState<string | null>(null);
+  const [editando, setEditando] = useState(false);
   const [fechaPromesa, setFechaPromesa] = useState(() => sumarDias(hoyLocal(), 3));
-  const texto = mensajeCobro(p, motivo);
+  const original = mensajeCobro(p, motivo, plantillas);
+  const texto = editado ?? original;
   const liga = ligaWhatsApp(p, texto);
   const color = motivo === "renovacion" ? "var(--sky)" : COLOR_ESTADO[estado];
   const icono = motivo === "renovacion" ? "flat-color-icons:calendar" : ICONO_ESTADO[estado];
@@ -80,15 +87,47 @@ export function TarjetaCobro({ pendiente, onWhatsApp, onPagada, onPromesa, onCan
       )}
 
       {/* El mensaje tal como se enviará: tócalo para leerlo completo */}
-      <button
-        type="button"
-        onClick={() => setMensajeCompleto((v) => !v)}
-        aria-expanded={mensajeCompleto}
-        className="mt-2 block w-full rounded-xl border border-line bg-bg-2/60 p-3 text-left text-sm leading-relaxed text-ink-soft"
-      >
-        <span className={mensajeCompleto ? "block" : "line-clamp-3"}>“{texto}”</span>
-        {!mensajeCompleto && <span className="mt-1 block text-xs text-ink-mute underline">Ver mensaje completo</span>}
-      </button>
+      {editando ? (
+        <div className="mt-2">
+          <textarea
+            value={texto}
+            onChange={(e) => setEditado(e.target.value)}
+            rows={5}
+            maxLength={1000}
+            aria-label={`Mensaje para ${p.asegurado}`}
+            className="field-input w-full text-sm leading-relaxed"
+            autoFocus
+          />
+          <div className="mt-1.5 flex flex-wrap gap-3 text-xs">
+            <button type="button" onClick={() => setEditando(false)} className="min-h-[36px] font-semibold text-ink underline">
+              Listo
+            </button>
+            {editado !== null && (
+              <button
+                type="button"
+                onClick={() => {
+                  setEditado(null);
+                  setEditando(false);
+                }}
+                className="min-h-[36px] text-ink-mute underline hover:text-ink"
+              >
+                Volver al original
+              </button>
+            )}
+            <span className="self-center text-ink-mute">Solo cambia este envío.</span>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setMensajeCompleto((v) => !v)}
+          aria-expanded={mensajeCompleto}
+          className="mt-2 block w-full rounded-xl border border-line bg-bg-2/60 p-3 text-left text-sm leading-relaxed text-ink-soft"
+        >
+          <span className={mensajeCompleto ? "block" : "line-clamp-3"}>“{texto}”</span>
+          {!mensajeCompleto && <span className="mt-1 block text-xs text-ink-mute underline">Ver mensaje completo</span>}
+        </button>
+      )}
 
       {/* Celular: WhatsApp a lo ancho y abajo Pagó / Promesa. Compu: todo en una fila. */}
       <div className="mt-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
@@ -160,6 +199,11 @@ export function TarjetaCobro({ pendiente, onWhatsApp, onPagada, onPromesa, onCan
       )}
 
       <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+        {!editando && (
+          <button type="button" onClick={() => setEditando(true)} className="min-h-[36px] text-ink-mute underline hover:text-ink">
+            Editar mensaje{editado !== null ? " (retocado)" : ""}
+          </button>
+        )}
         <button type="button" onClick={copiar} className="min-h-[36px] text-ink-mute underline hover:text-ink">
           Copiar mensaje
         </button>

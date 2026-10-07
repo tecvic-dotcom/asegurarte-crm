@@ -10,6 +10,7 @@ import {
   crmPolizaPagada,
   crmPolizaPromesa,
   crmPolizaRecordada,
+  crmMensajesCobro,
   crmPolizas,
   ErrorCRM,
 } from "@/lib/api";
@@ -25,12 +26,14 @@ import {
   etiquetaEstado,
   listaDeHoy,
   resumenCobranza,
+  type MotivoCobro,
 } from "@/lib/cobranza-reglas";
 import type { DatosPoliza, Poliza } from "@/lib/types";
 import { AvatarEmpleado } from "./AvatarEmpleado";
 import { AvisoMigracion } from "./panel/AvisoMigracion";
 import { TarjetaCobro } from "./cobranza/TarjetaCobro";
 import { FormularioPoliza } from "./cobranza/FormularioPoliza";
+import { EditorMensajes } from "./cobranza/EditorMensajes";
 
 interface CobranzaProps {
   /** Datos de un cliente ganado para dar de alta su póliza (desde su expediente). */
@@ -53,6 +56,9 @@ export function Cobranza({ prefill, onPrefillUsado }: CobranzaProps) {
   const [guardando, setGuardando] = useState(false);
   const [errorForm, setErrorForm] = useState<string | null>(null);
   const [busca, setBusca] = useState("");
+  // Tus mensajes de WhatsApp personalizados (vacío = textos base de Valeri).
+  const [mensajes, setMensajes] = useState<Partial<Record<MotivoCobro, string>>>({});
+  const [editorAbierto, setEditorAbierto] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
   const relojAviso = useRef<number | undefined>(undefined);
   const hoy = hoyLocal();
@@ -71,6 +77,8 @@ export function Cobranza({ prefill, onPrefillUsado }: CobranzaProps) {
 
   useEffect(() => {
     void cargar();
+    // Si aún no existe la tabla de mensajes, Valeri sigue con sus textos base.
+    crmMensajesCobro().then(setMensajes, () => undefined);
   }, [cargar]);
 
   const pendientes = useMemo(() => (polizas ? listaDeHoy(polizas, hoy) : []), [polizas, hoy]);
@@ -275,8 +283,30 @@ export function Cobranza({ prefill, onPrefillUsado }: CobranzaProps) {
           <section>
             <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
               <h3 className="font-semibold text-ink">A quién cobrarle hoy</h3>
-              <span className="text-xs text-ink-mute">Ordenado por urgencia · {fechaLarga(hoy)}</span>
+              <span className="flex flex-wrap items-center gap-3 text-xs text-ink-mute">
+                Ordenado por urgencia · {fechaLarga(hoy)}
+                <button type="button" onClick={() => setEditorAbierto((v) => !v)} aria-expanded={editorAbierto} className="btn-ghost px-3 py-1.5 text-xs">
+                  <Icon icon="flat-color-icons:edit-image" width={16} aria-hidden /> Personalizar mensajes
+                </button>
+              </span>
             </div>
+            {editorAbierto && (
+              <div className="mb-3">
+                <EditorMensajes
+                  personalizadas={mensajes}
+                  ejemplos={Object.fromEntries([...pendientes].reverse().map((x) => [x.motivo, x.poliza])) as Partial<Record<MotivoCobro, Poliza>>}
+                  onCambio={(motivo, texto) =>
+                    setMensajes((m) => {
+                      const nuevo = { ...m };
+                      if (texto === null) delete nuevo[motivo];
+                      else nuevo[motivo] = texto;
+                      return nuevo;
+                    })
+                  }
+                  onCerrar={() => setEditorAbierto(false)}
+                />
+              </div>
+            )}
             {pendientes.length === 0 ? (
               <p className="glass rounded-2xl p-5 text-center text-sm text-ink-soft">Todo al corriente: hoy nadie te debe. 🎉</p>
             ) : (
@@ -285,6 +315,7 @@ export function Cobranza({ prefill, onPrefillUsado }: CobranzaProps) {
                   <TarjetaCobro
                     key={pend.poliza.id}
                     pendiente={pend}
+                    plantillas={mensajes}
                     onWhatsApp={() => void accion(crmPolizaRecordada(pend.poliza.id), (p) => `Anotado: le recordaste hoy a ${p.asegurado}.`)}
                     onRecordada={() => void accion(crmPolizaRecordada(pend.poliza.id), (p) => `Anotado: le recordaste hoy a ${p.asegurado}.`)}
                     onPagada={() =>
