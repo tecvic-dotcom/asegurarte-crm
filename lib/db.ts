@@ -18,6 +18,7 @@ import { validarLead, validarLeadManual } from "./validacion";
 import { hashPassword, verifyPassword } from "./auth";
 import { faltaMigracion, MENSAJE_MIGRACION } from "./migracion";
 import { esRamo } from "./ramos";
+import { ubicacionDeCP } from "./codigos-postales";
 import type {
   Lead,
   Actividad,
@@ -448,6 +449,15 @@ export async function actualizarLead(
   if (patch.ramo !== undefined) limpio.ramo = patch.ramo;
   // La fecha de cierre alimenta tu meta: se pone al pasar a "ganado" y se borra si regresa.
   if (patch.etapa !== undefined) limpio.cerrado_en = patch.etapa === "ganado" ? nowISO() : null;
+  // Con el código postal capturado, la ciudad, el estado y el país se rellenan solos (catálogo de Correos de México).
+  if (typeof limpio.codigo_postal === "string") {
+    const u = await ubicacionDeCP(limpio.codigo_postal);
+    if (u) {
+      limpio.ciudad = u.ciudad;
+      limpio.region = u.estado;
+      limpio.pais = u.pais;
+    }
+  }
 
   if (cloudReady && adminDb) {
     let { data, error } = await adminDb.from("leads").update(limpio).eq("id", id).select("*").limit(1);
