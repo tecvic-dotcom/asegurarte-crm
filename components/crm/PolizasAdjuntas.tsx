@@ -1,11 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
 import { crmAdjuntas, crmEliminarAdjunta, crmGuardarAdjunta, crmLeerPoliza, ErrorCRM } from "@/lib/api";
 import { RAMOS, infoRamo } from "@/lib/ramos";
 import { fechaCorta, hoyLocal } from "@/lib/fechas";
-import { aniosConPolizas, porPeriodo, totalPeriodos, type Agrupar } from "@/lib/adjuntas-reglas";
+import { aniosConPolizas, polizasDePeriodo, porPeriodo, totalPeriodos, type Agrupar, type QueListar } from "@/lib/adjuntas-reglas";
 import type { DatosAdjunta, PolizaAdjunta, Ramo, TipoAdjunta } from "@/lib/types";
 import { GraficaColumnas } from "./panel/GraficaColumnas";
 import { AvisoMigracion } from "./panel/AvisoMigracion";
@@ -94,6 +94,8 @@ export function PolizasAdjuntas() {
   const [ramo, setRamo] = useState<Ramo | null>(null);
   const [anio, setAnio] = useState(Number(hoyLocal().slice(0, 4)));
   const [agrupar, setAgrupar] = useState<Agrupar>("mes");
+  // La cifra de la tabla que está abierta mostrando sus pólizas (fila null = total del año).
+  const [abierta, setAbierta] = useState<{ fila: number | null; que: QueListar } | null>(null);
 
   const cargar = useCallback(
     () =>
@@ -299,7 +301,10 @@ export function PolizasAdjuntas() {
                   key={a}
                   type="button"
                   aria-pressed={agrupar === a}
-                  onClick={() => setAgrupar(a)}
+                  onClick={() => {
+                    setAgrupar(a);
+                    setAbierta(null);
+                  }}
                   className={`min-h-[40px] rounded-lg px-3 text-sm ${agrupar === a ? "bg-brand/25 font-semibold text-ink" : "text-ink-mute hover:text-ink"}`}
                 >
                   Por {a}
@@ -309,7 +314,10 @@ export function PolizasAdjuntas() {
             <select
               aria-label="Año"
               value={anio}
-              onChange={(e) => setAnio(Number(e.target.value))}
+              onChange={(e) => {
+                setAnio(Number(e.target.value));
+                setAbierta(null);
+              }}
               className="field-input min-h-[40px] w-auto py-1.5 text-sm"
             >
               {anios.map((y) => (
@@ -324,7 +332,10 @@ export function PolizasAdjuntas() {
                   key={r ?? "todos"}
                   type="button"
                   aria-pressed={ramo === r}
-                  onClick={() => setRamo(r)}
+                  onClick={() => {
+                    setRamo(r);
+                    setAbierta(null);
+                  }}
                   className={`min-h-[40px] rounded-xl border px-3 text-sm ${
                     ramo === r ? "border-brand-2 bg-brand/15 font-semibold text-ink" : "border-line bg-glass text-ink-mute hover:text-ink"
                   }`}
@@ -363,6 +374,7 @@ export function PolizasAdjuntas() {
             <h3 className="font-semibold text-ink">
               Detalle por {agrupar} · {nombreRamo} · {anio}
             </h3>
+            <p className="text-xs text-ink-mute">Toca un número subrayado para ver qué pólizas son y de quién.</p>
             <div className="no-scrollbar mt-2 overflow-x-auto">
               <table className="w-full min-w-[560px] text-sm">
                 <thead>
@@ -376,16 +388,61 @@ export function PolizasAdjuntas() {
                   </tr>
                 </thead>
                 <tbody className="tabular-nums">
-                  {[...filas, total].map((f, i, todas) => (
-                    <tr key={f.etiqueta} className={`border-b border-line/60 ${i === todas.length - 1 ? "font-semibold text-ink" : "text-ink-soft"}`}>
-                      <td className="py-2 capitalize text-ink">{f.etiqueta}</td>
-                      <td className="py-2 text-right">{f.nuevas || "—"}</td>
-                      <td className="py-2 text-right">{f.primaNueva ? dinero(f.primaNueva) : "—"}</td>
-                      <td className="py-2 text-right">{f.renovaciones || "—"}</td>
-                      <td className="py-2 text-right">{f.primaRenovacion ? dinero(f.primaRenovacion) : "—"}</td>
-                      {mostrarAsegurados && <td className="py-2 text-right">{f.aseguradosNuevos || "—"}</td>}
-                    </tr>
-                  ))}
+                  {[...filas, total].map((f, i, todas) => {
+                    const esTotal = i === todas.length - 1;
+                    const fila = esTotal ? null : i;
+                    const abre = abierta && abierta.fila === fila ? abierta.que : null;
+                    const celda = (que: QueListar, valor: number) =>
+                      valor ? (
+                        <button
+                          type="button"
+                          aria-expanded={abre === que}
+                          onClick={() => setAbierta(abre === que ? null : { fila, que })}
+                          className={`min-w-[2rem] rounded-lg px-2 py-0.5 underline decoration-dotted underline-offset-4 hover:bg-bg-3/60 ${abre === que ? "bg-brand/20 text-ink" : ""}`}
+                          title="Ver cuáles pólizas son"
+                        >
+                          {valor}
+                        </button>
+                      ) : (
+                        "—"
+                      );
+                    const lista = abre ? polizasDePeriodo(polizas, anio, ramo, agrupar, fila, abre) : [];
+                    return (
+                      <Fragment key={f.etiqueta}>
+                        <tr className={`border-b border-line/60 ${esTotal ? "font-semibold text-ink" : "text-ink-soft"}`}>
+                          <td className="py-2 capitalize text-ink">{f.etiqueta}</td>
+                          <td className="py-2 text-right">{celda("nuevas", f.nuevas)}</td>
+                          <td className="py-2 text-right">{f.primaNueva ? dinero(f.primaNueva) : "—"}</td>
+                          <td className="py-2 text-right">{celda("renovaciones", f.renovaciones)}</td>
+                          <td className="py-2 text-right">{f.primaRenovacion ? dinero(f.primaRenovacion) : "—"}</td>
+                          {mostrarAsegurados && <td className="py-2 text-right">{celda("asegurados", f.aseguradosNuevos)}</td>}
+                        </tr>
+                        {abre && (
+                          <tr className="border-b border-line/60">
+                            <td colSpan={mostrarAsegurados ? 6 : 5} className="bg-bg-3/40 px-3 py-2">
+                              <p className="mb-1 text-xs font-semibold text-ink-soft">
+                                {abre === "nuevas" ? "Pólizas nuevas" : abre === "renovaciones" ? "Renovaciones" : "Pólizas nuevas con asegurados nuevos"} ·{" "}
+                                {esTotal ? `año ${anio}` : f.etiqueta}
+                              </p>
+                              <ul className="divide-y divide-line/50">
+                                {lista.map((p) => (
+                                  <li key={p.id} className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 py-1.5 text-xs">
+                                    <span className="font-semibold text-ink">{p.numero || "Sin número"}</span>
+                                    <span className="min-w-0 flex-1 text-ink-soft">{p.contratante || "Sin contratante"}</span>
+                                    <span className="text-ink-mute">
+                                      {ramo === null && `${infoRamo(p.ramo).corto} · `}inicio {fechaCorta(p.inicio)}
+                                      {abre === "asegurados" && ` · ${p.asegurados_nuevos} asegurado${p.asegurados_nuevos === 1 ? "" : "s"}`}
+                                    </span>
+                                    <span className="tabular-nums text-ink">{dinero(p.prima_neta)}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

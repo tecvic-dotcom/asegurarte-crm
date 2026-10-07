@@ -144,3 +144,29 @@ export function resumenAdjuntas(polizas: PolizaAdjunta[], desde: string, hasta: 
   r.primaRenovacion = Math.round(r.primaRenovacion);
   return r;
 }
+
+export type QueListar = "nuevas" | "renovaciones" | "asegurados";
+
+/**
+ * Las pólizas que hay detrás de una cifra de la tabla: las de un mes o trimestre
+ * (indice = posición en la tabla; null = todo el año). Mismos filtros que porPeriodo.
+ */
+export function polizasDePeriodo(
+  polizas: PolizaAdjunta[],
+  anio: number,
+  ramo: Ramo | null,
+  agrupar: Agrupar,
+  indice: number | null,
+  que: QueListar,
+): PolizaAdjunta[] {
+  return polizas
+    .filter((p) => {
+      if (!enPesos(p, anio, ramo)) return false;
+      const mes = Number(p.inicio.slice(5, 7)) - 1;
+      if (indice !== null && (agrupar === "mes" ? mes : Math.floor(mes / 3)) !== indice) return false;
+      if (que === "nuevas") return p.tipo === "nueva";
+      if (que === "renovaciones") return p.tipo === "renovacion";
+      return p.tipo === "nueva" && p.asegurados_nuevos > 0;
+    })
+    .sort((a, b) => a.inicio.localeCompare(b.inicio));
+}
