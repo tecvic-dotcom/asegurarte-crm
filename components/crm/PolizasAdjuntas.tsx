@@ -342,9 +342,9 @@ export function PolizasAdjuntas() {
               <Tarjeta
                 titulo="Asegurados nuevos"
                 valor={String(
-                  (polizas ?? []).filter((p) => p.ramo === "gmm" && Number(p.inicio.slice(0, 4)) === anio).reduce((s, p) => s + p.asegurados_nuevos, 0),
+                  (polizas ?? []).filter((p) => p.ramo === "gmm" && p.tipo === "nueva" && Number(p.inicio.slice(0, 4)) === anio).reduce((s, p) => s + p.asegurados_nuevos, 0),
                 )}
-                nota={`gastos médicos · ${anio}`}
+                nota={`gastos médicos, solo pólizas nuevas · ${anio}`}
               />
             )}
           </div>
@@ -389,7 +389,7 @@ export function PolizasAdjuntas() {
                 </tbody>
               </table>
             </div>
-            {ramo === null && <p className="mt-2 text-xs text-ink-mute">En “Todos”, los asegurados nuevos suman cualquier ramo que los tenga capturados.</p>}
+            {ramo === null && <p className="mt-2 text-xs text-ink-mute">Los asegurados nuevos salen solo de pólizas nuevas; las renovaciones no los suman.</p>}
           </section>
 
           {ramo === null && porRamoTrim.length > 0 && (
@@ -442,7 +442,7 @@ export function PolizasAdjuntas() {
                     </p>
                     <p className="text-xs text-ink-mute">
                       {p.tipo === "nueva" ? "Nueva" : "Renovación"} · inicio {fechaCorta(p.inicio)} {p.inicio.slice(0, 4)}
-                      {p.ramo === "gmm" && ` · ${p.asegurados_nuevos} asegurado${p.asegurados_nuevos === 1 ? "" : "s"} nuevo${p.asegurados_nuevos === 1 ? "" : "s"}`}
+                      {p.ramo === "gmm" && p.tipo === "nueva" && ` · ${p.asegurados_nuevos} asegurado${p.asegurados_nuevos === 1 ? "" : "s"} nuevo${p.asegurados_nuevos === 1 ? "" : "s"}`}
                     </p>
                   </div>
                   <span className="tabular-nums text-ink">
@@ -555,18 +555,18 @@ function TarjetaItem({
             <Campo etiqueta="Contratante">
               <input className="field-input" value={f.contratante} onChange={(e) => set({ contratante: e.target.value })} />
             </Campo>
-            {f.ramo === "gmm" && (
+            {f.ramo === "gmm" && f.tipo === "nueva" && (
               <>
                 <Campo etiqueta="Asegurados en la póliza">
                   <input inputMode="numeric" className="field-input" value={f.asegurados_total} onChange={(e) => set({ asegurados_total: e.target.value })} />
                 </Campo>
-                <Campo etiqueta={f.tipo === "nueva" ? "Asegurados nuevos (todos)" : "Asegurados nuevos que se agregaron"}>
+                <Campo etiqueta="Asegurados nuevos (todos los de la póliza)">
                   <input inputMode="numeric" className="field-input" value={f.asegurados_nuevos} onChange={(e) => set({ asegurados_nuevos: e.target.value })} />
                 </Campo>
               </>
             )}
           </div>
-          {f.ramo === "gmm" && f.asegurados_nombres.length > 0 && (
+          {f.ramo === "gmm" && f.tipo === "nueva" && f.asegurados_nombres.length > 0 && (
             <div>
               <button type="button" onClick={() => setVerNombres((v) => !v)} className="text-xs text-ink-mute underline">
                 {verNombres ? "Ocultar" : "Ver"} los {f.asegurados_nombres.length} asegurados que leyó la IA

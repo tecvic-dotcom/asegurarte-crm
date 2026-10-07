@@ -102,17 +102,6 @@ export async function listarAdjuntas(): Promise<PolizaAdjunta[]> {
   return [...demo().filas].sort((a, b) => b.inicio.localeCompare(a.inicio));
 }
 
-/** La vigencia más reciente de esa póliza que empiece antes de `antesDe` (para comparar asegurados). */
-export async function vigenciaAnterior(numero: string, aseguradora: string, antesDe: string): Promise<PolizaAdjunta | null> {
-  if (!numero) return null;
-  const todas = await listarAdjuntas();
-  return (
-    todas
-      .filter((p) => p.numero === numero && p.aseguradora.toLowerCase() === aseguradora.toLowerCase() && p.inicio < antesDe)
-      .sort((a, b) => b.inicio.localeCompare(a.inicio))[0] ?? null
-  );
-}
-
 export type ResultadoCrear = { ok: true; poliza: PolizaAdjunta } | { ok: false; duplicada: true };
 
 export async function crearAdjunta(d: DatosAdjunta): Promise<ResultadoCrear> {

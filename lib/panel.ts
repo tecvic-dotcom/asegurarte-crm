@@ -16,6 +16,8 @@ import { listarMovimientos } from "./finanzas";
 import { listarPolizas } from "./cobranza";
 import { resumenCobranza } from "./cobranza-reglas";
 import { listarProduccion } from "./produccion";
+import { listarAdjuntas } from "./polizas-adjuntas";
+import { resumenAdjuntas } from "./adjuntas-reglas";
 import { acumulado, corteDeDatos, crecimiento as crecPct, porAnio } from "./crecimiento-reglas";
 import { getManagerConfig } from "./manager-config";
 import { RAMOS, infoRamo } from "./ramos";
@@ -604,8 +606,46 @@ export async function numerosParaManager(config: ManagerConfig): Promise<Record<
     crecimiento_produccion = { disponible: false, motivo: "La tabla de producción aún no existe (falta 0005_produccion.sql)." };
   }
 
+  // Pólizas nuevas y renovaciones que Roberto adjuntó: prima neta por ramo, solo totales (sin nombres de clientes).
+  let polizas_adjuntas: Record<string, unknown>;
+  try {
+    const todas = await listarAdjuntas();
+    if (!todas.length) {
+      polizas_adjuntas = { disponible: false, motivo: "Aún no ha adjuntado pólizas nuevas ni renovaciones en la pestaña Pólizas." };
+    } else {
+      const anio = ctx.hoy.slice(0, 4);
+      const m = Number(ctx.hoy.slice(5, 7));
+      const t0 = Math.floor((m - 1) / 3) * 3 + 1;
+      const mm = (n: number) => String(n).padStart(2, "0");
+      const periodos = {
+        este_mes: [`${anio}-${mm(m)}-01`, `${anio}-${mm(m)}-31`],
+        este_trimestre: [`${anio}-${mm(t0)}-01`, `${anio}-${mm(t0 + 2)}-31`],
+        este_anio: [`${anio}-01-01`, `${anio}-12-31`],
+      } as const;
+      const porPeriodo = (r: Ramo | null) =>
+        Object.fromEntries(
+          Object.entries(periodos).map(([k, [d, h]]) => {
+            const x = resumenAdjuntas(todas, d, h, r);
+            return [k, { polizas_nuevas: x.nuevas, prima_neta_nueva: x.primaNueva, renovaciones: x.renovaciones, prima_neta_renovada: x.primaRenovacion }];
+          }),
+        );
+      const gmm = Object.fromEntries(
+        Object.entries(periodos).map(([k, [d, h]]) => [k, resumenAdjuntas(todas, d, h, "gmm").aseguradosNuevos]),
+      );
+      polizas_adjuntas = {
+        nota: "Prima neta anual por inicio de vigencia, solo pesos. Los asegurados nuevos de GMM salen solo de pólizas nuevas; las renovaciones no cuentan.",
+        total: porPeriodo(null),
+        por_ramo: Object.fromEntries(RAMOS.filter((r) => todas.some((p) => p.ramo === r.id)).map((r) => [r.corto, porPeriodo(r.id)])),
+        gmm_asegurados_nuevos: gmm,
+      };
+    }
+  } catch {
+    polizas_adjuntas = { disponible: false, motivo: "La pestaña Pólizas aún no tiene su tabla en Supabase (falta 0006_polizas_adjuntas.sql)." };
+  }
+
   return {
     crecimiento_produccion,
+    polizas_adjuntas,
     cobranza,
     hoy: ctx.hoy,
     meta: {

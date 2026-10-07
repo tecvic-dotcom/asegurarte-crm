@@ -10,6 +10,7 @@ import { moneda } from "./crm-data";
 import { RAMOS, infoRamo } from "./ramos";
 import { capitalizarPalabras, estadoDe, DIAS_RENOVACION } from "./cobranza-reglas";
 import { crecimiento } from "./crecimiento-reglas";
+import { resumenAdjuntas } from "./adjuntas-reglas";
 import {
   capitalizar,
   diasEntre,
@@ -33,6 +34,7 @@ import type {
   ManagerConfig,
   Movimiento,
   Poliza,
+  PolizaAdjunta,
   ProduccionMes,
   Ramo,
   ReporteClara,
@@ -69,6 +71,8 @@ export interface DatosReporte {
   polizas: Poliza[] | null;
   /** null = la tabla de producción aún no existe. */
   produccion: ProduccionMes[] | null;
+  /** null = la tabla de pólizas adjuntas aún no existe. */
+  adjuntas: PolizaAdjunta[] | null;
   config: ManagerConfig;
   cloud: boolean;
 }
@@ -479,6 +483,31 @@ export function armarReporte(tipo: TipoReporte, fecha: string | null, d: DatosRe
       }
     }
     secciones.push({ id: "produccion", titulo: "Producción de la aseguradora", icono: "flat-color-icons:line-chart", lineas });
+  }
+
+  // ---------- Pólizas nuevas y renovaciones adjuntas (prima neta por inicio de vigencia) ----------
+  if (d.adjuntas && d.adjuntas.length) {
+    const lineas: string[] = [];
+    const tot = resumenAdjuntas(d.adjuntas, act.desde, act.hasta, null);
+    const totAnt = resumenAdjuntas(d.adjuntas, ant.desde, ant.hasta, null);
+    if (!tot.nuevas && !tot.renovaciones) {
+      lineas.push(`No hay pólizas nuevas ni renovaciones adjuntas que empiecen ${esSemana ? "en esta semana" : "en este mes"}.`);
+    } else {
+      lineas.push(
+        `Prima neta nueva: ${moneda(tot.primaNueva)} en ${tot.nuevas} ${plural(tot.nuevas, "póliza nueva", "pólizas nuevas")} (${cambio(tot.primaNueva, totAnt.primaNueva, "moneda", contra)}).`,
+      );
+      lineas.push(
+        `Prima neta renovada: ${moneda(tot.primaRenovacion)} en ${tot.renovaciones} ${plural(tot.renovaciones, "renovación", "renovaciones")}.`,
+      );
+      for (const r of RAMOS) {
+        const x = resumenAdjuntas(d.adjuntas, act.desde, act.hasta, r.id);
+        if (!x.nuevas && !x.renovaciones) continue;
+        lineas.push(
+          `→ ${r.corto}: ${moneda(x.primaNueva)} nueva (${x.nuevas}) · ${moneda(x.primaRenovacion)} renovada (${x.renovaciones})${r.id === "gmm" && x.aseguradosNuevos ? ` · ${x.aseguradosNuevos} ${plural(x.aseguradosNuevos, "asegurado nuevo", "asegurados nuevos")}` : ""}.`,
+        );
+      }
+    }
+    secciones.push({ id: "polizas", titulo: "Pólizas nuevas y renovaciones", icono: "flat-color-icons:file", lineas });
   }
 
   // ---------- Focos: lo primero que hay que hacer (máximo 3) ----------

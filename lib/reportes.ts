@@ -9,6 +9,7 @@ import { listLeads, isCloud } from "./db";
 import { listarMovimientos } from "./finanzas";
 import { listarPolizas } from "./cobranza";
 import { listarProduccion } from "./produccion";
+import { listarAdjuntas } from "./polizas-adjuntas";
 import { getManagerConfig } from "./manager-config";
 import { MigracionPendienteError } from "./migracion";
 import { armarReporte, inicioDatos } from "./reportes-reglas";
@@ -28,14 +29,15 @@ async function opcional<T>(promesa: Promise<T>): Promise<T | null> {
 export async function reporteClara(tipo: TipoReporte, fecha: string | null): Promise<ReporteClara> {
   const hoy = hoyLocal();
   const rango = inicioDatos(tipo, fecha, hoy);
-  const [{ config }, leads, movimientos, polizas, produccion] = await Promise.all([
+  const [{ config }, leads, movimientos, polizas, produccion, adjuntas] = await Promise.all([
     getManagerConfig(),
     listLeads(),
     listarMovimientos(rango.desde, rango.hasta),
     opcional(listarPolizas()),
     tipo === "mes" ? opcional(listarProduccion()) : Promise.resolve(null),
+    opcional(listarAdjuntas()),
   ]);
-  return armarReporte(tipo, fecha, { hoy, leads, movimientos, polizas, produccion, config, cloud: isCloud() });
+  return armarReporte(tipo, fecha, { hoy, leads, movimientos, polizas, produccion, adjuntas, config, cloud: isCloud() });
 }
 
 /**

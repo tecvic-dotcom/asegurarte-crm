@@ -9,8 +9,7 @@ import "server-only";
  * (La IA recibe el documento completo, con nombres: es necesario para leerlo.)
  */
 import Anthropic from "@anthropic-ai/sdk";
-import { aseguradosNuevos, validarAdjunta } from "./adjuntas-reglas";
-import { vigenciaAnterior } from "./polizas-adjuntas";
+import { validarAdjunta } from "./adjuntas-reglas";
 import { esFechaValida } from "./fechas";
 import type { LecturaPoliza, TipoAdjunta } from "./types";
 
@@ -145,16 +144,6 @@ export async function leerPoliza(
   if (!inicio) avisos.push("No vi la fecha de inicio de vigencia: escríbela tú.");
   if (!Number(crudo.prima_neta)) avisos.push("No vi la prima neta: captúrala tú.");
 
-  // Asegurados nuevos (GMM): comparo contra la vigencia anterior de la MISMA póliza, si ya la cargaste.
-  let nuevos: number | null = null;
-  if (ramo === "gmm") {
-    const anterior = tipo === "renovacion" && inicio ? await vigenciaAnterior(String(crudo.numero ?? ""), String(crudo.aseguradora ?? ""), inicio) : null;
-    nuevos = aseguradosNuevos(tipo, nombres, anterior?.asegurados_nombres ?? null, nombres.length);
-    if (tipo === "renovacion" && nuevos === null) {
-      avisos.push("No encontré la vigencia anterior de esta póliza en tu CRM: captura cuántos asegurados nuevos se agregaron.");
-    }
-  }
-
   // Sin validar el ramo/fecha aquí: el formulario deja corregir lo que la IA no vio.
   const base = validarAdjunta({
     tipo,
@@ -167,7 +156,8 @@ export async function leerPoliza(
     moneda: crudo.moneda,
     asegurados_nombres: nombres,
     asegurados_total: Math.max(1, nombres.length),
-    asegurados_nuevos: nuevos ?? 0,
+    // En una renovación los asegurados no cuentan como nuevos.
+    asegurados_nuevos: tipo === "nueva" ? nombres.length : 0,
     archivo: archivo.nombre,
   });
   if (!base.ok) throw new ErrorLectura("La IA devolvió datos raros. Intenta de nuevo.");

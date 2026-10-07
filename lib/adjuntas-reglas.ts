@@ -7,34 +7,6 @@ import { esRamo } from "./ramos";
 import { esFechaValida } from "./fechas";
 import type { DatosAdjunta, PolizaAdjunta, Ramo } from "./types";
 
-/** Para comparar nombres sin importar mayúsculas, acentos ni espacios. */
-export function claveNombre(n: string): string {
-  return n
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9 ]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-/**
- * Asegurados nuevos: en una póliza nueva son todos; en una renovación, los que
- * no estaban en la vigencia anterior. Sin vigencia anterior se devuelve null
- * (no se puede saber: Roberto lo captura).
- */
-export function aseguradosNuevos(
-  tipo: DatosAdjunta["tipo"],
-  nombres: string[],
-  anterior: string[] | null,
-  total: number,
-): number | null {
-  if (tipo === "nueva") return Math.max(total, nombres.length);
-  if (!anterior || !anterior.length || !nombres.length) return null;
-  const previos = new Set(anterior.map(claveNombre));
-  return nombres.filter((n) => !previos.has(claveNombre(n))).length;
-}
-
 function texto(v: unknown, max: number): string {
   return typeof v === "string" ? v.trim().slice(0, max) : "";
 }
@@ -71,7 +43,8 @@ export function validarAdjunta(entrada: unknown): ResultadoAdjunta {
       prima_neta: Math.round(prima * 100) / 100,
       moneda: e.moneda === "DLS" ? "DLS" : "MN",
       asegurados_total: total,
-      asegurados_nuevos: entero(e.asegurados_nuevos, 0, total, e.tipo === "nueva" ? total : 0),
+      // Solo las pólizas NUEVAS suman asegurados nuevos: en una renovación nunca cuentan.
+      asegurados_nuevos: e.tipo === "nueva" ? entero(e.asegurados_nuevos, 0, total, total) : 0,
       asegurados_nombres: nombres,
       notas: texto(e.notas, 500),
       archivo: texto(e.archivo, 200),
@@ -116,11 +89,11 @@ export function porPeriodo(polizas: PolizaAdjunta[], anio: number, ramo: Ramo | 
     if (p.tipo === "nueva") {
       f.nuevas++;
       f.primaNueva += p.prima_neta;
+      f.aseguradosNuevos += p.asegurados_nuevos;
     } else {
       f.renovaciones++;
       f.primaRenovacion += p.prima_neta;
     }
-    f.aseguradosNuevos += p.asegurados_nuevos;
   }
   return filas;
 }
@@ -143,4 +116,31 @@ export function aniosConPolizas(polizas: PolizaAdjunta[], anioActual: number): n
   const s = new Set(polizas.map((p) => Number(p.inicio.slice(0, 4))));
   s.add(anioActual);
   return [...s].sort((a, b) => b - a);
+}
+
+export interface ResumenAdjuntas {
+  nuevas: number;
+  primaNueva: number;
+  renovaciones: number;
+  primaRenovacion: number;
+  aseguradosNuevos: number;
+}
+
+/** Totales de las pólizas cuyo inicio cae entre dos fechas (inclusive), en pesos. Para RORO y Clara. */
+export function resumenAdjuntas(polizas: PolizaAdjunta[], desde: string, hasta: string, ramo: Ramo | null): ResumenAdjuntas {
+  const r: ResumenAdjuntas = { nuevas: 0, primaNueva: 0, renovaciones: 0, primaRenovacion: 0, aseguradosNuevos: 0 };
+  for (const p of polizas) {
+    if (p.moneda !== "MN" || p.inicio < desde || p.inicio > hasta || (ramo !== null && p.ramo !== ramo)) continue;
+    if (p.tipo === "nueva") {
+      r.nuevas++;
+      r.primaNueva += p.prima_neta;
+      r.aseguradosNuevos += p.asegurados_nuevos;
+    } else {
+      r.renovaciones++;
+      r.primaRenovacion += p.prima_neta;
+    }
+  }
+  r.primaNueva = Math.round(r.primaNueva);
+  r.primaRenovacion = Math.round(r.primaRenovacion);
+  return r;
 }
