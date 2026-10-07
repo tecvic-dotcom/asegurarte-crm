@@ -31,7 +31,7 @@ type Vista = "kanban" | "tabla";
 
 export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
   const [leads, setLeads] = useState<Lead[]>(inicial);
-  const [pestana, setPestana] = useState<Pestana>("tablero");
+  const [pestana, setPestana] = useState<Pestana>("seguimiento");
   const [vista, setVista] = useState<Vista>("kanban");
   const [busca, setBusca] = useState("");
   const [filtroEtapa, setFiltroEtapa] = useState<EtapaId | "todas">("todas");

@@ -38,9 +38,9 @@ export const GRUPOS_MENU: GrupoMenu[] = [
     titulo: "Ventas",
     soloAdmin: false,
     opciones: [
+      { id: "seguimiento", nombre: "Hoy", pista: "A quién darle seguimiento", icono: "flat-color-icons:alarm-clock" },
       { id: "tablero", nombre: "Tablero", pista: "Prospectos por etapa", icono: "flat-color-icons:flow-chart" },
       { id: "contactos", nombre: "Contactos", pista: "Tu lista completa", icono: "flat-color-icons:grid" },
-      { id: "seguimiento", nombre: "Hoy", pista: "A quién darle seguimiento", icono: "flat-color-icons:alarm-clock" },
       { id: "campanas", nombre: "Campañas", pista: "Qué anuncio te trae clientes", icono: "flat-color-icons:advertising" },
       { id: "reportes", nombre: "Embudo", pista: "Conversión y origen", icono: "flat-color-icons:statistics" },
     ],
