@@ -18,7 +18,6 @@ import { Crecimiento } from "./Crecimiento";
 import { PolizasAdjuntas } from "./PolizasAdjuntas";
 import { SeguimientoSofi } from "./SeguimientoSofi";
 import { ReportesClara } from "./ReportesClara";
-import { SlotRoro } from "./SlotRoro";
 import { MenuLateral, opcionDe, type Pestana } from "./MenuLateral";
 import type { Lead, Sesion, EtapaId, DatosPoliza } from "@/lib/types";
 
@@ -29,8 +28,6 @@ interface CRMAppProps {
 }
 
 type Vista = "kanban" | "tabla";
-/** En estas pestañas no se muestra el reporte del equipo digital de arriba (el tablero queda limpio; en las propias pestañas ya está). */
-const SIN_SLOT: Pestana[] = ["tablero", "panel", "roro", "sofi", "valeri", "clara", "polizas"];
 
 export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
   const [leads, setLeads] = useState<Lead[]>(inicial);
@@ -186,17 +183,6 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
             <Metrica icono="flat-color-icons:approval" label="Clientes" valor={String(pipeline.length)} />
             <Metrica icono="flat-color-icons:money-transfer" label="Ganado" valor={moneda(valorGanado)} />
           </div>
-
-          {/* Tu equipo digital (Módulo 3 · AI Manager): RORO, Valeri y Clara con su reporte de hoy.
-              En sus propias pestañas no se repite (ahí ya está). */}
-          {esAdmin && !SIN_SLOT.includes(pestana) && (
-            <SlotRoro
-              onPanel={() => elegir("panel")}
-              onRoro={() => elegir("roro")}
-              onValeri={() => elegir("valeri")}
-              onClara={() => elegir("clara")}
-            />
-          )}
 
           {(pestana === "tablero" || pestana === "contactos") && (
             <div className="mb-4 flex flex-wrap items-center gap-2">
