@@ -31,6 +31,10 @@ import type {
   ResumenCobranza,
   ProduccionMes,
   ReporteClara,
+  PolizaAdjunta,
+  DatosAdjunta,
+  LecturaPoliza,
+  TipoAdjunta,
   TipoReporte,
 } from "./types";
 
@@ -275,6 +279,31 @@ export const crmPolizaCancelar = (id: string, cancelada: boolean) => accionCobra
 export async function crmCrecimiento(): Promise<{ filas: ProduccionMes[]; cloud: boolean }> {
   const res = await fetch("/api/crm/crecimiento", { cache: "no-store" });
   return (await jsonOErrorCRM(res)) as { filas: ProduccionMes[]; cloud: boolean };
+}
+
+// ---- Pólizas adjuntas: nuevas y renovaciones (solo admin) ----
+
+export async function crmAdjuntas(): Promise<{ polizas: PolizaAdjunta[]; cloud: boolean }> {
+  const res = await fetch("/api/crm/polizas-adjuntas", { cache: "no-store" });
+  return (await jsonOErrorCRM(res)) as { polizas: PolizaAdjunta[]; cloud: boolean };
+}
+
+/** Manda UN archivo a la IA para que lo lea (no guarda nada). */
+export async function crmLeerPoliza(archivo: File, tipo: TipoAdjunta): Promise<LecturaPoliza> {
+  const form = new FormData();
+  form.append("archivo", archivo);
+  form.append("tipo", tipo);
+  const res = await fetch("/api/crm/polizas-adjuntas/leer", { method: "POST", body: form });
+  return (await jsonOErrorCRM(res)) as LecturaPoliza;
+}
+
+export async function crmGuardarAdjunta(poliza: DatosAdjunta): Promise<PolizaAdjunta> {
+  const data = await jsonOErrorCRM(await postJSON("/api/crm/polizas-adjuntas", { accion: "crear", poliza }));
+  return (data as { poliza: PolizaAdjunta }).poliza;
+}
+
+export async function crmEliminarAdjunta(id: string): Promise<void> {
+  await jsonOErrorCRM(await postJSON("/api/crm/polizas-adjuntas", { accion: "eliminar", id }));
 }
 
 // ---- Reportes: Clara (solo admin) ----

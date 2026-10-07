@@ -15,6 +15,7 @@ import { PanelMando } from "./PanelMando";
 import { ManagerIA } from "./ManagerIA";
 import { Cobranza } from "./Cobranza";
 import { Crecimiento } from "./Crecimiento";
+import { PolizasAdjuntas } from "./PolizasAdjuntas";
 import { ReportesClara } from "./ReportesClara";
 import { SlotRoro } from "./SlotRoro";
 import { MenuLateral, opcionDe, type Pestana } from "./MenuLateral";
@@ -28,7 +29,7 @@ interface CRMAppProps {
 
 type Vista = "kanban" | "tabla";
 /** En estas pestañas no se repite el reporte de arriba (ahí ya está). */
-const SIN_SLOT: Pestana[] = ["panel", "roro", "valeri", "clara"];
+const SIN_SLOT: Pestana[] = ["panel", "roro", "valeri", "clara", "polizas"];
 
 export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
   const [leads, setLeads] = useState<Lead[]>(inicial);
@@ -240,6 +241,7 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
           {pestana === "reportes" && <Reportes leads={leads} />}
           {esAdmin && pestana === "panel" && <PanelMando onVerSinRamo={verGanadasSinRamo} />}
           {esAdmin && pestana === "crecimiento" && <Crecimiento />}
+          {esAdmin && pestana === "polizas" && <PolizasAdjuntas />}
           {esAdmin && pestana === "roro" && <ManagerIA sesion={sesion} onValeri={() => elegir("valeri")} onClara={() => elegir("clara")} />}
           {esAdmin && pestana === "valeri" && (
             <Cobranza

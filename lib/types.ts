@@ -436,3 +436,37 @@ export interface ResumenCobranza {
   /** La línea diaria de Valeri. */
   frase: string;
 }
+
+// ---- Pólizas adjuntas (nuevas y renovaciones leídas con IA) ----
+
+export type TipoAdjunta = "nueva" | "renovacion";
+
+export interface DatosAdjunta {
+  tipo: TipoAdjunta;
+  ramo: Ramo;
+  aseguradora: string;
+  numero: string;
+  contratante: string;
+  /** Inicio de vigencia AAAA-MM-DD (de aquí sale el mes del reporte). */
+  inicio: string;
+  /** Prima neta anual (sin derechos ni IVA). */
+  prima_neta: number;
+  moneda: "MN" | "DLS";
+  asegurados_total: number;
+  /** Asegurados que se sumaron (GMM). */
+  asegurados_nuevos: number;
+  asegurados_nombres: string[];
+  notas: string;
+  archivo: string;
+}
+
+export interface PolizaAdjunta extends DatosAdjunta {
+  id: string;
+  creado_en: string;
+}
+
+/** Lo que la IA leyó del PDF, para que Roberto lo revise antes de guardar. */
+export interface LecturaPoliza {
+  datos: DatosAdjunta;
+  avisos: string[];
+}

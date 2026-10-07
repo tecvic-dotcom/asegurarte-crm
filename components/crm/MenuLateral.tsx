@@ -11,6 +11,7 @@ export type Pestana =
   | "reportes"
   | "panel"
   | "crecimiento"
+  | "polizas"
   | "roro"
   | "valeri"
   | "clara";
@@ -50,6 +51,7 @@ export const GRUPOS_MENU: GrupoMenu[] = [
     opciones: [
       { id: "panel", nombre: "Panel de Mando", pista: "Tu meta y tu dinero", icono: "flat-color-icons:combo-chart" },
       { id: "crecimiento", nombre: "Crecimiento", pista: "Producción por año y ramo", icono: "flat-color-icons:line-chart" },
+      { id: "polizas", nombre: "Pólizas", pista: "Adjunta nuevas y renovaciones", icono: "flat-color-icons:file" },
     ],
   },
   {

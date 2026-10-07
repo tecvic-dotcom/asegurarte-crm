@@ -30,3 +30,6 @@ const CODIGOS_FALTANTES = new Set(["42P01", "42703", "42883", "PGRST202", "PGRST
 export function faltaMigracion(error: { code?: string } | null | undefined): boolean {
   return Boolean(error?.code && CODIGOS_FALTANTES.has(error.code));
 }
+
+export const MENSAJE_MIGRACION_ADJUNTAS =
+  "Falta un paso para encender tu pestaña de Pólizas: abre Supabase → SQL Editor → New query, pega el archivo supabase/migrations/0006_polizas_adjuntas.sql y dale Run.";
