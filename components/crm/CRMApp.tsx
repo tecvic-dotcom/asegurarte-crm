@@ -29,8 +29,8 @@ interface CRMAppProps {
 }
 
 type Vista = "kanban" | "tabla";
-/** En estas pestañas no se repite el reporte de arriba (ahí ya está). */
-const SIN_SLOT: Pestana[] = ["panel", "roro", "sofi", "valeri", "clara", "polizas"];
+/** En estas pestañas no se muestra el reporte del equipo digital de arriba (el tablero queda limpio; en las propias pestañas ya está). */
+const SIN_SLOT: Pestana[] = ["tablero", "panel", "roro", "sofi", "valeri", "clara", "polizas"];
 
 export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
   const [leads, setLeads] = useState<Lead[]>(inicial);
