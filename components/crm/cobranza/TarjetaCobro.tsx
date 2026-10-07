@@ -20,6 +20,7 @@ interface TarjetaCobroProps {
   onWhatsApp: () => void;
   onPagada: () => void;
   onPromesa: (fecha: string) => void;
+  onCancelada: () => void;
   onRecordada: () => void;
   onEditar: () => void;
   onCopiado: () => void;
@@ -34,7 +35,7 @@ const TITULO_MOTIVO = {
 } as const;
 
 /** Un cobro pendiente: quién, cuánto, por qué y el mensaje listo para mandar. */
-export function TarjetaCobro({ pendiente, onWhatsApp, onPagada, onPromesa, onRecordada, onEditar, onCopiado }: TarjetaCobroProps) {
+export function TarjetaCobro({ pendiente, onWhatsApp, onPagada, onPromesa, onCancelada, onRecordada, onEditar, onCopiado }: TarjetaCobroProps) {
   const { poliza: p, estado, dias, motivo, recordadaHoy } = pendiente;
   const [promesaAbierta, setPromesaAbierta] = useState(false);
   const [mensajeCompleto, setMensajeCompleto] = useState(false);
@@ -118,6 +119,15 @@ export function TarjetaCobro({ pendiente, onWhatsApp, onPagada, onPromesa, onRec
               aria-expanded={promesaAbierta}
             >
               <Icon icon="flat-color-icons:clock" width={18} aria-hidden /> Promesa
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (window.confirm(`¿Marcar la póliza de ${p.asegurado} como cancelada? Valeri dejará de cobrarla (puedes reactivarla desde "Editar póliza").`)) onCancelada();
+              }}
+              className="btn-ghost col-span-2 w-full text-sm sm:col-span-1 sm:w-auto"
+            >
+              <Icon icon="flat-color-icons:cancel" width={18} aria-hidden /> Cancelada
             </button>
           </>
         )}

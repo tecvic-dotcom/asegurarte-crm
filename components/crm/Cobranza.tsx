@@ -294,6 +294,9 @@ export function Cobranza({ prefill, onPrefillUsado }: CobranzaProps) {
                           : `¡Pagó! ${p.asegurado} queda al corriente.`,
                       )
                     }
+                    onCancelada={() =>
+                      void accion(crmPolizaCancelar(pend.poliza.id, true), (p) => `${p.asegurado}: cancelada, Valeri ya no la cobra.`)
+                    }
                     onPromesa={(fecha) =>
                       void accion(crmPolizaPromesa(pend.poliza.id, fecha), (p) => `Promesa anotada: ${p.asegurado} paga el ${fechaLarga(fecha)}.`)
                     }
