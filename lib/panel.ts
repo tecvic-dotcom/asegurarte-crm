@@ -17,6 +17,7 @@ import { listarPolizas } from "./cobranza";
 import { resumenCobranza } from "./cobranza-reglas";
 import { listarProduccion } from "./produccion";
 import { listarAdjuntas } from "./polizas-adjuntas";
+import { resumenSeguimiento } from "./seguimiento-reglas";
 import { resumenAdjuntas } from "./adjuntas-reglas";
 import { acumulado, corteDeDatos, crecimiento as crecPct, porAnio } from "./crecimiento-reglas";
 import { getManagerConfig } from "./manager-config";
@@ -643,9 +644,21 @@ export async function numerosParaManager(config: ManagerConfig): Promise<Record<
     polizas_adjuntas = { disponible: false, motivo: "La pestaña Pólizas aún no tiene su tabla en Supabase (falta 0006_polizas_adjuntas.sql)." };
   }
 
+  // Lo que ve Sofi (seguimiento a prospectos), solo en totales.
+  const sg = resumenSeguimiento(ctx.leads, ctx.hoy);
+  const seguimiento = {
+    prospectos_activos: sg.activos,
+    les_toca_hoy: sg.porContactar,
+    urgentes: sg.urgentes,
+    nuevos_sin_contactar: sg.nuevosSinContacto,
+    sin_whatsapp: sg.sinWhatsapp,
+    al_corriente: sg.alCorriente,
+  };
+
   return {
     crecimiento_produccion,
     polizas_adjuntas,
+    seguimiento,
     cobranza,
     hoy: ctx.hoy,
     meta: {

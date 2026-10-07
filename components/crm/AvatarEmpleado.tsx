@@ -2,12 +2,13 @@
 
 import { useId } from "react";
 
-export type VarianteAvatar = "roro" | "valeri" | "clara";
+export type VarianteAvatar = "roro" | "valeri" | "clara" | "sofi";
 
 const ESTILO: Record<VarianteAvatar, { claro: string; oscuro: string; ojos: string; nombre: string }> = {
   roro: { claro: "var(--brand-2)", oscuro: "var(--brand)", ojos: "var(--sky)", nombre: "RORO, tu gerente digital" },
   valeri: { claro: "var(--violet)", oscuro: "var(--brand)", ojos: "var(--ink)", nombre: "Valeri, tu cobranza digital" },
   clara: { claro: "var(--sky)", oscuro: "var(--brand-deep)", ojos: "var(--ink)", nombre: "Clara, tus reportes" },
+  sofi: { claro: "var(--green)", oscuro: "var(--brand)", ojos: "var(--ink)", nombre: "Sofi, tu seguimiento a prospectos" },
 };
 
 interface AvatarEmpleadoProps {
@@ -21,7 +22,7 @@ interface AvatarEmpleadoProps {
 /**
  * La cara de tus empleados digitales: flotan, parpadean y "hablan".
  * RORO (gerente) lleva corbata; Valeri (cobranza) lleva audífonos para sus llamadas;
- * Clara (reportes) lleva lentes y su portapapeles con la gráfica.
+ * Clara (reportes) lleva lentes y su portapapeles con la gráfica; Sofi (seguimiento) lleva coleta y su globo de mensaje.
  * Solo SVG + animaciones baratas (transform/opacity): fluido en el celular.
  */
 export function AvatarEmpleado({ variante = "roro", tamano = 72, hablando = false, enLinea = true }: AvatarEmpleadoProps) {
@@ -46,6 +47,12 @@ export function AvatarEmpleado({ variante = "roro", tamano = 72, hablando = fals
         ) : variante === "valeri" ? (
           // Diadema de los audífonos
           <path d="M17 34 Q17 6 50 6 Q83 6 83 34" fill="none" strokeWidth="4" strokeLinecap="round" style={{ stroke: "var(--ink-soft)" }} />
+        ) : variante === "sofi" ? (
+          // Coleta de lado de Sofi
+          <g style={{ fill: e.oscuro }}>
+            <circle cx="50" cy="14" r="6" />
+            <path d="M54 14 Q82 6 84 30 Q76 18 56 20 Z" />
+          </g>
         ) : (
           // Chongo de Clara
           <circle cx="50" cy="13" r="8" style={{ fill: e.oscuro }} />
@@ -92,6 +99,14 @@ export function AvatarEmpleado({ variante = "roro", tamano = 72, hablando = fals
             <rect x="40" y="91" width="4" height="5" rx="1" style={{ fill: "var(--brand)" }} />
             <rect x="48" y="87" width="4" height="9" rx="1" style={{ fill: "var(--brand)" }} />
             <rect x="56" y="84" width="4" height="12" rx="1" className="roro-foco" style={{ fill: "var(--green)" }} />
+          </g>
+        ) : variante === "sofi" ? (
+          // Globo de mensaje con puntos "escribiendo"
+          <g>
+            <path d="M36 80 H64 Q69 80 69 85 V92 Q69 97 64 97 H52 L45 102 V97 H36 Q31 97 31 92 V85 Q31 80 36 80 Z" style={{ fill: "var(--plata)" }} />
+            <circle cx="41" cy="88.5" r="2" style={{ fill: "var(--brand)" }} />
+            <circle cx="50" cy="88.5" r="2" className="roro-foco" style={{ fill: "var(--green)" }} />
+            <circle cx="59" cy="88.5" r="2" style={{ fill: "var(--brand)" }} />
           </g>
         ) : (
           <>

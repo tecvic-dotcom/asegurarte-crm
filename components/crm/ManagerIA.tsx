@@ -49,7 +49,7 @@ function historialPara(mensajes: Mensaje[]): TurnoManager[] {
  * te recomienda qué hacer, con el porqué, el riesgo y la acción de hoy.
  * Él propone; tú decides.
  */
-export function ManagerIA({ sesion, onValeri, onClara }: { sesion: Sesion; onValeri: () => void; onClara: () => void }) {
+export function ManagerIA({ sesion, onSofi, onValeri, onClara }: { sesion: Sesion; onSofi: () => void; onValeri: () => void; onClara: () => void }) {
   const [estado, setEstado] = useState<ManagerEstado | null>(null);
   const [errorCarga, setErrorCarga] = useState<ErrorCRM | Error | null>(null);
   const [mensajes, setMensajes] = useState<Mensaje[]>(leerChat);
@@ -288,7 +288,7 @@ export function ManagerIA({ sesion, onValeri, onClara }: { sesion: Sesion; onVal
 
       {estado && <EditorCerebro estado={estado} onGuardado={(c) => setEstado({ ...estado, config: c })} />}
 
-      <EquipoDigital nombre={config?.nombre ?? "RORO"} onValeri={onValeri} onClara={onClara} />
+      <EquipoDigital nombre={config?.nombre ?? "RORO"} onSofi={onSofi} onValeri={onValeri} onClara={onClara} />
     </section>
   );
 }
@@ -461,17 +461,26 @@ function EditorCerebro({ estado, onGuardado }: { estado: ManagerEstado; onGuarda
   );
 }
 
-function EquipoDigital({ nombre, onValeri, onClara }: { nombre: string; onValeri: () => void; onClara: () => void }) {
+function EquipoDigital({ nombre, onSofi, onValeri, onClara }: { nombre: string; onSofi: () => void; onValeri: () => void; onClara: () => void }) {
   return (
     <div className="glass rounded-2xl p-4 sm:p-5">
       <p className="font-semibold text-ink">Tu equipo digital</p>
-      <p className="mb-3 text-xs text-ink-mute">Tu gerente, tu cobranza y tus reportes ya trabajan juntos.</p>
-      <div className="grid grid-cols-3 gap-2 text-center text-xs">
+      <p className="mb-3 text-xs text-ink-mute">Tu gerente, tu seguimiento, tu cobranza y tus reportes ya trabajan juntos.</p>
+      <div className="grid grid-cols-2 gap-2 text-center text-xs sm:grid-cols-4">
         <div className="flex flex-col items-center gap-1.5 rounded-xl border border-brand-2/50 bg-brand/10 p-3">
           <AvatarEmpleado variante="roro" tamano={40} />
           <span className="font-semibold text-ink">{nombre}</span>
           <span className="text-ink-mute">Gerente · activo</span>
         </div>
+        <button
+          type="button"
+          onClick={onSofi}
+          className="flex flex-col items-center gap-1.5 rounded-xl border border-brand-2/50 bg-brand/10 p-3 hover:border-brand-2"
+        >
+          <AvatarEmpleado variante="sofi" tamano={40} />
+          <span className="font-semibold text-ink">Sofi</span>
+          <span className="text-ink-mute">Seguimiento · en línea</span>
+        </button>
         <button
           type="button"
           onClick={onValeri}
@@ -492,7 +501,7 @@ function EquipoDigital({ nombre, onValeri, onClara }: { nombre: string; onValeri
         </button>
       </div>
       <p className="mt-3 text-xs text-ink-mute">
-        Para sumar otro, pídeselo a Claude Code: “créame mi empleado digital de seguimiento a prospectos, que viva junto a {nombre}”.
+        Para sumar otro, pídeselo a Claude Code: “créame mi empleado digital de ___, que viva junto a {nombre}”.
       </p>
     </div>
   );
