@@ -9,7 +9,6 @@ import { TablaLeads } from "./TablaLeads";
 import { LeadPanel } from "./LeadPanel";
 import { Contactos } from "./Contactos";
 import { Seguimiento } from "./Seguimiento";
-import { Campanas } from "./Campanas";
 import { Reportes } from "./Reportes";
 import { PanelMando } from "./PanelMando";
 import { ManagerIA } from "./ManagerIA";
@@ -234,7 +233,6 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
               <TablaLeads leads={filtrados} onAbrir={setSeleccion} />
             ))}
           {pestana === "contactos" && <Contactos leads={filtrados} onAbrir={setSeleccion} onCambio={recargar} />}
-          {pestana === "campanas" && <Campanas leads={leads} />}
           {pestana === "reportes" && <Reportes leads={leads} />}
           {esAdmin && pestana === "panel" && <PanelMando onVerSinRamo={verGanadasSinRamo} />}
           {esAdmin && pestana === "crecimiento" && <Crecimiento />}
