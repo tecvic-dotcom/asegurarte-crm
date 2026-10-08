@@ -8,6 +8,7 @@ import { fechaCorta } from "@/lib/fechas";
 import type { CifraReporte, ReporteClara, TipoReporte } from "@/lib/types";
 import { AvatarEmpleado } from "./AvatarEmpleado";
 import { AvisoMigracion } from "./panel/AvisoMigracion";
+import { BonoBIC } from "./BonoBIC";
 
 const COLOR_TONO: Record<CifraReporte["tono"], string> = {
   bien: "var(--green)",
@@ -40,6 +41,8 @@ async function copiar(texto: string): Promise<boolean> {
 export function ReportesClara() {
   const [tipo, setTipo] = useState<TipoReporte>("mes");
   const [fecha, setFecha] = useState<string | null>(null);
+  // Tercera pestaña: el bono de AXA (BIC) por trimestre.
+  const [bono, setBono] = useState(false);
   const [resultado, setResultado] = useState<{ clave: string; reporte: ReporteClara | null; error: Error | null } | null>(null);
   const [copiado, setCopiado] = useState(false);
   const clave = `${tipo}|${fecha ?? ""}`;
@@ -94,14 +97,27 @@ export function ReportesClara() {
             <button
               key={t}
               type="button"
-              aria-pressed={tipo === t}
-              onClick={() => cambiarTipo(t)}
-              className={`min-h-[40px] rounded-lg px-4 text-sm ${tipo === t ? "bg-brand/25 font-semibold text-ink" : "text-ink-mute hover:text-ink"}`}
+              aria-pressed={!bono && tipo === t}
+              onClick={() => {
+                setBono(false);
+                cambiarTipo(t);
+              }}
+              className={`min-h-[40px] rounded-lg px-4 text-sm ${!bono && tipo === t ? "bg-brand/25 font-semibold text-ink" : "text-ink-mute hover:text-ink"}`}
             >
               {t === "trimestre" ? "Trimestral" : "Mensual"}
             </button>
           ))}
+          <button
+            type="button"
+            aria-pressed={bono}
+            onClick={() => setBono(true)}
+            className={`min-h-[40px] rounded-lg px-4 text-sm ${bono ? "bg-brand/25 font-semibold text-ink" : "text-ink-mute hover:text-ink"}`}
+          >
+            Bono AXA
+          </button>
         </div>
+        {!bono && (
+          <>
         <div className="flex items-center gap-1">
           <button
             type="button"
@@ -145,9 +161,13 @@ export function ReportesClara() {
             <Icon icon="flat-color-icons:print" width={18} aria-hidden /> PDF
           </button>
         </div>
+          </>
+        )}
       </div>
 
-      {error instanceof ErrorCRM && error.migracion ? (
+      {bono ? (
+        <BonoBIC />
+      ) : error instanceof ErrorCRM && error.migracion ? (
         <AvisoMigracion
           onListo={() => void cargar()}
           archivo={error.archivo}
