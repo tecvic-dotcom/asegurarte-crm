@@ -8,7 +8,7 @@
  */
 import { moneda } from "./crm-data";
 import { RAMOS, infoRamo } from "./ramos";
-import { capitalizarPalabras, estadoDe, DIAS_RENOVACION } from "./cobranza-reglas";
+import { estadoDe, DIAS_RENOVACION } from "./cobranza-reglas";
 import { crecimiento } from "./crecimiento-reglas";
 import { resumenAdjuntas } from "./adjuntas-reglas";
 import {
@@ -81,39 +81,49 @@ export interface DatosReporte {
 // Periodos
 // ----------------------------------------------------------------------------
 
-/** Lunes de la semana de una fecha (la semana va de lunes a domingo). */
-export function lunesDe(f: string): string {
-  const [y, m, d] = f.split("-").map(Number);
-  const desdeLunes = (new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7;
-  return sumarDias(f, -desdeLunes);
+/** Primer día del trimestre (ene, abr, jul u oct) de una fecha. */
+function inicioTrimestre(f: string): string {
+  const m = Number(f.slice(5, 7));
+  return `${f.slice(0, 4)}-${String(Math.floor((m - 1) / 3) * 3 + 1).padStart(2, "0")}-01`;
+}
+
+function finTrimestre(desde: string): string {
+  return ultimoDeMes(sumarMeses(desde, 2));
+}
+
+/** "T4 2026" */
+function etiquetaTrimestre(desde: string): string {
+  return `T${Math.floor((Number(desde.slice(5, 7)) - 1) / 3) + 1} ${desde.slice(0, 4)}`;
 }
 
 /**
- * El periodo de un reporte. Sin fecha: la última semana (o mes) YA CERRADA.
+ * El periodo de un reporte. Sin fecha: el último mes (o trimestre) YA CERRADO.
  * Si el periodo va en curso, se compara contra los mismos días del anterior.
  */
 export function periodoReporte(tipo: TipoReporte, fecha: string | null, hoy: string): PeriodoReporte {
-  if (tipo === "semana") {
-    const actual = lunesDe(hoy);
-    let desde = fecha ? lunesDe(fecha) : sumarDias(actual, -7);
+  if (tipo === "trimestre") {
+    const actual = inicioTrimestre(hoy);
+    let desde = fecha ? inicioTrimestre(fecha) : sumarMeses(actual, -3);
     if (desde > actual) desde = actual;
-    const fin = sumarDias(desde, 6);
+    const fin = finTrimestre(desde);
     const enCurso = fin >= hoy;
     const hasta = enCurso ? hoy : fin;
-    const dias = diasIncluidos(desde, hasta);
-    const antDesde = sumarDias(desde, -7);
+    const antDesde = sumarMeses(desde, -3);
+    const finAnt = finTrimestre(antDesde);
+    const antHasta = enCurso ? minFecha(sumarDias(antDesde, diasIncluidos(desde, hasta) - 1), finAnt) : finAnt;
+    const etAnt = etiquetaTrimestre(antDesde);
     return {
       tipo,
       desde,
       hasta,
       fin,
       antDesde,
-      antHasta: sumarDias(antDesde, dias - 1),
+      antHasta,
       enCurso,
-      titulo: `Semana del ${fechaCorta(desde)} al ${fechaCorta(fin)}`,
-      comparadoCon: dias < 7 ? `los mismos ${dias} días de la semana anterior` : "la semana anterior",
+      titulo: `${etiquetaTrimestre(desde)} · ${mesCorto(desde)}–${mesCorto(fin)}`,
+      comparadoCon: hasta < fin ? `${etAnt} (primeros ${diasIncluidos(antDesde, antHasta)} días)` : etAnt,
       anterior: antDesde,
-      siguiente: desde < actual ? sumarDias(desde, 7) : null,
+      siguiente: desde < actual ? sumarMeses(desde, 3) : null,
     };
   }
 
@@ -241,14 +251,14 @@ function avanceMeta(d: DatosReporte, corte: string) {
   };
 }
 
-/** Producción (MN) de un mes, total o de un ramo. */
-function produccionMes(filas: ProduccionMes[], mes: string, ramo: Ramo | null) {
+/** Producción (MN) de uno o varios meses ('AAAA-MM'), total o de un ramo. */
+function produccionMeses(filas: ProduccionMes[], meses: string[], ramo: Ramo | null) {
   let prima = 0;
   let comision = 0;
   let pagos = 0;
   let ultimoDia: string | null = null;
   for (const f of filas) {
-    if (f.moneda !== "MN" || f.mes !== mes || (ramo && f.ramo !== ramo)) continue;
+    if (f.moneda !== "MN" || !meses.includes(f.mes) || (ramo && f.ramo !== ramo)) continue;
     prima += f.prima;
     comision += f.comision;
     pagos += f.pagos;
@@ -278,7 +288,8 @@ export function armarReporte(tipo: TipoReporte, fecha: string | null, d: DatosRe
   const act: Rango = { desde: p.desde, hasta: p.hasta };
   const ant: Rango = { desde: p.antDesde, hasta: p.antHasta };
   const contra = p.comparadoCon;
-  const esSemana = tipo === "semana";
+  const esTrim = tipo === "trimestre";
+  const nombrePeriodo = esTrim ? "este trimestre" : "este mes";
   const secciones: SeccionReporte[] = [];
   const avisos: string[] = [];
 
@@ -291,7 +302,7 @@ export function armarReporte(tipo: TipoReporte, fecha: string | null, d: DatosRe
   ventas.push(
     ganadas.length
       ? `Cerraste ${ganadas.length} ${plural(ganadas.length, "póliza", "pólizas")}: ${porRamo(ganadas)}.`
-      : `No cerraste pólizas ${esSemana ? "en esta semana" : "en este mes"}.`,
+      : `No cerraste pólizas en ${nombrePeriodo}.`,
   );
   if (ritmo >= 0.5) {
     const r = Math.round(ritmo);
@@ -368,11 +379,6 @@ export function armarReporte(tipo: TipoReporte, fecha: string | null, d: DatosRe
     if (gastos.length) dinero.push(`En qué se fue: ${gastos.map((g) => `${g.categoria} ${moneda(g.monto)}`).join(" · ")}.`);
     const porConfirmar = movsPeriodo.filter((m) => m.estado === "por_confirmar").length;
     if (porConfirmar) dinero.push(`${porConfirmar} ${plural(porConfirmar, "movimiento sigue", "movimientos siguen")} “por confirmar”.`);
-    if (esSemana && movsPeriodo.some((m) => m.concepto.startsWith("Comisiones AXA"))) {
-      avisos.push(
-        "Las comisiones de los reportes de la aseguradora se registran en un solo día al cierre de cada mes; por eso la semana que cierra mes se ve más alta.",
-      );
-    }
   }
   secciones.push({ id: "dinero", titulo: "Dinero", icono: "flat-color-icons:money-transfer", lineas: dinero });
 
@@ -406,7 +412,7 @@ export function armarReporte(tipo: TipoReporte, fecha: string | null, d: DatosRe
           (promesas ? ` · ${promesas} ${plural(promesas, "promesa", "promesas")} de pago` : "") +
           ".",
       );
-      const ventana = esSemana ? 7 : 30;
+      const ventana = 30;
       const limite = sumarDias(d.hoy, ventana - 1);
       const vencen = activas
         .filter((x) => x.estatus_manual !== "promesa" && x.fecha_limite_pago && x.fecha_limite_pago >= d.hoy && x.fecha_limite_pago <= limite)
@@ -418,12 +424,6 @@ export function armarReporte(tipo: TipoReporte, fecha: string | null, d: DatosRe
           ? `Vencen en los próximos ${ventana} días: ${porVencerN} (${moneda(porVencerMonto)}).`
           : `Nadie vence en los próximos ${ventana} días.`,
       );
-      if (esSemana) {
-        for (const x of vencen.slice(0, 5)) {
-          cobranza.push(`→ ${capitalizarPalabras(x.asegurado)}: ${moneda(x.monto_pago)}, vence el ${fechaCorta(x.fecha_limite_pago as string)}.`);
-        }
-        if (vencen.length > 5) cobranza.push(`→ y ${vencen.length - 5} más en Valeri.`);
-      }
       const renuevan = activas.filter((x) => {
         if (!x.renovacion) return false;
         const r = diasEntre(d.hoy, x.renovacion);
@@ -439,41 +439,44 @@ export function armarReporte(tipo: TipoReporte, fecha: string | null, d: DatosRe
   }
 
   // ---------- Producción de la aseguradora (solo en el mensual) ----------
-  let prod: ReturnType<typeof produccionMes> | null = null;
-  let prodAnt: ReturnType<typeof produccionMes> | null = null;
+  let prod: ReturnType<typeof produccionMeses> | null = null;
+  let prodAnt: ReturnType<typeof produccionMeses> | null = null;
   let caidaRamo: { nombre: string; pct: number } | null = null;
   /** El mes cargado va incompleto: compararlo contra un mes completo engaña. */
   let prodParcial = false;
   const anio = Number(p.desde.slice(0, 4));
   const mesNum = Number(p.desde.slice(5, 7));
-  const mesAnioAnt = `${anio - 1}-${p.desde.slice(5, 7)}`;
-  const etMesAnt = `${mesCorto(p.desde)} ${anio - 1}`;
-  if (!esSemana && d.produccion) {
+  const mesesPeriodo = esTrim ? [0, 1, 2].map((k) => sumarMeses(p.desde, k).slice(0, 7)) : [p.desde.slice(0, 7)];
+  const mesesAnt = mesesPeriodo.map((m) => `${anio - 1}${m.slice(4)}`);
+  const etMesAnt = esTrim ? `${etiquetaTrimestre(p.desde).slice(0, 2)} ${anio - 1}` : `${mesCorto(p.desde)} ${anio - 1}`;
+  const nombrePeriodoProd = esTrim ? etiquetaTrimestre(p.desde) : nombreMes(p.desde);
+  if (d.produccion) {
     const lineas: string[] = [];
-    prod = produccionMes(d.produccion, p.desde.slice(0, 7), null);
-    prodAnt = produccionMes(d.produccion, mesAnioAnt, null);
+    prod = produccionMeses(d.produccion, mesesPeriodo, null);
+    prodAnt = produccionMeses(d.produccion, mesesAnt, null);
     if (!prod.hay) {
-      lineas.push(`Aún no está cargado el reporte de prima pagada de ${nombreMes(p.desde)}.`);
+      lineas.push(`Aún no está cargado el reporte de prima pagada de ${nombrePeriodoProd}.`);
       prod = null;
     } else {
       prodParcial = p.enCurso || (prod.ultimoDia !== null && prod.ultimoDia < sumarDias(p.fin, -3));
       const contraAnt = (act: number, ant: number) => (prodParcial ? "" : ` (${pctTexto(crecimiento(act, ant))} vs ${etMesAnt})`);
       if (prodParcial) {
-        lineas.push(`El mes va incompleto (cargado al ${fechaCorta(prod.ultimoDia ?? p.hasta)}): se compara contra ${etMesAnt} cuando cierre.`);
+        lineas.push(`${esTrim ? "El trimestre va" : "El mes va"} incompleto (cargado al ${fechaCorta(prod.ultimoDia ?? p.hasta)}): se compara contra ${etMesAnt} cuando cierre.`);
       }
       lineas.push(`Prima pagada: ${moneda(prod.prima)}${prodParcial ? "" : ` (${pctTexto(crecimiento(prod.prima, prodAnt.prima))} vs ${etMesAnt}: ${moneda(prodAnt.prima)})`}.`);
       lineas.push(`Comisión: ${moneda(prod.comision)}${contraAnt(prod.comision, prodAnt.comision)}.`);
       lineas.push(`Pagos aplicados: ${prod.pagos.toLocaleString("es-MX")}${prodParcial ? "" : ` (${etMesAnt}: ${prodAnt.pagos.toLocaleString("es-MX")})`}.`);
       for (const r of RAMOS) {
-        const x = produccionMes(d.produccion, p.desde.slice(0, 7), r.id);
-        const y = produccionMes(d.produccion, mesAnioAnt, r.id);
+        const x = produccionMeses(d.produccion, mesesPeriodo, r.id);
+        const y = produccionMeses(d.produccion, mesesAnt, r.id);
         if (!x.hay && !y.hay) continue;
         const pct = prodParcial ? null : crecimiento(x.prima, y.prima);
         lineas.push(`→ ${infoRamo(r.id).corto}: ${moneda(x.prima)}${prodParcial ? "" : ` (${pctTexto(pct)})`}.`);
         if (pct !== null && pct <= CAIDA_RELEVANTE && (!caidaRamo || pct < caidaRamo.pct)) caidaRamo = { nombre: r.corto, pct };
       }
       // El acumulado del año se compara parejo: si este mes va incompleto, hasta el mes anterior.
-      const hastaMes = prodParcial ? mesNum - 1 : mesNum;
+      const mesTope = esTrim ? (prod.ultimoDia ? Number(prod.ultimoDia.slice(5, 7)) : Number(p.hasta.slice(5, 7))) : mesNum;
+      const hastaMes = prodParcial ? mesTope - 1 : esTrim ? Number(p.fin.slice(5, 7)) : mesNum;
       if (hastaMes >= 1) {
         const acum = primaAcumulada(d.produccion, anio, hastaMes);
         const acumAnt = primaAcumulada(d.produccion, anio - 1, hastaMes);
@@ -491,7 +494,7 @@ export function armarReporte(tipo: TipoReporte, fecha: string | null, d: DatosRe
     const tot = resumenAdjuntas(d.adjuntas, act.desde, act.hasta, null);
     const totAnt = resumenAdjuntas(d.adjuntas, ant.desde, ant.hasta, null);
     if (!tot.nuevas && !tot.renovaciones) {
-      lineas.push(`No hay pólizas nuevas ni renovaciones adjuntas que empiecen ${esSemana ? "en esta semana" : "en este mes"}.`);
+      lineas.push(`No hay pólizas nuevas ni renovaciones adjuntas que empiecen en ${nombrePeriodo}.`);
     } else {
       lineas.push(
         `Prima neta nueva: ${moneda(tot.primaNueva)} en ${tot.nuevas} ${plural(tot.nuevas, "póliza nueva", "pólizas nuevas")} (${cambio(tot.primaNueva, totAnt.primaNueva, "moneda", contra)}).`,
@@ -520,9 +523,9 @@ export function armarReporte(tipo: TipoReporte, fecha: string | null, d: DatosRe
         : `Empuja ${unir(meta.atrasados.map((r) => r.nombre))}: ${plural(meta.atrasados.length, "es el ramo", "son los ramos")} que más se ${plural(meta.atrasados.length, "atrasa", "atrasan")} en tu meta.`,
     );
   }
-  if (!esSemana && d.produccion && !prod) candidatos.push(`Carga el reporte de prima pagada de ${nombreMes(p.desde)} para ver tu crecimiento.`);
+  if (d.produccion && !prod) candidatos.push(`Carga el reporte de prima pagada de ${nombrePeriodoProd} para ver tu crecimiento.`);
   if (caidaRamo) candidatos.push(`${caidaRamo.nombre} bajó ${Math.abs(caidaRamo.pct).toLocaleString("es-MX")}% vs ${etMesAnt}: revisa sus renovaciones y su cobranza.`);
-  if (porVencerN) candidatos.push(`${plural(porVencerN, "Recuérdale", "Recuérdales")} a ${porVencerN} ${plural(porVencerN, "cliente que vence", "clientes que vencen")} ${esSemana ? "esta semana" : "este mes"} (${moneda(porVencerMonto)}).`);
+  if (porVencerN) candidatos.push(`${plural(porVencerN, "Recuérdale", "Recuérdales")} a ${porVencerN} ${plural(porVencerN, "cliente que vence", "clientes que vencen")} ${nombrePeriodo} (${moneda(porVencerMonto)}).`);
   if (sinContacto.length) candidatos.push(`Dale seguimiento a ${sinContacto.length} ${plural(sinContacto.length, "prospecto que lleva", "prospectos que llevan")} 3+ días sin contacto.`);
   if (!nuevos.length) candidatos.push("No entraron prospectos nuevos: activa una campaña o pide referidos a tus clientes.");
   if (meta?.sinRamo) candidatos.push(`Ponle ramo a ${meta.sinRamo} ${plural(meta.sinRamo, "póliza ganada", "pólizas ganadas")} para que cuenten en tu meta.`);
@@ -581,7 +584,7 @@ export function armarReporte(tipo: TipoReporte, fecha: string | null, d: DatosRe
   partes.push(`${nuevos.length ? `entraron ${nuevos.length}` : "no entraron"} ${plural(nuevos.length, "prospecto nuevo", "prospectos nuevos")}`);
   if (prod && prodAnt && !prodParcial) partes.push(`la prima pagada fue ${moneda(prod.prima)} (${pctTexto(crecimiento(prod.prima, prodAnt.prima))} vs ${etMesAnt})`);
   partes.push(movsPeriodo.length ? `${quedo >= 0 ? "te quedaron" : "perdiste"} ${moneda(Math.abs(quedo))}` : "no registraste comisiones ni gastos");
-  const cuando = esSemana ? `En la semana del ${fechaCorta(p.desde)} al ${fechaCorta(p.fin)}` : `En ${nombreMes(p.desde)}`;
+  const cuando = esTrim ? `En el ${etiquetaTrimestre(p.desde)} (${mesCorto(p.desde)}–${mesCorto(p.fin)})` : `En ${nombreMes(p.desde)}`;
   const frase = `${cuando}${p.enCurso ? ` (va en curso, al ${fechaCorta(p.hasta)})` : ""} ${unir(partes)}. Foco: ${focos[0]}`;
 
   if (!d.cloud) avisos.push("MODO DEMOSTRACIÓN: números inventados para practicar.");
@@ -614,7 +617,7 @@ export function inicioDatos(tipo: TipoReporte, fecha: string | null, hoy: string
 /** El reporte en texto para pegar en WhatsApp (*negritas* de WhatsApp). */
 export function textoReporte(r: ReporteClara): string {
   const t: string[] = [];
-  t.push(`*Clara · Reporte ${r.tipo === "semana" ? "semanal" : "mensual"}*`);
+  t.push(`*Clara · Reporte ${r.tipo === "trimestre" ? "trimestral" : "mensual"}*`);
   t.push(`${r.titulo}${r.enCurso ? ` (en curso, al ${fechaCorta(r.hasta)})` : ""}`);
   t.push("");
   t.push(r.frase);
@@ -622,7 +625,7 @@ export function textoReporte(r: ReporteClara): string {
   t.push("*Números*");
   for (const c of r.cifras) t.push(`• ${c.titulo}: ${c.valor}${c.cambio ? ` (${c.cambio})` : ""} — ${c.detalle}`);
   t.push("");
-  t.push(`*Focos ${r.tipo === "semana" ? "de la semana" : "del mes"}*`);
+  t.push(`*Focos ${r.tipo === "trimestre" ? "del trimestre" : "del mes"}*`);
   r.focos.forEach((f, i) => t.push(`${i + 1}. ${f}`));
   for (const s of r.secciones) {
     t.push("");

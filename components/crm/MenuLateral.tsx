@@ -62,7 +62,7 @@ export const GRUPOS_MENU: GrupoMenu[] = [
       { id: "roro", nombre: "RORO", pista: "Tu gerente: pregúntale", icono: "flat-color-icons:assistant", avatar: "roro" },
       { id: "sofi", nombre: "Sofi", pista: "Seguimiento a prospectos", icono: "flat-color-icons:sms", avatar: "sofi" },
       { id: "valeri", nombre: "Valeri", pista: "Cobranza de hoy", icono: "flat-color-icons:debt", avatar: "valeri" },
-      { id: "clara", nombre: "Clara", pista: "Reportes de semana y mes", icono: "flat-color-icons:document", avatar: "clara" },
+      { id: "clara", nombre: "Clara", pista: "Reportes de mes y trimestre", icono: "flat-color-icons:document", avatar: "clara" },
     ],
   },
 ];

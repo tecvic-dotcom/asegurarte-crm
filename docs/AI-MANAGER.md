@@ -12,7 +12,7 @@
 | Extra para tu meta | Cada prospecto tiene **Ramo** (vida, GMM, ahorro, autos, hogar) y fecha de cierre automática al pasarlo a “Cliente ganado”. | El odómetro de tu meta |
 | **Valeri (cobranza)** | Pestaña **Valeri · Cobranza**: tu cartera de pólizas y, cada día, a quién cobrarle primero (vencidas, por vencer, promesas, renovaciones) con el WhatsApp listo. Botones: **Pagó** (avanza al siguiente recibo), **Promesa** y **Ya le recordé**. No usa IA: cuesta $0. | El cobrador que nunca olvida |
 | **Crecimiento** | Pestaña **Crecimiento**: prima pagada, comisión o número de pagos por año y mes a mes, por ramo, comparando el año en curso contra los **mismos meses** del anterior. Se alimenta de los reportes de prima pagada de la aseguradora (tabla `produccion_mensual`, migración `0005_produccion.sql`, solo totales sin clientes). Las comisiones de esos reportes también entran a tus finanzas (“Cuánto entró”). | El historial del odómetro |
-| **Clara (reportes)** | Pestaña **Clara · Reportes**: cada **lunes** el cierre de la semana y cada **día 1** el del mes (ventas vs meta, prospectos, dinero, cobranza, producción de la aseguradora y **3 focos**). Botones **Copiar**, **WhatsApp** y **PDF**. Puedes ver semanas y meses anteriores. No usa IA: cuesta $0. | La secretaria que te deja el resumen en el escritorio |
+| **Clara (reportes)** | Pestaña **Clara · Reportes**: cada **día 1** el cierre del mes y, al terminar cada trimestre, el del **trimestre** (ventas vs meta, prospectos, dinero, cobranza, producción de la aseguradora y **3 focos**). Botones **Copiar**, **WhatsApp** y **PDF**. Puedes ver meses y trimestres anteriores. No usa IA: cuesta $0. | La secretaria que te deja el resumen en el escritorio |
 
 Para actualizarla cada mes: descarga el reporte de prima pagada por ramo y pídele a Claude Code *“carga mi producción del mes en Crecimiento”*.
 
@@ -41,7 +41,7 @@ Solo el **administrador** ve el Panel, a RORO, a Valeri y a Clara. Un vendedor d
 3. ¿Te pagaron una comisión o gastaste? **Panel → Registrar** (10 segundos).
 4. ¿Dudas para decidir? Pregúntale a **RORO**. Él propone; tú decides.
 5. Abre **Valeri · Cobranza**: envía los WhatsApp que te deja listos (los mandas tú) y marca **Pagó** o **Promesa** según te contesten. ¿Cerraste una venta? En el expediente del cliente ganado toca **“Agregar su póliza a cobranza”**.
-6. **Lunes:** abre **Clara · Reportes**, lee los 3 focos de la semana y, si quieres, mándatelo o compártelo con **WhatsApp**. **Día 1:** cambia a **Mensual** para el cierre del mes (carga antes el reporte de prima pagada del mes para que salga tu producción).
+6. **Día 1 de cada mes:** abre **Clara · Reportes**, lee los 3 focos del mes y, si quieres, mándatelo o compártelo con **WhatsApp**. **Al cerrar un trimestre:** cambia a **Trimestral**. Para el cierre del mes (carga antes el reporte de prima pagada del mes para que salga tu producción).
 
 ### Una vez al mes: tu Director Financiero (prompt fijo para Claude Code)
 
@@ -117,5 +117,5 @@ Valeri (cobranza) y Clara (reportes) ya están trabajando. Para el siguiente, p�
 - `lib/manager.ts`, `lib/manager-config.ts` — RORO (llamada a Claude, cerebro, tope de uso).
 - `app/api/crm/panel`, `app/api/crm/finanzas`, `app/api/crm/manager` — rutas del servidor (solo admin).
 - `supabase/migrations/0004_cobranza.sql`, `lib/cobranza.ts`, `lib/cobranza-reglas.ts`, `app/api/crm/cobranza` — Valeri (cartera, reglas de cobro y mensajes).
-- `lib/reportes-reglas.ts`, `lib/reportes.ts`, `app/api/crm/reportes` — Clara (reportes semanal y mensual; sin tabla nueva: lee las que ya existen).
+- `lib/reportes-reglas.ts`, `lib/reportes.ts`, `app/api/crm/reportes` — Clara (reportes mensual y trimestral; sin tabla nueva: lee las que ya existen).
 - `components/crm/PanelMando.tsx`, `components/crm/panel/*`, `components/crm/ManagerIA.tsx`, `components/crm/Cobranza.tsx`, `components/crm/cobranza/*`, `components/crm/ReportesClara.tsx`, `components/crm/AvatarEmpleado.tsx`, `components/crm/SlotRoro.tsx` — pantallas.

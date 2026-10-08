@@ -34,11 +34,11 @@ async function copiar(texto: string): Promise<boolean> {
 }
 
 /**
- * Clara, tu empleada digital de reportes: cada lunes el cierre de la semana y
- * cada día 1 el del mes, listos para copiar a WhatsApp o imprimir en PDF.
+ * Clara, tu empleada digital de reportes: cada día 1 el cierre del mes y, al
+ * terminar cada trimestre, el del trimestre, listos para copiar a WhatsApp o imprimir en PDF.
  */
 export function ReportesClara() {
-  const [tipo, setTipo] = useState<TipoReporte>("semana");
+  const [tipo, setTipo] = useState<TipoReporte>("mes");
   const [fecha, setFecha] = useState<string | null>(null);
   const [resultado, setResultado] = useState<{ clave: string; reporte: ReporteClara | null; error: Error | null } | null>(null);
   const [copiado, setCopiado] = useState(false);
@@ -81,8 +81,8 @@ export function ReportesClara() {
         <div className="min-w-0">
           <h2 className="font-display text-lg text-ink">Clara, tus reportes</h2>
           <p className="mt-1 text-sm text-ink-soft">
-            Cada <strong className="text-ink">lunes</strong> te deja el cierre de la semana y cada <strong className="text-ink">día 1</strong> el
-            del mes. Lee los mismos números de tu Panel, de Valeri y de Crecimiento. No usa IA: cuesta $0.
+            Cada <strong className="text-ink">día 1</strong> te deja el cierre del mes y, al terminar cada <strong className="text-ink">trimestre</strong>, el
+            de los 3 meses. Lee los mismos números de tu Panel, de Valeri y de Crecimiento. No usa IA: cuesta $0.
           </p>
         </div>
       </div>
@@ -90,7 +90,7 @@ export function ReportesClara() {
       {/* Controles: qué reporte, qué periodo y qué hacer con él */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex rounded-xl border border-line bg-glass p-1" role="group" aria-label="Tipo de reporte">
-          {(["semana", "mes"] as TipoReporte[]).map((t) => (
+          {(["mes", "trimestre"] as TipoReporte[]).map((t) => (
             <button
               key={t}
               type="button"
@@ -98,7 +98,7 @@ export function ReportesClara() {
               onClick={() => cambiarTipo(t)}
               className={`min-h-[40px] rounded-lg px-4 text-sm ${tipo === t ? "bg-brand/25 font-semibold text-ink" : "text-ink-mute hover:text-ink"}`}
             >
-              {t === "semana" ? "Semanal" : "Mensual"}
+              {t === "trimestre" ? "Trimestral" : "Mensual"}
             </button>
           ))}
         </div>
@@ -108,7 +108,7 @@ export function ReportesClara() {
             onClick={() => reporte?.anterior && setFecha(reporte.anterior)}
             disabled={!reporte?.anterior}
             className="min-h-[40px] rounded-xl border border-line bg-glass px-3 text-sm text-ink-soft hover:text-ink disabled:opacity-40"
-            aria-label={tipo === "semana" ? "Semana anterior" : "Mes anterior"}
+            aria-label={tipo === "trimestre" ? "Trimestre anterior" : "Mes anterior"}
           >
             ‹ Anterior
           </button>
@@ -117,7 +117,7 @@ export function ReportesClara() {
             onClick={() => reporte?.siguiente && setFecha(reporte.siguiente)}
             disabled={!reporte?.siguiente}
             className="min-h-[40px] rounded-xl border border-line bg-glass px-3 text-sm text-ink-soft hover:text-ink disabled:opacity-40"
-            aria-label={tipo === "semana" ? "Semana siguiente" : "Mes siguiente"}
+            aria-label={tipo === "trimestre" ? "Trimestre siguiente" : "Mes siguiente"}
           >
             Siguiente ›
           </button>
@@ -182,7 +182,7 @@ function Reporte({ r }: { r: ReporteClara }) {
     <article className="clara-imprimible space-y-4">
       <header className="glass rounded-2xl p-4 sm:p-5">
         <p className="text-xs font-semibold uppercase tracking-wide text-ink-mute">
-          Reporte {r.tipo === "semana" ? "semanal" : "mensual"} · Clara
+          Reporte {r.tipo === "trimestre" ? "trimestral" : "mensual"} · Clara
         </p>
         <h3 className="mt-0.5 flex flex-wrap items-center gap-2 font-display text-xl text-ink">
           {r.titulo}
@@ -213,7 +213,7 @@ function Reporte({ r }: { r: ReporteClara }) {
 
       <section className="rounded-2xl border border-brand-2/60 bg-brand/10 p-4 sm:p-5">
         <h4 className="flex items-center gap-2 font-semibold text-ink">
-          <Icon icon="flat-color-icons:todo-list" width={20} aria-hidden /> Focos {r.tipo === "semana" ? "de la semana" : "del mes"}
+          <Icon icon="flat-color-icons:todo-list" width={20} aria-hidden /> Focos {r.tipo === "trimestre" ? "del trimestre" : "del mes"}
         </h4>
         <ol className="mt-2 list-decimal space-y-1.5 pl-5 text-[15px] text-ink-soft">
           {r.focos.map((f) => (

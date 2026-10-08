@@ -14,13 +14,13 @@ interface SlotRoroProps {
 
 /**
  * Arriba de tu CRM: tu equipo digital con su reporte de hoy.
- * RORO te dice cómo va tu dinero y tu meta; Valeri, a quién cobrarle; Clara, cómo cerró la semana (o el mes).
+ * RORO te dice cómo va tu dinero y tu meta; Valeri, a quién cobrarle; Clara, cómo cerró el mes (o el trimestre).
  * Es el gancho diario: entras al CRM y en 20 segundos ya sabes qué hacer.
  */
 export function SlotRoro({ onPanel, onRoro, onValeri, onClara }: SlotRoroProps) {
   const [frase, setFrase] = useState<string | null>(null);
   const [cobranza, setCobranza] = useState<string | null>(null);
-  const [reporte, setReporte] = useState<{ frase: string; tipo: "semana" | "mes" } | null>(null);
+  const [reporte, setReporte] = useState<{ frase: string; tipo: "mes" | "trimestre" } | null>(null);
 
   useEffect(() => {
     let vivo = true;
@@ -46,7 +46,7 @@ export function SlotRoro({ onPanel, onRoro, onValeri, onClara }: SlotRoroProps) 
       });
     crmFraseClara()
       .then((r) => vivo && setReporte(r))
-      .catch(() => vivo && setReporte({ frase: "No pude armar tu reporte ahorita. Ábreme para reintentar.", tipo: "semana" }));
+      .catch(() => vivo && setReporte({ frase: "No pude armar tu reporte ahorita. Ábreme para reintentar.", tipo: "mes" }));
     return () => {
       vivo = false;
     };
@@ -72,7 +72,7 @@ export function SlotRoro({ onPanel, onRoro, onValeri, onClara }: SlotRoroProps) 
       <Fila
         variante="clara"
         nombre="Clara, tus reportes"
-        etiqueta={reporte?.tipo === "mes" ? "cierre del mes" : "cierre de la semana"}
+        etiqueta={reporte?.tipo === "trimestre" ? "cierre del trimestre" : "cierre del mes"}
         texto={reporte?.frase ?? null}
       >
         <button type="button" onClick={onClara} className="btn-ghost flex-1 px-3 py-2.5 text-sm sm:flex-none">

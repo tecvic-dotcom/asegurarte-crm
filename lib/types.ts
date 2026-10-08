@@ -379,17 +379,17 @@ export interface ProduccionMes {
 export type MetricaCrecimiento = "prima" | "comision" | "pagos";
 
 // ----------------------------------------------------------------------------
-// REPORTES: Clara, tu empleada digital de reportes (semanal y mensual)
+// REPORTES: Clara, tu empleada digital de reportes (mensual y trimestral)
 // ----------------------------------------------------------------------------
 
-export type TipoReporte = "semana" | "mes";
+export type TipoReporte = "mes" | "trimestre";
 
 /** Una cifra grande del reporte (ya formateada). */
 export interface CifraReporte {
   titulo: string;
   valor: string;
   detalle: string;
-  /** "▲ 12% vs la semana anterior" (null = sin comparación). */
+  /** "▲ 12% vs agosto" (null = sin comparación). */
   cambio: string | null;
   tono: "bien" | "mal" | "neutral";
 }
@@ -408,7 +408,7 @@ export interface ReporteClara {
   hasta: string;
   titulo: string;
   enCurso: boolean;
-  /** Con qué se compara ("la semana anterior", "agosto (1–4)"). */
+  /** Con qué se compara ("agosto", "T3 2026 (primeros 7 días)"). */
   comparadoCon: string;
   /** Fecha para pedir el periodo anterior / siguiente (null = no hay). */
   anterior: string | null;

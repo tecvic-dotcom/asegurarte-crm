@@ -34,18 +34,20 @@ export async function reporteClara(tipo: TipoReporte, fecha: string | null): Pro
     listLeads(),
     listarMovimientos(rango.desde, rango.hasta),
     opcional(listarPolizas()),
-    tipo === "mes" ? opcional(listarProduccion()) : Promise.resolve(null),
+    opcional(listarProduccion()),
     opcional(listarAdjuntas()),
   ]);
   return armarReporte(tipo, fecha, { hoy, leads, movimientos, polizas, produccion, adjuntas, config, cloud: isCloud() });
 }
 
 /**
- * La línea de Clara arriba del CRM: la primera semana de cada mes presume el
- * cierre del mes pasado; el resto del mes, el de la semana pasada.
+ * La línea de Clara: la primera semana de cada trimestre presume el cierre del
+ * trimestre pasado; el resto del tiempo, el del último mes cerrado.
  */
 export async function fraseClara(): Promise<{ frase: string; tipo: TipoReporte }> {
-  const tipo: TipoReporte = Number(hoyLocal().slice(8, 10)) <= 7 ? "mes" : "semana";
+  const hoy = hoyLocal();
+  const primerSemanaDeTrimestre = Number(hoy.slice(8, 10)) <= 7 && [1, 4, 7, 10].includes(Number(hoy.slice(5, 7)));
+  const tipo: TipoReporte = primerSemanaDeTrimestre ? "trimestre" : "mes";
   const r = await reporteClara(tipo, null);
   return { frase: r.frase, tipo };
 }
