@@ -59,7 +59,8 @@ export function Pipeline({ leads, onMover, onAbrir }: PipelineProps) {
       <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
         <div className="no-scrollbar flex gap-3 overflow-x-auto pb-2">
           {ETAPAS_ACTIVAS.map((et) => {
-            const items = leads.filter((l) => l.etapa === et.id);
+            // Los que llevan más tiempo sin tocar, arriba de cada columna.
+            const items = leads.filter((l) => l.etapa === et.id).sort((a, b) => a.actualizado_en.localeCompare(b.actualizado_en));
             const total = items.reduce((s, l) => s + l.valor, 0);
             return (
               <Columna key={et.id} id={et.id} nombre={et.nombre} color={et.color} count={items.length} total={total}>
@@ -205,10 +206,28 @@ function CardVisual({
             </span>
           )}
         </span>
-        {lead.utm_source && (
-          <span className="shrink-0 text-[10px] text-ink-mute">via {lead.utm_source}</span>
-        )}
+        <span className="flex shrink-0 items-center gap-1.5">
+          {lead.utm_source && <span className="text-[10px] text-ink-mute">via {lead.utm_source}</span>}
+          <DiasSinContacto lead={lead} />
+        </span>
       </div>
     </div>
+  );
+}
+
+/** Cuántos días lleva el prospecto sin movimiento (solo en etapas activas): verde al día, azul 1-2 días, ámbar 3 o más. */
+function DiasSinContacto({ lead }: { lead: Lead }) {
+  const [ahora] = useState(() => Date.now());
+  if (lead.etapa === "ganado" || lead.etapa === "perdido") return null;
+  const dias = Math.max(0, Math.floor((ahora - new Date(lead.actualizado_en).getTime()) / 86_400_000));
+  const color = dias >= 3 ? "var(--amber)" : dias >= 1 ? "var(--sky)" : "var(--green)";
+  return (
+    <span
+      className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold"
+      style={{ background: `color-mix(in srgb, ${color} 16%, transparent)`, color }}
+      title="Días sin movimiento"
+    >
+      {dias === 0 ? "Hoy" : `${dias} d`}
+    </span>
   );
 }

@@ -27,12 +27,12 @@ interface CRMAppProps {
   onLogout: () => void;
 }
 
-type Vista = "kanban" | "tabla";
+type Vista = "hoy" | "kanban" | "tabla";
 
 export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
   const [leads, setLeads] = useState<Lead[]>(inicial);
-  const [pestana, setPestana] = useState<Pestana>("seguimiento");
-  const [vista, setVista] = useState<Vista>("kanban");
+  const [pestana, setPestana] = useState<Pestana>("tablero");
+  const [vista, setVista] = useState<Vista>("hoy");
   const [busca, setBusca] = useState("");
   const [filtroEtapa, setFiltroEtapa] = useState<EtapaId | "todas">("todas");
   const [seleccion, setSeleccion] = useState<string | null>(null);
@@ -94,6 +94,12 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
       );
     });
   }, [leads, busca, filtroEtapa]);
+
+  // La vista "Hoy" trae sus propios filtros de etapa: solo le aplica la búsqueda.
+  const buscados = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    return q ? leads.filter((l) => l.nombre.toLowerCase().includes(q) || l.correo.toLowerCase().includes(q) || l.whatsapp.includes(q)) : leads;
+  }, [leads, busca]);
 
   const pipeline = useMemo(() => leads.filter((l) => l.etapa === "ganado"), [leads]);
   const valorGanado = pipeline.reduce((s, l) => s + l.valor, 0);
@@ -195,6 +201,7 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
                   className="w-56 bg-transparent text-sm text-ink outline-none placeholder:text-ink-mute"
                 />
               </div>
+              {!(pestana === "tablero" && vista === "hoy") && (
               <select
                 value={filtroEtapa}
                 onChange={(e) => setFiltroEtapa(e.target.value as EtapaId | "todas")}
@@ -207,8 +214,10 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
                   </option>
                 ))}
               </select>
+              )}
               {pestana === "tablero" && (
                 <div className="ml-auto flex rounded-xl border border-line bg-glass p-1">
+                  <Toggle activo={vista === "hoy"} onClick={() => setVista("hoy")} icono="flat-color-icons:alarm-clock" label="Hoy" />
                   <Toggle activo={vista === "kanban"} onClick={() => setVista("kanban")} icono="flat-color-icons:flow-chart" label="Tablero" />
                   <Toggle activo={vista === "tabla"} onClick={() => setVista("tabla")} icono="flat-color-icons:grid" label="Tabla" />
                 </div>
@@ -217,13 +226,14 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
           )}
 
           {pestana === "tablero" &&
-            (vista === "kanban" ? (
+            (vista === "hoy" ? (
+              <Seguimiento leads={buscados} onAbrir={setSeleccion} onMover={mover} />
+            ) : vista === "kanban" ? (
               <Pipeline leads={filtrados} onMover={mover} onAbrir={setSeleccion} />
             ) : (
               <TablaLeads leads={filtrados} onAbrir={setSeleccion} />
             ))}
           {pestana === "contactos" && <Contactos leads={filtrados} onAbrir={setSeleccion} onCambio={recargar} />}
-          {pestana === "seguimiento" && <Seguimiento leads={leads} onAbrir={setSeleccion} />}
           {pestana === "campanas" && <Campanas leads={leads} />}
           {pestana === "reportes" && <Reportes leads={leads} />}
           {esAdmin && pestana === "panel" && <PanelMando onVerSinRamo={verGanadasSinRamo} />}
