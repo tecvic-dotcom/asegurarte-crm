@@ -548,7 +548,7 @@ const CONFIG = {
   telefonoIntl: "+528182800234",     // para llamar
   whatsapp: "528182800234",          // 52 + 10 dígitos, sin espacios
   correo: "rdz.roberto@outlook.com",
-  sitioWeb: "https://www.especialistaenasegurarte.lat",
+  sitioWeb: "https://www.especialistaenasegurarte.lat/roberto",
   avisoPrivacidad: "https://www.especialistaenasegurarte.lat/privacidad",
   urlTarjeta: "https://www.especialistaenasegurarte.lat/roberto",   // a dónde apunta el QR
   vcardUrl: "/tarjeta/roberto-rodriguez.vcf",                      // archivo .vcf publicado; vacío = el contacto se arma en el momento
@@ -721,7 +721,7 @@ function vcardTexto() {
     { i: "wa", l: "WhatsApp", v: C.telefono, href: wa(C.mensajes.hola), ext: true },
     { i: "mail", l: "Correo", v: C.correo, href: "mailto:" + C.correo, copy: C.correo },
     { i: "pin", l: "Ciudad", v: C.ciudad },
-    { i: "globe", l: "Sitio web", v: (C.sitioWeb || "").replace(/^https?:\/\/(www\.)?/, ""), href: C.sitioWeb, ext: true }
+    { i: "globe", l: "Sitio web", v: (C.sitioWeb || "").replace(/^https?:\/\//, ""), href: C.sitioWeb, ext: true }
   ].filter((f) => f.v);
   $("#rows").innerHTML = filas.map((f) => `
     <div class="row">
