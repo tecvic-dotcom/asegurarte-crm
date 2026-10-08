@@ -287,6 +287,10 @@ h2{font:800 clamp(27px,7.4vw,34px)/1.12 var(--display);letter-spacing:-.01em;mar
 .social a{width:48px;height:48px;border-radius:50%;border:1px solid var(--line-strong);background:var(--glass);color:var(--ink);display:grid;place-items:center;transition:background .15s,border-color .15s}
 .social a:hover{background:var(--brand);border-color:var(--brand-2)}
 .social a .ic{width:21px;height:21px}
+.hero-social{display:flex;flex-direction:column;align-items:center;margin-top:12px}
+.hero-social .social-label{margin:0}
+.hero-social .social{justify-content:center;margin-top:10px}
+.hero-social .social a{width:44px;height:44px}
 
 .share{display:grid;justify-items:center;gap:16px;margin-top:24px;padding:30px 20px 24px;text-align:center;border-radius:26px}
 .qr{width:212px;height:212px;max-width:100%;padding:16px;border-radius:18px;background:#ffffff;box-shadow:0 0 0 1px var(--line-strong),0 18px 50px -20px rgba(42,34,245,.8)}
@@ -402,6 +406,7 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
             <a class="btn btn-ghost" id="agendaHero" target="_blank" rel="noopener"><svg class="ic"><use href="#i-cal"/></svg>Agendar cita</a>
           </div>
           <p class="promise"><svg class="ic"><use href="#i-check"/></svg><span data-c="promesa"></span></p>
+          <div class="hero-social" id="heroSocial"><p class="social-label">Sigue mis canales</p><div class="social" id="socialHero"></div></div>
         </div>
       </div>
     </div>
@@ -461,7 +466,7 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
           <p class="ch-meta"><span data-c="cargo"></span><em id="ced"></em></p>
           <div class="rows" id="rows"></div>
           <button class="btn btn-primary btn-caps block" id="saveContact" type="button"><svg class="ic"><use href="#i-userplus"/></svg>Guardar contacto</button>
-          <p class="social-label">Redes sociales</p>
+          <p class="social-label">Sigue mis canales</p>
           <div class="social" id="social"></div>
         </div>
 
@@ -475,8 +480,6 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
             <a class="btn btn-wa" id="shWa" target="_blank" rel="noopener"><svg class="ic"><use href="#i-wa"/></svg>WhatsApp</a>
             <a class="btn btn-ghost" id="shFb" target="_blank" rel="noopener"><svg class="ic"><use href="#i-facebook"/></svg>Facebook</a>
             <a class="btn btn-ghost" id="shIn" target="_blank" rel="noopener"><svg class="ic"><use href="#i-linkedin"/></svg>LinkedIn</a>
-            <a class="btn btn-ghost" id="shYt" target="_blank" rel="noopener"><svg class="ic"><use href="#i-youtube"/></svg>YouTube</a>
-            <a class="btn btn-ghost" id="shTt" target="_blank" rel="noopener"><svg class="ic"><use href="#i-tiktok"/></svg>TikTok</a>
             <button class="btn btn-ghost" id="shCopy" type="button"><svg class="ic"><use href="#i-link"/></svg>Copiar enlace</button>
           </div>
         </div>
@@ -711,6 +714,8 @@ function vcardTexto() {
   const redes = [["whatsapp", "wa", "WhatsApp", wa(C.mensajes.hola)], ...["instagram", "facebook", "linkedin", "tiktok", "youtube"].map((k) => [k, k, k === "tiktok" ? "TikTok" : k === "youtube" ? "YouTube" : k === "linkedin" ? "LinkedIn" : k[0].toUpperCase() + k.slice(1), C.redes[k]])]
     .filter((r) => r[3]);
   $("#social").innerHTML = redes.map(([, i, n, u]) => `<a href="${esc(u)}" target="_blank" rel="noopener" aria-label="${n}" title="${n}">${ic(i)}</a>`).join("");
+  const canales = redes.filter((r) => r[0] !== "whatsapp");
+  if (canales.length) $("#socialHero").innerHTML = canales.map(([, i, n, u]) => `<a href="${esc(u)}" target="_blank" rel="noopener" aria-label="${n}" title="${n}">${ic(i)}</a>`).join(""); else $("#heroSocial").hidden = true;
 
   // Cédula
   if (C.cedulaCNSF) $("#ced").textContent = "Cédula CNSF " + C.cedulaCNSF; else $("#ced").hidden = true;
@@ -773,9 +778,6 @@ function vcardTexto() {
   $("#shWa").href = "https://wa.me/?text=" + encodeURIComponent(shareText + " " + C.urlTarjeta);
   $("#shFb").href = "https://www.facebook.com/sharer/sharer.php?u=" + encodeURIComponent(C.urlTarjeta);
   $("#shIn").href = "https://www.linkedin.com/sharing/share-offsite/?url=" + encodeURIComponent(C.urlTarjeta);
-  // YouTube y TikTok no comparten la tarjeta: llevan a los canales de Roberto.
-  $("#shYt").href = C.redes.youtube;
-  $("#shTt").href = C.redes.tiktok;
   $("#shCopy").addEventListener("click", () => copiar(C.urlTarjeta, "Enlace"));
   $("#shareBtn").addEventListener("click", async () => {
     if (navigator.share) {
