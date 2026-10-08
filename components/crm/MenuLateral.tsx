@@ -37,7 +37,7 @@ export const GRUPOS_MENU: GrupoMenu[] = [
     titulo: "Ventas",
     soloAdmin: false,
     opciones: [
-      { id: "tablero", nombre: "Hoy y tablero", pista: "Pendientes y etapa de cada prospecto", icono: "flat-color-icons:flow-chart" },
+      { id: "tablero", nombre: "Mi día", pista: "Pendientes y etapa de cada prospecto", icono: "flat-color-icons:flow-chart" },
       { id: "contactos", nombre: "Contactos", pista: "Tu lista completa", icono: "flat-color-icons:grid" },
       { id: "campanas", nombre: "Campañas", pista: "Qué anuncio te trae clientes", icono: "flat-color-icons:advertising" },
       { id: "reportes", nombre: "Embudo", pista: "Conversión y origen", icono: "flat-color-icons:statistics" },
