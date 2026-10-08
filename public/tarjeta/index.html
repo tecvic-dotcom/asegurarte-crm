@@ -475,8 +475,9 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
             <a class="btn btn-wa" id="shWa" target="_blank" rel="noopener"><svg class="ic"><use href="#i-wa"/></svg>WhatsApp</a>
             <a class="btn btn-ghost" id="shFb" target="_blank" rel="noopener"><svg class="ic"><use href="#i-facebook"/></svg>Facebook</a>
             <a class="btn btn-ghost" id="shIn" target="_blank" rel="noopener"><svg class="ic"><use href="#i-linkedin"/></svg>LinkedIn</a>
-            <a class="btn btn-ghost" id="shMail"><svg class="ic"><use href="#i-mail"/></svg>Correo</a>
-            <button class="btn btn-ghost wide" id="shCopy" type="button"><svg class="ic"><use href="#i-link"/></svg>Copiar enlace</button>
+            <a class="btn btn-ghost" id="shYt" target="_blank" rel="noopener"><svg class="ic"><use href="#i-youtube"/></svg>YouTube</a>
+            <a class="btn btn-ghost" id="shTt" target="_blank" rel="noopener"><svg class="ic"><use href="#i-tiktok"/></svg>TikTok</a>
+            <button class="btn btn-ghost" id="shCopy" type="button"><svg class="ic"><use href="#i-link"/></svg>Copiar enlace</button>
           </div>
         </div>
       </section>
@@ -581,7 +582,7 @@ const CONFIG = {
     { icono: "facebook",  titulo: "Facebook", texto: "Consejos y novedades sobre seguros", url: "https://www.facebook.com/robertordzgzz" }
   ],
 
-  redes: { instagram: "https://www.instagram.com/robertordzglz/", facebook: "https://www.facebook.com/robertordzgzz", linkedin: "https://www.linkedin.com/in/robertorodriguezgzz", tiktok: "", youtube: "" }
+  redes: { instagram: "https://www.instagram.com/robertordzglz/", facebook: "https://www.facebook.com/robertordzgzz", linkedin: "https://www.linkedin.com/in/robertorodriguezgzz", tiktok: "https://www.tiktok.com/@robertojavierrodr3", youtube: "https://www.youtube.com/channel/UCbNO_ggojnWJdVli3AxiCjw" }
 };
 
 /* Contacto para el teléfono (vCard 3.0). Lo usa el botón y también el archivo .vcf que se publica. */
@@ -772,7 +773,9 @@ function vcardTexto() {
   $("#shWa").href = "https://wa.me/?text=" + encodeURIComponent(shareText + " " + C.urlTarjeta);
   $("#shFb").href = "https://www.facebook.com/sharer/sharer.php?u=" + encodeURIComponent(C.urlTarjeta);
   $("#shIn").href = "https://www.linkedin.com/sharing/share-offsite/?url=" + encodeURIComponent(C.urlTarjeta);
-  $("#shMail").href = "mailto:?subject=" + encodeURIComponent("Te comparto la tarjeta de " + C.nombre) + "&body=" + encodeURIComponent(shareText + "\n\n" + C.urlTarjeta);
+  // YouTube y TikTok no comparten la tarjeta: llevan a los canales de Roberto.
+  $("#shYt").href = C.redes.youtube;
+  $("#shTt").href = C.redes.tiktok;
   $("#shCopy").addEventListener("click", () => copiar(C.urlTarjeta, "Enlace"));
   $("#shareBtn").addEventListener("click", async () => {
     if (navigator.share) {
