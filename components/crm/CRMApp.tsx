@@ -181,13 +181,15 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
             <p className="text-sm text-ink-mute">{actual.pista}</p>
           </header>
 
-          {/* Métricas rápidas */}
+          {/* Métricas rápidas (en Pólizas no se muestran) */}
+          {pestana !== "polizas" && (
           <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Metrica icono="flat-color-icons:business-contact" label="Prospectos" valor={String(leads.length)} />
             <Metrica icono="flat-color-icons:calendar" label="En cita" valor={String(leads.filter((l) => l.etapa === "cita").length)} />
             <Metrica icono="flat-color-icons:approval" label="Clientes" valor={String(pipeline.length)} />
             <Metrica icono="flat-color-icons:money-transfer" label="Ganado" valor={moneda(valorGanado)} />
           </div>
+          )}
 
           {(pestana === "tablero" || pestana === "contactos") && (
             <div className="mb-4 flex flex-wrap items-center gap-2">
