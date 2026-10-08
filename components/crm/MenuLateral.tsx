@@ -13,7 +13,8 @@ export type Pestana =
   | "roro"
   | "sofi"
   | "valeri"
-  | "clara";
+  | "clara"
+  | "admin";
 
 export interface OpcionMenu {
   id: Pestana;
@@ -59,6 +60,13 @@ export const GRUPOS_MENU: GrupoMenu[] = [
       { id: "sofi", nombre: "Sofi", pista: "Seguimiento a prospectos", icono: "flat-color-icons:sms", avatar: "sofi" },
       { id: "valeri", nombre: "Valeri", pista: "Cobranza de hoy", icono: "flat-color-icons:debt", avatar: "valeri" },
       { id: "clara", nombre: "Clara", pista: "Reportes de mes y trimestre", icono: "flat-color-icons:document", avatar: "clara" },
+    ],
+  },
+  {
+    titulo: "Administración",
+    soloAdmin: true,
+    opciones: [
+      { id: "admin", nombre: "Panel de admin", pista: "Leads, ajustes y usuarios", icono: "flat-color-icons:settings" },
     ],
   },
 ];
@@ -136,13 +144,7 @@ export function MenuLateral({ negocio, nombre, esAdmin, activa, onElegir, onSali
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-1 border-t border-line px-3 py-2">
-        <a href="/admin" className="flex min-h-[44px] items-center gap-3 rounded-xl px-2.5 text-sm text-ink-soft hover:bg-bg-3/60 hover:text-ink">
-          <span className="flex w-[30px] justify-center">
-            <Icon icon="flat-color-icons:settings" width={22} aria-hidden />
-          </span>
-          Admin
-        </a>
+      <div className="border-t border-line px-3 py-2">
         <button type="button" onClick={onSalir} className="flex min-h-[44px] w-full items-center gap-3 rounded-xl px-2.5 text-left text-sm text-ink-soft hover:bg-bg-3/60 hover:text-ink">
           <span className="flex w-[30px] justify-center">
             <Icon icon="flat-color-icons:export" width={22} aria-hidden />

@@ -65,7 +65,7 @@ export function LoginCRM({ onLogin }: LoginCRMProps) {
         <p className="mt-5 rounded-xl border border-line bg-glass px-3 py-2 text-center text-xs text-ink-mute">
           Modo demo: <strong>demo@demo.com</strong> / <strong>demo1234</strong>.
           <br />
-          (Crea tus usuarios reales en <code>/admin</code> y borra el demo.)
+          (Crea tus usuarios reales en Panel de admin (menú izquierdo) y borra el demo.)
         </p>
       </form>
     </main>

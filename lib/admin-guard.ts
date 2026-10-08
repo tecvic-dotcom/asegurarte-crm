@@ -1,4 +1,5 @@
 import "server-only";
+import { sesionDesdeRequest } from "./auth";
 
 /**
  * Valida el código de admin enviado en la cabecera `x-admin-code`.
@@ -15,6 +16,9 @@ import "server-only";
  * cualquiera. `NEXT_PUBLIC_ADMIN_CODE` es opcional y solo sirve para la UI.
  */
 export function checkAdmin(req: Request): boolean {
+  // Dentro del CRM, quien ya inició sesión como ADMINISTRADOR entra sin escribir el código
+  // (la cookie de sesión va firmada; un vendedor no pasa).
+  if (sesionDesdeRequest(req)?.rol === "admin") return true;
   const expected = process.env.ADMIN_CODE;
   if (!expected) return false; // sin código de servidor configurado = acceso cerrado
   const code = req.headers.get("x-admin-code");
