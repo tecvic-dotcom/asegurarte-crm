@@ -25,6 +25,7 @@ import {
   estadoDe,
   etiquetaEstado,
   listaDeHoy,
+  listaDeRenovaciones,
   resumenCobranza,
   type MotivoCobro,
 } from "@/lib/cobranza-reglas";
@@ -43,6 +44,15 @@ interface CobranzaProps {
 
 type Formulario = { poliza: Poliza | null; inicial: Partial<DatosPoliza> | null };
 
+type FiltroCobro = "vencidas" | "por_vencer" | "promesas" | "renuevan";
+
+const FILTROS: Record<FiltroCobro, { titulo: string; motivos: MotivoCobro[]; vacio: string }> = {
+  vencidas: { titulo: "Vencidas", motivos: ["vencida", "promesa_vencida"], vacio: "Nadie está vencido. 🎉" },
+  por_vencer: { titulo: "Por vencer", motivos: ["por_vencer"], vacio: "Nadie vence en los próximos días." },
+  promesas: { titulo: "Promesas de pago", motivos: ["promesa"], vacio: "No hay promesas de pago en espera." },
+  renuevan: { titulo: "Renuevan", motivos: ["renovacion"], vacio: "Ninguna póliza renueva en los próximos días." },
+};
+
 /**
  * Valeri, tu empleado digital de cobranza. Vive junto a RORO.
  * Cada mañana ordena tu cartera: a quién cobrarle primero, cuánto está en
@@ -59,6 +69,8 @@ export function Cobranza({ prefill, onPrefillUsado }: CobranzaProps) {
   // Tus mensajes de WhatsApp personalizados (vacío = textos base de Valeri).
   const [mensajes, setMensajes] = useState<Partial<Record<MotivoCobro, string>>>({});
   const [editorAbierto, setEditorAbierto] = useState(false);
+  // Al tocar una de las 4 cifras de arriba, la lista muestra solo esas pólizas.
+  const [filtro, setFiltro] = useState<FiltroCobro | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const relojAviso = useRef<number | undefined>(undefined);
   const hoy = hoyLocal();
@@ -82,6 +94,17 @@ export function Cobranza({ prefill, onPrefillUsado }: CobranzaProps) {
   }, [cargar]);
 
   const pendientes = useMemo(() => (polizas ? listaDeHoy(polizas, hoy) : []), [polizas, hoy]);
+  const mostradas = useMemo(() => {
+    if (!filtro) return pendientes;
+    if (filtro === "renuevan") return polizas ? listaDeRenovaciones(polizas, hoy) : [];
+    return pendientes.filter((x) => FILTROS[filtro].motivos.includes(x.motivo));
+  }, [filtro, pendientes, polizas, hoy]);
+
+  function elegirFiltro(f: FiltroCobro) {
+    const nuevo = filtro === f ? null : f;
+    setFiltro(nuevo);
+    if (nuevo) window.setTimeout(() => document.getElementById("lista-cobranza")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+  }
   const resumen = useMemo(() => (polizas ? resumenCobranza(polizas, hoy) : null), [polizas, hoy]);
   const cartera = useMemo(() => {
     const q = busca.trim().toLowerCase();
@@ -252,6 +275,8 @@ export function Cobranza({ prefill, onPrefillUsado }: CobranzaProps) {
               color={resumen.vencidas ? "var(--red)" : "var(--green)"}
               icono={resumen.vencidas ? "flat-color-icons:high-priority" : "flat-color-icons:ok"}
               palabra={resumen.vencidas ? "Cobra primero" : "Nadie atrasado"}
+              activa={filtro === "vencidas"}
+              onClick={() => elegirFiltro("vencidas")}
             />
             <Cifra
               titulo={`Por vencer (${DIAS_AVISO} días)`}
@@ -261,6 +286,8 @@ export function Cobranza({ prefill, onPrefillUsado }: CobranzaProps) {
               color="var(--amber)"
               icono="flat-color-icons:medium-priority"
               palabra={resumen.porVencer ? "Avísales" : "Sin pendientes"}
+              activa={filtro === "por_vencer"}
+              onClick={() => elegirFiltro("por_vencer")}
             />
             <Cifra
               titulo="Promesas de pago"
@@ -269,6 +296,8 @@ export function Cobranza({ prefill, onPrefillUsado }: CobranzaProps) {
               color="var(--sky)"
               icono="flat-color-icons:clock"
               palabra="En espera"
+              activa={filtro === "promesas"}
+              onClick={() => elegirFiltro("promesas")}
             />
             <Cifra
               titulo={`Renuevan (${DIAS_RENOVACION} días)`}
@@ -277,12 +306,21 @@ export function Cobranza({ prefill, onPrefillUsado }: CobranzaProps) {
               color="var(--sky)"
               icono="flat-color-icons:calendar"
               palabra="Agenda llamada"
+              activa={filtro === "renuevan"}
+              onClick={() => elegirFiltro("renuevan")}
             />
           </div>
 
-          <section>
+          <section id="lista-cobranza" className="scroll-mt-4">
             <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-              <h3 className="font-semibold text-ink">A quién cobrarle hoy</h3>
+              <h3 className="font-semibold text-ink">
+                {filtro ? `${FILTROS[filtro].titulo} (${mostradas.length})` : "A quién cobrarle hoy"}
+                {filtro && (
+                  <button type="button" onClick={() => setFiltro(null)} className="ml-3 text-xs font-normal text-ink-mute underline hover:text-ink">
+                    Ver todos los pendientes ({pendientes.length})
+                  </button>
+                )}
+              </h3>
               <span className="flex flex-wrap items-center gap-3 text-xs text-ink-mute">
                 Ordenado por urgencia · {fechaLarga(hoy)}
                 <button type="button" onClick={() => setEditorAbierto((v) => !v)} aria-expanded={editorAbierto} className="btn-ghost px-3 py-1.5 text-xs">
@@ -307,13 +345,15 @@ export function Cobranza({ prefill, onPrefillUsado }: CobranzaProps) {
                 />
               </div>
             )}
-            {pendientes.length === 0 ? (
-              <p className="glass rounded-2xl p-5 text-center text-sm text-ink-soft">Todo al corriente: hoy nadie te debe. 🎉</p>
+            {mostradas.length === 0 ? (
+              <p className="glass rounded-2xl p-5 text-center text-sm text-ink-soft">
+                {filtro ? FILTROS[filtro].vacio : "Todo al corriente: hoy nadie te debe. 🎉"}
+              </p>
             ) : (
               <ul className="space-y-3">
-                {pendientes.map((pend) => (
+                {mostradas.map((pend) => (
                   <TarjetaCobro
-                    key={pend.poliza.id}
+                    key={`${pend.poliza.id}-${pend.motivo}`}
                     pendiente={pend}
                     plantillas={mensajes}
                     onWhatsApp={() => void accion(crmPolizaRecordada(pend.poliza.id), (p) => `Anotado: le recordaste hoy a ${p.asegurado}.`)}
@@ -408,6 +448,8 @@ function Cifra({
   color,
   icono,
   palabra,
+  activa,
+  onClick,
 }: {
   titulo: string;
   valor: number;
@@ -416,12 +458,19 @@ function Cifra({
   color: string;
   icono: string;
   palabra: string;
+  /** Esta cifra es el filtro que está viendo la lista. */
+  activa: boolean;
+  onClick: () => void;
 }) {
   const conSenal = valor > 0;
   return (
-    <div
-      className="glass flex min-h-[124px] flex-col rounded-2xl p-3.5 sm:p-4"
-      style={conSenal ? { borderColor: `color-mix(in srgb, ${color} 55%, transparent)` } : undefined}
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={activa}
+      title="Toca para ver solo estas pólizas"
+      className={`glass flex min-h-[124px] w-full flex-col rounded-2xl p-3.5 text-left transition-transform hover:-translate-y-0.5 sm:p-4 ${activa ? "ring-2 ring-brand-2" : ""}`}
+      style={conSenal || activa ? { borderColor: `color-mix(in srgb, ${color} 55%, transparent)` } : undefined}
     >
       <span className="text-[13px] font-semibold text-ink-soft">{titulo}</span>
       <span className="mt-1 text-[28px] font-bold leading-tight text-ink">{valor}</span>
@@ -430,6 +479,6 @@ function Cifra({
         <Icon icon={icono} width={14} aria-hidden /> {palabra}
       </span>
       <span className="text-[11px] text-ink-mute">{nota}</span>
-    </div>
+    </button>
   );
 }

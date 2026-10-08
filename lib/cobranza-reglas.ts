@@ -144,6 +144,24 @@ export function listaDeHoy(polizas: Poliza[], hoy: string): PendienteCobro[] {
   return lista.sort((a, b) => b.urgencia - a.urgencia);
 }
 
+/**
+ * Las pólizas que renuevan en los próximos DIAS_RENOVACION días, con el mensaje de renovación.
+ * Es la lista detrás de la cifra "Renuevan": incluye también las que ya van en otra lista
+ * (por ejemplo, una por vencer que además renueva pronto).
+ */
+export function listaDeRenovaciones(polizas: Poliza[], hoy: string): PendienteCobro[] {
+  const lista: PendienteCobro[] = [];
+  for (const p of polizas) {
+    if (p.estatus_manual === "cancelada" || !p.renovacion) continue;
+    const r = diasEntre(hoy, p.renovacion);
+    if (r < 0 || r > DIAS_RENOVACION) continue;
+    const { estado, dias } = estadoDe(p, hoy);
+    const ya = recordadaHoy(p, hoy);
+    lista.push({ poliza: p, motivo: "renovacion", estado, dias, recordadaHoy: ya, urgencia: (ya ? -10_000 : 0) + 1000 - r });
+  }
+  return lista.sort((a, b) => b.urgencia - a.urgencia);
+}
+
 // ----------------------------------------------------------------------------
 // Mensajes de WhatsApp (los envías TÚ; Valeri solo los deja listos)
 // ----------------------------------------------------------------------------
