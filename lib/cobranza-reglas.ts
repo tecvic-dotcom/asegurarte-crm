@@ -196,7 +196,7 @@ function laPoliza(p: Poliza): string {
 /** Texto base de cada situación (el que Valeri usa mientras no escribas el tuyo). */
 export const PLANTILLAS_BASE: Record<MotivoCobro, string> = {
   vencida:
-    "{saludo}, te escribo por el pago de {poliza} {monto}: la fecha límite fue el {fecha_limite} y todavía lo veo pendiente. Para que tu protección no se suspenda, ¿te ayudo a dejarlo pagado hoy? Quedo atento.",
+    "{saludo}, te escribo por el pago de {poliza} {monto}: la fecha de inicio de vigencia del recibo es del {fecha_limite} y todavía lo veo pendiente. Para que tu protección no se suspenda, ¿te ayudo a dejarlo pagado hoy? Quedo atento.",
   promesa_vencida:
     "{saludo}, ¿cómo vas? Quedamos en que el pago de {poliza} {monto} quedaba el {fecha_promesa} y aún no lo veo reflejado. ¿Te comparto los datos para hacerlo hoy? Quedo atento.",
   promesa:
