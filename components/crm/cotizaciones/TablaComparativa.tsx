@@ -1,12 +1,13 @@
 "use client";
 
 import { Icon } from "@iconify/react";
-import { fechaCorta, fechaLarga, fechaLocal } from "@/lib/fechas";
+import { fechaCorta, fechaLarga, fechaLocal, hoyLocal } from "@/lib/fechas";
 import {
+  celdaPagos,
+  estaVencida,
   ETIQUETA_ESTADO,
   filasComparativa,
   formatoDinero,
-  FORMAS_PAGO,
   masEconomica,
   type Cotizacion,
   type EstadoCotizacion,
@@ -50,10 +51,11 @@ interface TablaComparativaProps {
 /** Las opciones de un ramo, lado a lado: precio, coberturas y qué hacer con cada una. */
 export function TablaComparativa({ grupo, seleccion, ocupadas, onAlternar, onAlternarTodas, onNueva, onEditar, onDuplicar, onEstado }: TablaComparativaProps) {
   const { ramo, items } = grupo;
+  const hoy = hoyLocal();
   const activas = items.filter((c) => c.estado !== "descartada");
   const economica = masEconomica(activas);
   const filas = filasComparativa(items, ramo);
-  const hayPagos = items.some((c) => c.forma_pago && c.monto_pago);
+  const hayPagos = items.some((c) => celdaPagos(c));
   const hayVigencia = items.some((c) => c.vigencia_hasta);
   const hayEnvio = items.some((c) => c.enviada_en);
   const hayNotas = items.some((c) => c.notas);
@@ -124,6 +126,11 @@ export function TablaComparativa({ grupo, seleccion, ocupadas, onAlternar, onAlt
                     </label>
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       <ChipEstado estado={c.estado} titulo={c.enviada_en ? `Enviada el ${fechaCorta(fechaLocal(c.enviada_en))}` : undefined} />
+                      {estaVencida(c, hoy) && (
+                        <span className="flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium" style={{ background: "color-mix(in srgb, var(--amber) 16%, transparent)", color: "var(--amber)" }}>
+                          <Icon icon="flat-color-icons:high-priority" width={14} aria-hidden /> Vencida
+                        </span>
+                      )}
                       {economica === c.id && (
                         <span className="flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium" style={{ background: "color-mix(in srgb, var(--green) 16%, transparent)", color: "var(--green)" }}>
                           <Icon icon="flat-color-icons:approval" width={14} aria-hidden /> Más económica
@@ -139,12 +146,24 @@ export function TablaComparativa({ grupo, seleccion, ocupadas, onAlternar, onAlt
             {fila(ramo.etiquetaPrima, (c) => (
               <span className="text-base font-bold text-ink">{formatoDinero(c.prima, c.moneda)}</span>
             ))}
-            {hayPagos &&
-              fila("En pagos", (c) =>
-                c.forma_pago && c.monto_pago ? `${FORMAS_PAGO.find((f) => f.id === c.forma_pago)?.etiqueta}: ${formatoDinero(c.monto_pago, c.moneda)}` : "",
-              )}
+            {hayPagos && fila("En pagos", (c) => celdaPagos(c))}
             {filas.map((f) => fila(f.campo.etiqueta, (c) => c.datos[f.campo.clave] ?? ""))}
-            {hayVigencia && fila("Válida hasta", (c) => (c.vigencia_hasta ? fechaLarga(c.vigencia_hasta) : ""))}
+            {hayVigencia &&
+              fila("Válida hasta", (c) =>
+                c.vigencia_hasta ? (
+                  <>
+                    {fechaLarga(c.vigencia_hasta)}
+                    {estaVencida(c, hoy) && (
+                      <span className="font-medium" style={{ color: "var(--amber)" }}>
+                        {" "}
+                        · vencida
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  ""
+                ),
+              )}
             {hayEnvio && fila("Enviada", (c) => (c.enviada_en ? fechaCorta(fechaLocal(c.enviada_en)) : ""))}
             {hayNotas && fila("Notas (solo tú)", (c) => c.notas)}
             <tr className="border-t border-line">

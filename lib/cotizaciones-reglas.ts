@@ -6,7 +6,7 @@
  * cada aseguradora; aquí se guarda, se compara con las demás opciones y se arma el
  * mensaje de WhatsApp para el cliente.
  */
-import { esFechaValida, fechaLarga } from "./fechas";
+import { esFechaValida, fechaLarga, sumarDias } from "./fechas";
 
 export type RamoCotizacion = "gmm" | "autos" | "hogar" | "viaje" | "vida" | "ahorro";
 export type MonedaCotizacion = "MN" | "DLS";
@@ -25,6 +25,8 @@ export interface CampoCotizacion {
   compartido?: boolean;
   /** Ocupa el renglón completo del formulario. */
   ancho?: boolean;
+  /** Dato solo para ti (por ejemplo, el folio): se ve en la tabla pero NO sale en el mensaje al cliente. */
+  interno?: boolean;
 }
 
 export interface InfoRamoCotizacion {
@@ -44,6 +46,9 @@ export interface InfoRamoCotizacion {
   campos: CampoCotizacion[];
 }
 
+/** El número o folio que la aseguradora le da a la cotización (sirve para emitirla o reclamarla). */
+const FOLIO: CampoCotizacion = { clave: "folio", etiqueta: "Número de cotización", ejemplo: "Ej. el folio que da el portal", interno: true };
+
 /** En el orden en que aparecen: primero lo que más cotizas. */
 export const RAMOS_COTIZACION: InfoRamoCotizacion[] = [
   {
@@ -61,8 +66,9 @@ export const RAMOS_COTIZACION: InfoRamoCotizacion[] = [
       { clave: "deducible", etiqueta: "Deducible", ejemplo: "Ej. $30,000" },
       { clave: "coaseguro", etiqueta: "Coaseguro", ejemplo: "Ej. 10%" },
       { clave: "tope_coaseguro", etiqueta: "Tope de coaseguro", ejemplo: "Ej. $50,000" },
-      { clave: "nivel_hospitalario", etiqueta: "Nivel hospitalario", ejemplo: "Ej. Alto" },
-      { clave: "extras", etiqueta: "Otros beneficios", ejemplo: "Ej. Maternidad, emergencia en el extranjero", ancho: true },
+      { clave: "nivel_hospitalario", etiqueta: "Nivel o gama hospitalaria", ejemplo: "Ej. Esmeralda" },
+      { clave: "extras", etiqueta: "Otros beneficios", ejemplo: "Ej. Cobertura nacional, medicamentos fuera del hospital", ancho: true },
+      FOLIO,
     ],
   },
   {
@@ -82,7 +88,8 @@ export const RAMOS_COTIZACION: InfoRamoCotizacion[] = [
       { clave: "deducible_robo", etiqueta: "Deducible robo total", ejemplo: "Ej. 10%" },
       { clave: "rc", etiqueta: "Responsabilidad civil", ejemplo: "Ej. $3,000,000" },
       { clave: "gastos_medicos", etiqueta: "Gastos médicos ocupantes", ejemplo: "Ej. $200,000" },
-      { clave: "extras", etiqueta: "Otros beneficios", ejemplo: "Ej. Asistencia vial, auto sustituto", ancho: true },
+      { clave: "extras", etiqueta: "Otros beneficios", ejemplo: "Ej. Asistencia vial, auto relevo, defensa legal", ancho: true },
+      FOLIO,
     ],
   },
   {
@@ -101,6 +108,7 @@ export const RAMOS_COTIZACION: InfoRamoCotizacion[] = [
       { clave: "rc", etiqueta: "Responsabilidad civil", ejemplo: "Ej. $1,000,000" },
       { clave: "deducible", etiqueta: "Deducible", ejemplo: "Ej. 2%" },
       { clave: "coberturas", etiqueta: "Coberturas incluidas", ejemplo: "Ej. Sismo, huracán, inundación, robo", ancho: true },
+      FOLIO,
     ],
   },
   {
@@ -119,6 +127,7 @@ export const RAMOS_COTIZACION: InfoRamoCotizacion[] = [
       { clave: "cancelacion", etiqueta: "Cancelación o interrupción", ejemplo: "Ej. Hasta USD 5,000" },
       { clave: "equipaje", etiqueta: "Equipaje", ejemplo: "Ej. USD 1,500" },
       { clave: "extras", etiqueta: "Otros beneficios", ejemplo: "Ej. Asistencia 24 h, deportes recreativos", ancho: true },
+      FOLIO,
     ],
   },
   {
@@ -135,6 +144,7 @@ export const RAMOS_COTIZACION: InfoRamoCotizacion[] = [
       { clave: "suma_asegurada", etiqueta: "Suma asegurada", ejemplo: "Ej. $3,000,000" },
       { clave: "plazo", etiqueta: "Plazo", ejemplo: "Ej. 20 años" },
       { clave: "coberturas", etiqueta: "Coberturas adicionales", ejemplo: "Ej. Invalidez, enfermedades graves", ancho: true },
+      FOLIO,
     ],
   },
   {
@@ -153,6 +163,7 @@ export const RAMOS_COTIZACION: InfoRamoCotizacion[] = [
       { clave: "plazo", etiqueta: "Plazo", ejemplo: "Ej. 15 años" },
       { clave: "suma_asegurada", etiqueta: "Suma asegurada de vida", ejemplo: "Ej. $500,000" },
       { clave: "extras", etiqueta: "Otros beneficios", ejemplo: "Ej. Exención de pago por invalidez", ancho: true },
+      FOLIO,
     ],
   },
 ];
@@ -205,8 +216,10 @@ export interface Cotizacion {
   prima: number;
   moneda: MonedaCotizacion;
   forma_pago: FormaPago | null;
-  /** Cada pago, si la ofreces en parcialidades. */
+  /** Cada pago (los que siguen al primero), si la ofreces en parcialidades. */
   monto_pago: number | null;
+  /** El primer pago, cuando es distinto de los demás (casi siempre trae los derechos de póliza). */
+  primer_pago: number | null;
   /** AAAA-MM-DD */
   vigencia_hasta: string | null;
   /** Coberturas y datos del ramo, por la clave de cada campo. */
@@ -226,6 +239,7 @@ export interface DatosCotizacion {
   moneda: MonedaCotizacion;
   forma_pago: FormaPago | null;
   monto_pago: number | null;
+  primer_pago: number | null;
   vigencia_hasta: string | null;
   datos: Record<string, string>;
   notas: string;
@@ -277,6 +291,7 @@ export function validarCotizacion(entrada: unknown): ResultadoCotizacion {
   // Parcialidades: opcionales, y solo en los ramos que se pagan por partes.
   let forma_pago: FormaPago | null = null;
   let monto_pago: number | null = null;
+  let primer_pago: number | null = null;
   const forma = limpio(e.forma_pago);
   if (ramo.enPagos && forma) {
     if (!FORMAS_PAGO.some((f) => f.id === forma)) return { ok: false, error: "Esa forma de pago no es válida." };
@@ -286,6 +301,14 @@ export function validarCotizacion(entrada: unknown): ResultadoCotizacion {
       return { ok: false, error: "Si la ofreces en pagos, escribe cuánto es cada pago." };
     }
     monto_pago = redondear(monto);
+    // El primer pago es opcional: vacío (o igual a los demás) significa que todos los pagos son iguales.
+    if (limpio(e.primer_pago)) {
+      const primero = numeroDe(e.primer_pago);
+      if (!Number.isFinite(primero) || primero <= 0 || primero > MAX_DINERO) {
+        return { ok: false, error: "Escribe el primer pago como un número mayor que 0, o déjalo vacío si todos los pagos son iguales." };
+      }
+      primer_pago = redondear(primero) === monto_pago ? null : redondear(primero);
+    }
   }
 
   const vigencia = limpio(e.vigencia_hasta);
@@ -315,6 +338,7 @@ export function validarCotizacion(entrada: unknown): ResultadoCotizacion {
       moneda,
       forma_pago,
       monto_pago,
+      primer_pago,
       vigencia_hasta: vigencia || null,
       datos,
       notas,
@@ -337,6 +361,34 @@ export function formatoDinero(n: number, moneda: MonedaCotizacion): string {
     maximumFractionDigits: 2,
   });
   return `$${texto} ${moneda === "DLS" ? "USD" : "MXN"}`;
+}
+
+/** Cuántos pagos siguen después del primero en cada forma de pago. */
+const PAGOS_DESPUES: Record<FormaPago, number> = { mensual: 11, trimestral: 3, semestral: 1 };
+
+type DatosDePagos = Pick<Cotizacion, "forma_pago" | "monto_pago" | "primer_pago" | "moneda">;
+
+/** Para la tabla: "Mensual: $1,620 MXN" o "Semestral: 1er pago de $9,148.61 MXN y 1 pago de $8,336.61 MXN". Vacío si no hay pagos. */
+export function celdaPagos(c: DatosDePagos): string {
+  const forma = FORMAS_PAGO.find((f) => f.id === c.forma_pago);
+  if (!forma || !c.monto_pago) return "";
+  if (!c.primer_pago) return `${forma.etiqueta}: ${formatoDinero(c.monto_pago, c.moneda)}`;
+  const n = PAGOS_DESPUES[forma.id];
+  return `${forma.etiqueta}: 1er pago de ${formatoDinero(c.primer_pago, c.moneda)} y ${n === 1 ? "1 pago" : `${n} pagos`} de ${formatoDinero(c.monto_pago, c.moneda)}`;
+}
+
+/** Para el mensaje: "pagos mensuales de $1,620 MXN" o "pagos semestrales: 1er pago de $9,148.61 MXN y 1 pago de $8,336.61 MXN". */
+export function frasePagos(c: DatosDePagos): string {
+  const forma = FORMAS_PAGO.find((f) => f.id === c.forma_pago);
+  if (!forma || !c.monto_pago) return "";
+  if (!c.primer_pago) return `pagos ${forma.plural} de ${formatoDinero(c.monto_pago, c.moneda)}`;
+  const n = PAGOS_DESPUES[forma.id];
+  return `pagos ${forma.plural}: 1er pago de ${formatoDinero(c.primer_pago, c.moneda)} y ${n === 1 ? "1 pago" : `${n} pagos`} de ${formatoDinero(c.monto_pago, c.moneda)}`;
+}
+
+/** Ya pasó la fecha hasta la que era válida. Una elegida o descartada ya no corre prisa. */
+export function estaVencida(c: Pick<Cotizacion, "vigencia_hasta" | "estado">, hoy: string): boolean {
+  return c.vigencia_hasta !== null && c.vigencia_hasta < hoy && c.estado !== "elegida" && c.estado !== "descartada";
 }
 
 /** Por ramo (en el orden de arriba); en cada ramo, la elegida primero y luego la más barata. */
@@ -406,14 +458,14 @@ export function primerNombre(nombre: string): string {
 
 const igual = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
 
-function bloqueRamo(items: Cotizacion[], ramo: InfoRamoCotizacion, vigenciaPorOpcion: boolean): string[] {
+function bloqueRamo(items: Cotizacion[], ramo: InfoRamoCotizacion, vigenciaPorOpcion: boolean, vigencia: (c: Cotizacion) => string | null): string[] {
   const lineas: string[] = [`${ramo.emoji} *${ramo.nombre}*`];
   const varias = items.length > 1;
 
   // Lo que se asegura (asegurados, vehículo…) sale una sola vez si es igual en todas las opciones.
   const comunes = new Set<string>();
   if (varias) {
-    for (const campo of ramo.campos.filter((c) => c.compartido)) {
+    for (const campo of ramo.campos.filter((c) => c.compartido && !c.interno)) {
       const valores = items.map((c) => c.datos[campo.clave] ?? "");
       if (valores[0] && valores.every((v) => igual(v, valores[0]))) {
         comunes.add(campo.clave);
@@ -427,16 +479,16 @@ function bloqueRamo(items: Cotizacion[], ramo: InfoRamoCotizacion, vigenciaPorOp
     const nombre = `${c.aseguradora}${c.plan ? ` · ${c.plan}` : ""}`;
     lineas.push(varias ? `*Opción ${i + 1} · ${nombre}*` : `*${nombre}*`);
     for (const campo of ramo.campos) {
-      if (comunes.has(campo.clave)) continue;
+      // El folio y demás datos "solo para ti" no salen en el mensaje al cliente.
+      if (campo.interno || comunes.has(campo.clave)) continue;
       const v = c.datos[campo.clave];
       if (v) lineas.push(`• ${campo.etiqueta}: ${v}`);
     }
     lineas.push(`💰 *${ramo.etiquetaPrima}: ${formatoDinero(c.prima, c.moneda)}*`);
-    if (c.forma_pago && c.monto_pago) {
-      const plural = FORMAS_PAGO.find((f) => f.id === c.forma_pago)?.plural ?? "";
-      lineas.push(`O en pagos ${plural} de ${formatoDinero(c.monto_pago, c.moneda)}`);
-    }
-    if (vigenciaPorOpcion && c.vigencia_hasta) lineas.push(`📅 Vigente hasta el ${fechaLarga(c.vigencia_hasta)}`);
+    const pagos = frasePagos(c);
+    if (pagos) lineas.push(`O en ${pagos}`);
+    const hasta = vigencia(c);
+    if (vigenciaPorOpcion && hasta) lineas.push(`📅 Vigente hasta el ${fechaLarga(hasta)}`);
     lineas.push("");
   });
   return lineas;
@@ -444,9 +496,19 @@ function bloqueRamo(items: Cotizacion[], ramo: InfoRamoCotizacion, vigenciaPorOp
 
 /**
  * El mensaje listo para mandar: saludo, cada ramo con sus opciones, vigencia y despedida.
- * Se puede editar antes de enviarlo.
+ * Se puede editar antes de enviarlo. Si se pasa `hoy`, no se escribe la vigencia de una cotización que ya venció.
  */
-export function armarMensajeWhatsApp({ nombre, firma, cotizaciones }: { nombre: string; firma: string; cotizaciones: Cotizacion[] }): string {
+export function armarMensajeWhatsApp({
+  nombre,
+  firma,
+  cotizaciones,
+  hoy,
+}: {
+  nombre: string;
+  firma: string;
+  cotizaciones: Cotizacion[];
+  hoy?: string;
+}): string {
   const grupos = agruparPorRamo(cotizaciones);
   const total = cotizaciones.length;
   if (total === 0) return "";
@@ -457,9 +519,10 @@ export function armarMensajeWhatsApp({ nombre, firma, cotizaciones }: { nombre: 
     "",
   );
   // La vigencia: una sola línea al final si todas coinciden; si no, cada opción dice la suya.
-  const vigencias = cotizaciones.map((c) => c.vigencia_hasta).filter((v): v is string => Boolean(v));
+  const vigencia = (c: Cotizacion) => (c.vigencia_hasta && (!hoy || c.vigencia_hasta >= hoy) ? c.vigencia_hasta : null);
+  const vigencias = cotizaciones.map(vigencia).filter((v): v is string => Boolean(v));
   const unificada = vigencias.length === total && vigencias.every((v) => v === vigencias[0]);
-  for (const g of grupos) lineas.push(...bloqueRamo(g.items, g.ramo, vigencias.length > 0 && !unificada));
+  for (const g of grupos) lineas.push(...bloqueRamo(g.items, g.ramo, vigencias.length > 0 && !unificada, vigencia));
   if (unificada) lineas.push(`📅 Cotización vigente hasta el ${fechaLarga(vigencias[0])}.`, "");
 
   lineas.push("Los precios y condiciones están sujetos a la validación de la aseguradora al emitir la póliza.", "");
@@ -473,4 +536,122 @@ export function textoSeguimiento(cotizaciones: Cotizacion[], nombre: string): st
   const ramos = [...new Set(agruparPorRamo(cotizaciones).map((g) => g.ramo.corto))];
   const cuales = ramos.length === 1 ? `la cotización de ${ramos[0]}` : `las cotizaciones de ${ramos.join(" y ")}`;
   return `Dar seguimiento a ${cuales} de ${primerNombre(nombre) || nombre}`.slice(0, 200);
+}
+
+// ----------------------------------------------------------------------------
+// Portales de las aseguradoras (para abrirlos desde el CRM)
+// ----------------------------------------------------------------------------
+
+export interface PortalAseguradora {
+  id: string;
+  nombre: string;
+  /** Qué se cotiza ahí. */
+  detalle: string;
+  url: string;
+}
+
+/**
+ * Las direcciones CORTAS de cada portal: al abrirlas, la aseguradora pide tu usuario y contraseña
+ * (el CRM nunca las ve ni las guarda). No se usan las direcciones largas de inicio de sesión: traen
+ * un código de un solo uso y dejan de servir.
+ */
+export const PORTALES: PortalAseguradora[] = [
+  { id: "axa", nombre: "AXA", detalle: "Portal de distribuidores: gastos médicos, autos y hogar", url: "https://cloud.distribuidores.axa.com.mx/" },
+  { id: "chubb-autos", nombre: "Chubb autos", detalle: "Chubb Agent Space: autos", url: "https://agentspace.mx.chubb.com/" },
+  { id: "chubb-travel", nombre: "Chubb Travel", detalle: "Seguros de viaje", url: "https://travel.chubb.com/default.aspx?iso2=MX&sk=Chubb" },
+];
+
+// ----------------------------------------------------------------------------
+// Lectura de la cotización con IA: de lo que devuelve el modelo a un borrador revisable
+// ----------------------------------------------------------------------------
+
+/** Lo que se puede subir para que la IA lo lea, y cuánto puede pesar (Vercel acepta cuerpos de hasta 4.5 MB). */
+export const TIPOS_ARCHIVO_COTIZACION = ["application/pdf", "image/png", "image/jpeg", "image/webp"];
+export const MAX_BYTES_ARCHIVO = 4 * 1024 * 1024;
+
+/** Lo que la IA entendió del documento, listo para llenar el formulario. Lo que no vio queda en null o vacío. */
+export interface BorradorCotizacion {
+  ramo: RamoCotizacion | null;
+  aseguradora: string;
+  plan: string;
+  prima: number | null;
+  moneda: MonedaCotizacion;
+  forma_pago: FormaPago | null;
+  primer_pago: number | null;
+  monto_pago: number | null;
+  vigencia_hasta: string | null;
+  datos: Record<string, string>;
+}
+
+export interface LecturaCotizacion {
+  borrador: BorradorCotizacion;
+  /** Dudas de la lectura: qué no se vio claro y qué revisar antes de guardar. */
+  avisos: string[];
+}
+
+/** Todas las claves de campos de todos los ramos: son las que la IA puede devolver. */
+export const CLAVES_CAMPOS: string[] = [...new Set(RAMOS_COTIZACION.flatMap((r) => r.campos.map((c) => c.clave)))];
+
+/** Un monto válido de la IA (más de 0 y razonable), o null. */
+function montoDe(v: unknown): number | null {
+  const n = numeroDe(v);
+  return Number.isFinite(n) && n > 0 && n <= MAX_DINERO ? redondear(n) : null;
+}
+
+/**
+ * Convierte la respuesta cruda de la IA en un borrador para el formulario. No confía en nada: valida el ramo,
+ * deja solo las claves de ese ramo, calcula la fecha límite si el documento solo dice "15 días" y descarta
+ * pagos que no tienen sentido. La IA propone; el agente revisa y confirma.
+ */
+export function normalizarLectura(entrada: unknown): LecturaCotizacion {
+  const e = (entrada && typeof entrada === "object" ? entrada : {}) as Record<string, unknown>;
+  const avisos = Array.isArray(e.avisos) ? e.avisos.map(limpio).filter(Boolean) : [];
+
+  const ramoId = esRamoCotizacion(e.ramo) ? e.ramo : null;
+  const ramo = ramoId ? infoRamoCotizacion(ramoId) : null;
+  if (!ramo) avisos.push("No pude identificar el ramo: elígelo tú.");
+
+  const aseguradora = limpio(e.aseguradora).slice(0, MAX_ASEGURADORA);
+  if (!aseguradora) avisos.push("No vi la aseguradora: escríbela tú.");
+  const plan = limpio(e.plan).slice(0, MAX_PLAN);
+
+  const prima = montoDe(e.prima_contado);
+  if (prima === null) avisos.push("No vi la prima de contado: escríbela tú.");
+  const moneda: MonedaCotizacion = e.moneda === "DLS" ? "DLS" : "MN";
+
+  // Pagos fraccionados: solo si hay forma válida, un monto, y el ramo se paga por partes.
+  let forma_pago: FormaPago | null = null;
+  let monto_pago: number | null = null;
+  let primer_pago: number | null = null;
+  const forma = FORMAS_PAGO.find((f) => f.id === limpio(e.forma_pago))?.id ?? null;
+  const siguiente = montoDe(e.pago_siguiente);
+  const primero = montoDe(e.primer_pago);
+  if (forma && (!ramo || ramo.enPagos) && (siguiente !== null || primero !== null)) {
+    forma_pago = forma;
+    monto_pago = siguiente ?? primero;
+    primer_pago = primero !== null && primero !== monto_pago ? primero : null;
+  }
+
+  // Fecha límite de la cotización: la explícita; si no, la fecha de cotización + los días que diga.
+  const explicita = limpio(e.vigencia_hasta);
+  const fecha = limpio(e.fecha_cotizacion);
+  const dias = Math.round(Number(e.dias_vigencia));
+  let vigencia_hasta: string | null = null;
+  if (explicita && esFechaValida(explicita)) vigencia_hasta = explicita;
+  else if (esFechaValida(fecha) && Number.isFinite(dias) && dias > 0 && dias <= 365) vigencia_hasta = sumarDias(fecha, dias);
+  if (!vigencia_hasta) avisos.push("No vi hasta cuándo es válida la cotización: ponlo tú si lo sabes.");
+
+  // Los datos del ramo: solo claves de ese ramo, sin repetidas y sin vacíos.
+  const datos: Record<string, string> = {};
+  if (ramo && Array.isArray(e.campos)) {
+    for (const par of e.campos) {
+      if (!par || typeof par !== "object") continue;
+      const p = par as Record<string, unknown>;
+      const clave = limpio(p.clave);
+      const valor = limpio(p.valor).slice(0, MAX_DATO);
+      if (valor && !datos[clave] && ramo.campos.some((c) => c.clave === clave)) datos[clave] = valor;
+    }
+  }
+
+  return { borrador: { ramo: ramo?.id ?? null, aseguradora, plan, prima, moneda, forma_pago, primer_pago, monto_pago, vigencia_hasta, datos }, avisos };
 }

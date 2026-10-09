@@ -9,6 +9,7 @@ import {
   crmCrearPendiente,
   crmEditarCotizacion,
   crmEstadoCotizacion,
+  crmLeerCotizacion,
   crmMarcarEnviadas,
   crmMover,
   ErrorCRM,
@@ -16,10 +17,14 @@ import {
 import {
   agruparPorRamo,
   infoRamoCotizacion,
+  MAX_BYTES_ARCHIVO,
   ordenarCotizaciones,
+  PORTALES,
   RAMOS_COTIZACION,
   resumenCotizacion,
   textoSeguimiento,
+  TIPOS_ARCHIVO_COTIZACION,
+  type BorradorCotizacion,
   type Cotizacion,
   type DatosCotizacion,
   type EstadoCotizacion,
@@ -50,6 +55,31 @@ interface EstadoFormulario {
   base?: Cotizacion;
   /** Datos que no cambian entre opciones, ya escritos para la siguiente. */
   arrastre?: Record<string, string>;
+  /** Si viene de leer un archivo con IA: cómo se llamaba y qué dudas dejó. */
+  archivo?: string;
+  avisos?: string[];
+}
+
+/** El borrador que leyó la IA, con la forma de una cotización para que el formulario parta de ahí. */
+function baseDeBorrador(b: BorradorCotizacion, leadId: string, ramo: RamoCotizacion): Cotizacion {
+  return {
+    id: "",
+    lead_id: leadId,
+    ramo,
+    aseguradora: b.aseguradora,
+    plan: b.plan,
+    prima: b.prima ?? 0,
+    moneda: b.moneda,
+    forma_pago: b.forma_pago,
+    monto_pago: b.monto_pago,
+    primer_pago: b.primer_pago,
+    vigencia_hasta: b.vigencia_hasta,
+    datos: b.datos,
+    notas: "",
+    estado: "guardada",
+    enviada_en: null,
+    creado_en: "",
+  };
 }
 
 function edadDe(nacimiento: string | null, hoy: string): number | null {
@@ -83,7 +113,9 @@ export function VistaProspecto({ lead, firma, onCambiar, onAbrirExpediente, onCa
   const [verDescartadas, setVerDescartadas] = useState(false);
   const [mensajeAbierto, setMensajeAbierto] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
+  const [leyendo, setLeyendo] = useState(false);
   const relojAviso = useRef<number | undefined>(undefined);
+  const selectorArchivo = useRef<HTMLInputElement>(null);
 
   async function cargar() {
     setCargando(true);
@@ -127,6 +159,29 @@ export function VistaProspecto({ lead, firma, onCambiar, onAbrirExpediente, onCa
   function abrirFormulario(f: EstadoFormulario) {
     setFormulario(f);
     setVez((v) => v + 1);
+  }
+
+  /** La IA lee el PDF o la foto de la cotización y abre el formulario ya lleno, para que lo revises. */
+  async function leerArchivo(archivo: File) {
+    if (leyendo) return;
+    if (!TIPOS_ARCHIVO_COTIZACION.includes(archivo.type)) {
+      avisar("Solo puedo leer PDF o fotos (PNG, JPG, WEBP).");
+      return;
+    }
+    if (archivo.size > MAX_BYTES_ARCHIVO) {
+      avisar("El archivo pesa más de 4 MB. Comprímelo o sube solo las hojas principales.");
+      return;
+    }
+    setLeyendo(true);
+    try {
+      const lectura = await crmLeerCotizacion(archivo);
+      const ramo = lectura.borrador.ramo ?? "gmm";
+      abrirFormulario({ modo: "nueva", ramo, base: baseDeBorrador(lectura.borrador, lead.id, ramo), archivo: archivo.name, avisos: lectura.avisos });
+    } catch (err) {
+      avisar((err as Error).message || "No pude leer ese archivo. Intenta de nuevo o captúrala a mano.");
+    } finally {
+      setLeyendo(false);
+    }
   }
 
   async function guardar(datos: DatosCotizacion, otra: boolean) {
@@ -279,17 +334,62 @@ export function VistaProspecto({ lead, firma, onCambiar, onAbrirExpediente, onCa
         </div>
       </div>
 
-      {/* Qué se le cotiza */}
-      <div className="glass rounded-2xl p-4">
-        <p className="field-label">¿Qué vas a cotizarle?</p>
-        <div className="flex flex-wrap gap-2">
-          {RAMOS_COTIZACION.map((r) => (
-            <button key={r.id} type="button" onClick={() => abrirFormulario({ modo: "nueva", ramo: r.id })} className="btn-ghost gap-2 px-3.5 py-2 text-sm">
-              <Icon icon={r.icono} width={20} aria-hidden /> {r.corto}
-            </button>
-          ))}
+      {/* Qué se le cotiza: portal → subir el archivo → (o capturar a mano) */}
+      <div className="glass space-y-4 rounded-2xl p-4">
+        <p className="field-label mb-0">¿Qué vas a cotizarle?</p>
+
+        <div>
+          <p className="mb-1.5 text-sm text-ink-soft">1. Cotiza en el portal de la aseguradora</p>
+          <div className="flex flex-wrap gap-2">
+            {PORTALES.map((p) => (
+              <a
+                key={p.id}
+                href={p.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={`${p.detalle} (se abre en otra pestaña; ahí entras con tu usuario)`}
+                className="btn-ghost gap-1.5 text-sm"
+                style={{ padding: "0.6rem 1rem" }}
+              >
+                {p.nombre} <span aria-hidden>↗</span>
+              </a>
+            ))}
+          </div>
         </div>
-        <p className="mt-2 text-xs text-ink-mute">Cotiza en el portal de la aseguradora y guarda aquí cada opción: yo las comparo y armo el mensaje de WhatsApp.</p>
+
+        <div>
+          <p className="mb-1.5 text-sm text-ink-soft">2. Sube el PDF o la foto de la cotización y yo lleno los datos</p>
+          <input
+            ref={selectorArchivo}
+            type="file"
+            accept={`.pdf,${TIPOS_ARCHIVO_COTIZACION.join(",")}`}
+            className="hidden"
+            aria-label="Archivo de la cotización"
+            onChange={(e) => {
+              const archivo = e.target.files?.[0];
+              e.target.value = ""; // para poder subir el mismo archivo otra vez
+              if (archivo) void leerArchivo(archivo);
+            }}
+          />
+          <button type="button" onClick={() => selectorArchivo.current?.click()} disabled={leyendo} className="btn-primary gap-2 text-sm" style={{ padding: "0.7rem 1.2rem" }}>
+            <Icon icon={leyendo ? "flat-color-icons:synchronize" : "flat-color-icons:upload"} width={20} className={leyendo ? "animate-spin" : undefined} aria-hidden />
+            {leyendo ? "Leyendo la cotización… (unos segundos)" : "Subir cotización (PDF o foto)"}
+          </button>
+          <p className="mt-1.5 text-xs text-ink-mute">
+            Tú revisas todo antes de guardar. El archivo no se guarda en el CRM, pero se manda a la IA (con los nombres que traiga) para leerlo.
+          </p>
+        </div>
+
+        <div>
+          <p className="mb-1.5 text-sm text-ink-soft">O captúrala a mano</p>
+          <div className="flex flex-wrap gap-2">
+            {RAMOS_COTIZACION.map((r) => (
+              <button key={r.id} type="button" onClick={() => abrirFormulario({ modo: "nueva", ramo: r.id })} className="btn-ghost gap-2 px-3.5 py-2 text-sm">
+                <Icon icon={r.icono} width={20} aria-hidden /> {r.corto}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {aviso && (
@@ -315,6 +415,8 @@ export function VistaProspecto({ lead, firma, onCambiar, onAbrirExpediente, onCa
           ramoInicial={formulario.ramo}
           base={formulario.base}
           arrastre={formulario.arrastre}
+          archivo={formulario.archivo}
+          avisos={formulario.avisos}
           onGuardar={guardar}
           onCancelar={() => setFormulario(null)}
         />

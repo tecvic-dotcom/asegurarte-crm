@@ -13,10 +13,11 @@ import { validarAdjunta } from "./adjuntas-reglas";
 import { esFechaValida } from "./fechas";
 import type { LecturaPoliza, TipoAdjunta } from "./types";
 
-const MODELO = "claude-sonnet-5-5";
+/** El mismo modelo lee pólizas y cotizaciones (lib/lectura-cotizacion.ts). */
+export const MODELO = "claude-sonnet-5-5";
 
 export const TIPOS_ARCHIVO = ["application/pdf", "image/png", "image/jpeg", "image/webp"] as const;
-type TipoArchivo = (typeof TIPOS_ARCHIVO)[number];
+export type TipoArchivo = (typeof TIPOS_ARCHIVO)[number];
 export function esTipoArchivo(t: string): t is TipoArchivo {
   return (TIPOS_ARCHIVO as readonly string[]).includes(t);
 }
@@ -62,7 +63,7 @@ Extrae solo lo que está escrito en el documento; nunca inventes. Si un dato no 
 Responde solo con el JSON pedido.`;
 
 let cliente: Anthropic | null = null;
-function getCliente(): Anthropic {
+export function getCliente(): Anthropic {
   cliente ??= new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0, timeout: 55_000 });
   return cliente;
 }
@@ -81,7 +82,8 @@ export class ErrorLectura extends Error {
   }
 }
 
-function traducirError(e: unknown): ErrorLectura {
+/** `que` es lo que se estaba leyendo ("la póliza", "la cotización"): sale en el mensaje genérico. */
+export function traducirError(e: unknown, que = "la póliza"): ErrorLectura {
   if (e instanceof Anthropic.AuthenticationError) return new ErrorLectura("La llave de IA no es válida. Revisa ANTHROPIC_API_KEY en tu .env.local y en Vercel.");
   if (e instanceof Anthropic.RateLimitError) return new ErrorLectura("Muchas lecturas seguidas. Espera un minuto e intenta de nuevo.", 429);
   if (e instanceof Anthropic.APIError && (e.status === 402 || (e as { type?: string }).type === "billing_error")) {
@@ -89,7 +91,7 @@ function traducirError(e: unknown): ErrorLectura {
   }
   if (e instanceof Anthropic.BadRequestError) return new ErrorLectura("La IA no pudo abrir ese archivo. Prueba con el PDF original o una foto más clara.", 422);
   if (e instanceof Anthropic.APIConnectionError) return new ErrorLectura("No pude conectarme con la IA (internet o tiempo de espera). Intenta de nuevo.", 504);
-  return new ErrorLectura("La IA tuvo un problema al leer la póliza. Intenta de nuevo.");
+  return new ErrorLectura(`La IA tuvo un problema al leer ${que}. Intenta de nuevo.`);
 }
 
 export async function leerPoliza(

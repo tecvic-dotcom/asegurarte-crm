@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
-import { hoyLocal } from "@/lib/fechas";
 import {
   ASEGURADORAS_RAPIDAS,
   ASEGURADORAS_SUGERIDAS,
@@ -30,6 +29,9 @@ interface FormularioCotizacionProps {
   base?: Cotizacion;
   /** Datos que no cambian entre opciones (asegurados, vehículo…): llegan ya escritos al "agregar otra". */
   arrastre?: Record<string, string>;
+  /** Si viene de leer un archivo: su nombre y lo que la IA no vio claro (para que lo revises antes de guardar). */
+  archivo?: string;
+  avisos?: string[];
   /** Guarda; si falla, lanza el error para que el formulario lo muestre y siga abierto. */
   onGuardar: (datos: DatosCotizacion, otra: boolean) => Promise<void>;
   onCancelar: () => void;
@@ -51,14 +53,15 @@ function Chip({ activo, onClick, children }: { activo: boolean; onClick: () => v
 }
 
 /** Anotar (o corregir) una opción que cotizaste: aseguradora, plan, precio y las coberturas del ramo. */
-export function FormularioCotizacion({ lead, modo, ramoInicial, base, arrastre, onGuardar, onCancelar }: FormularioCotizacionProps) {
+export function FormularioCotizacion({ lead, modo, ramoInicial, base, arrastre, archivo, avisos, onGuardar, onCancelar }: FormularioCotizacionProps) {
   const [ramoId, setRamoId] = useState<RamoCotizacion>(base?.ramo ?? ramoInicial);
   const [aseguradora, setAseguradora] = useState(base?.aseguradora ?? "");
   const [plan, setPlan] = useState(base?.plan ?? "");
-  const [prima, setPrima] = useState(base ? String(base.prima) : "");
+  const [prima, setPrima] = useState(base && base.prima > 0 ? String(base.prima) : "");
   const [moneda, setMoneda] = useState<MonedaCotizacion>(base?.moneda ?? "MN");
   const [forma, setForma] = useState<FormaPago | "">(base?.forma_pago ?? "");
   const [monto, setMonto] = useState(base?.monto_pago ? String(base.monto_pago) : "");
+  const [primerPago, setPrimerPago] = useState(base?.primer_pago ? String(base.primer_pago) : "");
   const [vigencia, setVigencia] = useState(base?.vigencia_hasta ?? "");
   const [datos, setDatos] = useState<Record<string, string>>({ ...(arrastre ?? {}), ...(base?.datos ?? {}) });
   const [notas, setNotas] = useState(base?.notas ?? "");
@@ -80,6 +83,7 @@ export function FormularioCotizacion({ lead, modo, ramoInicial, base, arrastre, 
     if (!infoRamoCotizacion(id).enPagos) {
       setForma("");
       setMonto("");
+      setPrimerPago("");
     }
     setFalla(null);
   }
@@ -96,6 +100,7 @@ export function FormularioCotizacion({ lead, modo, ramoInicial, base, arrastre, 
       moneda,
       forma_pago: forma || null,
       monto_pago: forma ? monto : null,
+      primer_pago: forma ? primerPago : null,
       vigencia_hasta: vigencia || null,
       datos,
       notas,
@@ -128,6 +133,30 @@ export function FormularioCotizacion({ lead, modo, ramoInicial, base, arrastre, 
       <p className="flex items-center gap-2 font-display text-lg text-ink">
         <Icon icon={ramo.icono} width={26} aria-hidden /> {titulo}
       </p>
+
+      {archivo && (
+        <div
+          role="status"
+          className="rounded-xl border px-3.5 py-3 text-sm"
+          style={{
+            borderColor: "color-mix(in srgb, var(--amber) 50%, transparent)",
+            background: "color-mix(in srgb, var(--amber) 8%, transparent)",
+          }}
+        >
+          <p className="flex items-center gap-1.5 font-semibold text-ink">
+            <Icon icon="flat-color-icons:high-priority" width={18} aria-hidden /> Leí «{archivo}». Revisa que todo esté bien antes de guardar.
+          </p>
+          {avisos && avisos.length > 0 ? (
+            <ul className="mt-1.5 list-disc space-y-0.5 pl-5 text-ink-soft">
+              {avisos.map((a, i) => (
+                <li key={i}>{a}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-1 text-ink-soft">Todo se veía claro, pero la IA puede equivocarse: compara con el documento.</p>
+          )}
+        </div>
+      )}
 
       {modo !== "editar" && (
         <div className="flex flex-wrap gap-2" role="group" aria-label="Ramo">
@@ -211,7 +240,7 @@ export function FormularioCotizacion({ lead, modo, ramoInicial, base, arrastre, 
       </div>
 
       {ramo.enPagos && (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className={`grid gap-3 ${forma ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
           <div>
             <label htmlFor="cot-forma" className="field-label">
               También en pagos <span className="text-xs font-normal text-ink-mute">(opcional)</span>
@@ -226,20 +255,36 @@ export function FormularioCotizacion({ lead, modo, ramoInicial, base, arrastre, 
             </select>
           </div>
           {forma && (
-            <div>
-              <label htmlFor="cot-monto" className="field-label">
-                Monto de cada pago
-              </label>
-              <input
-                id="cot-monto"
-                value={monto}
-                onChange={(e) => setMonto(e.target.value)}
-                inputMode="decimal"
-                placeholder="Ej. 1,620"
-                autoComplete="off"
-                className="field-input"
-              />
-            </div>
+            <>
+              <div>
+                <label htmlFor="cot-primer" className="field-label">
+                  Primer pago <span className="text-xs font-normal text-ink-mute">(si es distinto)</span>
+                </label>
+                <input
+                  id="cot-primer"
+                  value={primerPago}
+                  onChange={(e) => setPrimerPago(e.target.value)}
+                  inputMode="decimal"
+                  placeholder="Ej. 9,148.61"
+                  autoComplete="off"
+                  className="field-input"
+                />
+              </div>
+              <div>
+                <label htmlFor="cot-monto" className="field-label">
+                  Monto de cada pago
+                </label>
+                <input
+                  id="cot-monto"
+                  value={monto}
+                  onChange={(e) => setMonto(e.target.value)}
+                  inputMode="decimal"
+                  placeholder="Ej. 8,336.61"
+                  autoComplete="off"
+                  className="field-input"
+                />
+              </div>
+            </>
           )}
         </div>
       )}
@@ -272,7 +317,8 @@ export function FormularioCotizacion({ lead, modo, ramoInicial, base, arrastre, 
           <label htmlFor="cot-vigencia" className="field-label">
             Cotización válida hasta <span className="text-xs font-normal text-ink-mute">(opcional)</span>
           </label>
-          <input id="cot-vigencia" type="date" min={hoyLocal()} value={vigencia} onChange={(e) => setVigencia(e.target.value)} className="field-input py-2 text-sm" />
+          {/* Sin fecha mínima: una cotización ya vencida (o leída de un PDF viejo) se guarda igual; la tabla la marca "Vencida". */}
+          <input id="cot-vigencia" type="date" value={vigencia} onChange={(e) => setVigencia(e.target.value)} className="field-input py-2 text-sm" />
         </div>
         <div>
           <label htmlFor="cot-notas" className="field-label">

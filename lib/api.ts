@@ -40,7 +40,7 @@ import type {
 } from "./types";
 
 import type { MotivoCobro } from "./cobranza-reglas";
-import type { Cotizacion, DatosCotizacion, EstadoCotizacion } from "./cotizaciones-reglas";
+import type { Cotizacion, DatosCotizacion, EstadoCotizacion, LecturaCotizacion } from "./cotizaciones-reglas";
 import type { DatosPendiente, Pendiente } from "./pendientes-reglas";
 
 async function jsonOrThrow(res: Response): Promise<unknown> {
@@ -390,6 +390,14 @@ export const crmEstadoCotizacion = (id: string, estado: EstadoCotizacion) => acc
 export async function crmMarcarEnviadas(ids: string[]): Promise<Cotizacion[]> {
   const data = await jsonOErrorCRM(await postJSON("/api/crm/cotizaciones", { accion: "enviadas", ids }));
   return (data as { cotizaciones: Cotizacion[] }).cotizaciones;
+}
+
+/** La IA lee una cotización (PDF o foto) y devuelve un borrador para llenar el formulario. No guarda nada. */
+export async function crmLeerCotizacion(archivo: File): Promise<LecturaCotizacion> {
+  const form = new FormData();
+  form.append("archivo", archivo);
+  const res = await fetch("/api/crm/cotizaciones/leer", { method: "POST", body: form });
+  return (await jsonOErrorCRM(res)) as LecturaCotizacion;
 }
 
 // ---- Admin (requiere código x-admin-code) ----

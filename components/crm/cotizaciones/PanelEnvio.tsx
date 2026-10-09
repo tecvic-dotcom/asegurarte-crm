@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
-import { armarMensajeWhatsApp, type Cotizacion } from "@/lib/cotizaciones-reglas";
+import { armarMensajeWhatsApp, estaVencida, resumenCotizacion, type Cotizacion } from "@/lib/cotizaciones-reglas";
+import { fechaLarga, hoyLocal } from "@/lib/fechas";
 import type { Lead } from "@/lib/types";
 
 export interface OpcionesEnvio {
@@ -27,7 +28,10 @@ const ETAPAS_PREVIAS = ["nuevo", "contactado", "cita"];
 
 /** El mensaje de WhatsApp listo para revisar, editar y mandar. */
 export function PanelEnvio({ lead, cotizaciones, firma, onEnviar, onCerrar }: PanelEnvioProps) {
-  const [texto, setTexto] = useState(() => armarMensajeWhatsApp({ nombre: lead.nombre, firma, cotizaciones }));
+  const hoy = hoyLocal();
+  // Una cotización vencida no se manda sin avisar: el precio puede haber cambiado.
+  const vencidas = cotizaciones.filter((c) => estaVencida(c, hoy));
+  const [texto, setTexto] = useState(() => armarMensajeWhatsApp({ nombre: lead.nombre, firma, cotizaciones, hoy }));
   const puedeMover = ETAPAS_PREVIAS.includes(lead.etapa);
   const [mover, setMover] = useState(puedeMover);
   const [recordar, setRecordar] = useState(true);
@@ -92,6 +96,26 @@ export function PanelEnvio({ lead, cotizaciones, firma, onEnviar, onCerrar }: Pa
 
         {/* Lo que se desliza: el mensaje y las opciones. Los botones de abajo siempre quedan a la vista. */}
         <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-4">
+          {vencidas.length > 0 && (
+            <div
+              role="alert"
+              className="mt-3 rounded-xl border px-3.5 py-3 text-sm"
+              style={{ borderColor: "color-mix(in srgb, var(--amber) 50%, transparent)", background: "color-mix(in srgb, var(--amber) 8%, transparent)" }}
+            >
+              <p className="flex items-center gap-1.5 font-semibold text-ink">
+                <Icon icon="flat-color-icons:high-priority" width={18} aria-hidden />
+                {vencidas.length === 1 ? "Esta cotización ya venció" : "Estas cotizaciones ya vencieron"}
+              </p>
+              <ul className="mt-1 list-disc space-y-0.5 pl-5 text-ink-soft">
+                {vencidas.map((c) => (
+                  <li key={c.id}>
+                    {resumenCotizacion(c)}: era válida hasta el {fechaLarga(c.vigencia_hasta ?? hoy)}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-1 text-ink-soft">El precio puede haber cambiado. Vuelve a cotizar en el portal antes de mandarla; en el mensaje no puse su fecha de vigencia.</p>
+            </div>
+          )}
           <label htmlFor="cot-mensaje" className="sr-only">
             Mensaje de WhatsApp
           </label>

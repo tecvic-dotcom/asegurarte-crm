@@ -49,6 +49,7 @@ function normalizar(f: Record<string, unknown>): Cotizacion {
     moneda: f.moneda === "DLS" ? "DLS" : "MN",
     forma_pago: forma,
     monto_pago: f.monto_pago === null || f.monto_pago === undefined ? null : Number(f.monto_pago) || null,
+    primer_pago: f.primer_pago === null || f.primer_pago === undefined ? null : Number(f.primer_pago) || null,
     vigencia_hasta: esFechaValida(vigencia) ? vigencia : null,
     datos,
     notas: String(f.notas ?? ""),
