@@ -26,7 +26,7 @@ function exportarCSV(leads: Lead[]) {
   const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
   const a = document.createElement("a");
   a.href = url;
-  a.download = "mis-contactos.csv";
+  a.download = "mis-prospectos.csv";
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -237,7 +237,7 @@ export function Contactos({ leads, onAbrir, onCambio }: ContactosProps) {
             ))}
           </tbody>
         </table>
-        {!leads.length && <p className="py-12 text-center text-ink-mute">Todavía no tienes contactos. Usa “Agregar prospecto” para capturar el primero.</p>}
+        {!leads.length && <p className="py-12 text-center text-ink-mute">Todavía no tienes prospectos. Usa “Agregar prospecto” para capturar el primero.</p>}
       </div>
     </section>
   );

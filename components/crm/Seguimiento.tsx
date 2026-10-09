@@ -151,7 +151,7 @@ export function Seguimiento({ leads, onAbrir, onMover }: SeguimientoProps) {
           );
         })}
         {!pendientes.length && (
-          <p className="py-12 text-center text-ink-mute">No tienes prospectos activos pendientes. Captura el primero en Contactos → “Agregar prospecto”. 🎉</p>
+          <p className="py-12 text-center text-ink-mute">No tienes prospectos activos pendientes. Captura el primero en Prospectos → “Agregar prospecto”. 🎉</p>
         )}
         {pendientes.length > 0 && !visibles.length && (
           <p className="py-8 text-center text-ink-mute">No hay prospectos en {etapa === "todas" ? "esta vista" : nombreEtapa(etapa)}.</p>
