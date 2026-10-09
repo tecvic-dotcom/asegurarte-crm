@@ -8,6 +8,7 @@ import { Pipeline } from "./Pipeline";
 import { TablaLeads } from "./TablaLeads";
 import { LeadPanel } from "./LeadPanel";
 import { Contactos } from "./Contactos";
+import { PendientesDia } from "./PendientesDia";
 import { Seguimiento } from "./Seguimiento";
 import { Reportes } from "./Reportes";
 import { PanelMando } from "./PanelMando";
@@ -235,6 +236,7 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
             ) : (
               <TablaLeads leads={filtrados} onAbrir={setSeleccion} />
             ))}
+          {pestana === "pendientes" && <PendientesDia leads={leads} onAbrir={setSeleccion} />}
           {pestana === "contactos" && <Contactos leads={filtrados} onAbrir={setSeleccion} onCambio={recargar} />}
           {pestana === "reportes" && <Reportes leads={leads} />}
           {esAdmin && pestana === "panel" && <PanelMando onVerSinRamo={verGanadasSinRamo} />}

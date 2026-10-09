@@ -40,6 +40,7 @@ import type {
 } from "./types";
 
 import type { MotivoCobro } from "./cobranza-reglas";
+import type { DatosPendiente, Pendiente } from "./pendientes-reglas";
 
 async function jsonOrThrow(res: Response): Promise<unknown> {
   const data = await res.json().catch(() => ({}));
@@ -347,6 +348,22 @@ export async function crmFraseClara(): Promise<{ frase: string; tipo: TipoReport
 export async function crmEliminarPoliza(id: string): Promise<void> {
   await jsonOErrorCRM(await postJSON("/api/crm/cobranza", { accion: "eliminar", id }));
 }
+
+// ---- Mis pendientes (cada usuario ve los suyos) ----
+
+export async function crmPendientes(): Promise<{ activos: Pendiente[]; hechos: Pendiente[] }> {
+  const res = await fetch("/api/crm/pendientes", { cache: "no-store" });
+  return (await jsonOErrorCRM(res)) as { activos: Pendiente[]; hechos: Pendiente[] };
+}
+
+async function accionPendiente(cuerpo: Record<string, unknown>): Promise<Pendiente> {
+  return ((await jsonOErrorCRM(await postJSON("/api/crm/pendientes", cuerpo))) as { pendiente: Pendiente }).pendiente;
+}
+
+export const crmCrearPendiente = (pendiente: DatosPendiente) => accionPendiente({ accion: "crear", pendiente });
+/** Completar (se guarda con su hora) o devolver a pendientes. */
+export const crmPendienteHecho = (id: string, hecho: boolean) => accionPendiente({ accion: "hecho", id, hecho });
+export const crmMoverPendiente = (id: string, fecha: string) => accionPendiente({ accion: "mover", id, fecha });
 
 // ---- Admin (requiere código x-admin-code) ----
 

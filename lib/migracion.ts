@@ -34,5 +34,8 @@ export function faltaMigracion(error: { code?: string } | null | undefined): boo
 export const MENSAJE_MIGRACION_ADJUNTAS =
   "Falta un paso para encender tu pestaña de Pólizas: abre Supabase → SQL Editor → New query, pega el archivo supabase/migrations/0006_polizas_adjuntas.sql y dale Run.";
 
+export const MENSAJE_MIGRACION_PENDIENTES =
+  "Falta un paso para encender tus pendientes: abre Supabase → SQL Editor → New query, pega el archivo supabase/migrations/0009_pendientes.sql y dale Run.";
+
 export const MENSAJE_MIGRACION_MENSAJES =
   "Falta un paso para guardar tus mensajes de Valeri: abre Supabase → SQL Editor → New query, pega el archivo supabase/migrations/0008_cobranza_mensajes.sql y dale Run.";
