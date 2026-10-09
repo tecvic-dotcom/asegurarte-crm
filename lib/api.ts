@@ -361,6 +361,7 @@ async function accionPendiente(cuerpo: Record<string, unknown>): Promise<Pendien
 }
 
 export const crmCrearPendiente = (pendiente: DatosPendiente) => accionPendiente({ accion: "crear", pendiente });
+export const crmEditarPendiente = (id: string, pendiente: DatosPendiente) => accionPendiente({ accion: "editar", id, pendiente });
 /** Completar (se guarda con su hora) o devolver a pendientes. */
 export const crmPendienteHecho = (id: string, hecho: boolean) => accionPendiente({ accion: "hecho", id, hecho });
 export const crmMoverPendiente = (id: string, fecha: string) => accionPendiente({ accion: "mover", id, fecha });

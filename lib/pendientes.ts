@@ -126,7 +126,7 @@ export async function crearPendiente(usuarioId: string, datos: DatosPendiente): 
 async function actualizar(
   usuarioId: string,
   id: string,
-  cambios: Partial<Pick<Pendiente, "hecho" | "hecho_en" | "fecha">>,
+  cambios: Partial<Pick<Pendiente, "hecho" | "hecho_en" | "fecha" | "texto" | "hora" | "lead_id">>,
 ): Promise<Pendiente | null> {
   if (cloudReady && adminDb) {
     const { data, error } = await adminDb
@@ -148,6 +148,11 @@ async function actualizar(
 /** Completar (queda guardado con su hora) o devolver a pendientes. */
 export function marcarHecho(usuarioId: string, id: string, hecho: boolean): Promise<Pendiente | null> {
   return actualizar(usuarioId, id, { hecho, hecho_en: hecho ? new Date().toISOString() : null });
+}
+
+/** Corrige un pendiente: texto, día, hora y prospecto (ya validados). Su estado de hecho no cambia. */
+export function editarPendiente(usuarioId: string, id: string, datos: DatosPendiente): Promise<Pendiente | null> {
+  return actualizar(usuarioId, id, datos);
 }
 
 /** Cambia el día de un pendiente (pasarlo a hoy o a mañana). */

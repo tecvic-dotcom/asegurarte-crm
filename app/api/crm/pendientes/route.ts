@@ -2,7 +2,7 @@ import { sesionDesdeRequest } from "@/lib/auth";
 import { getLead } from "@/lib/db";
 import { esFechaValida, hoyLocal } from "@/lib/fechas";
 import { MigracionPendienteError } from "@/lib/migracion";
-import { crearPendiente, listarPendientes, marcarHecho, moverPendiente } from "@/lib/pendientes";
+import { crearPendiente, editarPendiente, listarPendientes, marcarHecho, moverPendiente } from "@/lib/pendientes";
 import { validarPendiente } from "@/lib/pendientes-reglas";
 import { rateLimit } from "@/lib/rate-limit";
 import type { Pendiente } from "@/lib/pendientes-reglas";
@@ -29,7 +29,7 @@ export async function GET(req: Request): Promise<Response> {
   }
 }
 
-/** Anotar un pendiente, completarlo (o devolverlo) y pasarlo a otro día. */
+/** Anotar un pendiente, editarlo, completarlo (o devolverlo) y pasarlo a otro día. */
 export async function POST(req: Request): Promise<Response> {
   const s = sesionDesdeRequest(req);
   if (!s) return Response.json({ error: "Inicia sesión." }, { status: 401 });
@@ -47,17 +47,29 @@ export async function POST(req: Request): Promise<Response> {
   const responder = (p: Pendiente | null) =>
     p ? Response.json({ pendiente: p }) : Response.json({ error: "Ese pendiente ya no existe." }, { status: 404 });
 
+  /** Solo se puede ligar a un prospecto que sí es tuyo (un vendedor solo ve su cartera). Devuelve el error, o null si está bien. */
+  const leadInvalido = async (leadId: string | null): Promise<Response | null> => {
+    if (!leadId) return null;
+    const lead = await getLead(leadId, s.rol === "vendedor" ? s.id : undefined).catch(() => null);
+    return lead ? null : Response.json({ error: "Ese prospecto ya no existe." }, { status: 422 });
+  };
+
   try {
     switch (body.accion) {
       case "crear": {
         const r = validarPendiente(body.pendiente, hoyLocal());
         if (!r.ok) return Response.json({ error: r.error }, { status: 422 });
-        // Solo se puede ligar a un prospecto que sí es tuyo (un vendedor solo ve su cartera).
-        if (r.datos.lead_id) {
-          const lead = await getLead(r.datos.lead_id, s.rol === "vendedor" ? s.id : undefined).catch(() => null);
-          if (!lead) return Response.json({ error: "Ese prospecto ya no existe." }, { status: 422 });
-        }
+        const sinLead = await leadInvalido(r.datos.lead_id);
+        if (sinLead) return sinLead;
         return Response.json({ pendiente: await crearPendiente(s.id, r.datos) });
+      }
+      case "editar": {
+        if (!body.id) break;
+        const r = validarPendiente(body.pendiente, hoyLocal());
+        if (!r.ok) return Response.json({ error: r.error }, { status: 422 });
+        const sinLead = await leadInvalido(r.datos.lead_id);
+        if (sinLead) return sinLead;
+        return responder(await editarPendiente(s.id, body.id, r.datos));
       }
       case "hecho":
         if (!body.id) break;

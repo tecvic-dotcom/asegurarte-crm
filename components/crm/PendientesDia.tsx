@@ -2,7 +2,14 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
-import { crmCrearPendiente, crmMoverPendiente, crmPendienteHecho, crmPendientes, ErrorCRM } from "@/lib/api";
+import {
+  crmCrearPendiente,
+  crmEditarPendiente,
+  crmMoverPendiente,
+  crmPendienteHecho,
+  crmPendientes,
+  ErrorCRM,
+} from "@/lib/api";
 import { hoyLocal, sumarDias } from "@/lib/fechas";
 import {
   agruparCompletados,
@@ -11,6 +18,7 @@ import {
   horaDeInstante,
   MAX_TEXTO_PENDIENTE,
   resumenPendientes,
+  type DatosPendiente,
   type Pendiente,
 } from "@/lib/pendientes-reglas";
 import type { Lead } from "@/lib/types";
@@ -47,11 +55,14 @@ export function PendientesDia({ leads, onAbrir }: PendientesDiaProps) {
   const [activos, setActivos] = useState<Pendiente[]>([]);
   const [hechos, setHechos] = useState<Pendiente[]>([]);
   const [cargando, setCargando] = useState(true);
+  const [recargando, setRecargando] = useState(false);
   const [error, setError] = useState<ErrorCRM | Error | null>(null);
   const [aviso, setAviso] = useState<Aviso | null>(null);
   const [verHechos, setVerHechos] = useState(false);
   // Los que acabas de tachar: se ven tachados un instante antes de irse a Completados.
   const [saliendo, setSaliendo] = useState<Set<string>>(new Set());
+  // El pendiente que estás corrigiendo ahora (uno a la vez).
+  const [editando, setEditando] = useState<string | null>(null);
 
   // Formulario
   const [texto, setTexto] = useState("");
@@ -64,6 +75,26 @@ export function PendientesDia({ leads, onAbrir }: PendientesDiaProps) {
 
   const entrada = useRef<HTMLInputElement>(null);
   const relojAviso = useRef<number | undefined>(undefined);
+
+  /**
+   * Trae la lista otra vez (por ejemplo, lo que agendaste en el celular) sin recargar toda la página:
+   * la lista no desaparece y lo que estés escribiendo se queda como está.
+   */
+  async function recargar() {
+    if (recargando || cargando) return;
+    setRecargando(true);
+    try {
+      const d = await crmPendientes();
+      setActivos(d.activos);
+      setHechos(d.hechos);
+      setError(null);
+      avisar("Lista actualizada.");
+    } catch (err) {
+      avisar((err as Error).message || "No pude actualizar tu lista. Intenta de nuevo.");
+    } finally {
+      setRecargando(false);
+    }
+  }
 
   async function cargar() {
     setCargando(true);
@@ -166,6 +197,14 @@ export function PendientesDia({ leads, onAbrir }: PendientesDiaProps) {
     }
   }
 
+  /** Guarda lo corregido. Si falla, lanza el error para que el formulario de edición lo muestre y siga abierto. */
+  async function guardarEdicion(p: Pendiente, datos: DatosPendiente) {
+    const editado = await crmEditarPendiente(p.id, datos);
+    setActivos((a) => a.map((x) => (x.id === p.id ? editado : x)));
+    setEditando(null);
+    avisar("Cambios guardados.");
+  }
+
   async function pasarA(p: Pendiente, fecha: string) {
     try {
       const movido = await crmMoverPendiente(p.id, fecha);
@@ -198,6 +237,17 @@ export function PendientesDia({ leads, onAbrir }: PendientesDiaProps) {
               {cargando ? "Cargando tus pendientes…" : resumen.frase}
             </p>
           </div>
+          <button
+            type="button"
+            onClick={() => void recargar()}
+            disabled={cargando || recargando}
+            aria-label="Recargar pendientes"
+            title="Ver lo último que agendaste (por ejemplo, desde tu celular)"
+            className="btn-ghost shrink-0 gap-1.5 px-2.5 py-2 text-xs"
+          >
+            <Icon icon="flat-color-icons:synchronize" width={18} className={recargando ? "animate-spin" : undefined} aria-hidden />
+            <span className="hidden sm:inline">Recargar</span>
+          </button>
         </div>
         {!cargando && resumen.porHacer + resumen.hechosHoy > 0 && (
           <div className="mt-3">
@@ -233,48 +283,18 @@ export function PendientesDia({ leads, onAbrir }: PendientesDiaProps) {
           </button>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm text-ink-mute">Para:</span>
-          <Chip activo={dia === "hoy"} onClick={() => setDia("hoy")}>Hoy</Chip>
-          <Chip activo={dia === "manana"} onClick={() => setDia("manana")}>Mañana</Chip>
-          <Chip activo={dia === "otro"} onClick={() => setDia("otro")}>Otro día</Chip>
-          {dia === "otro" && (
-            <div className="w-40">
-              <input
-                type="date"
-                min={hoy}
-                value={fechaOtra}
-                onChange={(e) => setFechaOtra(e.target.value)}
-                aria-label="Día del pendiente"
-                className="field-input py-2 text-sm"
-              />
-            </div>
-          )}
-        </div>
-
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <label className="flex items-center gap-2 text-sm text-ink-mute">
-            Hora <span className="text-xs">(opcional)</span>
-            <span className="block w-32">
-              <input type="time" value={hora} onChange={(e) => setHora(e.target.value)} className="field-input py-2 text-sm" />
-            </span>
-          </label>
-          {prospectos.length > 0 && (
-            <label className="flex w-full min-w-0 flex-col gap-1 text-sm text-ink-mute sm:max-w-sm sm:flex-1 sm:flex-row sm:items-center sm:gap-2">
-              <span>
-                Prospecto <span className="text-xs">(opcional)</span>
-              </span>
-              <select value={leadId} onChange={(e) => setLeadId(e.target.value)} className="field-input min-w-0 flex-1 py-2 text-sm">
-                <option value="">Ninguno</option>
-                {prospectos.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.nombre}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-        </div>
+        <CamposAgenda
+          dia={dia}
+          onDia={setDia}
+          fechaOtra={fechaOtra}
+          onFechaOtra={setFechaOtra}
+          hora={hora}
+          onHora={setHora}
+          leadId={leadId}
+          onLead={setLeadId}
+          prospectos={prospectos}
+          minFecha={hoy}
+        />
 
         {falla && (
           <p className="text-sm" style={{ color: "var(--red)" }} role="alert">
@@ -319,23 +339,35 @@ export function PendientesDia({ leads, onAbrir }: PendientesDiaProps) {
                 </p>
               ) : (
                 <ul className="space-y-2">
-                  {g.items.map((p) => (
-                    <FilaPendiente
-                      key={p.id}
-                      p={p}
-                      prospecto={nombreDe(p.lead_id)}
-                      saliendo={saliendo.has(p.id)}
-                      onCompletar={() => void completar(p)}
-                      onAbrirProspecto={() => p.lead_id && onAbrir(p.lead_id)}
-                      onPasar={
-                        p.fecha < hoy
-                          ? { etiqueta: "Pasar a hoy", accion: () => void pasarA(p, hoy) }
-                          : p.fecha === hoy
-                            ? { etiqueta: "Mañana", accion: () => void pasarA(p, sumarDias(hoy, 1)) }
-                            : undefined
-                      }
-                    />
-                  ))}
+                  {g.items.map((p) =>
+                    editando === p.id ? (
+                      <EdicionPendiente
+                        key={p.id}
+                        p={p}
+                        hoy={hoy}
+                        leads={leads}
+                        onGuardar={(datos) => guardarEdicion(p, datos)}
+                        onCancelar={() => setEditando(null)}
+                      />
+                    ) : (
+                      <FilaPendiente
+                        key={p.id}
+                        p={p}
+                        prospecto={nombreDe(p.lead_id)}
+                        saliendo={saliendo.has(p.id)}
+                        onCompletar={() => void completar(p)}
+                        onEditar={() => setEditando(p.id)}
+                        onAbrirProspecto={() => p.lead_id && onAbrir(p.lead_id)}
+                        onPasar={
+                          p.fecha < hoy
+                            ? { etiqueta: "Pasar a hoy", accion: () => void pasarA(p, hoy) }
+                            : p.fecha === hoy
+                              ? { etiqueta: "Mañana", accion: () => void pasarA(p, sumarDias(hoy, 1)) }
+                              : undefined
+                        }
+                      />
+                    ),
+                  )}
                 </ul>
               )}
             </div>
@@ -408,11 +440,184 @@ function Chip({ activo, onClick, children }: { activo: boolean; onClick: () => v
   );
 }
 
+/** Día, hora y prospecto de un pendiente: los mismos campos al anotar uno nuevo y al corregir uno. */
+function CamposAgenda({
+  dia,
+  onDia,
+  fechaOtra,
+  onFechaOtra,
+  hora,
+  onHora,
+  leadId,
+  onLead,
+  prospectos,
+  minFecha,
+}: {
+  dia: Dia;
+  onDia: (d: Dia) => void;
+  fechaOtra: string;
+  onFechaOtra: (f: string) => void;
+  hora: string;
+  onHora: (h: string) => void;
+  leadId: string;
+  onLead: (id: string) => void;
+  prospectos: Lead[];
+  /** Fecha más temprana que deja elegir el calendario (al corregir uno atrasado no se limita). */
+  minFecha?: string;
+}) {
+  return (
+    <>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm text-ink-mute">Para:</span>
+        <Chip activo={dia === "hoy"} onClick={() => onDia("hoy")}>Hoy</Chip>
+        <Chip activo={dia === "manana"} onClick={() => onDia("manana")}>Mañana</Chip>
+        <Chip activo={dia === "otro"} onClick={() => onDia("otro")}>Otro día</Chip>
+        {dia === "otro" && (
+          <div className="w-40">
+            <input
+              type="date"
+              min={minFecha}
+              value={fechaOtra}
+              onChange={(e) => onFechaOtra(e.target.value)}
+              aria-label="Día del pendiente"
+              className="field-input py-2 text-sm"
+            />
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <label className="flex items-center gap-2 text-sm text-ink-mute">
+          Hora <span className="text-xs">(opcional)</span>
+          <span className="block w-32">
+            <input type="time" value={hora} onChange={(e) => onHora(e.target.value)} className="field-input py-2 text-sm" />
+          </span>
+        </label>
+        {prospectos.length > 0 && (
+          <label className="flex w-full min-w-0 flex-col gap-1 text-sm text-ink-mute sm:max-w-sm sm:flex-1 sm:flex-row sm:items-center sm:gap-2">
+            <span>
+              Prospecto <span className="text-xs">(opcional)</span>
+            </span>
+            <select value={leadId} onChange={(e) => onLead(e.target.value)} className="field-input min-w-0 flex-1 py-2 text-sm">
+              <option value="">Ninguno</option>
+              {prospectos.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.nombre}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+      </div>
+    </>
+  );
+}
+
+/** Corregir un pendiente en su mismo lugar: texto, día, hora y prospecto. */
+function EdicionPendiente({
+  p,
+  hoy,
+  leads,
+  onGuardar,
+  onCancelar,
+}: {
+  p: Pendiente;
+  hoy: string;
+  leads: Lead[];
+  /** Guarda los cambios; lanza el error si no se pudo. */
+  onGuardar: (datos: DatosPendiente) => Promise<void>;
+  onCancelar: () => void;
+}) {
+  const [texto, setTexto] = useState(p.texto);
+  const [dia, setDia] = useState<Dia>(p.fecha === hoy ? "hoy" : p.fecha === sumarDias(hoy, 1) ? "manana" : "otro");
+  const [fechaOtra, setFechaOtra] = useState(p.fecha === hoy || p.fecha === sumarDias(hoy, 1) ? "" : p.fecha);
+  const [hora, setHora] = useState(p.hora ?? "");
+  // Si el prospecto ligado ya no está en tu lista, se suelta en vez de mandar un dato que ya no existe.
+  const [leadId, setLeadId] = useState(p.lead_id && leads.some((l) => l.id === p.lead_id) ? p.lead_id : "");
+  const [guardando, setGuardando] = useState(false);
+  const [falla, setFalla] = useState<string | null>(null);
+
+  // Los prospectos perdidos no se ofrecen, salvo el que ya tiene este pendiente.
+  const prospectos = leads
+    .filter((l) => l.etapa !== "perdido" || l.id === p.lead_id)
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+
+  async function guardar(e: React.FormEvent) {
+    e.preventDefault();
+    if (guardando || !texto.trim()) return;
+    if (dia === "otro" && !fechaOtra) {
+      setFalla("Elige el día para este pendiente.");
+      return;
+    }
+    const fecha = dia === "hoy" ? hoy : dia === "manana" ? sumarDias(hoy, 1) : fechaOtra;
+    setGuardando(true);
+    setFalla(null);
+    try {
+      await onGuardar({ texto, fecha, hora: hora || null, lead_id: leadId || null });
+    } catch (err) {
+      setFalla((err as Error).message || "No pude guardar los cambios. Intenta de nuevo.");
+      setGuardando(false);
+    }
+  }
+
+  return (
+    <li className="list-none">
+      <form
+        onSubmit={(e) => void guardar(e)}
+        onKeyDown={(e) => e.key === "Escape" && onCancelar()}
+        className="glass space-y-3 rounded-2xl border border-brand-2 p-3"
+        aria-label="Editar pendiente"
+      >
+        <label htmlFor={`editar-${p.id}`} className="field-label">
+          Editar pendiente
+        </label>
+        <div className="grid grid-cols-[1fr_auto] items-center gap-2">
+          <input
+            id={`editar-${p.id}`}
+            value={texto}
+            onChange={(e) => setTexto(e.target.value)}
+            maxLength={MAX_TEXTO_PENDIENTE}
+            autoComplete="off"
+            autoFocus
+            className="field-input min-w-0"
+          />
+          <DictadoBoton onTexto={(t) => setTexto((x) => (x ? `${x} ${t}` : t).slice(0, MAX_TEXTO_PENDIENTE))} />
+        </div>
+        <CamposAgenda
+          dia={dia}
+          onDia={setDia}
+          fechaOtra={fechaOtra}
+          onFechaOtra={setFechaOtra}
+          hora={hora}
+          onHora={setHora}
+          leadId={leadId}
+          onLead={setLeadId}
+          prospectos={prospectos}
+        />
+        {falla && (
+          <p className="text-sm" style={{ color: "var(--red)" }} role="alert">
+            {falla}
+          </p>
+        )}
+        <div className="flex flex-wrap gap-2">
+          <button type="submit" disabled={guardando || !texto.trim()} className="btn-primary px-4 py-2 text-sm">
+            Guardar cambios
+          </button>
+          <button type="button" onClick={onCancelar} disabled={guardando} className="btn-ghost px-4 py-2 text-sm">
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </li>
+  );
+}
+
 function FilaPendiente({
   p,
   prospecto,
   saliendo,
   onCompletar,
+  onEditar,
   onAbrirProspecto,
   onPasar,
 }: {
@@ -420,6 +625,7 @@ function FilaPendiente({
   prospecto: string | null;
   saliendo: boolean;
   onCompletar: () => void;
+  onEditar: () => void;
   onAbrirProspecto: () => void;
   onPasar?: { etiqueta: string; accion: () => void };
 }) {
@@ -453,10 +659,17 @@ function FilaPendiente({
           </p>
         )}
       </div>
-      {onPasar && !saliendo && (
-        <button type="button" onClick={onPasar.accion} className="btn-ghost shrink-0 px-3 py-1.5 text-xs" title={`${onPasar.etiqueta}`}>
-          {onPasar.etiqueta}
-        </button>
+      {!saliendo && (
+        <div className="flex shrink-0 flex-wrap justify-end gap-1.5">
+          <button type="button" onClick={onEditar} className="btn-ghost px-3 py-1.5 text-xs" aria-label={`Editar: ${p.texto}`}>
+            Editar
+          </button>
+          {onPasar && (
+            <button type="button" onClick={onPasar.accion} className="btn-ghost px-3 py-1.5 text-xs">
+              {onPasar.etiqueta}
+            </button>
+          )}
+        </div>
       )}
     </li>
   );
