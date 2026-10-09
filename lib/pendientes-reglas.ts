@@ -19,6 +19,8 @@ export interface Pendiente {
   /** Instante (ISO) en que se completó. */
   hecho_en: string | null;
   creado_en: string;
+  /** Lugar que le diste arrastrándolo dentro de su día (1 = arriba), o null si nunca lo acomodaste. */
+  orden: number | null;
 }
 
 export interface DatosPendiente {
@@ -51,9 +53,17 @@ export function validarPendiente(entrada: unknown, hoy: string): ResultadoPendie
   return { ok: true, datos: { texto, fecha, hora: horaTxt || null, lead_id: lead || null } };
 }
 
-/** Orden del día: primero por fecha, luego por hora (los que no tienen hora, al final) y luego por cuándo se anotaron. */
+/**
+ * Orden del día: primero por fecha. Dentro del día, lo que acomodaste a mano va arriba, en el orden que le
+ * diste; el resto (lo nuevo) sigue por hora (los que no tienen hora, al final) y luego por cuándo se anotaron.
+ */
 export function compararPendientes(a: Pendiente, b: Pendiente): number {
   if (a.fecha !== b.fecha) return a.fecha < b.fecha ? -1 : 1;
+  if (a.orden !== b.orden) {
+    if (a.orden === null) return 1;
+    if (b.orden === null) return -1;
+    return a.orden - b.orden;
+  }
   if (a.hora !== b.hora) {
     if (!a.hora) return 1;
     if (!b.hora) return -1;
@@ -101,6 +111,15 @@ export function agruparPendientes(activos: Pendiente[], hoy: string): GrupoPendi
     else grupos.push({ clave: p.fecha, titulo: etiquetaDia(p.fecha, hoy), atrasado: false, items: [p] });
   }
   return grupos;
+}
+
+/** Cuántos pendientes se pueden acomodar de una vez (un día nunca llega a tanto; es solo un tope). */
+export const MAX_ORDENAR = 200;
+
+/** Da a cada pendiente de `ids` su lugar (1, 2, 3…) según su posición; los demás no cambian. */
+export function aplicarOrden(activos: Pendiente[], ids: string[]): Pendiente[] {
+  const lugar = new Map(ids.map((id, i) => [id, i + 1]));
+  return activos.map((p) => (lugar.has(p.id) ? { ...p, orden: lugar.get(p.id)! } : p));
 }
 
 /** Día (AAAA-MM-DD, hora de Monterrey) en que se completó un pendiente. */

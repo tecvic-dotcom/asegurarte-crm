@@ -37,5 +37,8 @@ export const MENSAJE_MIGRACION_ADJUNTAS =
 export const MENSAJE_MIGRACION_PENDIENTES =
   "Falta un paso para encender tus pendientes: abre Supabase → SQL Editor → New query, pega el archivo supabase/migrations/0009_pendientes.sql y dale Run.";
 
+export const MENSAJE_MIGRACION_PENDIENTES_ORDEN =
+  "Falta un paso para guardar el orden de tus pendientes: abre Supabase → SQL Editor → New query, pega el archivo supabase/migrations/0010_pendientes_orden.sql y dale Run.";
+
 export const MENSAJE_MIGRACION_MENSAJES =
   "Falta un paso para guardar tus mensajes de Valeri: abre Supabase → SQL Editor → New query, pega el archivo supabase/migrations/0008_cobranza_mensajes.sql y dale Run.";

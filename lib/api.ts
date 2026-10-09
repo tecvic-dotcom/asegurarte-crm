@@ -365,6 +365,10 @@ export const crmEditarPendiente = (id: string, pendiente: DatosPendiente) => acc
 /** Completar (se guarda con su hora) o devolver a pendientes. */
 export const crmPendienteHecho = (id: string, hecho: boolean) => accionPendiente({ accion: "hecho", id, hecho });
 export const crmMoverPendiente = (id: string, fecha: string) => accionPendiente({ accion: "mover", id, fecha });
+/** Guarda el orden en que arrastraste los pendientes de un día (el primero de la lista queda arriba). */
+export async function crmOrdenarPendientes(ids: string[]): Promise<void> {
+  await jsonOErrorCRM(await postJSON("/api/crm/pendientes", { accion: "ordenar", ids }));
+}
 
 // ---- Admin (requiere código x-admin-code) ----
 

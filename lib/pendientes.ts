@@ -12,7 +12,12 @@ import "server-only";
  * así queda el historial aunque ya no salga en la lista.
  */
 import { adminDb, cloudReady } from "./supabase-admin";
-import { faltaMigracion, MENSAJE_MIGRACION_PENDIENTES, MigracionPendienteError } from "./migracion";
+import {
+  faltaMigracion,
+  MENSAJE_MIGRACION_PENDIENTES,
+  MENSAJE_MIGRACION_PENDIENTES_ORDEN,
+  MigracionPendienteError,
+} from "./migracion";
 import { esFechaValida } from "./fechas";
 import { compararPendientes, type DatosPendiente, type Pendiente } from "./pendientes-reglas";
 
@@ -22,9 +27,11 @@ const MAX_COMPLETADOS = 1000;
 const MAX_ACTIVOS = 1000;
 
 function errorDeBase(error: { code?: string; message: string }): Error {
-  return faltaMigracion(error)
-    ? new MigracionPendienteError(MENSAJE_MIGRACION_PENDIENTES, "0009_pendientes.sql")
-    : new Error(error.message);
+  if (!faltaMigracion(error)) return new Error(error.message);
+  // Columna que no existe (42703 en Postgres, PGRST204 en la API): falta solo la 0010; si no, falta la tabla entera.
+  return error.code === "42703" || error.code === "PGRST204"
+    ? new MigracionPendienteError(MENSAJE_MIGRACION_PENDIENTES_ORDEN, "0010_pendientes_orden.sql")
+    : new MigracionPendienteError(MENSAJE_MIGRACION_PENDIENTES, "0009_pendientes.sql");
 }
 
 function normalizar(f: Record<string, unknown>): Pendiente {
@@ -38,6 +45,7 @@ function normalizar(f: Record<string, unknown>): Pendiente {
     hecho: Boolean(f.hecho),
     hecho_en: f.hecho_en ? String(f.hecho_en) : null,
     creado_en: String(f.creado_en ?? ""),
+    orden: f.orden === null || f.orden === undefined ? null : Number(f.orden),
   };
 }
 
@@ -117,16 +125,28 @@ export async function crearPendiente(usuarioId: string, datos: DatosPendiente): 
     hecho: false,
     hecho_en: null,
     creado_en: new Date().toISOString(),
+    orden: null,
   };
   s.filas.push(nuevo);
   return sinDueno(nuevo);
+}
+
+/** Un pendiente del usuario. Null si no existe (o es de otro usuario). */
+async function obtener(usuarioId: string, id: string): Promise<Pendiente | null> {
+  if (cloudReady && adminDb) {
+    const { data, error } = await adminDb.from(TABLA).select("*").eq("id", id).eq("usuario_id", usuarioId).limit(1);
+    if (error) throw errorDeBase(error);
+    return data?.[0] ? normalizar(data[0] as Record<string, unknown>) : null;
+  }
+  const fila = store().filas.find((f) => f.id === id && f.usuario_id === usuarioId);
+  return fila ? sinDueno(fila) : null;
 }
 
 /** Cambia campos de un pendiente del usuario. Null si no existe (o es de otro usuario). */
 async function actualizar(
   usuarioId: string,
   id: string,
-  cambios: Partial<Pick<Pendiente, "hecho" | "hecho_en" | "fecha" | "texto" | "hora" | "lead_id">>,
+  cambios: Partial<Pick<Pendiente, "hecho" | "hecho_en" | "fecha" | "texto" | "hora" | "lead_id" | "orden">>,
 ): Promise<Pendiente | null> {
   if (cloudReady && adminDb) {
     const { data, error } = await adminDb
@@ -150,12 +170,34 @@ export function marcarHecho(usuarioId: string, id: string, hecho: boolean): Prom
   return actualizar(usuarioId, id, { hecho, hecho_en: hecho ? new Date().toISOString() : null });
 }
 
-/** Corrige un pendiente: texto, día, hora y prospecto (ya validados). Su estado de hecho no cambia. */
-export function editarPendiente(usuarioId: string, id: string, datos: DatosPendiente): Promise<Pendiente | null> {
-  return actualizar(usuarioId, id, datos);
+/**
+ * Corrige un pendiente: texto, día, hora y prospecto (ya validados). Su estado de hecho no cambia.
+ * Si lo cambias de día, pierde el lugar que tenía y entra al final de su día nuevo.
+ */
+export async function editarPendiente(usuarioId: string, id: string, datos: DatosPendiente): Promise<Pendiente | null> {
+  const actual = await obtener(usuarioId, id);
+  if (!actual) return null;
+  return actualizar(usuarioId, id, actual.fecha === datos.fecha ? datos : { ...datos, orden: null });
 }
 
-/** Cambia el día de un pendiente (pasarlo a hoy o a mañana). */
+/** Cambia el día de un pendiente (pasarlo a hoy o a mañana). Entra al final de su día nuevo. */
 export function moverPendiente(usuarioId: string, id: string, fecha: string): Promise<Pendiente | null> {
-  return actualizar(usuarioId, id, { fecha });
+  return actualizar(usuarioId, id, { fecha, orden: null });
+}
+
+/** Guarda el orden de arrastrar: el primero de `ids` queda arriba. Solo toca pendientes del usuario. */
+export async function ordenarPendientes(usuarioId: string, ids: string[]): Promise<void> {
+  if (cloudReady && adminDb) {
+    const db = adminDb;
+    const resultados = await Promise.all(
+      ids.map((id, i) => db.from(TABLA).update({ orden: i + 1 }).eq("id", id).eq("usuario_id", usuarioId)),
+    );
+    const fallo = resultados.find((r) => r.error)?.error;
+    if (fallo) throw errorDeBase(fallo);
+    return;
+  }
+  ids.forEach((id, i) => {
+    const fila = store().filas.find((f) => f.id === id && f.usuario_id === usuarioId);
+    if (fila) fila.orden = i + 1;
+  });
 }

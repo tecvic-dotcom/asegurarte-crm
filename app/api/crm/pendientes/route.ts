@@ -2,8 +2,8 @@ import { sesionDesdeRequest } from "@/lib/auth";
 import { getLead } from "@/lib/db";
 import { esFechaValida, hoyLocal } from "@/lib/fechas";
 import { MigracionPendienteError } from "@/lib/migracion";
-import { crearPendiente, editarPendiente, listarPendientes, marcarHecho, moverPendiente } from "@/lib/pendientes";
-import { validarPendiente } from "@/lib/pendientes-reglas";
+import { crearPendiente, editarPendiente, listarPendientes, marcarHecho, moverPendiente, ordenarPendientes } from "@/lib/pendientes";
+import { MAX_ORDENAR, validarPendiente } from "@/lib/pendientes-reglas";
 import { rateLimit } from "@/lib/rate-limit";
 import type { Pendiente } from "@/lib/pendientes-reglas";
 
@@ -29,7 +29,7 @@ export async function GET(req: Request): Promise<Response> {
   }
 }
 
-/** Anotar un pendiente, editarlo, completarlo (o devolverlo) y pasarlo a otro día. */
+/** Anotar un pendiente, editarlo, completarlo (o devolverlo), pasarlo a otro día y acomodar su orden. */
 export async function POST(req: Request): Promise<Response> {
   const s = sesionDesdeRequest(req);
   if (!s) return Response.json({ error: "Inicia sesión." }, { status: 401 });
@@ -37,7 +37,7 @@ export async function POST(req: Request): Promise<Response> {
     return Response.json({ error: "Vas muy rápido. Espera unos segundos e intenta de nuevo." }, { status: 429 });
   }
 
-  let body: { accion?: string; id?: string; pendiente?: unknown; hecho?: boolean; fecha?: string };
+  let body: { accion?: string; id?: string; ids?: unknown; pendiente?: unknown; hecho?: boolean; fecha?: string };
   try {
     body = (await req.json()) as typeof body;
   } catch {
@@ -79,6 +79,18 @@ export async function POST(req: Request): Promise<Response> {
         const fecha = String(body.fecha ?? "");
         if (!esFechaValida(fecha)) return Response.json({ error: "Esa fecha no es válida." }, { status: 422 });
         return responder(await moverPendiente(s.id, body.id, fecha));
+      }
+      case "ordenar": {
+        const ids = body.ids;
+        const valido =
+          Array.isArray(ids) &&
+          ids.length > 0 &&
+          ids.length <= MAX_ORDENAR &&
+          ids.every((x) => typeof x === "string" && /^[\w-]{1,64}$/.test(x)) &&
+          new Set(ids).size === ids.length;
+        if (!valido) return Response.json({ error: "Ese orden no es válido." }, { status: 422 });
+        await ordenarPendientes(s.id, ids as string[]);
+        return Response.json({ ok: true });
       }
     }
     return Response.json({ error: "Acción no reconocida" }, { status: 400 });

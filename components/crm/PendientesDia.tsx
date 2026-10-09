@@ -1,11 +1,31 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  closestCenter,
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type Announcements,
+  type DragEndEvent,
+  type UniqueIdentifier,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { Icon } from "@iconify/react";
 import {
   crmCrearPendiente,
   crmEditarPendiente,
   crmMoverPendiente,
+  crmOrdenarPendientes,
   crmPendienteHecho,
   crmPendientes,
   ErrorCRM,
@@ -14,6 +34,7 @@ import { hoyLocal, sumarDias } from "@/lib/fechas";
 import {
   agruparCompletados,
   agruparPendientes,
+  aplicarOrden,
   formatearHora,
   horaDeInstante,
   MAX_TEXTO_PENDIENTE,
@@ -214,6 +235,50 @@ export function PendientesDia({ leads, onAbrir }: PendientesDiaProps) {
     }
   }
 
+  /** Acomoda los pendientes de un día en el orden en que los soltaste. Se ve al instante; si no se guarda, regresan. */
+  async function reordenar(ids: string[]) {
+    const antes = new Map(activos.filter((p) => ids.includes(p.id)).map((p) => [p.id, p.orden]));
+    setActivos((a) => aplicarOrden(a, ids));
+    try {
+      await crmOrdenarPendientes(ids);
+    } catch (err) {
+      setActivos((a) => a.map((p) => (antes.has(p.id) ? { ...p, orden: antes.get(p.id) ?? null } : p)));
+      avisar((err as Error).message || "No pude guardar el orden. Intenta de nuevo.");
+    }
+  }
+
+  /** Una fila de la lista: el pendiente tal cual, o su formulario si lo estás corrigiendo. */
+  function fila(p: Pendiente, arrastre?: Arrastre) {
+    return editando === p.id ? (
+      <EdicionPendiente
+        key={p.id}
+        p={p}
+        hoy={hoy}
+        leads={leads}
+        onGuardar={(datos) => guardarEdicion(p, datos)}
+        onCancelar={() => setEditando(null)}
+      />
+    ) : (
+      <FilaPendiente
+        key={p.id}
+        p={p}
+        prospecto={nombreDe(p.lead_id)}
+        saliendo={saliendo.has(p.id)}
+        arrastre={arrastre}
+        onCompletar={() => void completar(p)}
+        onEditar={() => setEditando(p.id)}
+        onAbrirProspecto={() => p.lead_id && onAbrir(p.lead_id)}
+        onPasar={
+          p.fecha < hoy
+            ? { etiqueta: "Pasar a hoy", accion: () => void pasarA(p, hoy) }
+            : p.fecha === hoy
+              ? { etiqueta: "Mañana", accion: () => void pasarA(p, sumarDias(hoy, 1)) }
+              : undefined
+        }
+      />
+    );
+  }
+
   if (error instanceof ErrorCRM && error.migracion) {
     return (
       <AvisoMigracion
@@ -326,52 +391,32 @@ export function PendientesDia({ leads, onAbrir }: PendientesDiaProps) {
       {/* Lo que falta por hacer */}
       {!cargando && !error && (
         <div className="space-y-5">
-          {grupos.map((g) => (
-            <div key={g.clave}>
-              <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold capitalize" style={{ color: g.atrasado ? "var(--amber)" : "var(--ink-soft)" }}>
-                {g.atrasado && <Icon icon="flat-color-icons:high-priority" width={18} aria-hidden />}
-                {g.titulo}
-                <span className="rounded-full bg-bg-3 px-2 py-0.5 text-xs font-normal text-ink-mute">{g.items.length}</span>
-              </h2>
-              {g.items.length === 0 ? (
-                <p className="rounded-2xl border border-dashed border-line px-4 py-4 text-sm text-ink-mute">
-                  {resumen.hechosHoy > 0 ? "Nada pendiente para hoy. ¡Buen trabajo!" : "Nada anotado para hoy todavía."}
-                </p>
-              ) : (
-                <ul className="space-y-2">
-                  {g.items.map((p) =>
-                    editando === p.id ? (
-                      <EdicionPendiente
-                        key={p.id}
-                        p={p}
-                        hoy={hoy}
-                        leads={leads}
-                        onGuardar={(datos) => guardarEdicion(p, datos)}
-                        onCancelar={() => setEditando(null)}
-                      />
-                    ) : (
-                      <FilaPendiente
-                        key={p.id}
-                        p={p}
-                        prospecto={nombreDe(p.lead_id)}
-                        saliendo={saliendo.has(p.id)}
-                        onCompletar={() => void completar(p)}
-                        onEditar={() => setEditando(p.id)}
-                        onAbrirProspecto={() => p.lead_id && onAbrir(p.lead_id)}
-                        onPasar={
-                          p.fecha < hoy
-                            ? { etiqueta: "Pasar a hoy", accion: () => void pasarA(p, hoy) }
-                            : p.fecha === hoy
-                              ? { etiqueta: "Mañana", accion: () => void pasarA(p, sumarDias(hoy, 1)) }
-                              : undefined
-                        }
-                      />
-                    ),
-                  )}
-                </ul>
-              )}
-            </div>
-          ))}
+          {grupos.map((g) => {
+            // Se acomodan a mano los días con 2 o más pendientes. Lo atrasado no: sale de varios días a la vez;
+            // ahí se usa "Pasar a hoy" y luego se sube en la lista de hoy. Mientras corriges uno, se pausa el arrastre.
+            const ordenable = !g.atrasado && g.items.length > 1 && editando === null;
+            return (
+              <div key={g.clave}>
+                <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold capitalize" style={{ color: g.atrasado ? "var(--amber)" : "var(--ink-soft)" }}>
+                  {g.atrasado && <Icon icon="flat-color-icons:high-priority" width={18} aria-hidden />}
+                  {g.titulo}
+                  <span className="rounded-full bg-bg-3 px-2 py-0.5 text-xs font-normal text-ink-mute">{g.items.length}</span>
+                </h2>
+                {ordenable && g.clave === hoy && (
+                  <p className="-mt-1 mb-2 text-xs text-ink-mute">Arrastra el asa ⋮⋮ para subir lo más importante.</p>
+                )}
+                {g.items.length === 0 ? (
+                  <p className="rounded-2xl border border-dashed border-line px-4 py-4 text-sm text-ink-mute">
+                    {resumen.hechosHoy > 0 ? "Nada pendiente para hoy. ¡Buen trabajo!" : "Nada anotado para hoy todavía."}
+                  </p>
+                ) : ordenable ? (
+                  <ListaOrdenable items={g.items} saliendo={saliendo} fila={fila} onReordenar={(ids) => void reordenar(ids)} />
+                ) : (
+                  <ul className="space-y-2">{g.items.map((p) => fila(p))}</ul>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -612,10 +657,127 @@ function EdicionPendiente({
   );
 }
 
+/** Lo que una fila necesita para poder arrastrarse (lo entrega ListaOrdenable). */
+interface Arrastre {
+  liRef: (el: HTMLElement | null) => void;
+  estilo: React.CSSProperties;
+  arrastrando: boolean;
+  /** El botón con el asa ⋮⋮: por ahí se agarra la fila. */
+  asa: React.ReactNode;
+}
+
+const recortarTexto = (t: string) => recortar(t, 30);
+
+/**
+ * Los pendientes de un día, arrastrables de arriba abajo. Solo se agarran por el asa (así el dedo puede
+ * seguir deslizando la pantalla en el celular). Con teclado: espacio para tomar, flechas para mover, espacio para soltar.
+ */
+function ListaOrdenable({
+  items,
+  saliendo,
+  fila,
+  onReordenar,
+}: {
+  items: Pendiente[];
+  saliendo: Set<string>;
+  fila: (p: Pendiente, arrastre: Arrastre) => React.ReactNode;
+  /** Los ids en el orden nuevo (el primero queda arriba). */
+  onReordenar: (ids: string[]) => void;
+}) {
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+  const ids = items.map((p) => p.id);
+  const texto = (id: UniqueIdentifier) => recortarTexto(items.find((p) => p.id === String(id))?.texto ?? "");
+  const lugar = (id: UniqueIdentifier) => `${ids.indexOf(String(id)) + 1} de ${ids.length}`;
+
+  const anuncios: Announcements = {
+    onDragStart: ({ active }) => `Tomaste «${texto(active.id)}». Muévelo con las flechas arriba y abajo.`,
+    onDragOver: ({ active, over }) => (over ? `«${texto(active.id)}» está en el lugar ${lugar(over.id)}.` : undefined),
+    onDragEnd: ({ active, over }) =>
+      over ? `Soltaste «${texto(active.id)}» en el lugar ${lugar(over.id)}.` : `Soltaste «${texto(active.id)}». Quedó donde estaba.`,
+    onDragCancel: ({ active }) => `Cancelaste el movimiento de «${texto(active.id)}». Quedó donde estaba.`,
+  };
+
+  function alSoltar({ active, over }: DragEndEvent) {
+    if (!over || active.id === over.id) return;
+    const de = ids.indexOf(String(active.id));
+    const a = ids.indexOf(String(over.id));
+    if (de < 0 || a < 0) return;
+    onReordenar(arrayMove(ids, de, a));
+  }
+
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={alSoltar}
+      accessibility={{
+        announcements: anuncios,
+        screenReaderInstructions: {
+          draggable:
+            "Para cambiar la prioridad de este pendiente, presiona la barra espaciadora, muévelo con las flechas arriba y abajo y presiona espacio otra vez para soltarlo. Escape cancela.",
+        },
+      }}
+    >
+      <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+        <ul className="space-y-2">
+          {items.map((p) => (
+            <FilaOrdenable key={p.id} p={p} deshabilitado={saliendo.has(p.id)} fila={fila} />
+          ))}
+        </ul>
+      </SortableContext>
+    </DndContext>
+  );
+}
+
+function FilaOrdenable({
+  p,
+  deshabilitado,
+  fila,
+}: {
+  p: Pendiente;
+  deshabilitado: boolean;
+  fila: (p: Pendiente, arrastre: Arrastre) => React.ReactNode;
+}) {
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
+    id: p.id,
+    disabled: deshabilitado,
+  });
+  return fila(p, {
+    liRef: setNodeRef,
+    // Solo de arriba abajo (x en 0); sin transición mientras la agarras para que siga al dedo sin retraso.
+    estilo: {
+      transform: CSS.Transform.toString(transform ? { ...transform, x: 0 } : null),
+      transition: isDragging ? "none" : transition,
+      position: "relative",
+      zIndex: isDragging ? 30 : undefined,
+    },
+    arrastrando: isDragging,
+    asa: (
+      <button
+        type="button"
+        ref={setActivatorNodeRef}
+        {...attributes}
+        {...listeners}
+        aria-label={`Mover para cambiar la prioridad: ${p.texto}`}
+        title="Arrastra para cambiar la prioridad"
+        className="-ml-1 grid h-9 w-6 shrink-0 cursor-grab touch-none place-items-center rounded-lg text-ink-mute transition-colors hover:text-ink active:cursor-grabbing"
+      >
+        <svg width="12" height="18" viewBox="0 0 12 18" fill="currentColor" aria-hidden>
+          {[3, 9, 15].flatMap((y) => [3, 9].map((x) => <circle key={`${x}-${y}`} cx={x} cy={y} r="1.5" />))}
+        </svg>
+      </button>
+    ),
+  });
+}
+
 function FilaPendiente({
   p,
   prospecto,
   saliendo,
+  arrastre,
   onCompletar,
   onEditar,
   onAbrirProspecto,
@@ -624,13 +786,22 @@ function FilaPendiente({
   p: Pendiente;
   prospecto: string | null;
   saliendo: boolean;
+  arrastre?: Arrastre;
   onCompletar: () => void;
   onEditar: () => void;
   onAbrirProspecto: () => void;
   onPasar?: { etiqueta: string; accion: () => void };
 }) {
   return (
-    <li className={`glass flex items-center gap-3 rounded-2xl px-3 py-2.5 transition-all duration-300 ${saliendo ? "scale-[0.98] opacity-50" : ""}`}>
+    <li
+      ref={arrastre?.liRef}
+      style={arrastre?.estilo}
+      // Al arrastrar, el movimiento lo anima dnd-kit; aquí solo se anima lo que se atenúa al tacharlo.
+      className={`glass flex items-center gap-3 rounded-2xl px-3 py-2.5 ${
+        arrastre ? "transition-opacity duration-300" : "transition-all duration-300"
+      } ${saliendo ? "scale-[0.98] opacity-50" : ""} ${arrastre?.arrastrando ? "shadow-2xl ring-1 ring-brand-2" : ""}`}
+    >
+      {arrastre && !saliendo && arrastre.asa}
       <button
         type="button"
         onClick={onCompletar}
