@@ -56,7 +56,7 @@ export const GRUPOS_MENU: GrupoMenu[] = [
     titulo: "Tu equipo digital",
     soloAdmin: true,
     opciones: [
-      { id: "roro", nombre: "RORO", pista: "Tu gerente: pregúntale", icono: "flat-color-icons:assistant", avatar: "roro" },
+      { id: "roro", nombre: "Robert", pista: "Tu gerente: pregúntale", icono: "flat-color-icons:assistant", avatar: "roro" },
       { id: "sofi", nombre: "Sofi", pista: "Seguimiento a prospectos", icono: "flat-color-icons:sms", avatar: "sofi" },
       { id: "valeri", nombre: "Valeri", pista: "Cobranza de hoy", icono: "flat-color-icons:debt", avatar: "valeri" },
       { id: "clara", nombre: "Clara", pista: "Reportes de mes y trimestre", icono: "flat-color-icons:document", avatar: "clara" },

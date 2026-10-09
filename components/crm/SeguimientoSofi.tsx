@@ -26,7 +26,7 @@ interface SofiProps {
 type Hecho = "whatsapp" | "llamada" | "perdido";
 
 /**
- * Sofi, tu empleada digital de seguimiento a prospectos. Vive junto a RORO.
+ * Sofi, tu empleada digital de seguimiento a prospectos. Vive junto a Robert.
  * Cada mañana te dice a quién le toca que le escribas, en orden de urgencia, y deja
  * el WhatsApp listo según la etapa. Tú lo envías; Sofi no manda nada sola.
  * No usa IA: trabaja con reglas fijas, sin costo, y los datos de tus prospectos no salen de tu CRM.

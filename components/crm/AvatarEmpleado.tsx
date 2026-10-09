@@ -5,7 +5,7 @@ import { useId } from "react";
 export type VarianteAvatar = "roro" | "valeri" | "clara" | "sofi";
 
 const ESTILO: Record<VarianteAvatar, { claro: string; oscuro: string; ojos: string; nombre: string }> = {
-  roro: { claro: "var(--brand-2)", oscuro: "var(--brand)", ojos: "var(--sky)", nombre: "RORO, tu gerente digital" },
+  roro: { claro: "var(--brand-2)", oscuro: "var(--brand)", ojos: "var(--sky)", nombre: "Robert, tu gerente digital" },
   valeri: { claro: "var(--violet)", oscuro: "var(--brand)", ojos: "var(--ink)", nombre: "Valeri, tu cobranza digital" },
   clara: { claro: "var(--sky)", oscuro: "var(--brand-deep)", ojos: "var(--ink)", nombre: "Clara, tus reportes" },
   sofi: { claro: "var(--green)", oscuro: "var(--brand)", ojos: "var(--ink)", nombre: "Sofi, tu seguimiento a prospectos" },
@@ -21,7 +21,7 @@ interface AvatarEmpleadoProps {
 
 /**
  * La cara de tus empleados digitales: flotan, parpadean y "hablan".
- * RORO (gerente) lleva corbata; Valeri (cobranza) lleva audífonos para sus llamadas;
+ * Robert (gerente) lleva corbata; Valeri (cobranza) lleva audífonos para sus llamadas;
  * Clara (reportes) lleva lentes y su portapapeles con la gráfica; Sofi (seguimiento) lleva coleta y su globo de mensaje.
  * Solo SVG + animaciones baratas (transform/opacity): fluido en el celular.
  */

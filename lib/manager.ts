@@ -1,10 +1,10 @@
 import "server-only";
 
 /**
- * RORO, tu gerente digital — SOLO SERVIDOR.
+ * Robert, tu gerente digital — SOLO SERVIDOR.
  *
  * Arma la pregunta para la IA de Claude con:
- *  1) quién es RORO y cómo debe responder (fijo; se guarda en caché para que
+ *  1) quién es Robert y cómo debe responder (fijo; se guarda en caché para que
  *     cada pregunta cueste menos),
  *  2) el cerebro de tu negocio (lo editas en su pestaña),
  *  3) tus NÚMEROS de hoy, calculados por lib/panel.ts (los mismos del Panel).
@@ -18,13 +18,13 @@ import { numerosParaManager } from "./panel";
 import { cerebroEfectivo } from "./manager-config";
 import type { ManagerConfig, RespuestaManager, TurnoManager } from "./types";
 
-/** El modelo de Claude que usa RORO. */
+/** El modelo de Claude que usa Robert. */
 const MODELO = "claude-opus-5-5";
 
 /** Cuántos turnos previos del chat se mandan (más turnos = más costo por pregunta). */
 const MAX_TURNOS_HISTORIAL = 8;
 
-/** Formato fijo de cada respuesta: así RORO siempre contesta como director, no como buscador. */
+/** Formato fijo de cada respuesta: así Robert siempre contesta como director, no como buscador. */
 const ESQUEMA_RESPUESTA = {
   type: "object",
   properties: {
@@ -216,7 +216,7 @@ export async function preguntarAManager(
         format: { type: "json_schema", schema: ESQUEMA_RESPUESTA },
       },
       system: [
-        // Bloque fijo (se cachea): RORO + cerebro. Los números van aparte porque cambian.
+        // Bloque fijo (se cachea): Robert + cerebro. Los números van aparte porque cambian.
         { type: "text", text: sistemaEstable(config), cache_control: { type: "ephemeral" } },
         {
           type: "text",
@@ -237,7 +237,7 @@ export async function preguntarAManager(
 
   if (resp.stop_reason === "refusal") {
     throw new ErrorManager(
-      "RORO no puede responder esa pregunta. Intenta decirla de otra forma, enfocada en tu negocio.",
+      "Robert no puede responder esa pregunta. Intenta decirla de otra forma, enfocada en tu negocio.",
       422,
       tokens,
     );
@@ -254,9 +254,9 @@ export async function preguntarAManager(
   try {
     crudo = JSON.parse(texto);
   } catch {
-    throw new ErrorManager("RORO se trabó al responder. Intenta de nuevo.", 502, tokens);
+    throw new ErrorManager("Robert se trabó al responder. Intenta de nuevo.", 502, tokens);
   }
   const respuesta = validarRespuesta(crudo);
-  if (!respuesta) throw new ErrorManager("RORO se trabó al responder. Intenta de nuevo.", 502, tokens);
+  if (!respuesta) throw new ErrorManager("Robert se trabó al responder. Intenta de nuevo.", 502, tokens);
   return { respuesta, tokens };
 }

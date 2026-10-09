@@ -18,7 +18,7 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const SIN_LLAVE =
-  "RORO todavía no tiene su llave de IA. Agrega ANTHROPIC_API_KEY en tu .env.local (y en Vercel) y vuelve a intentar.";
+  "Robert todavía no tiene su llave de IA. Agrega ANTHROPIC_API_KEY en tu .env.local (y en Vercel) y vuelve a intentar.";
 
 async function anotarUso(tokens: { entrada: number; salida: number }): Promise<void> {
   try {
@@ -28,9 +28,9 @@ async function anotarUso(tokens: { entrada: number; salida: number }): Promise<v
   }
 }
 
-/** Estado de RORO: su configuración, cuántas preguntas llevas este mes y si ya tiene llave de IA. */
+/** Estado de Robert: su configuración, cuántas preguntas llevas este mes y si ya tiene llave de IA. */
 export async function GET(req: Request): Promise<Response> {
-  const puerta = exigirAdmin(req, "a RORO");
+  const puerta = exigirAdmin(req, "a Robert");
   if ("respuesta" in puerta) return puerta.respuesta;
   try {
     const [{ config, migracionPendiente }, uso] = await Promise.all([getManagerConfig(), getUso()]);
@@ -38,13 +38,13 @@ export async function GET(req: Request): Promise<Response> {
     return Response.json(estado);
   } catch (e) {
     console.error("[manager]", e);
-    return Response.json({ error: "No pude cargar a RORO. Intenta de nuevo." }, { status: 500 });
+    return Response.json({ error: "No pude cargar a Robert. Intenta de nuevo." }, { status: 500 });
   }
 }
 
-/** Preguntarle a RORO, o guardar lo que sabe de tu negocio. */
+/** Preguntarle a Robert, o guardar lo que sabe de tu negocio. */
 export async function POST(req: Request): Promise<Response> {
-  const puerta = exigirAdmin(req, "a RORO");
+  const puerta = exigirAdmin(req, "a Robert");
   if ("respuesta" in puerta) return puerta.respuesta;
   const { sesion } = puerta;
 
@@ -112,6 +112,6 @@ export async function POST(req: Request): Promise<Response> {
       return Response.json({ error: e.message, migracion: true }, { status: 409 });
     }
     console.error("[manager]", e);
-    return Response.json({ error: "RORO no pudo leer tus números. Intenta de nuevo." }, { status: 500 });
+    return Response.json({ error: "Robert no pudo leer tus números. Intenta de nuevo." }, { status: 500 });
   }
 }

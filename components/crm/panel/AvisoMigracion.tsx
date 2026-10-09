@@ -16,7 +16,7 @@ export function AvisoMigracion({
   onListo,
   archivo = "0003_ai_manager.sql",
   que = "tu AI Manager",
-  detalle = "Tu libreta en la nube (Supabase) necesita 3 cajones nuevos: tus finanzas, el cerebro de RORO y el contador de preguntas. Es como instalar repisas antes de acomodar: se hace una sola vez.",
+  detalle = "Tu libreta en la nube (Supabase) necesita 3 cajones nuevos: tus finanzas, el cerebro de Robert y el contador de preguntas. Es como instalar repisas antes de acomodar: se hace una sola vez.",
 }: AvisoMigracionProps) {
   return (
     <section

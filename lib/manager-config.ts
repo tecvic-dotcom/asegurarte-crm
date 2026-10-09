@@ -1,7 +1,7 @@
 import "server-only";
 
 /**
- * Configuración de RORO, tu gerente digital — SOLO SERVIDOR.
+ * Configuración de Robert, tu gerente digital — SOLO SERVIDOR.
  *  - Su "cerebro": lo que sabe de tu negocio (se carga una vez y lo reusa siempre).
  *  - Tu meta: pólizas por ramo y la ventana de fechas.
  *  - El contador de preguntas del mes (tope de gasto).
@@ -12,7 +12,7 @@ import { faltaMigracion, MigracionPendienteError } from "./migracion";
 import { esFechaValida, hoyLocal } from "./fechas";
 import type { ManagerConfig, ManagerUso } from "./types";
 
-/** Lo que RORO sabe de tu negocio si todavía no escribes tu propia versión. */
+/** Lo que Robert sabe de tu negocio si todavía no escribes tu propia versión. */
 export const CEREBRO_BASE = `QUIÉN SOY
 - Roberto Rodríguez, "especialista en Asegurarte". Agente de seguros independiente en México.
 - Trabajo solo, apoyado en IA. Antes de contratar a alguien, primero veo si lo puede hacer la IA o una app de IA.
@@ -35,14 +35,14 @@ CÓMO QUIERO QUE ME AYUDES
 - Primero exprimir lo que ya funciona (más), luego mejorarlo (mejor) y hasta después probar algo nuevo.`;
 
 export const CONFIG_BASE: ManagerConfig = {
-  nombre: "RORO",
+  nombre: "Robert",
   cerebro: "",
   meta_por_ramo: 20,
   meta_inicio: "2026-09-30",
   meta_fin: "2026-12-29",
 };
 
-/** El texto que de verdad usa RORO: el tuyo, o el base si aún no escribes uno. */
+/** El texto que de verdad usa Robert: el tuyo, o el base si aún no escribes uno. */
 export function cerebroEfectivo(config: ManagerConfig): string {
   return config.cerebro.trim() || CEREBRO_BASE;
 }

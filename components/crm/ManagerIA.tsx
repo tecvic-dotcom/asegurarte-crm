@@ -45,7 +45,7 @@ function historialPara(mensajes: Mensaje[]): TurnoManager[] {
 }
 
 /**
- * Tu primer empleado digital: RORO, tu gerente. Lee los números del Panel y
+ * Tu primer empleado digital: Robert, tu gerente. Lee los números del Panel y
  * te recomienda qué hacer, con el porqué, el riesgo y la acción de hoy.
  * Él propone; tú decides.
  */
@@ -148,7 +148,7 @@ export function ManagerIA({ sesion, onSofi, onValeri, onClara }: { sesion: Sesio
       <div className="glass-strong flex items-center gap-4 rounded-2xl p-4 sm:p-5">
         <AvatarEmpleado variante="roro" tamano={76} hablando={pensando || hablando} />
         <div className="min-w-0 flex-1">
-          <p className="font-display text-xl text-ink">{config?.nombre ?? "RORO"}</p>
+          <p className="font-display text-xl text-ink">{config?.nombre ?? "Robert"}</p>
           <p className="text-sm text-ink-soft">
             Tu gerente digital · <span style={{ color: "var(--green)" }}>en línea</span>
           </p>
@@ -183,7 +183,7 @@ export function ManagerIA({ sesion, onSofi, onValeri, onClara }: { sesion: Sesio
       <div className="glass rounded-2xl p-3 sm:p-4">
         <div ref={lista} className="no-scrollbar max-h-[62vh] space-y-3 overflow-y-auto pr-1" aria-live="polite">
           <Burbuja lado="roro">
-            Hola, {nombre} 👋 Soy {config?.nombre ?? "RORO"}, tu gerente digital. Leo tus números del CRM y te digo qué haría
+            Hola, {nombre} 👋 Soy {config?.nombre ?? "Robert"}, tu gerente digital. Leo tus números del CRM y te digo qué haría
             yo: la recomendación, el porqué con tus cifras, el riesgo y qué hacer hoy. Tú decides. ¿Qué vemos?
           </Burbuja>
 
@@ -215,7 +215,7 @@ export function ManagerIA({ sesion, onSofi, onValeri, onClara }: { sesion: Sesio
           {pensando && (
             <Burbuja lado="roro">
               <span className="flex items-center gap-2 text-ink-soft">
-                {config?.nombre ?? "RORO"} está revisando tus números
+                {config?.nombre ?? "Robert"} está revisando tus números
                 <span className="flex gap-1" aria-hidden>
                   {[0, 1, 2].map((i) => (
                     <span key={i} className="roro-punto inline-block h-1.5 w-1.5 rounded-full bg-ink-soft" style={{ animationDelay: `${i * 0.2}s` }} />
@@ -254,7 +254,7 @@ export function ManagerIA({ sesion, onSofi, onValeri, onClara }: { sesion: Sesio
           }}
         >
           <label htmlFor="pregunta-roro" className="sr-only">
-            Tu pregunta para {config?.nombre ?? "RORO"}
+            Tu pregunta para {config?.nombre ?? "Robert"}
           </label>
           <textarea
             id="pregunta-roro"
@@ -288,7 +288,7 @@ export function ManagerIA({ sesion, onSofi, onValeri, onClara }: { sesion: Sesio
 
       {estado && <EditorCerebro estado={estado} onGuardado={(c) => setEstado({ ...estado, config: c })} />}
 
-      <EquipoDigital nombre={config?.nombre ?? "RORO"} onSofi={onSofi} onValeri={onValeri} onClara={onClara} />
+      <EquipoDigital nombre={config?.nombre ?? "Robert"} onSofi={onSofi} onValeri={onValeri} onClara={onClara} />
     </section>
   );
 }
@@ -338,7 +338,7 @@ function AvisoLlave() {
   return (
     <div className="glass rounded-2xl border p-4 sm:p-5" style={{ borderColor: "color-mix(in srgb, var(--amber) 50%, transparent)" }}>
       <p className="flex items-center gap-2 font-semibold text-ink">
-        <Icon icon="flat-color-icons:key" width={20} aria-hidden /> Falta la llave para que RORO piense
+        <Icon icon="flat-color-icons:key" width={20} aria-hidden /> Falta la llave para que Robert piense
       </p>
       <p className="mt-1.5 text-sm text-ink-soft">
         Es como la llave del coche: el coche ya está armado, solo falta encenderlo. Se hace una vez:

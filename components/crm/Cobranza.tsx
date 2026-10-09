@@ -54,7 +54,7 @@ const FILTROS: Record<FiltroCobro, { titulo: string; motivos: MotivoCobro[]; vac
 };
 
 /**
- * Valeri, tu empleado digital de cobranza. Vive junto a RORO.
+ * Valeri, tu empleado digital de cobranza. Vive junto a Robert.
  * Cada mañana ordena tu cartera: a quién cobrarle primero, cuánto está en
  * riesgo y el mensaje de WhatsApp listo. Tú lo envías; Valeri no manda nada sola.
  * No usa IA: trabaja con reglas fijas, sin costo.

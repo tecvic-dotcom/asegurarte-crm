@@ -14,7 +14,7 @@ interface SlotRoroProps {
 
 /**
  * Arriba de tu CRM: tu equipo digital con su reporte de hoy.
- * RORO te dice cómo va tu dinero y tu meta; Valeri, a quién cobrarle; Clara, cómo cerró el mes (o el trimestre).
+ * Robert te dice cómo va tu dinero y tu meta; Valeri, a quién cobrarle; Clara, cómo cerró el mes (o el trimestre).
  * Es el gancho diario: entras al CRM y en 20 segundos ya sabes qué hacer.
  */
 export function SlotRoro({ onPanel, onRoro, onValeri, onClara }: SlotRoroProps) {
@@ -54,7 +54,7 @@ export function SlotRoro({ onPanel, onRoro, onValeri, onClara }: SlotRoroProps) 
 
   return (
     <div className="mb-5 space-y-4 rounded-2xl border border-line bg-glass p-4">
-      <Fila variante="roro" nombre="RORO, tu gerente digital" etiqueta="reporte de hoy" texto={frase}>
+      <Fila variante="roro" nombre="Robert, tu gerente digital" etiqueta="reporte de hoy" texto={frase}>
         <button type="button" onClick={onPanel} className="btn-ghost flex-1 px-3 py-2.5 text-sm sm:flex-none">
           <Icon icon="flat-color-icons:combo-chart" width={18} aria-hidden /> Panel
         </button>
