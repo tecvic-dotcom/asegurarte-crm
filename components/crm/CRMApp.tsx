@@ -182,8 +182,8 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
             <p className="text-sm text-ink-mute">{actual.pista}</p>
           </header>
 
-          {/* Métricas rápidas (en Pólizas y Administración no se muestran) */}
-          {pestana !== "polizas" && pestana !== "admin" && (
+          {/* Métricas rápidas (solo se muestran en Tablero) */}
+          {pestana === "tablero" && (
           <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Metrica icono="flat-color-icons:business-contact" label="Prospectos" valor={String(leads.length)} />
             <Metrica icono="flat-color-icons:calendar" label="En cita" valor={String(leads.filter((l) => l.etapa === "cita").length)} />
