@@ -40,6 +40,7 @@ import type {
 } from "./types";
 
 import type { MotivoCobro } from "./cobranza-reglas";
+import type { Cotizacion, DatosCotizacion, EstadoCotizacion } from "./cotizaciones-reglas";
 import type { DatosPendiente, Pendiente } from "./pendientes-reglas";
 
 async function jsonOrThrow(res: Response): Promise<unknown> {
@@ -368,6 +369,27 @@ export const crmMoverPendiente = (id: string, fecha: string) => accionPendiente(
 /** Guarda el orden en que arrastraste los pendientes de un día (el primero de la lista queda arriba). */
 export async function crmOrdenarPendientes(ids: string[]): Promise<void> {
   await jsonOErrorCRM(await postJSON("/api/crm/pendientes", { accion: "ordenar", ids }));
+}
+
+// ---- Cotizaciones (cada usuario ve las suyas) ----
+
+/** Las de un prospecto; sin prospecto, las más recientes de todos. */
+export async function crmCotizaciones(leadId?: string): Promise<Cotizacion[]> {
+  const res = await fetch(`/api/crm/cotizaciones${leadId ? `?lead_id=${encodeURIComponent(leadId)}` : ""}`, { cache: "no-store" });
+  return ((await jsonOErrorCRM(res)) as { cotizaciones: Cotizacion[] }).cotizaciones;
+}
+
+async function accionCotizacion(cuerpo: Record<string, unknown>): Promise<Cotizacion> {
+  return ((await jsonOErrorCRM(await postJSON("/api/crm/cotizaciones", cuerpo))) as { cotizacion: Cotizacion }).cotizacion;
+}
+
+export const crmCrearCotizacion = (cotizacion: DatosCotizacion) => accionCotizacion({ accion: "crear", cotizacion });
+export const crmEditarCotizacion = (id: string, cotizacion: DatosCotizacion) => accionCotizacion({ accion: "editar", id, cotizacion });
+export const crmEstadoCotizacion = (id: string, estado: EstadoCotizacion) => accionCotizacion({ accion: "estado", id, estado });
+/** Las marca como enviadas; devuelve las que cambiaron (la elegida no cambia). */
+export async function crmMarcarEnviadas(ids: string[]): Promise<Cotizacion[]> {
+  const data = await jsonOErrorCRM(await postJSON("/api/crm/cotizaciones", { accion: "enviadas", ids }));
+  return (data as { cotizaciones: Cotizacion[] }).cotizaciones;
 }
 
 // ---- Admin (requiere código x-admin-code) ----

@@ -9,6 +9,7 @@ import { TablaLeads } from "./TablaLeads";
 import { LeadPanel } from "./LeadPanel";
 import { Contactos } from "./Contactos";
 import { PendientesDia } from "./PendientesDia";
+import { Cotizaciones } from "./Cotizaciones";
 import { Seguimiento } from "./Seguimiento";
 import { Reportes } from "./Reportes";
 import { PanelMando } from "./PanelMando";
@@ -41,6 +42,8 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
   // Póliza prellenada desde un cliente ganado ("Agregar a cobranza"). "vez" reinicia la pestaña de Valeri solo al llegar una nueva.
   const [polizaNueva, setPolizaNueva] = useState<Partial<DatosPoliza> | null>(null);
   const [vezPoliza, setVezPoliza] = useState(0);
+  // El prospecto al que se le cotiza (se conserva al cambiar de pestaña y volver).
+  const [cotizarLeadId, setCotizarLeadId] = useState<string | null>(null);
   // Celular: el menú vive escondido a la izquierda y se abre con el botón "Menú".
   const [menuAbierto, setMenuAbierto] = useState(false);
 
@@ -134,6 +137,14 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
     setVezPoliza((v) => v + 1);
     setSeleccion(null);
     setPestana("valeri");
+  }
+
+  /** Desde el expediente de un prospecto: lo lleva a Cotizaciones ya elegido. */
+  function cotizarA(lead: Lead) {
+    setCotizarLeadId(lead.id);
+    setSeleccion(null);
+    setPestana("cotizaciones");
+    window.scrollTo({ top: 0 });
   }
 
   const menu = (onCerrar?: () => void) => (
@@ -237,6 +248,17 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
               <TablaLeads leads={filtrados} onAbrir={setSeleccion} />
             ))}
           {pestana === "pendientes" && <PendientesDia leads={leads} onAbrir={setSeleccion} />}
+          {pestana === "cotizaciones" && (
+            <Cotizaciones
+              leads={leads}
+              firma={sesion.nombre}
+              leadId={cotizarLeadId}
+              onLead={setCotizarLeadId}
+              onAbrir={setSeleccion}
+              onNuevoProspecto={() => elegir("contactos")}
+              onCambio={recargar}
+            />
+          )}
           {pestana === "contactos" && <Contactos leads={filtrados} onAbrir={setSeleccion} onCambio={recargar} />}
           {pestana === "reportes" && <Reportes leads={leads} />}
           {esAdmin && pestana === "panel" && <PanelMando onVerSinRamo={verGanadasSinRamo} />}
@@ -261,6 +283,7 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
               onClose={() => setSeleccion(null)}
               onCambio={recargar}
               onAgregarCobranza={esAdmin ? agregarACobranza : undefined}
+              onCotizar={cotizarA}
             />
           )}
         </div>

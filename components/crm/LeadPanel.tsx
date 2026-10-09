@@ -16,9 +16,11 @@ interface LeadPanelProps {
   onCambio: () => void;
   /** Solo admin: lleva al cliente ganado con Valeri para dar de alta su póliza en cobranza. */
   onAgregarCobranza?: (lead: Lead) => void;
+  /** Lleva a Cotizaciones con este prospecto ya elegido. */
+  onCotizar?: (lead: Lead) => void;
 }
 
-export function LeadPanel({ id, onClose, onCambio, onAgregarCobranza }: LeadPanelProps) {
+export function LeadPanel({ id, onClose, onCambio, onAgregarCobranza, onCotizar }: LeadPanelProps) {
   const [lead, setLead] = useState<Lead | null>(null);
   const [actividad, setActividad] = useState<Actividad[]>([]);
   const [notas, setNotas] = useState("");
@@ -163,6 +165,12 @@ export function LeadPanel({ id, onClose, onCambio, onAgregarCobranza }: LeadPane
                 <Icon icon="logos:whatsapp-icon" width={16} /> {lead.whatsapp}
               </a>
             </div>
+
+            {onCotizar && (
+              <button type="button" onClick={() => onCotizar(lead)} className="btn-ghost mt-4 w-full py-2.5 text-sm">
+                <Icon icon="flat-color-icons:calculator" width={18} aria-hidden /> Cotizar a {lead.nombre.split(" ")[0]}
+              </button>
+            )}
 
             {/* Mover de etapa */}
             <label className="field-label mt-6">Etapa</label>
