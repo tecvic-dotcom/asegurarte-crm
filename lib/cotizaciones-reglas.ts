@@ -598,6 +598,19 @@ function montoDe(v: unknown): number | null {
   return Number.isFinite(n) && n > 0 && n <= MAX_DINERO ? redondear(n) : null;
 }
 
+/** Recorta sin partir una palabra a la mitad ("…cristales, asistencia…" y no "…crist"). */
+function recortarTexto(texto: string, max: number): string {
+  if (texto.length <= max) return texto;
+  let corte = texto.slice(0, max - 1);
+  const espacio = corte.lastIndexOf(" ");
+  if (espacio > max * 0.6) corte = corte.slice(0, espacio);
+  return `${corte.replace(/[\s,;:.-]+$/, "")}…`;
+}
+
+/** Cuántos avisos de la IA se muestran, y de qué largo (para que una lectura rara no inunde la pantalla). */
+const MAX_AVISOS = 5;
+const MAX_AVISO = 240;
+
 /**
  * Convierte la respuesta cruda de la IA en un borrador para el formulario. No confía en nada: valida el ramo,
  * deja solo las claves de ese ramo, calcula la fecha límite si el documento solo dice "15 días" y descarta
@@ -605,15 +618,15 @@ function montoDe(v: unknown): number | null {
  */
 export function normalizarLectura(entrada: unknown): LecturaCotizacion {
   const e = (entrada && typeof entrada === "object" ? entrada : {}) as Record<string, unknown>;
-  const avisos = Array.isArray(e.avisos) ? e.avisos.map(limpio).filter(Boolean) : [];
+  const avisos = (Array.isArray(e.avisos) ? e.avisos.map(limpio).filter(Boolean) : []).slice(0, MAX_AVISOS).map((a) => recortarTexto(a, MAX_AVISO));
 
   const ramoId = esRamoCotizacion(e.ramo) ? e.ramo : null;
   const ramo = ramoId ? infoRamoCotizacion(ramoId) : null;
   if (!ramo) avisos.push("No pude identificar el ramo: elígelo tú.");
 
-  const aseguradora = limpio(e.aseguradora).slice(0, MAX_ASEGURADORA);
+  const aseguradora = recortarTexto(limpio(e.aseguradora), MAX_ASEGURADORA);
   if (!aseguradora) avisos.push("No vi la aseguradora: escríbela tú.");
-  const plan = limpio(e.plan).slice(0, MAX_PLAN);
+  const plan = recortarTexto(limpio(e.plan), MAX_PLAN);
 
   const prima = montoDe(e.prima_contado);
   if (prima === null) avisos.push("No vi la prima de contado: escríbela tú.");
@@ -648,7 +661,7 @@ export function normalizarLectura(entrada: unknown): LecturaCotizacion {
       if (!par || typeof par !== "object") continue;
       const p = par as Record<string, unknown>;
       const clave = limpio(p.clave);
-      const valor = limpio(p.valor).slice(0, MAX_DATO);
+      const valor = recortarTexto(limpio(p.valor), MAX_DATO);
       if (valor && !datos[clave] && ramo.campos.some((c) => c.clave === clave)) datos[clave] = valor;
     }
   }
