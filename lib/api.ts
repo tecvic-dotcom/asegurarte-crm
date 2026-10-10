@@ -40,6 +40,7 @@ import type {
 } from "./types";
 
 import type { MotivoCobro } from "./cobranza-reglas";
+import type { MotivoSeguimiento } from "./seguimiento-reglas";
 import type { Cotizacion, DatosCotizacion, EstadoCotizacion, LecturaCotizacion } from "./cotizaciones-reglas";
 import type { DatosPendiente, Pendiente } from "./pendientes-reglas";
 
@@ -284,6 +285,19 @@ export async function crmMensajesCobro(): Promise<Partial<Record<MotivoCobro, st
 /** Guarda tu texto para una situación; con texto null vuelve al base de Valeri. */
 export async function crmGuardarMensajeCobro(motivo: MotivoCobro, texto: string | null): Promise<void> {
   await jsonOErrorCRM(await postJSON("/api/crm/cobranza/mensajes", { motivo, texto }));
+}
+
+// ---- Seguimiento: Sofi (solo admin) ----
+
+/** Tus mensajes de seguimiento personalizados (solo las situaciones que cambiaste). */
+export async function crmMensajesSeguimiento(): Promise<Partial<Record<MotivoSeguimiento, string>>> {
+  const res = await fetch("/api/crm/seguimiento/mensajes", { cache: "no-store" });
+  return ((await jsonOErrorCRM(res)) as { mensajes: Partial<Record<MotivoSeguimiento, string>> }).mensajes;
+}
+
+/** Guarda tu texto para una situación; con texto null vuelve al base de Sofi. */
+export async function crmGuardarMensajeSeguimiento(motivo: MotivoSeguimiento, texto: string | null): Promise<void> {
+  await jsonOErrorCRM(await postJSON("/api/crm/seguimiento/mensajes", { motivo, texto }));
 }
 
 export async function crmResumenCobranza(): Promise<ResumenCobranza> {

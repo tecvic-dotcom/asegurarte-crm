@@ -43,5 +43,8 @@ export const MENSAJE_MIGRACION_PENDIENTES_ORDEN =
 export const MENSAJE_MIGRACION_COTIZACIONES =
   "Falta un paso para encender tus cotizaciones: abre Supabase → SQL Editor → New query, pega el archivo supabase/migrations/0011_cotizaciones.sql y dale Run.";
 
+export const MENSAJE_MIGRACION_SEGUIMIENTO =
+  "Falta un paso para guardar tus mensajes de Sofi: abre Supabase → SQL Editor → New query, pega el archivo supabase/migrations/0012_seguimiento_mensajes.sql y dale Run.";
+
 export const MENSAJE_MIGRACION_MENSAJES =
   "Falta un paso para guardar tus mensajes de Valeri: abre Supabase → SQL Editor → New query, pega el archivo supabase/migrations/0008_cobranza_mensajes.sql y dale Run.";

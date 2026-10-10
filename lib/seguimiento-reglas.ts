@@ -6,6 +6,7 @@
  * prospectos a quienes ya toca escribirles, en orden, con el mensaje escrito.
  * Tú lo mandas; Sofi no envía nada sola.
  */
+import { saludoPara } from "./cobranza-reglas";
 import { diasEntre, fechaLocal } from "./fechas";
 import type { EtapaId, Lead, Ramo } from "./types";
 
@@ -134,21 +135,83 @@ const SEGURO: Record<Ramo, string> = {
   hogar: "tu seguro de hogar",
 };
 
-/** El WhatsApp listo para mandar, según la etapa del prospecto. Suena a Roberto, no a robot. */
-export function mensajeSeguimiento(p: PendienteSeguimiento): string {
-  const nombre = p.lead.nombre.trim().split(/\s+/)[0] || "";
-  const hola = nombre ? `Hola ${nombre}` : "Hola";
-  const seguro = p.lead.ramo ? SEGURO[p.lead.ramo] : "tu seguro";
-  switch (p.etapa) {
-    case "nuevo":
-      return `${hola}, soy Roberto Rodríguez de Asegurarte 👋 Vi que pediste información de ${seguro}. ¿Tienes 5 minutos hoy para platicarte las opciones? Sin compromiso.`;
-    case "contactado":
-      return `${hola}, ¿cómo estás? Te escribo para dar seguimiento a lo que platicamos de ${seguro}. ¿Pudiste pensarlo o te surgió alguna duda? Con gusto la resolvemos.`;
-    case "cita":
-      return `${hola}, ¿cómo vas? Quería confirmar nuestra cita para platicar de ${seguro}. ¿Sigue en pie? Si necesitas moverla, dime qué día te acomoda.`;
-    case "propuesta":
-      return p.ultimoIntento
-        ? `${hola}, no quiero ser insistente: hace unos días te envié la propuesta de ${seguro}. ¿Sigues interesado o prefieres que lo dejemos para más adelante? Cualquiera de las dos respuestas me sirve.`
-        : `${hola}, ¿pudiste revisar la propuesta de ${seguro} que te envié? Si quieres, te explico cualquier parte o ajustamos la cobertura al presupuesto que traes.`;
+// ----------------------------------------------------------------------------
+// Mensajes de WhatsApp (los envías TÚ; Sofi solo los deja listos). Se pueden personalizar, igual que los de Valeri.
+// ----------------------------------------------------------------------------
+
+/** Las situaciones que tienen su propio mensaje: una por etapa, y "último intento" para la propuesta que lleva mucho sin respuesta. */
+export type MotivoSeguimiento = EtapaSeguimiento | "ultimo_intento";
+
+/** Texto base de cada situación (el que Sofi usa mientras no escribas el tuyo). Suena a Roberto, no a robot. */
+export const PLANTILLAS_SEGUIMIENTO: Record<MotivoSeguimiento, string> = {
+  nuevo:
+    "{saludo}, soy Roberto Rodríguez de Asegurarte 👋 Vi que pediste información de {seguro}. ¿Tienes 5 minutos hoy para platicarte las opciones? Sin compromiso.",
+  contactado:
+    "{saludo}, ¿cómo estás? Te escribo para dar seguimiento a lo que platicamos de {seguro}. ¿Pudiste pensarlo o te surgió alguna duda? Con gusto la resolvemos.",
+  cita: "{saludo}, ¿cómo vas? Quería confirmar nuestra cita para platicar de {seguro}. ¿Sigue en pie? Si necesitas moverla, dime qué día te acomoda.",
+  propuesta:
+    "{saludo}, ¿pudiste revisar la propuesta de {seguro} que te envié? Si quieres, te explico cualquier parte o ajustamos la cobertura al presupuesto que traes.",
+  ultimo_intento:
+    "{saludo}, no quiero ser insistente: hace unos días te envié la propuesta de {seguro}. ¿Sigues interesado o prefieres que lo dejemos para más adelante? Cualquiera de las dos respuestas me sirve.",
+};
+
+export const MOTIVOS_SEGUIMIENTO: { id: MotivoSeguimiento; nombre: string; cuando: string }[] = [
+  { id: "nuevo", nombre: "Prospecto nuevo", cuando: "Acaba de entrar y aún no lo contactas" },
+  { id: "contactado", nombre: "Contactado", cuando: "Ya hablaron y lleva 2 días sin contacto" },
+  { id: "cita", nombre: "Con cita", cuando: "Tiene cita agendada y lleva 2 días sin contacto" },
+  { id: "propuesta", nombre: "Propuesta enviada", cuando: "Le mandaste la propuesta y lleva 3 días sin respuesta" },
+  { id: "ultimo_intento", nombre: "Último intento", cuando: `La propuesta lleva ${DIAS_ULTIMO_INTENTO} días o más sin respuesta` },
+];
+
+/** Lo que puedes poner entre llaves en tu mensaje, y qué se escribe en su lugar. */
+export const VARIABLES_SEGUIMIENTO: { clave: string; ejemplo: string; descripcion: string }[] = [
+  { clave: "saludo", ejemplo: "Hola Myrna", descripcion: "Saludo con el nombre del prospecto" },
+  { clave: "nombre", ejemplo: "Myrna", descripcion: "Solo el nombre de pila" },
+  { clave: "seguro", ejemplo: "tu seguro de vida", descripcion: "Qué seguro le interesa, según el ramo del prospecto (si no lo has definido, dice «tu seguro»)" },
+];
+
+const CLAVES_VALIDAS = new Set(VARIABLES_SEGUIMIENTO.map((v) => v.clave));
+
+/** Variables entre llaves que no existen (para avisar en vez de mandarlas tal cual al prospecto). */
+export function variablesDesconocidasSeguimiento(texto: string): string[] {
+  return [...new Set([...texto.matchAll(/\{([^{}]*)\}/g)].map((m) => m[1]).filter((c) => !CLAVES_VALIDAS.has(c)))];
+}
+
+export type ResultadoMensajeSeguimiento = { ok: true; texto: string } | { ok: false; error: string };
+
+export function validarMensajeSeguimiento(entrada: unknown): ResultadoMensajeSeguimiento {
+  const texto = typeof entrada === "string" ? entrada.trim() : "";
+  if (texto.length < 10) return { ok: false, error: "Escribe un mensaje de al menos 10 letras." };
+  if (texto.length > 1000) return { ok: false, error: "El mensaje es muy largo (máximo 1,000 letras)." };
+  const raras = variablesDesconocidasSeguimiento(texto);
+  if (raras.length) {
+    return { ok: false, error: `No conozco ${raras.map((r) => `{${r}}`).join(", ")}. Usa solo: ${VARIABLES_SEGUIMIENTO.map((v) => `{${v.clave}}`).join(" ")}.` };
   }
+  return { ok: true, texto };
+}
+
+/** Rellena una plantilla con los datos del prospecto (el saludo cuida mayúsculas y razones sociales, igual que Valeri). */
+export function rellenarSeguimiento(plantilla: string, lead: Pick<Lead, "nombre" | "ramo">): string {
+  const saludo = saludoPara(lead.nombre);
+  const valores: Record<string, string> = {
+    saludo,
+    nombre: saludo.replace(/^Hola,? /, ""),
+    seguro: lead.ramo ? SEGURO[lead.ramo] : "tu seguro",
+  };
+  return plantilla
+    .replace(/\{([^{}]*)\}/g, (todo, clave: string) => (clave in valores ? valores[clave] : todo))
+    .replace(/\s+([,.:;!?])/g, "$1")
+    .replace(/ {2,}/g, " ")
+    .trim();
+}
+
+/** La situación de un pendiente: su etapa, o "último intento" si la propuesta lleva mucho sin respuesta. */
+export function motivoDe(p: Pick<PendienteSeguimiento, "etapa" | "ultimoIntento">): MotivoSeguimiento {
+  return p.etapa === "propuesta" && p.ultimoIntento ? "ultimo_intento" : p.etapa;
+}
+
+/** El WhatsApp listo para mandar: tu texto si lo personalizaste; si no, el base. */
+export function mensajeSeguimiento(p: PendienteSeguimiento, personalizadas: Partial<Record<MotivoSeguimiento, string>> = {}): string {
+  const motivo = motivoDe(p);
+  return rellenarSeguimiento(personalizadas[motivo] || PLANTILLAS_SEGUIMIENTO[motivo], p.lead);
 }

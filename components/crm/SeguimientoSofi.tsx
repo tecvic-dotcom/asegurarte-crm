@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
-import { crmAgregarActividad, crmMover } from "@/lib/api";
+import { crmAgregarActividad, crmMensajesSeguimiento, crmMover } from "@/lib/api";
 import { nombreEtapa } from "@/lib/crm-data";
 import { infoRamo } from "@/lib/ramos";
 import { hoyLocal } from "@/lib/fechas";
@@ -10,11 +10,14 @@ import {
   ligaWhatsAppLead,
   listaDeSeguimiento,
   mensajeSeguimiento,
+  motivoDe,
   resumenSeguimiento,
+  type MotivoSeguimiento,
   type PendienteSeguimiento,
 } from "@/lib/seguimiento-reglas";
 import type { Lead } from "@/lib/types";
 import { AvatarEmpleado } from "./AvatarEmpleado";
+import { EditorMensajesSofi, type EjemploProspecto } from "./seguimiento/EditorMensajesSofi";
 
 interface SofiProps {
   leads: Lead[];
@@ -37,6 +40,14 @@ export function SeguimientoSofi({ leads, onAbrir, onCambio }: SofiProps) {
   const [hechos, setHechos] = useState<Record<string, Hecho>>({});
   const [aviso, setAviso] = useState<string | null>(null);
   const relojAviso = useRef<number | undefined>(undefined);
+  // Tus mensajes de WhatsApp personalizados (vacío = textos base de Sofi).
+  const [mensajes, setMensajes] = useState<Partial<Record<MotivoSeguimiento, string>>>({});
+  const [editorAbierto, setEditorAbierto] = useState(false);
+
+  useEffect(() => {
+    // Si aún no existe la tabla de mensajes, Sofi sigue con sus textos base.
+    crmMensajesSeguimiento().then(setMensajes, () => undefined);
+  }, []);
 
   const resumen = useMemo(() => resumenSeguimiento(leads, hoy), [leads, hoy]);
   const lista = useMemo(() => {
@@ -110,12 +121,36 @@ export function SeguimientoSofi({ leads, onAbrir, onCambio }: SofiProps) {
         <Cifra titulo="Al corriente" valor={resumen.alCorriente} nota="aún no les toca" color="var(--green)" />
       </div>
 
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="font-semibold text-ink">{lista.length > 0 ? "A quién escribirle hoy" : "Tus mensajes"}</h3>
+        <button type="button" onClick={() => setEditorAbierto((v) => !v)} aria-expanded={editorAbierto} className="btn-ghost px-3 py-1.5 text-xs">
+          <Icon icon="flat-color-icons:edit-image" width={16} aria-hidden /> Personalizar mensajes
+        </button>
+      </div>
+      {editorAbierto && (
+        <EditorMensajesSofi
+          personalizadas={mensajes}
+          // El primero de cada situación en la lista de hoy sirve de ejemplo para la vista previa.
+          ejemplos={Object.fromEntries([...lista].reverse().map((x) => [motivoDe(x), x.lead])) as Partial<Record<MotivoSeguimiento, EjemploProspecto>>}
+          onCambio={(motivo, texto) =>
+            setMensajes((m) => {
+              const nuevo = { ...m };
+              if (texto === null) delete nuevo[motivo];
+              else nuevo[motivo] = texto;
+              return nuevo;
+            })
+          }
+          onCerrar={() => setEditorAbierto(false)}
+        />
+      )}
+
       {lista.length > 0 && (
         <ul className="space-y-3">
           {lista.map((p) => (
             <TarjetaSeguimiento
               key={p.lead.id}
               p={p}
+              mensajes={mensajes}
               hecho={hechos[p.lead.id] ?? null}
               onAbrir={() => onAbrir(p.lead.id)}
               onRegistrar={(que) => void registrar(p, que)}
@@ -147,19 +182,22 @@ function Cifra({ titulo, valor, nota, color }: { titulo: string; valor: number; 
 
 function TarjetaSeguimiento({
   p,
+  mensajes,
   hecho,
   onAbrir,
   onRegistrar,
   onCopiar,
 }: {
   p: PendienteSeguimiento;
+  /** Tus mensajes personalizados (vacío = el texto base de cada situación). */
+  mensajes: Partial<Record<MotivoSeguimiento, string>>;
   hecho: Hecho | null;
   onAbrir: () => void;
   onRegistrar: (que: Hecho) => void;
   onCopiar: (texto: string) => void;
 }) {
   const [completo, setCompleto] = useState(false);
-  const texto = mensajeSeguimiento(p);
+  const texto = mensajeSeguimiento(p, mensajes);
   const liga = ligaWhatsAppLead(p.lead, texto);
   const alta = p.urgencia === "alta";
   const color = alta ? "var(--red)" : "var(--amber)";
