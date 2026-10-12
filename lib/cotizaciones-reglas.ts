@@ -74,7 +74,7 @@ export const RAMOS_COTIZACION: InfoRamoCotizacion[] = [
   {
     id: "autos",
     nombre: "Seguro de auto",
-    corto: "Auto",
+    corto: "Autos",
     icono: "flat-color-icons:automotive",
     emoji: "🚗",
     etiquetaPrima: "Prima anual",
@@ -417,6 +417,28 @@ export function agruparPorRamo(lista: Cotizacion[]): GrupoCotizaciones[] {
     else grupos.push({ ramo: infoRamoCotizacion(c.ramo), items: [c] });
   }
   return grupos;
+}
+
+/**
+ * Los ramos que se le están cotizando a cada prospecto (id de prospecto → ramos, en el orden de siempre).
+ * Cuenta el ramo que traen las cotizaciones vivas (las descartadas ya no) más el ramo que se anotó en
+ * su ficha, aunque todavía no tenga cotización guardada.
+ */
+export function ramosPorProspecto(
+  prospectos: { id: string; ramo: RamoCotizacion | null }[],
+  cotizaciones: Pick<Cotizacion, "lead_id" | "ramo" | "estado">[],
+): Map<string, InfoRamoCotizacion[]> {
+  const vistos = new Map<string, Set<RamoCotizacion>>();
+  const anotar = (leadId: string, ramo: RamoCotizacion) => {
+    const set = vistos.get(leadId) ?? new Set<RamoCotizacion>();
+    set.add(ramo);
+    vistos.set(leadId, set);
+  };
+  for (const p of prospectos) if (p.ramo) anotar(p.id, p.ramo);
+  for (const c of cotizaciones) if (c.estado !== "descartada") anotar(c.lead_id, c.ramo);
+  const resultado = new Map<string, InfoRamoCotizacion[]>();
+  for (const [leadId, set] of vistos) resultado.set(leadId, RAMOS_COTIZACION.filter((r) => set.has(r.id)));
+  return resultado;
 }
 
 /** El id de la opción más barata, si hay 2 o más en la misma moneda y solo una gana. */

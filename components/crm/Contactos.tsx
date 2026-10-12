@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Icon } from "@iconify/react";
-import { crmActualizar, crmCrearLead } from "@/lib/api";
+import { crmActualizar, crmCotizaciones, crmCrearLead } from "@/lib/api";
+import { ramosPorProspecto, type Cotizacion } from "@/lib/cotizaciones-reglas";
 import { RAMOS } from "@/lib/ramos";
 import { ETAPAS } from "@/lib/crm-data";
 import { ORIGENES_MANUAL, type Lead, type EtapaId, type NuevoLeadManual, type Ramo } from "@/lib/types";
@@ -146,6 +147,19 @@ function FormularioProspecto({ onGuardado, onCancelar, onAbrir }: { onGuardado: 
 export function Contactos({ leads, onAbrir, onCambio }: ContactosProps) {
   const [editando, setEditando] = useState<string | null>(null);
   const [agregando, setAgregando] = useState(false);
+  const [cotizaciones, setCotizaciones] = useState<Cotizacion[]>([]);
+
+  // El ramo cotizado sale de las cotizaciones guardadas; si no cargan (sin sesión, falta migración), queda el ramo de la ficha.
+  useEffect(() => {
+    let vivo = true;
+    crmCotizaciones()
+      .then((c) => vivo && setCotizaciones(c))
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, []);
+  const ramos = useMemo(() => ramosPorProspecto(leads, cotizaciones), [leads, cotizaciones]);
 
   async function guardarCampo(id: string, patch: { nombre?: string; valor?: number; etapa?: EtapaId }) {
     setEditando(id);
@@ -182,7 +196,7 @@ export function Contactos({ leads, onAbrir, onCambio }: ContactosProps) {
           <thead>
             <tr className="border-b border-line text-left text-xs uppercase text-ink-mute">
               <th className="px-4 py-3">Nombre</th>
-              <th className="px-4 py-3">Correo</th>
+              <th className="px-4 py-3">Ramo</th>
               <th className="px-4 py-3">WhatsApp</th>
               <th className="px-4 py-3">Etapa</th>
               <th className="px-4 py-3">Valor (MXN)</th>
@@ -201,7 +215,19 @@ export function Contactos({ leads, onAbrir, onCambio }: ContactosProps) {
                     className="w-full rounded-lg bg-transparent px-2 py-2 text-ink outline-none hover:bg-glass focus:bg-glass"
                   />
                 </td>
-                <td className="px-4 py-3 text-ink-soft">{l.correo}</td>
+                <td className="px-4 py-3 text-ink-soft">
+                  {ramos.get(l.id)?.length ? (
+                    <span className="flex flex-wrap gap-x-3 gap-y-1">
+                      {ramos.get(l.id)!.map((r) => (
+                        <span key={r.id} className="inline-flex items-center gap-1.5">
+                          <Icon icon={r.icono} width={15} aria-hidden /> {r.corto}
+                        </span>
+                      ))}
+                    </span>
+                  ) : (
+                    <span className="text-ink-mute">—</span>
+                  )}
+                </td>
                 <td className="px-4 py-3 text-ink-soft">{l.whatsapp}</td>
                 <td className="px-2 py-1">
                   <select
