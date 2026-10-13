@@ -471,6 +471,63 @@ export interface LecturaPoliza {
   avisos: string[];
 }
 
+// ---- Historial de cada póliza de la cartera: pagos, renovaciones y endosos (tabla polizas_historial) ----
+
+export type TipoEvento = "pago" | "endoso" | "renovacion";
+
+export interface EventoPoliza {
+  id: string;
+  poliza_id: string;
+  tipo: TipoEvento;
+  /** Día en que ocurrió (AAAA-MM-DD). */
+  fecha: string;
+  /** Pago: lo pagado · endoso: ajuste de prima (puede ser negativo) · renovación: prima anual de la vigencia nueva. */
+  monto: number;
+  /** Pago: quién lo anotó · endoso: su tipo · renovación: manual o lector de PDF. */
+  concepto: string;
+  /** Número de endoso (opcional). */
+  numero: string;
+  nota: string;
+  /** Pago: fecha límite del recibo que cubrió. */
+  recibo: string | null;
+  /** Renovación: la vigencia nueva. */
+  desde: string | null;
+  hasta: string | null;
+  creado_en: string;
+}
+
+/** Lo que se captura de un pago o de un endoso (la renovación va por su propio formulario). */
+export interface DatosEvento {
+  tipo: "pago" | "endoso";
+  fecha: string;
+  monto: number;
+  concepto: string;
+  numero: string;
+  nota: string;
+  recibo: string | null;
+}
+
+/** Los datos de una renovación (manual, o leída del PDF y confirmada por Roberto). */
+export interface DatosRenovacion {
+  /** Inicio de la vigencia nueva. */
+  inicio: string;
+  /** Fin de la vigencia nueva (la siguiente renovación). */
+  hasta: string;
+  forma_pago: FormaPago;
+  /** Lo que paga el cliente en cada recibo de la vigencia nueva. */
+  monto_pago: number;
+  prima_anual: number;
+  /** Fecha límite del primer recibo de la vigencia nueva. */
+  fecha_limite_pago: string | null;
+  numero: string;
+  aseguradora: string;
+  origen: "manual" | "pdf";
+  /** Prima neta anual (sin derechos ni IVA): si es mayor a 0 cuenta en los reportes de renovaciones. 0 = no contarla. */
+  prima_neta: number;
+  nota: string;
+  archivo: string;
+}
+
 /** Prospecto capturado a mano por Roberto o su equipo (con su etapa desde el inicio). */
 export interface NuevoLeadManual {
   nombre: string;

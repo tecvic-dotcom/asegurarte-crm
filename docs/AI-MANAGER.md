@@ -12,7 +12,7 @@
 | Extra para tu meta | Cada prospecto tiene **Ramo** (vida, GMM, ahorro, autos, hogar) y fecha de cierre automática al pasarlo a “Cliente ganado”. | El odómetro de tu meta |
 | **Valeri (cobranza)** | Pestaña **Valeri · Cobranza**: tu cartera de pólizas y, cada día, a quién cobrarle primero (vencidas, por vencer, promesas, renovaciones) con el WhatsApp listo. Botones: **Pagó** (avanza al siguiente recibo), **Promesa** y **Ya le recordé**. No usa IA: cuesta $0. | El cobrador que nunca olvida |
 | **Crecimiento** | Pestaña **Crecimiento**: prima pagada, comisión o número de pagos por año y mes a mes, por ramo, comparando el año en curso contra los **mismos meses** del anterior. Se alimenta de los reportes de prima pagada de la aseguradora (tabla `produccion_mensual`, migración `0005_produccion.sql`, solo totales sin clientes). Las comisiones de esos reportes también entran a tus finanzas (“Cuánto entró”). | El historial del odómetro |
-| **Clara (reportes)** | Pestaña **Clara · Reportes**: cada **día 1** el cierre del mes y, al terminar cada trimestre, el del **trimestre** (ventas vs meta, prospectos, dinero, cobranza, producción de la aseguradora y **3 focos**). Botones **Copiar**, **WhatsApp** y **PDF**. Puedes ver meses y trimestres anteriores. No usa IA: cuesta $0. | La secretaria que te deja el resumen en el escritorio |
+| **Clara (reportes)** | Pestaña **Clara · Reportes**: cada **día 1** el cierre del mes y, al terminar cada trimestre, el del **trimestre** (ventas vs meta, prospectos, dinero, cobranza, producción de la aseguradora y **3 focos**). Botones **Copiar**, **WhatsApp** y **PDF**. Puedes ver meses y trimestres anteriores. Un cuarto botón, **Clientes por ramo**, arma el listado de tus pólizas (ver abajo). No usa IA: cuesta $0 (solo el lector de PDF de las renovaciones lee con IA). | La secretaria que te deja el resumen en el escritorio |
 
 Para actualizarla cada mes: descarga el reporte de prima pagada por ramo y pídele a Claude Code *“carga mi producción del mes en Crecimiento”*.
 
@@ -105,6 +105,22 @@ Valeri (cobranza) y Clara (reportes) ya están trabajando. Para el siguiente, p�
 | Una venta no cuenta en tu meta | Revisa que esté en “Cliente ganado” y que tenga **Ramo**. |
 | En tu compu (`pnpm dev`) se ven estilos viejos | Borra la carpeta `.next/dev/cache` y vuelve a correr `pnpm dev`. |
 
+## Clara · Clientes por ramo (listado con acciones)
+
+En **Clara** toca el botón **Clientes por ramo**: es tu cartera de pólizas (la misma de Valeri) agrupada por ramo, con **nombre, aseguradora, WhatsApp, vigencia y estatus**. Arriba filtras por ramo, buscas, filtras por estatus (pago vencido, por vencer, por renovar…) y puedes **Copiar**, mandar por **WhatsApp**, bajar en **Excel (CSV)** o sacar el **PDF**.
+
+A un costado de cada renglón están los 5 botones de acción:
+
+| Botón | Qué hace |
+|---|---|
+| ✏️ **Editar** | La misma ficha de Valeri: datos, montos, fechas; también cancelar o borrar la póliza. |
+| 💵 **Historial de pagos** | Cada vez que en Valeri marcas **Pagó**, el pago se anota solo aquí. También puedes registrar pagos viejos a mano (con la opción de saldar el recibo que toca o no). |
+| 🔄 **Renovación manual** | Escribes la vigencia nueva, los montos y la fecha del primer pago. La póliza se actualiza, queda en su historial y, si escribes la **prima neta**, suma en tus reportes de prima renovada. |
+| ⬆️ **Renovación con lector de PDF** | Adjuntas el PDF (o foto) de la renovación; la IA lee número, aseguradora, inicio y prima neta, te avisa si el documento parece de otra póliza o persona, y tú confirmas antes de guardar. El archivo no se guarda. |
+| 📋 **Endosos** | Bitácora de cambios de la póliza (alta o baja de asegurado, cambio de vehículo, de suma, etc.) con fecha, número de endoso y ajuste de prima (+ o −). Si el endoso cambia lo que paga el cliente, actualiza el monto con ✏️ Editar. |
+
+Un globito en 💵 y 📋 te dice cuántos movimientos hay. **Una sola vez**, para encender el historial, corre en Supabase el archivo `supabase/migrations/0013_polizas_historial.sql` (Valeri sigue funcionando igual aunque todavía no lo corras; solo no se anotarán los pagos).
+
 ## Lo que NO se instaló del kit (y por qué)
 
 `skills-recomendadas.md` sugiere apps externas (QuickBooks, Xero, Ramp, Zapier, Lindy, Looker Studio, Gemini en Sheets) y “enchufes” MCP. Son cuentas de terceros y la mayoría de pago; no hacen falta para lo que ya tienes. Se conectan solo si tú lo decides, una a la vez, empezando por la que de verdad uses (por ejemplo, Google Sheets si llevas ahí tus números).
@@ -118,4 +134,5 @@ Valeri (cobranza) y Clara (reportes) ya están trabajando. Para el siguiente, p�
 - `app/api/crm/panel`, `app/api/crm/finanzas`, `app/api/crm/manager` — rutas del servidor (solo admin).
 - `supabase/migrations/0004_cobranza.sql`, `lib/cobranza.ts`, `lib/cobranza-reglas.ts`, `app/api/crm/cobranza` — Valeri (cartera, reglas de cobro y mensajes).
 - `lib/reportes-reglas.ts`, `lib/reportes.ts`, `app/api/crm/reportes` — Clara (reportes mensual y trimestral; sin tabla nueva: lee las que ya existen).
+- `supabase/migrations/0013_polizas_historial.sql`, `lib/polizas-historial.ts`, `lib/historial-reglas.ts`, `lib/clientes-reglas.ts`, `app/api/crm/historial`, `components/crm/clientes/*` — Clara · Clientes por ramo (listado, historial de pagos, renovaciones y endosos; las renovaciones pasan por `app/api/crm/cobranza`, acción `renovar`).
 - `components/crm/PanelMando.tsx`, `components/crm/panel/*`, `components/crm/ManagerIA.tsx`, `components/crm/Cobranza.tsx`, `components/crm/cobranza/*`, `components/crm/ReportesClara.tsx`, `components/crm/AvatarEmpleado.tsx`, `components/crm/SlotRoro.tsx` — pantallas.

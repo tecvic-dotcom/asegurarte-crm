@@ -48,3 +48,6 @@ export const MENSAJE_MIGRACION_SEGUIMIENTO =
 
 export const MENSAJE_MIGRACION_MENSAJES =
   "Falta un paso para guardar tus mensajes de Valeri: abre Supabase → SQL Editor → New query, pega el archivo supabase/migrations/0008_cobranza_mensajes.sql y dale Run.";
+
+export const MENSAJE_MIGRACION_HISTORIAL =
+  "Falta un paso para encender el historial de tus pólizas (pagos, renovaciones y endosos): abre Supabase → SQL Editor → New query, pega el archivo supabase/migrations/0013_polizas_historial.sql y dale Run.";

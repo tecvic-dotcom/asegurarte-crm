@@ -13,9 +13,13 @@ import "server-only";
 import { adminDb, cloudReady } from "./supabase-admin";
 import { faltaMigracion, MENSAJE_MIGRACION_COBRANZA, MigracionPendienteError } from "./migracion";
 import { esRamo } from "./ramos";
-import { esFechaValida, hoyLocal, sumarDias } from "./fechas";
+import { esFechaValida, hoyLocal, maxFecha, sumarDias } from "./fechas";
 import { FORMAS_PAGO, siguienteFechaPago } from "./cobranza-reglas";
-import type { DatosPoliza, FormaPago, Poliza, Ramo } from "./types";
+import { CONCEPTO_PAGO_VALERI } from "./historial-reglas";
+import { crearEvento, listarHistorial } from "./polizas-historial";
+import { crearAdjunta } from "./polizas-adjuntas";
+import { validarAdjunta } from "./adjuntas-reglas";
+import type { DatosPoliza, DatosRenovacion, FormaPago, Poliza, Ramo } from "./types";
 
 const TABLA = "polizas";
 
@@ -104,16 +108,19 @@ function semilla(): StoreCobranza {
   return {
     seq: 100,
     polizas: [
-      p("LAURA MENDEZ RUIZ", "gmm", "mensual", 1850, -12, "8110000001"),
-      p("TRANSPORTES DEL NORTE SA DE CV", "autos", "trimestral", 9400, -3, "8110000002"),
-      p("Jorge Salinas Treviño", "vida", "anual", 12600, 2, "", { renovacion: sumarDias(hoy, 2) }),
+      p("LAURA MENDEZ RUIZ", "gmm", "mensual", 1850, -12, "8110000001", { aseguradora: "AXA", numero: "F746002330", inicio: sumarDias(hoy, -300), renovacion: sumarDias(hoy, 65) }),
+      p("TRANSPORTES DEL NORTE SA DE CV", "autos", "trimestral", 9400, -3, "8110000002", { aseguradora: "Chubb", inicio: sumarDias(hoy, -200), renovacion: sumarDias(hoy, 165) }),
+      p("Jorge Salinas Treviño", "vida", "anual", 12600, 2, "", { aseguradora: "GNP", inicio: sumarDias(hoy, -363), renovacion: sumarDias(hoy, 2) }),
       p("Patricia Ochoa Leal", "hogar", "semestral", 3200, -5, "8110000004", {
+        aseguradora: "AXA",
+        inicio: sumarDias(hoy, -150),
+        renovacion: sumarDias(hoy, 215),
         estatus_manual: "promesa",
         promesa_fecha: sumarDias(hoy, 1),
       }),
-      p("Ricardo Garza Elizondo", "ahorro", "mensual", 2500, 9, "8110000005"),
-      p("Sofía Cantú Villarreal", "vida", "anual", 8900, 25, "8110000006", { renovacion: sumarDias(hoy, 25) }),
-      p("Miguel Ángel Rocha", "autos", "mensual", 1450, 20, "8110000007"),
+      p("Ricardo Garza Elizondo", "ahorro", "mensual", 2500, 9, "8110000005", { aseguradora: "GNP", inicio: sumarDias(hoy, -400), renovacion: sumarDias(hoy, -35) }),
+      p("Sofía Cantú Villarreal", "vida", "anual", 8900, 25, "8110000006", { aseguradora: "AXA", inicio: sumarDias(hoy, -340), renovacion: sumarDias(hoy, 25) }),
+      p("Miguel Ángel Rocha", "autos", "mensual", 1450, 20, "8110000007", { aseguradora: "Qualitas", inicio: sumarDias(hoy, -90), renovacion: sumarDias(hoy, 275) }),
     ],
   };
 }
@@ -206,16 +213,147 @@ export async function eliminarPoliza(id: string): Promise<void> {
 // Acciones rápidas de Valeri
 // ----------------------------------------------------------------------------
 
-/** "Pagó": el recibo queda saldado y la fecha límite avanza al siguiente periodo. */
+/**
+ * "Pagó": el recibo queda saldado y la fecha límite avanza al siguiente periodo. Además anota el pago en el historial
+ * de la póliza; si todavía no existe esa tabla (SQL 0013), Valeri sigue funcionando igual y solo se salta la nota.
+ */
 export async function marcarPagada(id: string): Promise<Poliza | null> {
   const p = await obtenerPoliza(id);
   if (!p) return null;
-  return actualizar(id, {
+  const hoy = hoyLocal();
+  const nueva = await actualizar(id, {
     fecha_limite_pago: p.fecha_limite_pago ? siguienteFechaPago(p.fecha_limite_pago, p.forma_pago) : null,
     estatus_manual: null,
     promesa_fecha: null,
-    ultimo_pago: hoyLocal(),
+    ultimo_pago: hoy,
   });
+  try {
+    await crearEvento({
+      poliza_id: id,
+      tipo: "pago",
+      fecha: hoy,
+      monto: p.monto_pago,
+      concepto: CONCEPTO_PAGO_VALERI,
+      numero: "",
+      nota: "",
+      recibo: p.fecha_limite_pago,
+      desde: null,
+      hasta: null,
+    });
+  } catch (e) {
+    console.warn("[cobranza] el pago quedó marcado, pero no pude anotarlo en el historial:", (e as Error).message);
+  }
+  return nueva;
+}
+
+export interface DatosPagoManual {
+  fecha: string;
+  monto: number;
+  concepto: string;
+  nota: string;
+  recibo: string | null;
+}
+
+/**
+ * Anota un pago a mano en el historial (por ejemplo uno de hace meses). Con "avanzar" también salda el recibo que toca:
+ * la fecha límite pasa al siguiente periodo, igual que con «Pagó» de Valeri. Si falta el SQL 0013, avisa antes de tocar nada.
+ */
+export async function registrarPago(id: string, d: DatosPagoManual, avanzar: boolean): Promise<Poliza | null> {
+  const p = await obtenerPoliza(id);
+  if (!p) return null;
+  await listarHistorial(id); // lanza MigracionPendienteError si falta la tabla
+  let actual: Poliza | null = p;
+  const ultimo = p.ultimo_pago ? maxFecha(p.ultimo_pago, d.fecha) : d.fecha;
+  if (avanzar) {
+    actual = await actualizar(id, {
+      fecha_limite_pago: p.fecha_limite_pago ? siguienteFechaPago(p.fecha_limite_pago, p.forma_pago) : null,
+      estatus_manual: null,
+      promesa_fecha: null,
+      ultimo_pago: ultimo,
+    });
+  } else if (ultimo !== p.ultimo_pago) {
+    actual = await actualizar(id, { ultimo_pago: ultimo });
+  }
+  await crearEvento({
+    poliza_id: id,
+    tipo: "pago",
+    fecha: d.fecha,
+    monto: d.monto,
+    concepto: d.concepto,
+    numero: "",
+    nota: d.nota,
+    recibo: d.recibo ?? (avanzar ? p.fecha_limite_pago : null),
+    desde: null,
+    hasta: null,
+  });
+  return actual;
+}
+
+export interface ResultadoRenovacion {
+  poliza: Poliza;
+  /** Si se anotó en tus reportes de renovaciones (prima neta). */
+  reportes: "contada" | "duplicada" | "omitida" | "error";
+}
+
+/**
+ * Renueva una póliza (a mano o con los datos leídos del PDF): la vigencia, los montos y la fecha del primer pago pasan
+ * a los de la renovación, se reactiva si estaba cancelada o con promesa, queda anotada en su historial y, si trae prima
+ * neta, también cuenta en los reportes de renovaciones de Clara. Si falta el SQL 0013, avisa antes de tocar nada.
+ */
+export async function renovarPoliza(id: string, r: DatosRenovacion): Promise<ResultadoRenovacion | null> {
+  const p = await obtenerPoliza(id);
+  if (!p) return null;
+  await listarHistorial(id); // lanza MigracionPendienteError si falta la tabla
+  const poliza = await actualizar(id, {
+    inicio: r.inicio,
+    renovacion: r.hasta,
+    forma_pago: r.forma_pago,
+    monto_pago: r.monto_pago,
+    prima_anual: r.prima_anual,
+    fecha_limite_pago: r.fecha_limite_pago,
+    numero: r.numero || p.numero,
+    aseguradora: r.aseguradora || p.aseguradora,
+    estatus_manual: null,
+    promesa_fecha: null,
+  });
+  if (!poliza) return null;
+  await crearEvento({
+    poliza_id: id,
+    tipo: "renovacion",
+    fecha: r.inicio,
+    monto: r.prima_anual,
+    concepto: r.origen === "pdf" ? "Renovación con lector de PDF" : "Renovación manual",
+    numero: poliza.numero,
+    nota: r.nota,
+    recibo: null,
+    desde: r.inicio,
+    hasta: r.hasta,
+  });
+
+  let reportes: ResultadoRenovacion["reportes"] = "omitida";
+  if (r.prima_neta > 0 && poliza.ramo) {
+    try {
+      const v = validarAdjunta({
+        tipo: "renovacion",
+        ramo: poliza.ramo,
+        aseguradora: poliza.aseguradora,
+        numero: poliza.numero,
+        contratante: poliza.asegurado,
+        inicio: r.inicio,
+        prima_neta: r.prima_neta,
+        moneda: "MN",
+        asegurados_total: 1,
+        notas: r.nota,
+        archivo: r.archivo,
+      });
+      if (v.ok) reportes = (await crearAdjunta(v.datos)).ok ? "contada" : "duplicada";
+      else reportes = "error";
+    } catch (e) {
+      console.warn("[cobranza] la renovación quedó guardada, pero no pude anotarla en los reportes:", (e as Error).message);
+      reportes = "error";
+    }
+  }
+  return { poliza, reportes };
 }
 
 /** "Prometió pagar el…": mientras la promesa esté vigente, Valeri no lo marca como vencido. */

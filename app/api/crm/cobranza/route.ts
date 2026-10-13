@@ -9,8 +9,10 @@ import {
   registrarPromesa,
   marcarRecordada,
   cancelarPoliza,
+  renovarPoliza,
 } from "@/lib/cobranza";
 import { resumenCobranza, validarPoliza } from "@/lib/cobranza-reglas";
+import { validarRenovacion } from "@/lib/historial-reglas";
 import { esFechaValida, hoyLocal } from "@/lib/fechas";
 import { MigracionPendienteError } from "@/lib/migracion";
 import type { Poliza } from "@/lib/types";
@@ -46,7 +48,7 @@ export async function POST(req: Request): Promise<Response> {
   const puerta = exigirAdmin(req, "tu cobranza");
   if ("respuesta" in puerta) return puerta.respuesta;
 
-  let body: { accion?: string; id?: string; poliza?: unknown; fecha?: string; cancelada?: boolean };
+  let body: { accion?: string; id?: string; poliza?: unknown; fecha?: string; cancelada?: boolean; renovacion?: unknown };
   try {
     body = (await req.json()) as typeof body;
   } catch {
@@ -94,6 +96,13 @@ export async function POST(req: Request): Promise<Response> {
       case "cancelar":
         if (!body.id) break;
         return responder(await cancelarPoliza(body.id, body.cancelada !== false));
+      case "renovar": {
+        if (!body.id) break;
+        const r = validarRenovacion(body.renovacion);
+        if (!r.ok) return Response.json({ error: r.error }, { status: 422 });
+        const res = await renovarPoliza(body.id, r.datos);
+        return res ? Response.json({ poliza: res.poliza, reportes: res.reportes }) : responder(null);
+      }
     }
     return Response.json({ error: "Acción no reconocida" }, { status: 400 });
   } catch (e) {

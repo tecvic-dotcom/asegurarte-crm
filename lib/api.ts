@@ -37,9 +37,14 @@ import type {
   TipoAdjunta,
   NuevoLeadManual,
   TipoReporte,
+  EventoPoliza,
+  DatosEvento,
+  DatosRenovacion,
+  TipoEvento,
 } from "./types";
 
 import type { MotivoCobro } from "./cobranza-reglas";
+import type { ConteoEventos } from "./historial-reglas";
 import type { MotivoSeguimiento } from "./seguimiento-reglas";
 import type { Cotizacion, DatosCotizacion, EstadoCotizacion, LecturaCotizacion } from "./cotizaciones-reglas";
 import type { DatosPendiente, Pendiente } from "./pendientes-reglas";
@@ -315,6 +320,48 @@ export const crmPolizaPagada = (id: string) => accionCobranza({ accion: "pagada"
 export const crmPolizaPromesa = (id: string, fecha: string) => accionCobranza({ accion: "promesa", id, fecha });
 export const crmPolizaRecordada = (id: string) => accionCobranza({ accion: "recordada", id });
 export const crmPolizaCancelar = (id: string, cancelada: boolean) => accionCobranza({ accion: "cancelar", id, cancelada });
+
+/** Renueva una póliza (a mano o con los datos del PDF ya confirmados). `reportes` dice si contó en los reportes de renovaciones. */
+export async function crmRenovarPoliza(
+  id: string,
+  renovacion: DatosRenovacion,
+): Promise<{ poliza: Poliza; reportes: "contada" | "duplicada" | "omitida" | "error" }> {
+  const data = await jsonOErrorCRM(await postJSON("/api/crm/cobranza", { accion: "renovar", id, renovacion }));
+  return data as { poliza: Poliza; reportes: "contada" | "duplicada" | "omitida" | "error" };
+}
+
+// ---- Historial de cada póliza: pagos, renovaciones y endosos (solo admin) ----
+
+/** Los movimientos de una póliza (lo más nuevo primero), opcionalmente solo de un tipo. */
+export async function crmHistorialPoliza(polizaId: string, tipo?: TipoEvento): Promise<EventoPoliza[]> {
+  const res = await fetch(`/api/crm/historial?poliza_id=${encodeURIComponent(polizaId)}${tipo ? `&tipo=${tipo}` : ""}`, { cache: "no-store" });
+  return ((await jsonOErrorCRM(res)) as { eventos: EventoPoliza[] }).eventos;
+}
+
+/** Cuántos pagos, renovaciones y endosos tiene cada póliza (para los globitos del listado). */
+export async function crmConteoHistorial(): Promise<Record<string, ConteoEventos>> {
+  const res = await fetch("/api/crm/historial?conteo=1", { cache: "no-store" });
+  return ((await jsonOErrorCRM(res)) as { conteo: Record<string, ConteoEventos> }).conteo;
+}
+
+/** Anota un pago; con `avanzar` también salda el recibo que toca. Devuelve la lista de pagos y la póliza ya actualizada. */
+export async function crmRegistrarPago(
+  polizaId: string,
+  evento: DatosEvento,
+  avanzar: boolean,
+): Promise<{ eventos: EventoPoliza[]; poliza: Poliza | null }> {
+  const data = await jsonOErrorCRM(await postJSON("/api/crm/historial", { accion: "crear", poliza_id: polizaId, evento, avanzar }));
+  return data as { eventos: EventoPoliza[]; poliza: Poliza | null };
+}
+
+export async function crmRegistrarEndoso(polizaId: string, evento: DatosEvento): Promise<EventoPoliza[]> {
+  const data = await jsonOErrorCRM(await postJSON("/api/crm/historial", { accion: "crear", poliza_id: polizaId, evento }));
+  return (data as { eventos: EventoPoliza[] }).eventos;
+}
+
+export async function crmEliminarEvento(id: string): Promise<void> {
+  await jsonOErrorCRM(await postJSON("/api/crm/historial", { accion: "eliminar", id }));
+}
 
 // ---- Crecimiento (solo admin) ----
 

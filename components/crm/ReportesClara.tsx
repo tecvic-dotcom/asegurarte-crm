@@ -9,6 +9,7 @@ import type { CifraReporte, ReporteClara, TipoReporte } from "@/lib/types";
 import { AvatarEmpleado } from "./AvatarEmpleado";
 import { AvisoMigracion } from "./panel/AvisoMigracion";
 import { BonoBIC } from "./BonoBIC";
+import { ListadoClientes } from "./clientes/ListadoClientes";
 
 const COLOR_TONO: Record<CifraReporte["tono"], string> = {
   bien: "var(--green)",
@@ -41,8 +42,10 @@ async function copiar(texto: string): Promise<boolean> {
 export function ReportesClara() {
   const [tipo, setTipo] = useState<TipoReporte>("mes");
   const [fecha, setFecha] = useState<string | null>(null);
-  // Tercera pestaña: el bono de AXA (BIC) por trimestre.
+  // Tercera pestaña: el bono de AXA (BIC) por trimestre. Cuarta: el listado de clientes por ramo.
   const [bono, setBono] = useState(false);
+  const [clientes, setClientes] = useState(false);
+  const aparte = bono || clientes;
   const [resultado, setResultado] = useState<{ clave: string; reporte: ReporteClara | null; error: Error | null } | null>(null);
   const [copiado, setCopiado] = useState(false);
   const clave = `${tipo}|${fecha ?? ""}`;
@@ -85,7 +88,8 @@ export function ReportesClara() {
           <h2 className="font-display text-lg text-ink">Clara, tus reportes</h2>
           <p className="mt-1 text-sm text-ink-soft">
             Cada <strong className="text-ink">día 1</strong> te deja el cierre del mes y, al terminar cada <strong className="text-ink">trimestre</strong>, el
-            de los 3 meses. Lee los mismos números de tu Panel, de Valeri y de Crecimiento. No usa IA: cuesta $0.
+            de los 3 meses. Lee los mismos números de tu Panel, de Valeri y de Crecimiento. Y con <strong className="text-ink">Clientes por ramo</strong>{" "}
+            armas el listado de tus pólizas con sus acciones. Los reportes no usan IA: cuestan $0 (solo el lector de PDF de las renovaciones lee con IA).
           </p>
         </div>
       </div>
@@ -97,12 +101,13 @@ export function ReportesClara() {
             <button
               key={t}
               type="button"
-              aria-pressed={!bono && tipo === t}
+              aria-pressed={!aparte && tipo === t}
               onClick={() => {
                 setBono(false);
+                setClientes(false);
                 cambiarTipo(t);
               }}
-              className={`min-h-[40px] rounded-lg px-4 text-sm ${!bono && tipo === t ? "bg-brand/25 font-semibold text-ink" : "text-ink-mute hover:text-ink"}`}
+              className={`min-h-[40px] rounded-lg px-4 text-sm ${!aparte && tipo === t ? "bg-brand/25 font-semibold text-ink" : "text-ink-mute hover:text-ink"}`}
             >
               {t === "trimestre" ? "Trimestral" : "Mensual"}
             </button>
@@ -110,13 +115,27 @@ export function ReportesClara() {
           <button
             type="button"
             aria-pressed={bono}
-            onClick={() => setBono(true)}
+            onClick={() => {
+              setClientes(false);
+              setBono(true);
+            }}
             className={`min-h-[40px] rounded-lg px-4 text-sm ${bono ? "bg-brand/25 font-semibold text-ink" : "text-ink-mute hover:text-ink"}`}
           >
             Bono AXA
           </button>
+          <button
+            type="button"
+            aria-pressed={clientes}
+            onClick={() => {
+              setBono(false);
+              setClientes(true);
+            }}
+            className={`flex min-h-[40px] items-center gap-1.5 rounded-lg px-4 text-sm ${clientes ? "bg-brand/25 font-semibold text-ink" : "text-ink-mute hover:text-ink"}`}
+          >
+            <Icon icon="flat-color-icons:list" width={16} aria-hidden /> Clientes por ramo
+          </button>
         </div>
-        {!bono && (
+        {!aparte && (
           <>
         <div className="flex items-center gap-1">
           <button
@@ -165,7 +184,9 @@ export function ReportesClara() {
         )}
       </div>
 
-      {bono ? (
+      {clientes ? (
+        <ListadoClientes />
+      ) : bono ? (
         <BonoBIC />
       ) : error instanceof ErrorCRM && error.migracion ? (
         <AvisoMigracion
