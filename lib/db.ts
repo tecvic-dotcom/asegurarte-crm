@@ -16,7 +16,7 @@ import { adminDb, cloudReady } from "./supabase-admin";
 import { normCorreo, normWhatsapp, normCodigoPostal } from "./normalize";
 import { validarLead, validarLeadManual } from "./validacion";
 import { hashPassword, verifyPassword } from "./auth";
-import { faltaMigracion, MENSAJE_MIGRACION } from "./migracion";
+import { faltaMigracion, MENSAJE_MIGRACION, MENSAJE_MIGRACION_DOBLE_FACTOR, MigracionPendienteError } from "./migracion";
 import { esRamo } from "./ramos";
 import { ubicacionDeCP } from "./codigos-postales";
 import type {
@@ -24,6 +24,7 @@ import type {
   Actividad,
   TipoActividad,
   Usuario,
+  EstadoMfa,
   RolUsuario,
   Ajustes,
   NuevoLead,
@@ -47,6 +48,8 @@ export function isCloud(): boolean {
 interface UsuarioConClave extends Usuario {
   password_hash: string;
   password_salt: string;
+  /** Doble factor (solo demo en memoria; en la nube vive en columnas mfa_* de la tabla usuarios). */
+  mfa?: EstadoMfa;
 }
 
 interface Store {
@@ -650,20 +653,20 @@ export async function setAjuste(clave: string, valor: string): Promise<void> {
 // ----------------------------------------------------------------------------
 
 function sinClave(u: UsuarioConClave): Usuario {
-  const { password_hash: _h, password_salt: _s, ...rest } = u;
+  const { password_hash: _h, password_salt: _s, mfa, ...rest } = u;
   void _h;
   void _s;
-  return rest;
+  return { ...rest, mfa_activo: Boolean(mfa?.activo) };
 }
 
 export async function listUsuarios(): Promise<Usuario[]> {
   if (cloudReady && adminDb) {
-    const { data, error } = await adminDb
-      .from("usuarios")
-      .select("id,nombre,correo,rol,activo,creado_en")
-      .order("creado_en", { ascending: true });
-    if (error) throw new Error(error.message);
-    return (data as Usuario[]) ?? [];
+    const q = (cols: string) => adminDb!.from("usuarios").select(cols).order("creado_en", { ascending: true });
+    let r = await q("id,nombre,correo,rol,activo,creado_en,mfa_activo");
+    // Si todavía no corriste el SQL 0014, la lista sigue saliendo (sin la marca de 2FA).
+    if (r.error && faltaMigracion(r.error)) r = await q("id,nombre,correo,rol,activo,creado_en");
+    if (r.error) throw new Error(r.error.message);
+    return (r.data as unknown as Usuario[]) ?? [];
   }
   return store().usuarios.map(sinClave);
 }
@@ -726,6 +729,84 @@ export async function loginUsuario(correo: string, password: string): Promise<Us
   const u = store().usuarios.find((x) => x.correo === c);
   if (!u || !u.activo) return null;
   return verifyPassword(password, u.password_hash, u.password_salt) ? sinClave(u) : null;
+}
+
+// ----------------------------------------------------------------------------
+// DOBLE FACTOR (2FA) de cada persona del equipo
+// ----------------------------------------------------------------------------
+
+const COLUMNAS_MFA = "mfa_activo,mfa_secreto,mfa_ultimo_paso,mfa_fallos,mfa_bloqueo,mfa_respaldo";
+
+function errorMfa(error: { code?: string; message: string }): Error {
+  return faltaMigracion(error)
+    ? new MigracionPendienteError(MENSAJE_MIGRACION_DOBLE_FACTOR, "0014_doble_factor.sql")
+    : new Error(error.message);
+}
+
+function aEstadoMfa(f: Record<string, unknown>): EstadoMfa {
+  return {
+    activo: f.mfa_activo === true,
+    secreto: String(f.mfa_secreto ?? ""),
+    ultimoPaso: Number(f.mfa_ultimo_paso) || 0,
+    fallos: Number(f.mfa_fallos) || 0,
+    bloqueoHasta: f.mfa_bloqueo ? String(f.mfa_bloqueo) : null,
+    respaldo: Array.isArray(f.mfa_respaldo) ? f.mfa_respaldo.map(String) : [],
+  };
+}
+
+const MFA_VACIO: EstadoMfa = { activo: false, secreto: "", ultimoPaso: 0, fallos: 0, bloqueoHasta: null, respaldo: [] };
+
+/** La persona y su estado de 2FA. Null si ya no existe o está desactivada. Avisa si falta el SQL 0014. */
+export async function leerUsuarioMfa(id: string): Promise<{ usuario: Usuario; mfa: EstadoMfa } | null> {
+  if (cloudReady && adminDb) {
+    const { data, error } = await adminDb
+      .from("usuarios")
+      .select(`id,nombre,correo,rol,activo,creado_en,${COLUMNAS_MFA}`)
+      .eq("id", id)
+      .limit(1);
+    if (error) throw errorMfa(error);
+    const f = data?.[0] as unknown as Record<string, unknown> | undefined;
+    if (!f || f.activo !== true) return null;
+    const mfa = aEstadoMfa(f);
+    return {
+      usuario: {
+        id: String(f.id),
+        nombre: String(f.nombre),
+        correo: String(f.correo),
+        rol: f.rol === "admin" ? "admin" : "vendedor",
+        activo: true,
+        creado_en: String(f.creado_en),
+        mfa_activo: mfa.activo,
+      },
+      mfa,
+    };
+  }
+  const u = store().usuarios.find((x) => x.id === id);
+  if (!u || !u.activo) return null;
+  return { usuario: sinClave(u), mfa: { ...MFA_VACIO, ...u.mfa } };
+}
+
+/** Cambia solo los campos de 2FA que se pasen. */
+export async function guardarMfa(id: string, cambios: Partial<EstadoMfa>): Promise<void> {
+  if (cloudReady && adminDb) {
+    const fila: Record<string, unknown> = {};
+    if (cambios.activo !== undefined) fila.mfa_activo = cambios.activo;
+    if (cambios.secreto !== undefined) fila.mfa_secreto = cambios.secreto;
+    if (cambios.ultimoPaso !== undefined) fila.mfa_ultimo_paso = cambios.ultimoPaso;
+    if (cambios.fallos !== undefined) fila.mfa_fallos = cambios.fallos;
+    if (cambios.bloqueoHasta !== undefined) fila.mfa_bloqueo = cambios.bloqueoHasta;
+    if (cambios.respaldo !== undefined) fila.mfa_respaldo = cambios.respaldo;
+    const { error } = await adminDb.from("usuarios").update(fila).eq("id", id);
+    if (error) throw errorMfa(error);
+    return;
+  }
+  const u = store().usuarios.find((x) => x.id === id);
+  if (u) u.mfa = { ...MFA_VACIO, ...u.mfa, ...cambios };
+}
+
+/** Quita el 2FA de una persona: en su próximo login enlaza su app de nuevo (celular perdido o nuevo). */
+export function restablecerMfa(id: string): Promise<void> {
+  return guardarMfa(id, { ...MFA_VACIO });
 }
 
 export async function eliminarUsuario(id: string): Promise<void> {

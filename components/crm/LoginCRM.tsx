@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Icon } from "@iconify/react";
 import { crmLogin } from "@/lib/api";
+import { AvisoRespaldo, PasoCodigo, PasoConfigurar } from "@/components/crm/DobleFactor";
+import { TURNSTILE_SITE_KEY, Turnstile } from "@/components/crm/Turnstile";
 import type { Sesion } from "@/lib/types";
 
 interface LoginCRMProps {
@@ -21,6 +23,9 @@ function leerCorreoGuardado(): string {
   }
 }
 
+/** clave = correo y contraseña · codigo = código de tu app · configurar = enlazar la app (primera vez) · aviso = entró con código de respaldo */
+type Paso = "clave" | "codigo" | "configurar" | "aviso";
+
 export function LoginCRM({ onLogin }: LoginCRMProps) {
   // Esta pantalla solo se monta en el navegador (la página espera a revisar tu sesión), así que
   // se puede leer el correo guardado desde el primer pintado sin chocar con el servidor.
@@ -29,72 +34,124 @@ export function LoginCRM({ onLogin }: LoginCRMProps) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [entrando, setEntrando] = useState(false);
+  const [paso, setPaso] = useState<Paso>("clave");
+  // Captcha: el token solo sirve una vez, así que tras cada intento se pide uno nuevo.
+  const captchaOn = Boolean(TURNSTILE_SITE_KEY);
+  const [captcha, setCaptcha] = useState("");
+  const [captchaFallo, setCaptchaFallo] = useState(false);
+  const [reinicioCaptcha, setReinicioCaptcha] = useState(0);
+  const [aviso, setAviso] = useState<{ sesion: Sesion; restantes: number } | null>(null);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setEntrando(true);
     try {
-      const sesion = await crmLogin(correo, password);
-      // Solo se recuerda si entró bien: un correo mal escrito no se queda guardado.
-      try {
-        window.localStorage.setItem(CLAVE_CORREO, correo.trim());
-      } catch {
-        /* sin almacenamiento: simplemente no se recuerda */
-      }
-      onLogin(sesion);
+      const r = await crmLogin(correo, password, captcha);
+      setPassword("");
+      setPaso(r.paso);
+      setEntrando(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo iniciar sesión.");
       setEntrando(false);
+      if (captchaOn) setReinicioCaptcha((n) => n + 1); // el token ya se gastó: pide uno nuevo
     }
   }
 
+  /** Terminó el segundo paso: ya hay sesión. */
+  function terminar(sesion: Sesion, respaldoRestantes?: number) {
+    // Solo se recuerda si entró bien: un correo mal escrito no se queda guardado.
+    try {
+      window.localStorage.setItem(CLAVE_CORREO, correo.trim());
+    } catch {
+      /* sin almacenamiento: simplemente no se recuerda */
+    }
+    if (respaldoRestantes !== undefined) {
+      setAviso({ sesion, restantes: respaldoRestantes });
+      setPaso("aviso");
+      return;
+    }
+    onLogin(sesion);
+  }
+
+  function volver(mensaje?: string) {
+    setPaso("clave");
+    setPassword("");
+    setCaptcha("");
+    setError(mensaje ?? "");
+  }
+
+  const bloqueadoPorCaptcha = captchaOn && (!captcha || captchaFallo);
+
   return (
     <main className="grid min-h-[80vh] place-items-center px-5">
-      <form onSubmit={onSubmit} className="glass-strong w-full max-w-sm rounded-[22px] p-8">
-        <div className="mb-6 text-center">
-          <Icon icon="flat-color-icons:business-contact" width={56} className="mx-auto" />
-          <h1 className="mt-3 font-display text-2xl text-ink">Tu CRM</h1>
-          <p className="text-sm text-ink-mute">Entra para ver y atender a tus prospectos.</p>
-        </div>
+      <div className={`glass-strong w-full rounded-[22px] p-8 ${paso === "configurar" ? "max-w-md" : "max-w-sm"}`}>
+        {paso === "codigo" && <PasoCodigo onEntrar={terminar} onReiniciar={volver} />}
+        {paso === "configurar" && <PasoConfigurar onEntrar={terminar} onReiniciar={volver} />}
+        {paso === "aviso" && aviso && <AvisoRespaldo restantes={aviso.restantes} onContinuar={() => onLogin(aviso.sesion)} />}
 
-        <label className="field-label" htmlFor="crm-correo">Correo</label>
-        <input
-          id="crm-correo"
-          name="email"
-          type="email"
-          value={correo}
-          onChange={(e) => setCorreo(e.target.value)}
-          className="field-input"
-          placeholder="tucorreo@negocio.com"
-          autoComplete="username"
-        />
-        <label className="field-label mt-4" htmlFor="crm-password">Contraseña</label>
-        <input
-          id="crm-password"
-          name="password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="field-input"
-          placeholder="••••••••"
-          autoComplete="current-password"
-          // Si ya sabemos tu correo, el cursor queda directo en la contraseña.
-          autoFocus={Boolean(recordado)}
-        />
+        {paso === "clave" && (
+          <form onSubmit={onSubmit}>
+            <div className="mb-6 text-center">
+              <Icon icon="flat-color-icons:business-contact" width={56} className="mx-auto" />
+              <h1 className="mt-3 font-display text-2xl text-ink">Tu CRM</h1>
+              <p className="text-sm text-ink-mute">Entra para ver y atender a tus prospectos.</p>
+            </div>
 
-        {error && <p className="mt-3 text-sm text-[#ff9a9a]">{error}</p>}
+            <label className="field-label" htmlFor="crm-correo">Correo</label>
+            <input
+              id="crm-correo"
+              name="email"
+              type="email"
+              value={correo}
+              onChange={(e) => setCorreo(e.target.value)}
+              className="field-input"
+              placeholder="tucorreo@negocio.com"
+              autoComplete="username"
+            />
+            <label className="field-label mt-4" htmlFor="crm-password">Contraseña</label>
+            <input
+              id="crm-password"
+              name="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="field-input"
+              placeholder="••••••••"
+              autoComplete="current-password"
+              // Si ya sabemos tu correo, el cursor queda directo en la contraseña.
+              autoFocus={Boolean(recordado)}
+            />
 
-        <button type="submit" disabled={entrando} className="btn-primary mt-6 w-full">
-          {entrando ? "Entrando…" : "Entrar"}
-        </button>
+            {captchaOn && (
+              <div className="mt-4">
+                <Turnstile onToken={setCaptcha} onFallo={() => setCaptchaFallo(true)} reinicio={reinicioCaptcha} />
+              </div>
+            )}
+            {captchaFallo && (
+              <p className="mt-3 text-sm text-[#ff9a9a]" role="alert">
+                No pude cargar la verificación anti-robots. Revisa tu internet o desactiva el bloqueador de anuncios y recarga la página.
+              </p>
+            )}
 
-        <p className="mt-5 rounded-xl border border-line bg-glass px-3 py-2 text-center text-xs text-ink-mute">
-          Modo demo: <strong>demo@demo.com</strong> / <strong>demo1234</strong>.
-          <br />
-          (Crea tus usuarios reales en Panel de admin (menú izquierdo) y borra el demo.)
-        </p>
-      </form>
+            {error && (
+              <p className="mt-3 text-sm text-[#ff9a9a]" role="alert">
+                {error}
+              </p>
+            )}
+
+            <button type="submit" disabled={entrando || bloqueadoPorCaptcha} className="btn-primary mt-6 w-full">
+              {entrando ? "Entrando…" : captchaOn && !captcha && !captchaFallo ? "Verificando…" : "Entrar"}
+            </button>
+
+            <p className="mt-5 rounded-xl border border-line bg-glass px-3 py-2 text-center text-xs text-ink-mute">
+              Modo demo: <strong>demo@demo.com</strong> / <strong>demo1234</strong>.
+              <br />
+              (Crea tus usuarios reales en Panel de admin (menú izquierdo) y borra el demo.)
+            </p>
+          </form>
+        )}
+      </div>
     </main>
   );
 }

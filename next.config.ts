@@ -14,12 +14,14 @@ const csp = [
   "default-src 'self'",
   // Next.js necesita inline para hidratar; los estilos de Tailwind van inline.
   // Meta Pixel y TikTok Pixel se cargan solo tras aceptar cookies (ver Pixels.tsx).
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://connect.facebook.net https://analytics.tiktok.com",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://connect.facebook.net https://analytics.tiktok.com https://challenges.cloudflare.com",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
   // connect-src: tu base de datos (Supabase), el API de íconos a color y los píxeles.
-  "connect-src 'self' https://*.supabase.co https://api.iconify.design https://api.simplesvg.com https://api.unisvg.com https://www.facebook.com https://analytics.tiktok.com",
+  "connect-src 'self' https://*.supabase.co https://api.iconify.design https://api.simplesvg.com https://api.unisvg.com https://www.facebook.com https://analytics.tiktok.com https://challenges.cloudflare.com",
+  // El captcha del login (Cloudflare Turnstile) se dibuja en un iframe de Cloudflare.
+  "frame-src https://challenges.cloudflare.com",
   "frame-ancestors 'self'",
   "base-uri 'self'",
   "form-action 'self'",

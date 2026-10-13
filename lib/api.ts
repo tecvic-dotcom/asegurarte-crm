@@ -86,14 +86,59 @@ export async function getAjustesPublicas(): Promise<Ajustes> {
 
 // ---- CRM (sesión por cookie firmada) ----
 
-export async function crmLogin(correo: string, password: string): Promise<Sesion> {
-  const res = await fetch("/api/crm/login", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ correo, password }),
-  });
-  const data = (await jsonOrThrow(res)) as { sesion: Sesion };
-  return data.sesion;
+/** Error del login con pistas para la pantalla: volver al primer paso o pedir otro captcha. */
+export class ErrorLogin extends Error {
+  constructor(
+    mensaje: string,
+    public reinicia = false,
+    public captcha = false,
+  ) {
+    super(mensaje);
+    this.name = "ErrorLogin";
+  }
+}
+
+async function jsonLogin(res: Response): Promise<Record<string, unknown>> {
+  const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+  if (!res.ok) throw new ErrorLogin(String(data.error ?? `Error ${res.status}`), data.reinicia === true, data.captcha === true);
+  return data;
+}
+
+function postLogin(url: string, cuerpo: Record<string, unknown>): Promise<Response> {
+  return fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(cuerpo) });
+}
+
+/** Primer paso: correo + contraseña (+ captcha). No entrega sesión: dice qué sigue. */
+export async function crmLogin(correo: string, password: string, captcha = ""): Promise<{ paso: "codigo" | "configurar" }> {
+  const data = await jsonLogin(await postLogin("/api/crm/login", { correo, password, captcha }));
+  return { paso: data.paso === "configurar" ? "configurar" : "codigo" };
+}
+
+export interface DatosEnlace {
+  /** Imagen del QR (data URL). */
+  qr: string;
+  /** La clave para escribirla a mano si no se puede escanear. */
+  secreto: string;
+  /** Enlace otpauth:// (abre la app autenticadora si estás en el mismo celular). */
+  uri: string;
+}
+
+/** Primera vez: pide el QR para enlazar la app autenticadora. */
+export async function crm2faIniciar(): Promise<DatosEnlace> {
+  return (await jsonLogin(await postLogin("/api/crm/2fa", { accion: "iniciar" }))) as unknown as DatosEnlace;
+}
+
+/** Primera vez: confirma con el primer código. Entrega la sesión y los 10 códigos de respaldo (se ven una sola vez). */
+export async function crm2faConfirmar(codigo: string): Promise<{ sesion: Sesion; codigos: string[] }> {
+  return (await jsonLogin(await postLogin("/api/crm/2fa", { accion: "confirmar", codigo }))) as unknown as { sesion: Sesion; codigos: string[] };
+}
+
+/** Código de la app (6 dígitos) o de respaldo. Entrega la sesión. */
+export async function crm2faVerificar(codigo: string): Promise<{ sesion: Sesion; respaldoRestantes?: number }> {
+  return (await jsonLogin(await postLogin("/api/crm/2fa", { accion: "verificar", codigo }))) as unknown as {
+    sesion: Sesion;
+    respaldoRestantes?: number;
+  };
 }
 
 export async function crmLogout(): Promise<void> {
@@ -461,7 +506,7 @@ export async function crmLeerCotizacion(archivo: File): Promise<LecturaCotizacio
   return (await jsonOErrorCRM(res)) as LecturaCotizacion;
 }
 
-// ---- Admin (requiere código x-admin-code) ----
+// ---- Admin (solo sesión de administrador; el encabezado x-admin-code ya no se usa) ----
 
 function adminHeaders(code: string): HeadersInit {
   return { "content-type": "application/json", "x-admin-code": code };
@@ -508,6 +553,17 @@ export async function adminEliminarUsuario(code: string, id: string): Promise<vo
       method: "POST",
       headers: adminHeaders(code),
       body: JSON.stringify({ accion: "eliminar-usuario", id }),
+    }),
+  );
+}
+
+/** Quita el 2FA de una persona (celular perdido o nuevo): en su próximo login enlaza la app de nuevo. */
+export async function adminRestablecer2fa(code: string, id: string): Promise<void> {
+  await jsonOrThrow(
+    await fetch("/api/admin", {
+      method: "POST",
+      headers: adminHeaders(code),
+      body: JSON.stringify({ accion: "restablecer-2fa", id }),
     }),
   );
 }

@@ -2,27 +2,16 @@ import "server-only";
 import { sesionDesdeRequest } from "./auth";
 
 /**
- * Valida el código de admin enviado en la cabecera `x-admin-code`.
- * El código de servidor (ADMIN_CODE) protege los DATOS; el NEXT_PUBLIC solo
- * desbloquea la UI. Tener ambos da defensa en profundidad.
+ * Puerta del panel de administración: SOLO una sesión de ADMINISTRADOR.
  *
- * SEGURIDAD: falla CERRADO. Si no hay `ADMIN_CODE` configurado, el panel queda
- * inaccesible (NUNCA hubo un código por defecto tipo "admin"). Configura
- * `ADMIN_CODE` en Vercel → Settings → Environment Variables.
+ * Esa sesión solo existe si la persona pasó contraseña + captcha + código de su app (doble factor).
  *
- * IMPORTANTE: la barrera del SERVIDOR usa SOLO `ADMIN_CODE` (server-only). NO
- * cae a `NEXT_PUBLIC_ADMIN_CODE`, porque Next inyecta las variables NEXT_PUBLIC_
- * en el bundle del navegador: usarla como auth de servidor la dejaría leíble por
- * cualquiera. `NEXT_PUBLIC_ADMIN_CODE` es opcional y solo sirve para la UI.
+ * Antes también se aceptaba un código fijo (ADMIN_CODE, cabecera `x-admin-code`): quien lo supiera entraba
+ * al panel —leads con datos de clientes, crear usuarios admin— sin contraseña ni doble factor. Se quitó:
+ * un 2FA con una puerta trasera no protege nada. La variable ADMIN_CODE ya no se usa; puedes borrarla de Vercel.
  */
 export function checkAdmin(req: Request): boolean {
-  // Dentro del CRM, quien ya inició sesión como ADMINISTRADOR entra sin escribir el código
-  // (la cookie de sesión va firmada; un vendedor no pasa).
-  if (sesionDesdeRequest(req)?.rol === "admin") return true;
-  const expected = process.env.ADMIN_CODE;
-  if (!expected) return false; // sin código de servidor configurado = acceso cerrado
-  const code = req.headers.get("x-admin-code");
-  return Boolean(code && code === expected);
+  return sesionDesdeRequest(req)?.rol === "admin";
 }
 
 export function noAutorizado(): Response {

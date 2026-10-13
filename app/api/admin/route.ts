@@ -8,6 +8,7 @@ import {
   setAjuste,
   crearUsuario,
   eliminarUsuario,
+  restablecerMfa,
   eliminarLead,
   exportarLeadsCSV,
 } from "@/lib/db";
@@ -17,9 +18,9 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 /**
- * Panel admin. Protegido por código (cabecera x-admin-code, fail-closed).
+ * Panel admin. Solo sesión de administrador (con doble factor), fail-closed.
  * GET  ?recurso=resumen|csv
- * POST { accion: 'ajuste'|'crear-usuario'|'eliminar-usuario'|'eliminar-lead', ... }
+ * POST { accion: 'ajuste'|'crear-usuario'|'eliminar-usuario'|'restablecer-2fa'|'eliminar-lead', ... }
  */
 export async function GET(req: Request): Promise<Response> {
   if (!checkAdmin(req)) return noAutorizado();
@@ -91,6 +92,10 @@ export async function POST(req: Request): Promise<Response> {
     }
     if (body.accion === "eliminar-usuario" && body.id) {
       await eliminarUsuario(body.id);
+      return Response.json({ ok: true });
+    }
+    if (body.accion === "restablecer-2fa" && body.id) {
+      await restablecerMfa(body.id);
       return Response.json({ ok: true });
     }
     if (body.accion === "eliminar-lead" && body.id) {

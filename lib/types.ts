@@ -99,6 +99,20 @@ export interface Usuario {
   rol: RolUsuario;
   activo: boolean;
   creado_en: string;
+  /** Si ya enlazó su app autenticadora (doble factor). Solo viene en la lista del panel de admin. */
+  mfa_activo?: boolean;
+}
+
+/** Estado del doble factor de una persona, tal como se guarda (el secreto va CIFRADO; nunca sale del servidor). */
+export interface EstadoMfa {
+  activo: boolean;
+  secreto: string;
+  /** Último paso de 30 s aceptado: un código ya usado no sirve otra vez. */
+  ultimoPaso: number;
+  fallos: number;
+  bloqueoHasta: string | null;
+  /** Huellas de los códigos de respaldo que aún no se han usado. */
+  respaldo: string[];
 }
 
 /** Sesión mínima del CRM (lo que viaja en la cookie firmada). */

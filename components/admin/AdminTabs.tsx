@@ -6,6 +6,7 @@ import {
   adminSetAjuste,
   adminCrearUsuario,
   adminEliminarUsuario,
+  adminRestablecer2fa,
   adminEliminarLead,
   adminExportCSV,
   type ResumenAdmin,
@@ -200,6 +201,16 @@ export function TabUsuarios({ data, code, onCambio }: { data: ResumenAdmin; code
     await adminEliminarUsuario(code, id);
     onCambio();
   }
+  async function restablecer2fa(id: string, nombre: string) {
+    if (!confirm(`¿Restablecer el doble factor de ${nombre}? En su próximo ingreso tendrá que enlazar la app autenticadora otra vez (y recibirá códigos de respaldo nuevos).`)) return;
+    try {
+      await adminRestablecer2fa(code, id);
+      setMsg(`Doble factor de ${nombre} restablecido ✓`);
+      onCambio();
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "No se pudo restablecer.");
+    }
+  }
 
   return (
     <section className="grid gap-5 lg:grid-cols-2">
@@ -228,10 +239,25 @@ export function TabUsuarios({ data, code, onCambio }: { data: ResumenAdmin; code
               <div>
                 <p className="text-sm font-medium text-ink">{u.nombre}</p>
                 <p className="text-xs text-ink-mute">{u.correo} · {u.rol}</p>
+                {u.mfa_activo !== undefined && (
+                  <p className={`text-xs ${u.mfa_activo ? "text-[#7be0a4]" : "text-[#ffd479]"}`}>
+                    {u.mfa_activo ? "Doble factor activo" : "Doble factor pendiente (lo enlaza al entrar)"}
+                  </p>
+                )}
               </div>
-              <button onClick={() => borrar(u.id)} className="text-ink-mute hover:text-[#ff9a9a]" title="Eliminar">
-                <Icon icon="flat-color-icons:delete-database" width={20} />
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => restablecer2fa(u.id, u.nombre)}
+                  className="text-ink-mute hover:text-ink"
+                  title="Restablecer doble factor (celular perdido o nuevo)"
+                  aria-label={`Restablecer doble factor de ${u.nombre}`}
+                >
+                  <Icon icon="flat-color-icons:key" width={20} />
+                </button>
+                <button onClick={() => borrar(u.id)} className="text-ink-mute hover:text-[#ff9a9a]" title="Eliminar">
+                  <Icon icon="flat-color-icons:delete-database" width={20} />
+                </button>
+              </div>
             </li>
           ))}
           {!data.usuarios.length && <p className="text-sm text-ink-mute">Aún no hay usuarios.</p>}

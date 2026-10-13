@@ -29,6 +29,15 @@ function secret(): string | null {
   return null;
 }
 
+/**
+ * Una llave propia para cada uso (cifrar el secreto del 2FA, firmar la verificación a medias, etc.),
+ * sacada del secreto base: así una firma hecha para una cosa nunca vale para otra.
+ */
+export function derivarClave(etiqueta: string): Buffer | null {
+  const sec = secret();
+  return sec ? createHmac("sha256", sec).update(`acm:${etiqueta}`).digest() : null;
+}
+
 /** Genera hash + salt para guardar una contraseña nueva. */
 export function hashPassword(password: string): { hash: string; salt: string } {
   const salt = randomBytes(16).toString("hex");
@@ -49,11 +58,15 @@ export function verifyPassword(password: string, hash: string, salt: string): bo
   }
 }
 
-/** Firma la sesión en un token `payload.firma`. Null si no hay secreto. */
+/**
+ * Firma la sesión en un token `payload.firma`. Null si no hay secreto.
+ * Solo se llama cuando la persona YA pasó contraseña + código del 2FA: la marca `mfa` queda dentro de la
+ * firma y `leerSesion` la exige, así una cookie vieja (de antes del 2FA) o a medias no abre nada.
+ */
 export function firmarSesion(sesion: Sesion): string | null {
   const sec = secret();
   if (!sec) return null;
-  const payload = Buffer.from(JSON.stringify(sesion)).toString("base64url");
+  const payload = Buffer.from(JSON.stringify({ ...sesion, mfa: true })).toString("base64url");
   const firma = createHmac("sha256", sec).update(payload).digest("base64url");
   return `${payload}.${firma}`;
 }
@@ -69,7 +82,8 @@ export function leerSesion(token: string | null | undefined): Sesion | null {
   const b = Buffer.from(esperado);
   if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
   try {
-    return JSON.parse(Buffer.from(payload, "base64url").toString()) as Sesion;
+    const { mfa, ...sesion } = JSON.parse(Buffer.from(payload, "base64url").toString()) as Sesion & { mfa?: boolean };
+    return mfa === true ? sesion : null; // sin la marca del 2FA no es una sesión válida
   } catch {
     return null;
   }
