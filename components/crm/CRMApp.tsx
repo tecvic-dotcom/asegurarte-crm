@@ -11,7 +11,7 @@ import { Contactos } from "./Contactos";
 import { PendientesDia } from "./PendientesDia";
 import { Cotizaciones } from "./Cotizaciones";
 import { Seguimiento } from "./Seguimiento";
-import { Reportes } from "./Reportes";
+import { EmbudoVentas } from "./EmbudoVentas";
 import { PanelMando } from "./PanelMando";
 import { ManagerIA } from "./ManagerIA";
 import { Cobranza } from "./Cobranza";
@@ -204,7 +204,7 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
           </div>
           )}
 
-          {(pestana === "tablero" || pestana === "contactos") && (
+          {(pestana === "tablero" || pestana === "contactos" || pestana === "reportes") && (
             <div className="mb-4 flex flex-wrap items-center gap-2">
               <div className="flex items-center gap-2 rounded-xl border border-line bg-glass px-3 py-2">
                 <Icon icon="flat-color-icons:search" width={18} />
@@ -215,7 +215,7 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
                   className="w-56 bg-transparent text-sm text-ink outline-none placeholder:text-ink-mute"
                 />
               </div>
-              {!(pestana === "tablero" && vista === "hoy") && (
+              {pestana !== "reportes" && !(pestana === "tablero" && vista === "hoy") && (
               <select
                 value={filtroEtapa}
                 onChange={(e) => setFiltroEtapa(e.target.value as EtapaId | "todas")}
@@ -260,7 +260,7 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
             />
           )}
           {pestana === "contactos" && <Contactos leads={filtrados} onAbrir={setSeleccion} onCambio={recargar} />}
-          {pestana === "reportes" && <Reportes leads={leads} />}
+          {pestana === "reportes" && <EmbudoVentas leads={buscados} todos={leads} onMover={mover} onAbrir={setSeleccion} />}
           {esAdmin && pestana === "panel" && <PanelMando onVerSinRamo={verGanadasSinRamo} />}
           {esAdmin && pestana === "crecimiento" && <Crecimiento />}
           {esAdmin && pestana === "polizas" && <PolizasAdjuntas />}
