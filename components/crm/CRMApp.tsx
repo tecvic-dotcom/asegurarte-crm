@@ -185,7 +185,7 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
       )}
 
       <main className="min-w-0 flex-1">
-        <div className="mx-auto max-w-6xl px-4 py-6">
+        <div className={`mx-auto px-4 py-6 ${pestana === "reportes" ? "max-w-[1800px]" : "max-w-6xl"}`}>
           {/* Dónde estás */}
           <header className="mb-5 hidden lg:block">
             <h1 className="flex items-center gap-2 font-display text-2xl text-ink">

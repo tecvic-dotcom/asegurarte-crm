@@ -63,7 +63,7 @@ export function Pipeline({ leads, onMover, onAbrir, modo = "tablero" }: Pipeline
   return (
     <div className="space-y-4">
       <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
-        <div className="no-scrollbar flex gap-3 overflow-x-auto pb-2">
+        <div className={`no-scrollbar flex overflow-x-auto pb-2 ${embudo ? "gap-2" : "gap-3"}`}>
           {columnas.map((et) => {
             // Los que llevan más tiempo sin tocar, arriba de cada columna.
             const items = leads.filter((l) => l.etapa === et.id).sort((a, b) => a.actualizado_en.localeCompare(b.actualizado_en));
@@ -128,14 +128,22 @@ function Columna({
 }) {
   const { setNodeRef, isOver } = useDroppable({ id });
   return (
-    <div className={`flex shrink-0 flex-col ${embudo ? "w-[252px]" : "w-[260px]"}`}>
-      <div className="mb-2 flex items-center justify-between px-1">
+    <div className={`flex flex-col ${embudo ? "min-w-[158px] flex-1 basis-0" : "w-[260px] shrink-0"}`}>
+      <div className={`mb-2 px-1 ${embudo ? "" : "flex items-center justify-between"}`}>
         <div className="flex items-center gap-2">
-          <span className="h-2.5 w-2.5 rounded-full" style={{ background: color }} />
-          <span className="text-sm font-semibold text-ink">{nombre}</span>
-          <span className="text-xs text-ink-mute">{count}</span>
+          <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: color }} />
+          <span className={`font-semibold leading-tight text-ink ${embudo ? "text-[13px]" : "text-sm"}`}>{nombre}</span>
+          {!embudo && <span className="text-xs text-ink-mute">{count}</span>}
         </div>
-        <span className="text-[11px] text-ink-mute">{moneda(total)}</span>
+        <span className={`text-[11px] text-ink-mute ${embudo ? "mt-0.5 block pl-[18px]" : ""}`}>
+          {embudo ? (
+            <>
+              <b className="font-semibold text-ink-soft">{count}</b> · {moneda(total)}
+            </>
+          ) : (
+            moneda(total)
+          )}
+        </span>
       </div>
       <div
         ref={setNodeRef}
