@@ -31,6 +31,8 @@ const MUESTRA: Poliza = {
   ramo: "gmm",
   aseguradora: "AXA",
   monto_pago: 4644,
+  primer_pago: 0,
+  primer_pago_pendiente: false,
   prima_anual: 18576,
   forma_pago: "trimestral",
   inicio: null,

@@ -9,9 +9,11 @@ import {
   COLOR_ESTADO,
   FORMAS_PAGO,
   ICONO_ESTADO,
+  esPrimerPago,
   etiquetaEstado,
   ligaWhatsApp,
   mensajeCobro,
+  montoDelProximoPago,
   type MotivoCobro,
   type PendienteCobro,
 } from "@/lib/cobranza-reglas";
@@ -72,7 +74,10 @@ export function TarjetaCobro({ pendiente, plantillas, onWhatsApp, onPagada, onPr
         <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide" style={{ color }}>
           <Icon icon={icono} width={15} aria-hidden /> {etiqueta}
         </span>
-        <span className="text-lg font-bold text-ink">{p.monto_pago > 0 ? moneda(p.monto_pago) : "Monto sin capturar"}</span>
+        <span className="text-lg font-bold text-ink">
+          {montoDelProximoPago(p) > 0 ? moneda(montoDelProximoPago(p)) : "Monto sin capturar"}
+          {esPrimerPago(p) && <span className="ml-1.5 text-xs font-semibold text-ink-mute">1er pago</span>}
+        </span>
       </div>
 
       <p className="mt-1.5 text-[16px] font-semibold text-ink">{p.asegurado}</p>

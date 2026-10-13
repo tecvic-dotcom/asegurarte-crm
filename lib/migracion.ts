@@ -52,5 +52,8 @@ export const MENSAJE_MIGRACION_MENSAJES =
 export const MENSAJE_MIGRACION_HISTORIAL =
   "Falta un paso para encender el historial de tus pólizas (pagos, renovaciones y endosos): abre Supabase → SQL Editor → New query, pega el archivo supabase/migrations/0013_polizas_historial.sql y dale Run.";
 
+export const MENSAJE_MIGRACION_PRIMER_PAGO =
+  "Falta un paso para guardar el primer pago de tus pólizas (el que lleva el derecho de póliza): abre Supabase → SQL Editor → New query, pega el archivo supabase/migrations/0015_primer_pago.sql y dale Run.";
+
 export const MENSAJE_MIGRACION_DOBLE_FACTOR =
   "Falta un paso para encender el doble factor de tu CRM: abre Supabase → SQL Editor → New query, pega el archivo supabase/migrations/0014_doble_factor.sql y dale Run.";

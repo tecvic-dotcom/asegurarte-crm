@@ -8,7 +8,7 @@
  */
 import { moneda } from "./crm-data";
 import { RAMOS, infoRamo } from "./ramos";
-import { estadoDe, DIAS_RENOVACION } from "./cobranza-reglas";
+import { estadoDe, montoDelProximoPago, DIAS_RENOVACION } from "./cobranza-reglas";
 import { crecimiento } from "./crecimiento-reglas";
 import { resumenAdjuntas } from "./adjuntas-reglas";
 import {
@@ -405,7 +405,7 @@ export function armarReporte(tipo: TipoReporte, fecha: string | null, d: DatosRe
         return e === "vencida" || e === "promesa_vencida";
       });
       vencidasN = vencidas.length;
-      vencidasMonto = Math.round(vencidas.reduce((s, x) => s + x.monto_pago, 0));
+      vencidasMonto = Math.round(vencidas.reduce((s, x) => s + montoDelProximoPago(x), 0));
       const promesas = activas.filter((x) => estadoDe(x, d.hoy).estado === "promesa").length;
       cobranza.push(
         `Hoy: ${vencidasN} ${plural(vencidasN, "vencida", "vencidas")}${vencidasMonto ? ` (${moneda(vencidasMonto)} en riesgo)` : ""}` +
@@ -418,7 +418,7 @@ export function armarReporte(tipo: TipoReporte, fecha: string | null, d: DatosRe
         .filter((x) => x.estatus_manual !== "promesa" && x.fecha_limite_pago && x.fecha_limite_pago >= d.hoy && x.fecha_limite_pago <= limite)
         .sort((a, b) => (a.fecha_limite_pago ?? "").localeCompare(b.fecha_limite_pago ?? ""));
       porVencerN = vencen.length;
-      porVencerMonto = Math.round(vencen.reduce((s, x) => s + x.monto_pago, 0));
+      porVencerMonto = Math.round(vencen.reduce((s, x) => s + montoDelProximoPago(x), 0));
       cobranza.push(
         porVencerN
           ? `Vencen en los próximos ${ventana} días: ${porVencerN} (${moneda(porVencerMonto)}).`

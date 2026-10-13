@@ -22,10 +22,12 @@ import {
   DIAS_AVISO,
   DIAS_RENOVACION,
   ICONO_ESTADO,
+  esPrimerPago,
   estadoDe,
   etiquetaEstado,
   listaDeHoy,
   listaDeRenovaciones,
+  montoDelProximoPago,
   resumenCobranza,
   type MotivoCobro,
 } from "@/lib/cobranza-reglas";
@@ -425,7 +427,12 @@ export function Cobranza({ prefill, onPrefillUsado }: CobranzaProps) {
                         <span className="inline-flex items-center gap-1 text-xs font-semibold" style={{ color: COLOR_ESTADO[estado] }}>
                           <Icon icon={ICONO_ESTADO[estado]} width={13} aria-hidden /> {etiquetaEstado(estado, dias, p)}
                         </span>
-                        {p.monto_pago > 0 && <span className="text-xs text-ink-soft">{moneda(p.monto_pago)}</span>}
+                        {montoDelProximoPago(p) > 0 && (
+                          <span className="text-xs text-ink-soft">
+                            {moneda(montoDelProximoPago(p))}
+                            {esPrimerPago(p) && " · 1er pago"}
+                          </span>
+                        )}
                       </span>
                     </button>
                   </li>

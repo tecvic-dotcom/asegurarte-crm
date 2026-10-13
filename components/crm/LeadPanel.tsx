@@ -240,7 +240,7 @@ export function LeadPanel({ id, onClose, onCambio, onAgregarCobranza, onCotizar 
                 </select>
                 {formaPago !== "anual" && lead.valor > 0 && (
                   <p className="mt-1.5 text-xs text-ink-mute">
-                    Cada pago estimado: <strong className="text-ink">{moneda(montoPorPago(lead.valor, formaPago))}</strong> ({moneda(lead.valor)} ÷ {pagosPorAnio(formaPago)}). Lo ajustas en Valeri si el recibo trae recargo.
+                    Cada pago estimado: <strong className="text-ink">{moneda(montoPorPago(lead.valor, formaPago))}</strong> ({moneda(lead.valor)} ÷ {pagosPorAnio(formaPago)}). El primer pago suele ser mayor (derecho de póliza): lo capturas en Valeri.
                   </p>
                 )}
                 <button type="button" onClick={() => onAgregarCobranza(lead, formaPago)} className="btn-ghost mt-3 w-full py-2.5 text-sm">

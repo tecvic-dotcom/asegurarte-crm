@@ -333,8 +333,12 @@ export interface Poliza {
   correo: string;
   ramo: Ramo | null;
   aseguradora: string;
-  /** Lo que paga el cliente en cada recibo (0 = sin dato). */
+  /** Lo que paga el cliente en cada recibo (0 = sin dato). En pólizas no anuales son los pagos SUBSECUENTES. */
   monto_pago: number;
+  /** Lo que cuesta el primer recibo de la vigencia (lleva el derecho de póliza). 0 = todos los pagos son iguales. */
+  primer_pago: number;
+  /** El próximo pago por cobrar es ese primer pago (pasa a false al marcar «Pagó»; al renovar vuelve a true). */
+  primer_pago_pendiente: boolean;
   prima_anual: number;
   forma_pago: FormaPago;
   inicio: string | null;
@@ -361,6 +365,8 @@ export type DatosPoliza = Pick<
   | "ramo"
   | "aseguradora"
   | "monto_pago"
+  | "primer_pago"
+  | "primer_pago_pendiente"
   | "prima_anual"
   | "forma_pago"
   | "inicio"
@@ -528,8 +534,10 @@ export interface DatosRenovacion {
   /** Fin de la vigencia nueva (la siguiente renovación). */
   hasta: string;
   forma_pago: FormaPago;
-  /** Lo que paga el cliente en cada recibo de la vigencia nueva. */
+  /** Lo que paga el cliente en cada recibo de la vigencia nueva (los subsecuentes si hay primer pago distinto). */
   monto_pago: number;
+  /** Lo que cuesta el primer recibo de la vigencia nueva (derecho de póliza). 0 = todos los pagos son iguales. */
+  primer_pago: number;
   prima_anual: number;
   /** Fecha límite del primer recibo de la vigencia nueva. */
   fecha_limite_pago: string | null;

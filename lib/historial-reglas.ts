@@ -89,9 +89,10 @@ export function validarRenovacion(entrada: unknown): ResultadoRenovacion {
   if (!FORMAS_PAGO.some((f) => f.id === forma)) return { ok: false, error: "La forma de pago no es válida." };
 
   const montoPago = monto(e.monto_pago, false);
+  const primerPago = monto(e.primer_pago, false);
   const primaAnual = monto(e.prima_anual, false);
   const primaNeta = monto(e.prima_neta, false);
-  if (montoPago === null || primaAnual === null || primaNeta === null) {
+  if (montoPago === null || primerPago === null || primaAnual === null || primaNeta === null) {
     return { ok: false, error: "Revisa los montos: deben ser números (ejemplo: 1250)." };
   }
 
@@ -105,6 +106,8 @@ export function validarRenovacion(entrada: unknown): ResultadoRenovacion {
       hasta,
       forma_pago: forma as FormaPago,
       monto_pago: montoPago,
+      // El primer pago distinto solo existe en pólizas que se pagan por partes.
+      primer_pago: forma === "anual" ? 0 : primerPago,
       prima_anual: primaAnual,
       fecha_limite_pago: limite,
       numero: texto(e.numero, 40),
@@ -125,6 +128,8 @@ export function sugerirRenovacion(p: Poliza, hoy: string): DatosRenovacion {
     hasta: sumarMeses(inicio, 12),
     forma_pago: p.forma_pago,
     monto_pago: p.monto_pago,
+    // Lo mismo de hoy como punto de partida (el derecho de póliza suele ser parecido de un año a otro).
+    primer_pago: p.primer_pago,
     prima_anual: p.prima_anual,
     // Regla de Roberto: la fecha límite de pago es el inicio del recibo.
     fecha_limite_pago: inicio,

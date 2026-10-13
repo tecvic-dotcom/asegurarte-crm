@@ -57,6 +57,14 @@ export interface GrupoRamo {
   filas: FilaCliente[];
 }
 
+/** "$1,850" · o, si el primer pago es distinto: "1er pago $2,150 · luego $1,850". Null si no hay monto. */
+function textoDeMontos(p: Poliza): string | null {
+  if (p.forma_pago !== "anual" && p.primer_pago > 0) {
+    return `1er pago ${moneda(p.primer_pago)}${p.monto_pago > 0 ? ` · luego ${moneda(p.monto_pago)}` : ""}`;
+  }
+  return p.monto_pago > 0 ? moneda(p.monto_pago) : null;
+}
+
 export function filaDe(p: Poliza, hoy: string): FilaCliente {
   const { estado, dias } = estadoDe(p, hoy);
   const forma = FORMAS_PAGO.find((f) => f.id === p.forma_pago)?.nombre ?? "";
@@ -68,7 +76,7 @@ export function filaDe(p: Poliza, hoy: string): FilaCliente {
     icono: ICONO_ESTADO[estado],
     vigencia: textoVigencia(p),
     aviso: notaVigencia(p, hoy),
-    cobro: [forma, p.monto_pago > 0 ? moneda(p.monto_pago) : null].filter(Boolean).join(" · "),
+    cobro: [forma, textoDeMontos(p)].filter(Boolean).join(" · "),
   };
 }
 
@@ -165,7 +173,7 @@ function celdaCsv(v: string): string {
 
 /** El listado como CSV (con marca BOM para que Excel respete los acentos). */
 export function csvListado(grupos: GrupoRamo[]): string {
-  const cab = ["Ramo", "Cliente", "Aseguradora", "Póliza", "WhatsApp", "Vigencia desde", "Vigencia hasta", "Estatus de pago", "Aviso de vigencia", "Forma de pago", "Monto de cada pago"];
+  const cab = ["Ramo", "Cliente", "Aseguradora", "Póliza", "WhatsApp", "Vigencia desde", "Vigencia hasta", "Estatus de pago", "Aviso de vigencia", "Forma de pago", "Primer pago", "Monto de cada pago (subsecuentes)"];
   const filas = grupos.flatMap((g) =>
     g.filas.map((f) => {
       const p = f.poliza;
@@ -180,6 +188,7 @@ export function csvListado(grupos: GrupoRamo[]): string {
         f.etiqueta,
         f.aviso?.texto ?? "",
         FORMAS_PAGO.find((x) => x.id === p.forma_pago)?.nombre ?? "",
+        p.forma_pago !== "anual" && p.primer_pago > 0 ? String(p.primer_pago) : "",
         p.monto_pago > 0 ? String(p.monto_pago) : "",
       ]
         .map(celdaCsv)

@@ -15,6 +15,8 @@ interface Campos {
   aseguradora: string;
   forma_pago: FormaPago;
   monto_pago: string;
+  primer_pago: string;
+  primer_pago_pendiente: boolean;
   fecha_limite_pago: string;
   renovacion: string;
   prima_anual: string;
@@ -23,7 +25,7 @@ interface Campos {
   lead_id: string | null;
 }
 
-function camposDe(d: Partial<DatosPoliza> | Poliza | null): Campos {
+function camposDe(d: Partial<DatosPoliza> | Poliza | null, nueva: boolean): Campos {
   return {
     asegurado: d?.asegurado ?? "",
     whatsapp: d?.whatsapp ?? "",
@@ -32,6 +34,9 @@ function camposDe(d: Partial<DatosPoliza> | Poliza | null): Campos {
     aseguradora: d?.aseguradora ?? "",
     forma_pago: d?.forma_pago ?? "anual",
     monto_pago: d?.monto_pago ? String(d.monto_pago) : "",
+    primer_pago: d?.primer_pago ? String(d.primer_pago) : "",
+    // Una póliza nueva casi siempre empieza por su primer pago; una que ya traías, tú dices si todavía es el primero.
+    primer_pago_pendiente: d?.primer_pago_pendiente ?? nueva,
     fecha_limite_pago: d?.fecha_limite_pago ?? "",
     renovacion: d?.renovacion ?? "",
     prima_anual: d?.prima_anual ? String(d.prima_anual) : "",
@@ -63,7 +68,7 @@ export function FormularioPoliza({
   onCancelarPoliza,
   onBorrar,
 }: FormularioPolizaProps) {
-  const [c, setC] = useState<Campos>(() => camposDe(poliza ?? inicial));
+  const [c, setC] = useState<Campos>(() => camposDe(poliza ?? inicial, !poliza));
   const [errorLocal, setErrorLocal] = useState<string | null>(null);
   const set = (cambios: Partial<Campos>) => setC((x) => ({ ...x, ...cambios }));
 
@@ -118,9 +123,37 @@ export function FormularioPoliza({
             ))}
           </select>
         </Campo>
-        <Campo id="pz-monto" etiqueta="Monto de cada pago (MXN)">
-          <input id="pz-monto" inputMode="decimal" value={c.monto_pago} onChange={(e) => set({ monto_pago: e.target.value })} placeholder="1850" className="field-input" />
-        </Campo>
+        {c.forma_pago === "anual" ? (
+          <Campo id="pz-monto" etiqueta="Monto del pago (MXN)">
+            <input id="pz-monto" inputMode="decimal" value={c.monto_pago} onChange={(e) => set({ monto_pago: e.target.value })} placeholder="22000" className="field-input" />
+          </Campo>
+        ) : (
+          <>
+            <Campo id="pz-primer" etiqueta="Primer pago (con derecho de póliza)">
+              <input id="pz-primer" inputMode="decimal" value={c.primer_pago} onChange={(e) => set({ primer_pago: e.target.value })} placeholder="2150" className="field-input" />
+            </Campo>
+            <Campo id="pz-monto" etiqueta="Pagos subsecuentes (MXN)">
+              <input id="pz-monto" inputMode="decimal" value={c.monto_pago} onChange={(e) => set({ monto_pago: e.target.value })} placeholder="1850" className="field-input" />
+            </Campo>
+            <p className="text-xs text-ink-mute sm:self-end sm:pb-3.5">
+              El primer recibo suele costar más porque lleva el derecho de póliza. Si todos tus pagos son iguales, deja el primer pago vacío.
+            </p>
+            {Number(c.primer_pago.replace(/[$,\s]/g, "")) > 0 && (
+              <label htmlFor="pz-primer-pendiente" className="flex cursor-pointer items-start gap-2 text-sm text-ink-soft sm:col-span-2">
+                <input
+                  id="pz-primer-pendiente"
+                  type="checkbox"
+                  checked={c.primer_pago_pendiente}
+                  onChange={(e) => set({ primer_pago_pendiente: e.target.checked })}
+                  className="mt-1"
+                />
+                <span>
+                  El próximo pago que toca cobrar es el <strong>primero</strong>. Al marcar «Pagó», Valeri pasa a cobrar los subsecuentes.
+                </span>
+              </label>
+            )}
+          </>
+        )}
         <Campo id="pz-limite" etiqueta="Fecha límite del próximo pago">
           <input id="pz-limite" type="date" value={c.fecha_limite_pago} onChange={(e) => set({ fecha_limite_pago: e.target.value })} className="field-input [color-scheme:dark]" />
         </Campo>

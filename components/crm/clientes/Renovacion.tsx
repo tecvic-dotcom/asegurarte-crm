@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { Icon } from "@iconify/react";
 import { crmLeerPoliza, crmRenovarPoliza, ErrorCRM } from "@/lib/api";
 import { moneda } from "@/lib/crm-data";
-import { FORMAS_PAGO, estadoDe } from "@/lib/cobranza-reglas";
+import { FORMAS_PAGO, estadoDe, montoDelProximoPago } from "@/lib/cobranza-reglas";
 import { diasEntre, esFechaValida, fechaCorta, hoyLocal, sumarMeses } from "@/lib/fechas";
 import { sugerirRenovacion, validarRenovacion } from "@/lib/historial-reglas";
 import { infoRamo } from "@/lib/ramos";
@@ -20,6 +20,7 @@ interface Campos {
   hasta: string;
   forma_pago: FormaPago;
   monto_pago: string;
+  primer_pago: string;
   prima_anual: string;
   fecha_limite_pago: string;
   numero: string;
@@ -59,6 +60,7 @@ export function Renovacion({ poliza, modo, onHecha }: RenovacionProps) {
     hasta: sugerida.hasta,
     forma_pago: sugerida.forma_pago,
     monto_pago: sugerida.monto_pago ? String(sugerida.monto_pago) : "",
+    primer_pago: sugerida.primer_pago ? String(sugerida.primer_pago) : "",
     prima_anual: sugerida.prima_anual ? String(sugerida.prima_anual) : "",
     fecha_limite_pago: sugerida.fecha_limite_pago ?? "",
     numero: sugerida.numero,
@@ -232,7 +234,7 @@ export function Renovacion({ poliza, modo, onHecha }: RenovacionProps) {
           {recibo && (
             <p className="rounded-xl border border-line p-3 text-xs text-ink-soft">
               Esta póliza tiene un recibo pendiente del {conAnio(poliza.fecha_limite_pago!)}
-              {poliza.monto_pago > 0 ? ` (${moneda(poliza.monto_pago)})` : ""}. Al renovar, la fecha límite pasa al primer pago de la vigencia nueva.
+              {montoDelProximoPago(poliza) > 0 ? ` (${moneda(montoDelProximoPago(poliza))})` : ""}. Al renovar, la fecha límite pasa al primer pago de la vigencia nueva.
             </p>
           )}
 
@@ -261,7 +263,12 @@ export function Renovacion({ poliza, modo, onHecha }: RenovacionProps) {
                 ))}
               </select>
             </Campo>
-            <Campo id="rn-monto" etiqueta="Monto de cada pago (MXN)">
+            {campos.forma_pago !== "anual" && (
+              <Campo id="rn-primer" etiqueta="Primer pago (con derecho de póliza)">
+                <input id="rn-primer" inputMode="decimal" value={campos.primer_pago} onChange={(e) => set({ primer_pago: e.target.value })} placeholder="2150" className="field-input" />
+              </Campo>
+            )}
+            <Campo id="rn-monto" etiqueta={campos.forma_pago === "anual" ? "Monto del pago (MXN)" : "Pagos subsecuentes (MXN)"}>
               <input id="rn-monto" inputMode="decimal" value={campos.monto_pago} onChange={(e) => set({ monto_pago: e.target.value })} placeholder="1850" className="field-input" />
             </Campo>
             <Campo id="rn-limite" etiqueta="Fecha límite del primer pago">

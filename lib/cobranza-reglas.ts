@@ -37,6 +37,19 @@ export function montoPorPago(primaAnual: number, forma: FormaPago): number {
   return Math.round((primaAnual / pagosPorAnio(forma)) * 100) / 100;
 }
 
+/**
+ * ¿El próximo pago por cobrar es el PRIMERO de la vigencia? En pólizas que no son anuales ese recibo suele costar
+ * distinto porque lleva el derecho de póliza. Solo cuenta si capturaste el primer pago y sigue pendiente.
+ */
+export function esPrimerPago(p: Pick<Poliza, "forma_pago" | "primer_pago" | "primer_pago_pendiente">): boolean {
+  return p.forma_pago !== "anual" && p.primer_pago_pendiente && p.primer_pago > 0;
+}
+
+/** Lo que toca cobrar en el próximo pago: el primer pago si todavía es ese, y si no, el monto de los pagos subsecuentes. */
+export function montoDelProximoPago(p: Pick<Poliza, "forma_pago" | "primer_pago" | "primer_pago_pendiente" | "monto_pago">): number {
+  return esPrimerPago(p) ? p.primer_pago : p.monto_pago;
+}
+
 /** Al marcar "Pagó", el siguiente recibo vence un periodo después. */
 export function siguienteFechaPago(fecha: string, forma: FormaPago): string {
   const meses = FORMAS_PAGO.find((f) => f.id === forma)?.meses ?? 12;
@@ -134,7 +147,7 @@ export function listaDeHoy(polizas: Poliza[], hoy: string): PendienteCobro[] {
     let urgencia = 0;
     if (estado === "vencida") {
       motivo = "vencida";
-      urgencia = 5000 + dias * 10 + Math.min(p.monto_pago / 1000, 9);
+      urgencia = 5000 + dias * 10 + Math.min(montoDelProximoPago(p) / 1000, 9);
     } else if (estado === "promesa_vencida") {
       motivo = "promesa_vencida";
       urgencia = 4000 + dias;
@@ -294,13 +307,14 @@ export function validarMensajeCobro(entrada: unknown): ResultadoMensaje {
 /** Rellena una plantilla con los datos de la póliza. */
 export function rellenarMensaje(plantilla: string, p: Poliza): string {
   const saludo = saludoPara(p.asegurado);
+  const aCobrar = montoDelProximoPago(p);
   const valores: Record<string, string> = {
     saludo,
     nombre: saludo.replace(/^Hola,? /, ""),
     poliza: laPoliza(p),
     poliza_numero: p.numero ? `tu póliza ${p.numero}` : "tu póliza",
-    monto: p.monto_pago > 0 ? `por ${moneda(p.monto_pago)}` : "",
-    cantidad: p.monto_pago > 0 ? `por la cantidad de ${pesosExactos(p.monto_pago)}` : "",
+    monto: aCobrar > 0 ? `por ${moneda(aCobrar)}` : "",
+    cantidad: aCobrar > 0 ? `por la cantidad de ${pesosExactos(aCobrar)}` : "",
     fecha_limite: p.fecha_limite_pago ? fechaLarga(p.fecha_limite_pago) : "",
     fecha_recibo: p.fecha_limite_pago ? fechaNumerica(p.fecha_limite_pago) : "",
     fecha_promesa: p.promesa_fecha ? fechaLarga(p.promesa_fecha) : "",
@@ -339,10 +353,10 @@ export function resumenCobranza(polizas: Poliza[], hoy: string): ResumenCobranza
     const { estado } = estadoDe(p, hoy);
     if (estado === "vencida" || estado === "promesa_vencida") {
       vencidas += 1;
-      montoVencido += p.monto_pago;
+      montoVencido += montoDelProximoPago(p);
     } else if (estado === "por_vencer") {
       porVencer += 1;
-      montoPorVencer += p.monto_pago;
+      montoPorVencer += montoDelProximoPago(p);
     } else if (estado === "promesa") {
       promesas += 1;
     }
@@ -432,9 +446,14 @@ export function validarPoliza(entrada: unknown): ResultadoPoliza {
 
   const monto_pago = dinero(e.monto_pago);
   const prima_anual = dinero(e.prima_anual);
-  if (monto_pago === null || prima_anual === null) {
+  const primer = dinero(e.primer_pago);
+  if (monto_pago === null || prima_anual === null || primer === null) {
     return { ok: false, error: "Revisa los montos: deben ser números (ejemplo: 1250)." };
   }
+  // El primer pago distinto solo existe en pólizas que se pagan por partes; en las anuales hay un solo pago.
+  const primer_pago = forma === "anual" ? 0 : primer;
+  const pendiente = e.primer_pago_pendiente === true || e.primer_pago_pendiente === "true";
+  const primer_pago_pendiente = primer_pago > 0 && pendiente;
 
   const inicio = fechaOpcional(e.inicio);
   const renovacion = fechaOpcional(e.renovacion);
@@ -455,6 +474,8 @@ export function validarPoliza(entrada: unknown): ResultadoPoliza {
       ramo,
       aseguradora: String(e.aseguradora ?? "").trim().slice(0, 60),
       monto_pago,
+      primer_pago,
+      primer_pago_pendiente,
       prima_anual,
       forma_pago: forma as FormaPago,
       inicio,

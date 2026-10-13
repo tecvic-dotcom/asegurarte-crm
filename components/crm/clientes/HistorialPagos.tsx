@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Icon } from "@iconify/react";
 import { crmEliminarEvento, crmHistorialPoliza, crmRegistrarPago, ErrorCRM } from "@/lib/api";
 import { moneda } from "@/lib/crm-data";
-import { etiquetaEstado, estadoDe, COLOR_ESTADO, FORMAS_PAGO } from "@/lib/cobranza-reglas";
+import { etiquetaEstado, estadoDe, montoDelProximoPago, COLOR_ESTADO, FORMAS_PAGO } from "@/lib/cobranza-reglas";
 import { fechaCorta, hoyLocal } from "@/lib/fechas";
 import { formatoWhatsapp } from "@/lib/clientes-reglas";
 import type { EventoPoliza, Poliza } from "@/lib/types";
@@ -29,7 +29,7 @@ export function HistorialPagos({ poliza, onPoliza, onCambio }: HistorialPagosPro
   const [errorForm, setErrorForm] = useState<string | null>(null);
   const hoy = hoyLocal();
   const [fecha, setFecha] = useState(hoy);
-  const [importe, setImporte] = useState(poliza.monto_pago ? String(poliza.monto_pago) : "");
+  const [importe, setImporte] = useState(montoDelProximoPago(poliza) ? String(montoDelProximoPago(poliza)) : "");
   const [nota, setNota] = useState("");
   const [saldar, setSaldar] = useState(false);
 
@@ -102,7 +102,14 @@ export function HistorialPagos({ poliza, onPoliza, onCambio }: HistorialPagosPro
         <Dato titulo="Cliente" valor={poliza.asegurado} ancho />
         <Dato titulo="Póliza" valor={[poliza.aseguradora, poliza.numero].filter(Boolean).join(" ") || "—"} />
         <Dato titulo="Forma de pago" valor={forma || "—"} />
-        <Dato titulo="Monto de cada pago" valor={poliza.monto_pago > 0 ? moneda(poliza.monto_pago) : "Sin dato"} />
+        {poliza.forma_pago !== "anual" && poliza.primer_pago > 0 ? (
+          <>
+            <Dato titulo="Primer pago" valor={`${moneda(poliza.primer_pago)} · ${poliza.primer_pago_pendiente ? "pendiente" : "ya cubierto"}`} />
+            <Dato titulo="Pagos subsecuentes" valor={poliza.monto_pago > 0 ? moneda(poliza.monto_pago) : "Sin dato"} />
+          </>
+        ) : (
+          <Dato titulo="Monto de cada pago" valor={poliza.monto_pago > 0 ? moneda(poliza.monto_pago) : "Sin dato"} />
+        )}
         <Dato titulo="Último pago" valor={poliza.ultimo_pago ? conAnio(poliza.ultimo_pago) : "—"} />
         <div className="col-span-2 sm:col-span-3">
           <dt className="text-xs text-ink-mute">Próximo pago</dt>

@@ -141,8 +141,12 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
       prima_anual: lead.valor,
       forma_pago: forma,
       ...(conMonto ? { monto_pago: montoPorPago(lead.valor, forma) } : {}),
+      // Pagando por partes, el primer recibo (con derecho de póliza) suele costar más: se captura aparte en el formulario.
+      ...(forma !== "anual" ? { primer_pago_pendiente: true } : {}),
       ...(conMonto && forma !== "anual"
-        ? { notas: `Monto de cada pago estimado (${moneda(lead.valor)} ÷ ${pagosPorAnio(forma)}), sin recargo por pago fraccionado: confírmalo con la aseguradora.` }
+        ? {
+            notas: `Pagos subsecuentes estimados (${moneda(lead.valor)} ÷ ${pagosPorAnio(forma)}), sin recargo por pago fraccionado: confírmalos con la aseguradora. Captura el primer pago, que lleva el derecho de póliza.`,
+          }
         : {}),
       lead_id: lead.id,
     });

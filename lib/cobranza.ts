@@ -11,10 +11,10 @@ import "server-only";
  * tabla (RLS cerrado) y las rutas exigen sesión de ADMIN.
  */
 import { adminDb, cloudReady } from "./supabase-admin";
-import { faltaMigracion, MENSAJE_MIGRACION_COBRANZA, MigracionPendienteError } from "./migracion";
+import { faltaMigracion, MENSAJE_MIGRACION_COBRANZA, MENSAJE_MIGRACION_PRIMER_PAGO, MigracionPendienteError } from "./migracion";
 import { esRamo } from "./ramos";
 import { esFechaValida, hoyLocal, maxFecha, sumarDias } from "./fechas";
-import { FORMAS_PAGO, siguienteFechaPago } from "./cobranza-reglas";
+import { esPrimerPago, FORMAS_PAGO, montoDelProximoPago, siguienteFechaPago } from "./cobranza-reglas";
 import { CONCEPTO_PAGO_VALERI } from "./historial-reglas";
 import { crearEvento, listarHistorial } from "./polizas-historial";
 import { crearAdjunta } from "./polizas-adjuntas";
@@ -24,6 +24,9 @@ import type { DatosPoliza, DatosRenovacion, FormaPago, Poliza, Ramo } from "./ty
 const TABLA = "polizas";
 
 function errorDeBase(error: { code?: string; message: string }): Error {
+  if (faltaMigracion(error) && /primer_pago/.test(error.message)) {
+    return new MigracionPendienteError(MENSAJE_MIGRACION_PRIMER_PAGO, "0015_primer_pago.sql");
+  }
   return faltaMigracion(error)
     ? new MigracionPendienteError(MENSAJE_MIGRACION_COBRANZA, "0004_cobranza.sql")
     : new Error(error.message);
@@ -45,6 +48,8 @@ function normalizar(f: Record<string, unknown>): Poliza {
     ramo: esRamo(f.ramo) ? f.ramo : null,
     aseguradora: String(f.aseguradora ?? ""),
     monto_pago: Number(f.monto_pago) || 0,
+    primer_pago: Number(f.primer_pago) || 0,
+    primer_pago_pendiente: f.primer_pago_pendiente === true,
     prima_anual: Number(f.prima_anual) || 0,
     forma_pago: forma,
     inicio: fecha(f.inicio),
@@ -90,6 +95,8 @@ function semilla(): StoreCobranza {
     ramo,
     aseguradora: "Aseguradora demo",
     monto_pago: monto,
+    primer_pago: 0,
+    primer_pago_pendiente: false,
     prima_anual: forma === "anual" ? monto : forma === "semestral" ? monto * 2 : forma === "trimestral" ? monto * 4 : monto * 12,
     forma_pago: forma,
     inicio: null,
@@ -221,21 +228,26 @@ export async function marcarPagada(id: string): Promise<Poliza | null> {
   const p = await obtenerPoliza(id);
   if (!p) return null;
   const hoy = hoyLocal();
+  // Lo que se cobró en este recibo: el primer pago (con derecho de póliza) si todavía era ese, o el monto de los subsecuentes.
+  const eraElPrimero = esPrimerPago(p);
+  const cobrado = montoDelProximoPago(p);
   const nueva = await actualizar(id, {
     fecha_limite_pago: p.fecha_limite_pago ? siguienteFechaPago(p.fecha_limite_pago, p.forma_pago) : null,
     estatus_manual: null,
     promesa_fecha: null,
     ultimo_pago: hoy,
+    // Solo se toca esta columna cuando hace falta: así «Pagó» no depende del SQL 0015 en pólizas sin primer pago.
+    ...(p.primer_pago_pendiente ? { primer_pago_pendiente: false } : {}),
   });
   try {
     await crearEvento({
       poliza_id: id,
       tipo: "pago",
       fecha: hoy,
-      monto: p.monto_pago,
+      monto: cobrado,
       concepto: CONCEPTO_PAGO_VALERI,
       numero: "",
-      nota: "",
+      nota: eraElPrimero ? "Primer pago de la vigencia (incluye derecho de póliza)." : "",
       recibo: p.fecha_limite_pago,
       desde: null,
       hasta: null,
@@ -270,6 +282,8 @@ export async function registrarPago(id: string, d: DatosPagoManual, avanzar: boo
       estatus_manual: null,
       promesa_fecha: null,
       ultimo_pago: ultimo,
+      // Saldar el recibo que tocaba también salda el primer pago: lo que sigue ya son los subsecuentes.
+      ...(p.primer_pago_pendiente ? { primer_pago_pendiente: false } : {}),
     });
   } else if (ultimo !== p.ultimo_pago) {
     actual = await actualizar(id, { ultimo_pago: ultimo });
@@ -309,6 +323,12 @@ export async function renovarPoliza(id: string, r: DatosRenovacion): Promise<Res
     renovacion: r.hasta,
     forma_pago: r.forma_pago,
     monto_pago: r.monto_pago,
+    // La vigencia nueva arranca con su primer pago (con derecho de póliza) si lo capturaste.
+    ...(r.forma_pago !== "anual" && r.primer_pago > 0
+      ? { primer_pago: r.primer_pago, primer_pago_pendiente: true }
+      : p.primer_pago > 0 || p.primer_pago_pendiente
+        ? { primer_pago: 0, primer_pago_pendiente: false }
+        : {}),
     prima_anual: r.prima_anual,
     fecha_limite_pago: r.fecha_limite_pago,
     numero: r.numero || p.numero,
