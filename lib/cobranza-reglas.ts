@@ -23,6 +23,20 @@ export const FORMAS_PAGO: { id: FormaPago; nombre: string; meses: number }[] = [
   { id: "mensual", nombre: "Mensual", meses: 1 },
 ];
 
+/** Cuántos pagos caben en el año con esa forma de pago (mensual 12, trimestral 4, semestral 2, anual 1). */
+export function pagosPorAnio(forma: FormaPago): number {
+  const meses = FORMAS_PAGO.find((f) => f.id === forma)?.meses ?? 12;
+  return Math.round(12 / meses);
+}
+
+/**
+ * Cuánto toca en cada pago si la prima de TODO el año se reparte en la forma elegida. Es un estimado: las
+ * aseguradoras suelen cobrar un recargo por pagar fraccionado, así que el recibo real puede salir un poco mayor.
+ */
+export function montoPorPago(primaAnual: number, forma: FormaPago): number {
+  return Math.round((primaAnual / pagosPorAnio(forma)) * 100) / 100;
+}
+
 /** Al marcar "Pagó", el siguiente recibo vence un periodo después. */
 export function siguienteFechaPago(fecha: string, forma: FormaPago): string {
   const meses = FORMAS_PAGO.find((f) => f.id === forma)?.meses ?? 12;

@@ -4,18 +4,22 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Icon } from "@iconify/react";
 import { crmLead, crmMover, crmActualizar, crmAgregarActividad, crmPlantillas } from "@/lib/api";
-import { ETAPAS, etapa as etapaPorId, ICONO_ACTIVIDAD } from "@/lib/crm-data";
+import { ETAPAS, etapa as etapaPorId, ICONO_ACTIVIDAD, moneda } from "@/lib/crm-data";
+import { FORMAS_PAGO, montoPorPago, pagosPorAnio } from "@/lib/cobranza-reglas";
 import { aplicarPlantilla } from "@/lib/plantillas";
 import { RAMOS } from "@/lib/ramos";
 import { DictadoBoton } from "./DictadoBoton";
-import type { Lead, Actividad, EtapaId, TipoActividad, Genero, PlantillaMensaje, Ramo } from "@/lib/types";
+import type { Lead, Actividad, EtapaId, TipoActividad, Genero, PlantillaMensaje, Ramo, FormaPago } from "@/lib/types";
+
+/** Mensual → anual, como se elige de corto a largo. */
+const FORMAS_DE_CORTO_A_LARGO = [...FORMAS_PAGO].reverse();
 
 interface LeadPanelProps {
   id: string;
   onClose: () => void;
   onCambio: () => void;
-  /** Solo admin: lleva al cliente ganado con Valeri para dar de alta su póliza en cobranza. */
-  onAgregarCobranza?: (lead: Lead) => void;
+  /** Solo admin: lleva al cliente ganado con Valeri para dar de alta su póliza en cobranza (con la frecuencia de pago elegida). */
+  onAgregarCobranza?: (lead: Lead, forma: FormaPago) => void;
   /** Lleva a Cotizaciones con este prospecto ya elegido. */
   onCotizar?: (lead: Lead) => void;
 }
@@ -33,6 +37,7 @@ export function LeadPanel({ id, onClose, onCambio, onAgregarCobranza, onCotizar 
   const [plantillas, setPlantillas] = useState<PlantillaMensaje[]>([]);
   const [mostrarPlantillas, setMostrarPlantillas] = useState(false);
   const [errorRamo, setErrorRamo] = useState<string | null>(null);
+  const [formaPago, setFormaPago] = useState<FormaPago>("anual");
 
   function cargarDesde(l: Lead) {
     setLead(l);
@@ -59,6 +64,7 @@ export function LeadPanel({ id, onClose, onCambio, onAgregarCobranza, onCotizar 
       const r = await crmLead(id);
       if (!vivo) return;
       cargarDesde(r.lead);
+      setFormaPago("anual"); // cada prospecto empieza en «Anual»
       setActividad(r.actividad);
       setCargando(false);
     })();
@@ -218,9 +224,29 @@ export function LeadPanel({ id, onClose, onCambio, onAgregarCobranza, onCotizar 
               </p>
             )}
             {lead.etapa === "ganado" && onAgregarCobranza && (
-              <button type="button" onClick={() => onAgregarCobranza(lead)} className="btn-ghost mt-3 w-full py-2.5 text-sm">
-                <Icon icon="flat-color-icons:debt" width={18} aria-hidden /> Agregar su póliza a cobranza (Valeri)
-              </button>
+              <>
+                <label className="field-label mt-4" htmlFor="lead-forma-pago">Frecuencia de pago de su póliza</label>
+                <select
+                  id="lead-forma-pago"
+                  value={formaPago}
+                  onChange={(ev) => setFormaPago(ev.target.value as FormaPago)}
+                  className="field-input"
+                >
+                  {FORMAS_DE_CORTO_A_LARGO.map((f) => (
+                    <option key={f.id} value={f.id}>
+                      {f.nombre}
+                    </option>
+                  ))}
+                </select>
+                {formaPago !== "anual" && lead.valor > 0 && (
+                  <p className="mt-1.5 text-xs text-ink-mute">
+                    Cada pago estimado: <strong className="text-ink">{moneda(montoPorPago(lead.valor, formaPago))}</strong> ({moneda(lead.valor)} ÷ {pagosPorAnio(formaPago)}). Lo ajustas en Valeri si el recibo trae recargo.
+                  </p>
+                )}
+                <button type="button" onClick={() => onAgregarCobranza(lead, formaPago)} className="btn-ghost mt-3 w-full py-2.5 text-sm">
+                  <Icon icon="flat-color-icons:debt" width={18} aria-hidden /> Agregar su póliza a cobranza (Valeri)
+                </button>
+              </>
             )}
 
             {/* Valor */}

@@ -21,7 +21,8 @@ import { PolizasAdjuntas } from "./PolizasAdjuntas";
 import { SeguimientoSofi } from "./SeguimientoSofi";
 import { ReportesClara } from "./ReportesClara";
 import { MenuLateral, opcionDe, type Pestana } from "./MenuLateral";
-import type { Lead, Sesion, EtapaId, DatosPoliza } from "@/lib/types";
+import { montoPorPago, pagosPorAnio } from "@/lib/cobranza-reglas";
+import type { Lead, Sesion, EtapaId, DatosPoliza, FormaPago } from "@/lib/types";
 
 interface CRMAppProps {
   sesion: Sesion;
@@ -129,13 +130,20 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
   }
 
   /** Desde el expediente de un cliente ganado: lo lleva con Valeri con su póliza ya prellenada. */
-  function agregarACobranza(lead: Lead) {
+  function agregarACobranza(lead: Lead, forma: FormaPago = "anual") {
+    // El valor estimado es la prima de todo el año: con la frecuencia elegida se estima cuánto toca en cada pago.
+    const conMonto = lead.valor > 0;
     setPolizaNueva({
       asegurado: lead.nombre,
       whatsapp: lead.whatsapp,
       correo: lead.correo,
       ramo: lead.ramo,
       prima_anual: lead.valor,
+      forma_pago: forma,
+      ...(conMonto ? { monto_pago: montoPorPago(lead.valor, forma) } : {}),
+      ...(conMonto && forma !== "anual"
+        ? { notas: `Monto de cada pago estimado (${moneda(lead.valor)} ÷ ${pagosPorAnio(forma)}), sin recargo por pago fraccionado: confírmalo con la aseguradora.` }
+        : {}),
       lead_id: lead.id,
     });
     setVezPoliza((v) => v + 1);
