@@ -106,6 +106,11 @@ export function fechaCorta(f: string): string {
   return `${Number(f.slice(8, 10))} ${mesCorto(f)}`;
 }
 
+/** "13/10/2026" (día/mes/año, como se escribe en los recibos y en WhatsApp) */
+export function fechaNumerica(f: string): string {
+  return `${f.slice(8, 10)}/${f.slice(5, 7)}/${f.slice(0, 4)}`;
+}
+
 /** "4 de noviembre" (para mensajes a clientes) */
 export function fechaLarga(f: string): string {
   return `${Number(f.slice(8, 10))} de ${nombreMes(f)}`;

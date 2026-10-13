@@ -6,7 +6,7 @@
  * pronto, y al final a quién toca recordarle su renovación.
  */
 import { moneda } from "./crm-data";
-import { diasEntre, esFechaValida, fechaLarga, fechaLocal, sumarMeses } from "./fechas";
+import { diasEntre, esFechaValida, fechaLarga, fechaLocal, fechaNumerica, sumarMeses } from "./fechas";
 import { normCorreo, normWhatsapp } from "./normalize";
 import { esRamo } from "./ramos";
 import type { DatosPoliza, EstadoCobro, FormaPago, Poliza, Ramo, ResumenCobranza } from "./types";
@@ -225,6 +225,16 @@ function laPoliza(p: Poliza): string {
   return `tu póliza${numero}${ramo}`;
 }
 
+/** Pesos con centavos cuando los hay: $8,520.13 · $4,644 (en un cobro importan los centavos). */
+function pesosExactos(n: number): string {
+  return n.toLocaleString("es-MX", {
+    style: "currency",
+    currency: "MXN",
+    minimumFractionDigits: Number.isInteger(n) ? 0 : 2,
+    maximumFractionDigits: 2,
+  });
+}
+
 /** Texto base de cada situación (el que Valeri usa mientras no escribas el tuyo). */
 export const PLANTILLAS_BASE: Record<MotivoCobro, string> = {
   vencida:
@@ -234,7 +244,7 @@ export const PLANTILLAS_BASE: Record<MotivoCobro, string> = {
   promesa:
     "{saludo}, solo para recordarte que quedamos en el pago de {poliza} {monto} para el {fecha_promesa}. ¿Te comparto los datos para dejarlo listo? ¡Gracias!",
   por_vencer:
-    "{saludo}, te recuerdo que el pago de {poliza} {monto} vence el {fecha_limite}. Así mantienes tu protección sin interrupciones. Si necesitas la línea de pago o ayuda, aquí estoy. ¡Gracias!",
+    "{saludo} te recuerdo el pago de {poliza_numero} {cantidad}. La fecha de inicio de vigencia de tu recibo es el {fecha_recibo}. Si requieres apoyo para realizar el pago, avísame. Saludos!",
   renovacion:
     "{saludo}, {poliza} renueva {fecha_renovacion}. Antes de esa fecha me gustaría revisar contigo que siga cubriendo lo que necesitas. ¿Qué día te acomoda una llamada de 10 minutos?",
 };
@@ -252,8 +262,11 @@ export const VARIABLES_MENSAJE: { clave: string; ejemplo: string; descripcion: s
   { clave: "saludo", ejemplo: "Hola Joan", descripcion: "Saludo con el nombre del cliente" },
   { clave: "nombre", ejemplo: "Joan", descripcion: "Solo el nombre de pila" },
   { clave: "poliza", ejemplo: "tu póliza 93177V04 de gastos médicos", descripcion: "Cuál póliza (con número y ramo)" },
+  { clave: "poliza_numero", ejemplo: "tu póliza 93177V04", descripcion: "Cuál póliza, solo con su número (sin el ramo)" },
   { clave: "monto", ejemplo: "por $4,644", descripcion: "El monto del recibo (se omite si no lo has capturado)" },
+  { clave: "cantidad", ejemplo: "por la cantidad de $4,644.50", descripcion: "El monto del recibo con centavos y las palabras «por la cantidad de» (se omite si no lo has capturado)" },
   { clave: "fecha_limite", ejemplo: "14 de septiembre", descripcion: "Fecha límite de pago" },
+  { clave: "fecha_recibo", ejemplo: "14/09/2026", descripcion: "Fecha de inicio de vigencia del recibo, en día/mes/año" },
   { clave: "fecha_promesa", ejemplo: "20 de octubre", descripcion: "Día que prometió pagar" },
   { clave: "fecha_renovacion", ejemplo: "el 3 de noviembre", descripcion: "Cuándo renueva (si no hay fecha, dice \"pronto\")" },
 ];
@@ -285,8 +298,11 @@ export function rellenarMensaje(plantilla: string, p: Poliza): string {
     saludo,
     nombre: saludo.replace(/^Hola,? /, ""),
     poliza: laPoliza(p),
+    poliza_numero: p.numero ? `tu póliza ${p.numero}` : "tu póliza",
     monto: p.monto_pago > 0 ? `por ${moneda(p.monto_pago)}` : "",
+    cantidad: p.monto_pago > 0 ? `por la cantidad de ${pesosExactos(p.monto_pago)}` : "",
     fecha_limite: p.fecha_limite_pago ? fechaLarga(p.fecha_limite_pago) : "",
+    fecha_recibo: p.fecha_limite_pago ? fechaNumerica(p.fecha_limite_pago) : "",
     fecha_promesa: p.promesa_fecha ? fechaLarga(p.promesa_fecha) : "",
     fecha_renovacion: p.renovacion ? `el ${fechaLarga(p.renovacion)}` : "pronto",
   };
