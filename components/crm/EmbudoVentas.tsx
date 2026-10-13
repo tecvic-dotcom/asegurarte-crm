@@ -10,6 +10,9 @@ interface EmbudoVentasProps {
   leads: Lead[];
   /** Todos los prospectos (para las estadísticas de conversión y origen, que no dependen de la búsqueda). */
   todos: Lead[];
+  /** La búsqueda que está filtrando el tablero (vacía = se ven todos). */
+  busca: string;
+  onQuitarBusqueda: () => void;
   onMover: (id: string, etapa: EtapaId) => void;
   onAbrir: (id: string) => void;
 }
@@ -18,7 +21,8 @@ interface EmbudoVentasProps {
  * Embudo de ventas: una columna por etapa con tus prospectos (nombre, WhatsApp y ramo) para arrastrarlos de una etapa a
  * otra. Abajo, plegado, queda el análisis de conversión y origen que tenía el menú «Embudo».
  */
-export function EmbudoVentas({ leads, todos, onMover, onAbrir }: EmbudoVentasProps) {
+export function EmbudoVentas({ leads, todos, busca, onQuitarBusqueda, onMover, onAbrir }: EmbudoVentasProps) {
+  const filtrando = busca.trim() !== "";
   return (
     <section className="space-y-5">
       <p className="flex items-start gap-2 text-sm text-ink-soft">
@@ -28,6 +32,22 @@ export function EmbudoVentas({ leads, todos, onMover, onAbrir }: EmbudoVentasPro
           para abrir su expediente.
         </span>
       </p>
+
+      {filtrando && (
+        <p
+          className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border px-3.5 py-2.5 text-sm text-ink"
+          style={{ borderColor: "color-mix(in srgb, var(--amber) 55%, transparent)", background: "color-mix(in srgb, var(--amber) 8%, transparent)" }}
+          role="status"
+        >
+          <Icon icon="flat-color-icons:filled-filter" width={18} aria-hidden />
+          <span>
+            Estás viendo <strong>{leads.length}</strong> de <strong>{todos.length}</strong> prospectos: solo los que coinciden con «{busca.trim()}».
+          </span>
+          <button type="button" onClick={onQuitarBusqueda} className="font-semibold underline hover:text-ink">
+            Ver todos
+          </button>
+        </p>
+      )}
 
       <Pipeline modo="embudo" leads={leads} onMover={onMover} onAbrir={onAbrir} />
 

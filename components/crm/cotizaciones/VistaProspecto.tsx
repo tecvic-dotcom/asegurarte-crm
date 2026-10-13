@@ -306,6 +306,15 @@ export function VistaProspecto({ lead, firma, onCambiar, onAbrirExpediente, onCa
 
   return (
     <section className="space-y-4">
+      {/* Regreso a la lista de todas tus cotizaciones (y a elegir a otro prospecto) */}
+      <button
+        type="button"
+        onClick={onCambiar}
+        className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border border-line bg-glass px-3.5 text-sm font-medium text-ink-soft transition-colors hover:border-brand-2 hover:text-ink"
+      >
+        <span aria-hidden>←</span> Todas las cotizaciones
+      </button>
+
       {/* A quién le cotizas */}
       <div className="glass-strong rounded-2xl p-4 sm:p-5">
         <div className="flex flex-wrap items-start gap-3">

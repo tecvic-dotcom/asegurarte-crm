@@ -111,6 +111,10 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
   const actual = opcionDe(pestana);
 
   function elegir(id: Pestana) {
+    // Una búsqueda escrita en otra pantalla no se lleva a la nueva: así el tablero no aparece «vacío» sin saber por qué.
+    if (id !== pestana) setBusca("");
+    // Tocar «Cotizaciones» estando ya en Cotizaciones te regresa a la lista (si no, el botón del menú parecía no hacer nada).
+    if (id === "cotizaciones" && pestana === "cotizaciones") setCotizarLeadId(null);
     setPestana(id);
     setMenuAbierto(false);
     window.scrollTo({ top: 0 });
@@ -214,6 +218,11 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
                   placeholder="Buscar por nombre, correo o WhatsApp…"
                   className="w-56 bg-transparent text-sm text-ink outline-none placeholder:text-ink-mute"
                 />
+                {busca && (
+                  <button type="button" onClick={() => setBusca("")} className="-mr-1 rounded-lg px-1.5 text-lg leading-none text-ink-mute hover:text-ink" aria-label="Borrar la búsqueda">
+                    ×
+                  </button>
+                )}
               </div>
               {pestana !== "reportes" && !(pestana === "tablero" && vista === "hoy") && (
               <select
@@ -260,7 +269,7 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
             />
           )}
           {pestana === "contactos" && <Contactos leads={filtrados} onAbrir={setSeleccion} onCambio={recargar} />}
-          {pestana === "reportes" && <EmbudoVentas leads={buscados} todos={leads} onMover={mover} onAbrir={setSeleccion} />}
+          {pestana === "reportes" && <EmbudoVentas leads={buscados} todos={leads} busca={busca} onQuitarBusqueda={() => setBusca("")} onMover={mover} onAbrir={setSeleccion} />}
           {esAdmin && pestana === "panel" && <PanelMando onVerSinRamo={verGanadasSinRamo} />}
           {esAdmin && pestana === "crecimiento" && <Crecimiento />}
           {esAdmin && pestana === "polizas" && <PolizasAdjuntas />}
