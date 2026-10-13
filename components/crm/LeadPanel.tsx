@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Icon } from "@iconify/react";
-import { crmLead, crmMover, crmActualizar, crmAgregarActividad, crmPlantillas } from "@/lib/api";
-import { ETAPAS, etapa as etapaPorId, ICONO_ACTIVIDAD, moneda } from "@/lib/crm-data";
-import { FORMAS_PAGO, montoPorPago, pagosPorAnio } from "@/lib/cobranza-reglas";
+import { crmCotizaciones, crmLead, crmMover, crmActualizar, crmAgregarActividad, crmPlantillas } from "@/lib/api";
+import { ETAPAS, etapa as etapaPorId, ICONO_ACTIVIDAD } from "@/lib/crm-data";
+import { FORMAS_PAGO } from "@/lib/cobranza-reglas";
+import { avisoDeMontos, cotizacionElegida } from "@/lib/poliza-desde-venta";
+import type { Cotizacion } from "@/lib/cotizaciones-reglas";
 import { aplicarPlantilla } from "@/lib/plantillas";
 import { RAMOS } from "@/lib/ramos";
 import { DictadoBoton } from "./DictadoBoton";
@@ -19,12 +21,13 @@ interface LeadPanelProps {
   onClose: () => void;
   onCambio: () => void;
   /** Solo admin: lleva al cliente ganado con Valeri para dar de alta su póliza en cobranza (con la frecuencia de pago elegida). */
-  onAgregarCobranza?: (lead: Lead, forma: FormaPago) => void;
+  onAgregarCobranza?: (lead: Lead, forma: FormaPago, cotizacion: Cotizacion | null) => void;
   /** Lleva a Cotizaciones con este prospecto ya elegido. */
   onCotizar?: (lead: Lead) => void;
 }
 
 export function LeadPanel({ id, onClose, onCambio, onAgregarCobranza, onCotizar }: LeadPanelProps) {
+  const puedeAgregarCobranza = Boolean(onAgregarCobranza);
   const [lead, setLead] = useState<Lead | null>(null);
   const [actividad, setActividad] = useState<Actividad[]>([]);
   const [notas, setNotas] = useState("");
@@ -38,6 +41,8 @@ export function LeadPanel({ id, onClose, onCambio, onAgregarCobranza, onCotizar 
   const [mostrarPlantillas, setMostrarPlantillas] = useState(false);
   const [errorRamo, setErrorRamo] = useState<string | null>(null);
   const [formaPago, setFormaPago] = useState<FormaPago>("anual");
+  // La cotización que elegiste para este cliente (si hay): de ella salen la prima, el primer pago y los pagos subsecuentes.
+  const [elegida, setElegida] = useState<Cotizacion | null>(null);
 
   function cargarDesde(l: Lead) {
     setLead(l);
@@ -67,6 +72,12 @@ export function LeadPanel({ id, onClose, onCambio, onAgregarCobranza, onCotizar 
       setFormaPago("anual"); // cada prospecto empieza en «Anual»
       setActividad(r.actividad);
       setCargando(false);
+      setElegida(null);
+      if (r.lead.etapa === "ganado" && puedeAgregarCobranza) {
+        crmCotizaciones(id)
+          .then((lista) => vivo && setElegida(cotizacionElegida(lista)))
+          .catch(() => {}); // sin cotizaciones (o sin su SQL) se usa el estimado de siempre
+      }
     })();
     crmPlantillas()
       .then((p) => vivo && setPlantillas(p))
@@ -74,7 +85,7 @@ export function LeadPanel({ id, onClose, onCambio, onAgregarCobranza, onCotizar 
     return () => {
       vivo = false;
     };
-  }, [id]);
+  }, [id, puedeAgregarCobranza]);
 
   async function cambiarEtapa(e: EtapaId) {
     if (!lead) return;
@@ -238,12 +249,12 @@ export function LeadPanel({ id, onClose, onCambio, onAgregarCobranza, onCotizar 
                     </option>
                   ))}
                 </select>
-                {formaPago !== "anual" && lead.valor > 0 && (
-                  <p className="mt-1.5 text-xs text-ink-mute">
-                    Cada pago estimado: <strong className="text-ink">{moneda(montoPorPago(lead.valor, formaPago))}</strong> ({moneda(lead.valor)} ÷ {pagosPorAnio(formaPago)}). El primer pago suele ser mayor (derecho de póliza): lo capturas en Valeri.
+                {avisoDeMontos(lead, formaPago, elegida) && (
+                  <p className="mt-1.5 text-xs text-ink-mute" data-testid="aviso-montos">
+                    {avisoDeMontos(lead, formaPago, elegida)}
                   </p>
                 )}
-                <button type="button" onClick={() => onAgregarCobranza(lead, formaPago)} className="btn-ghost mt-3 w-full py-2.5 text-sm">
+                <button type="button" onClick={() => onAgregarCobranza(lead, formaPago, elegida)} className="btn-ghost mt-3 w-full py-2.5 text-sm">
                   <Icon icon="flat-color-icons:debt" width={18} aria-hidden /> Agregar su póliza a cobranza (Valeri)
                 </button>
               </>

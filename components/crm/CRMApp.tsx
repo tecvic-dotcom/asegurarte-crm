@@ -21,7 +21,8 @@ import { PolizasAdjuntas } from "./PolizasAdjuntas";
 import { SeguimientoSofi } from "./SeguimientoSofi";
 import { ReportesClara } from "./ReportesClara";
 import { MenuLateral, opcionDe, type Pestana } from "./MenuLateral";
-import { montoPorPago, pagosPorAnio } from "@/lib/cobranza-reglas";
+import { polizaDesdeVenta } from "@/lib/poliza-desde-venta";
+import type { Cotizacion } from "@/lib/cotizaciones-reglas";
 import type { Lead, Sesion, EtapaId, DatosPoliza, FormaPago } from "@/lib/types";
 
 interface CRMAppProps {
@@ -130,26 +131,9 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
   }
 
   /** Desde el expediente de un cliente ganado: lo lleva con Valeri con su póliza ya prellenada. */
-  function agregarACobranza(lead: Lead, forma: FormaPago = "anual") {
-    // El valor estimado es la prima de todo el año: con la frecuencia elegida se estima cuánto toca en cada pago.
-    const conMonto = lead.valor > 0;
-    setPolizaNueva({
-      asegurado: lead.nombre,
-      whatsapp: lead.whatsapp,
-      correo: lead.correo,
-      ramo: lead.ramo,
-      prima_anual: lead.valor,
-      forma_pago: forma,
-      ...(conMonto ? { monto_pago: montoPorPago(lead.valor, forma) } : {}),
-      // Pagando por partes, el primer recibo (con derecho de póliza) suele costar más: se captura aparte en el formulario.
-      ...(forma !== "anual" ? { primer_pago_pendiente: true } : {}),
-      ...(conMonto && forma !== "anual"
-        ? {
-            notas: `Pagos subsecuentes estimados (${moneda(lead.valor)} ÷ ${pagosPorAnio(forma)}), sin recargo por pago fraccionado: confírmalos con la aseguradora. Captura el primer pago, que lleva el derecho de póliza.`,
-          }
-        : {}),
-      lead_id: lead.id,
-    });
+  function agregarACobranza(lead: Lead, forma: FormaPago = "anual", cotizacion: Cotizacion | null = null) {
+    // Con la cotización elegida se pasan sus cantidades reales (prima, primer pago y subsecuentes); sin ella, un estimado.
+    setPolizaNueva(polizaDesdeVenta(lead, forma, cotizacion));
     setVezPoliza((v) => v + 1);
     setSeleccion(null);
     setPestana("valeri");
