@@ -30,7 +30,9 @@ interface CotizacionesProps {
  * le mandas al cliente el mensaje de WhatsApp ya redactado. Primero eliges a quién; luego, qué cotizarle.
  */
 export function Cotizaciones({ leads, firma, leadId, onLead, onAbrir, onNuevoProspecto, onCambio }: CotizacionesProps) {
+  // Quien ya compró (cliente ganado) no sale en la lista de a quién cotizarle; se le cotiza otro seguro desde «Clientes ganados».
   const lead = leadId ? leads.find((l) => l.id === leadId) ?? null : null;
+  const aQuienCotizar = useMemo(() => leads.filter((l) => l.etapa !== "ganado"), [leads]);
 
   if (lead) {
     return (
@@ -46,8 +48,8 @@ export function Cotizaciones({ leads, firma, leadId, onLead, onAbrir, onNuevoPro
   }
   return (
     <div className="space-y-4">
-      <BuscadorProspecto leads={leads} onElegir={onLead} onNuevo={onNuevoProspecto} />
-      <Recientes leads={leads} onElegir={onLead} />
+      <BuscadorProspecto leads={aQuienCotizar} onElegir={onLead} onNuevo={onNuevoProspecto} />
+      <Recientes leads={aQuienCotizar} onElegir={onLead} />
     </div>
   );
 }

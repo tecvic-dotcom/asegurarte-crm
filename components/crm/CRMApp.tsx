@@ -3,11 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Icon } from "@iconify/react";
 import { crmLeads, crmMover, crmLogout, getAjustesPublicas } from "@/lib/api";
-import { ETAPAS, moneda } from "@/lib/crm-data";
+import { ETAPAS } from "@/lib/crm-data";
 import { Pipeline } from "./Pipeline";
 import { TablaLeads } from "./TablaLeads";
 import { LeadPanel } from "./LeadPanel";
 import { Contactos } from "./Contactos";
+import { ClientesGanados } from "./ClientesGanados";
 import { PendientesDia } from "./PendientesDia";
 import { Cotizaciones } from "./Cotizaciones";
 import { Seguimiento } from "./Seguimiento";
@@ -46,6 +47,8 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
   const [vezPoliza, setVezPoliza] = useState(0);
   // El prospecto al que se le cotiza (se conserva al cambiar de pestaña y volver).
   const [cotizarLeadId, setCotizarLeadId] = useState<string | null>(null);
+  // Llegó desde el Panel de Mando («ganadas sin ramo»): Clientes ganados se abre ya filtrado.
+  const [clientesSinRamo, setClientesSinRamo] = useState(false);
   // Celular: el menú vive escondido a la izquierda y se abre con el botón "Menú".
   const [menuAbierto, setMenuAbierto] = useState(false);
 
@@ -107,14 +110,20 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
     return q ? leads.filter((l) => l.nombre.toLowerCase().includes(q) || l.correo.toLowerCase().includes(q) || l.whatsapp.includes(q)) : leads;
   }, [leads, busca]);
 
+  // Los clientes ganados viven en su propio apartado: no salen en Prospectos ni al elegir a quién cotizarle.
   const pipeline = useMemo(() => leads.filter((l) => l.etapa === "ganado"), [leads]);
-  const valorGanado = pipeline.reduce((s, l) => s + l.valor, 0);
+  const prospectos = useMemo(() => leads.filter((l) => l.etapa !== "ganado"), [leads]);
+  const prospectosFiltrados = useMemo(() => filtrados.filter((l) => l.etapa !== "ganado"), [filtrados]);
   const esAdmin = sesion.rol === "admin";
   const actual = opcionDe(pestana);
 
   function elegir(id: Pestana) {
     // Una búsqueda escrita en otra pantalla no se lleva a la nueva: así el tablero no aparece «vacío» sin saber por qué.
     if (id !== pestana) setBusca("");
+    // Entrar a Clientes ganados desde el menú lo muestra completo; solo el Panel de Mando lo abre ya filtrado.
+    if (id === "clientes") setClientesSinRamo(false);
+    // Un filtro «Cliente ganado» pendiente dejaría vacío Prospectos (los ganados ya no viven ahí).
+    if (id === "contactos" && filtroEtapa === "ganado") setFiltroEtapa("todas");
     // Tocar «Cotizaciones» estando ya en Cotizaciones te regresa a la lista (si no, el botón del menú parecía no hacer nada).
     if (id === "cotizaciones" && pestana === "cotizaciones") setCotizarLeadId(null);
     setPestana(id);
@@ -122,12 +131,12 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
     window.scrollTo({ top: 0 });
   }
 
-  /** Desde el Panel: muestra en tabla las pólizas ganadas para asignarles su ramo. */
+  /** Desde el Panel: muestra los clientes ganados que no tienen ramo para asignárselo. */
   function verGanadasSinRamo() {
-    setPestana("tablero");
-    setVista("tabla");
-    setFiltroEtapa("ganado");
+    setClientesSinRamo(true);
+    setPestana("clientes");
     setBusca("");
+    window.scrollTo({ top: 0 });
   }
 
   /** Desde el expediente de un cliente ganado: lo lleva con Valeri con su póliza ya prellenada. */
@@ -197,10 +206,10 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
           {/* Métricas rápidas (solo se muestran en Prospectos) */}
           {pestana === "contactos" && (
           <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Metrica icono="flat-color-icons:business-contact" label="Prospectos" valor={String(leads.length)} />
-            <Metrica icono="flat-color-icons:calendar" label="En cita" valor={String(leads.filter((l) => l.etapa === "cita").length)} />
-            <Metrica icono="flat-color-icons:approval" label="Clientes" valor={String(pipeline.length)} />
-            <Metrica icono="flat-color-icons:money-transfer" label="Ganado" valor={moneda(valorGanado)} />
+            <Metrica icono="flat-color-icons:business-contact" label="Prospectos" valor={String(prospectos.length)} />
+            <Metrica icono="flat-color-icons:calendar" label="En cita" valor={String(prospectos.filter((l) => l.etapa === "cita").length)} />
+            <Metrica icono="flat-color-icons:feedback" label="Con propuesta" valor={String(prospectos.filter((l) => l.etapa === "propuesta").length)} />
+            <Metrica icono="flat-color-icons:approval" label="Clientes ganados" valor={String(pipeline.length)} onClick={() => elegir("clientes")} />
           </div>
           )}
 
@@ -227,7 +236,7 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
                 className="rounded-xl border border-line bg-glass px-3 py-2 text-sm text-ink"
               >
                 <option value="todas">Todas las etapas</option>
-                {ETAPAS.map((et) => (
+                {ETAPAS.filter((et) => !(pestana === "contactos" && et.id === "ganado")).map((et) => (
                   <option key={et.id} value={et.id}>
                     {et.nombre}
                   </option>
@@ -264,7 +273,8 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
               onCambio={recargar}
             />
           )}
-          {pestana === "contactos" && <Contactos leads={filtrados} onAbrir={setSeleccion} onCambio={recargar} />}
+          {pestana === "contactos" && <Contactos leads={prospectosFiltrados} onAbrir={setSeleccion} onCambio={recargar} />}
+          {pestana === "clientes" && <ClientesGanados leads={leads} esAdmin={esAdmin} soloSinRamo={clientesSinRamo} onAbrir={setSeleccion} onCotizar={cotizarA} />}
           {pestana === "reportes" && <EmbudoVentas leads={buscados} todos={leads} busca={busca} onQuitarBusqueda={() => setBusca("")} onMover={mover} onAbrir={setSeleccion} />}
           {esAdmin && pestana === "panel" && <PanelMando onVerSinRamo={verGanadasSinRamo} />}
           {esAdmin && pestana === "crecimiento" && <Crecimiento />}
@@ -297,15 +307,22 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
   );
 }
 
-function Metrica({ icono, label, valor }: { icono: string; label: string; valor: string }) {
-  return (
-    <div className="glass flex items-center gap-3 rounded-2xl p-3">
+function Metrica({ icono, label, valor, onClick }: { icono: string; label: string; valor: string; onClick?: () => void }) {
+  const contenido = (
+    <>
       <Icon icon={icono} width={30} />
-      <div>
+      <div className="text-left">
         <p className="text-lg font-bold text-ink">{valor}</p>
         <p className="text-xs text-ink-mute">{label}</p>
       </div>
-    </div>
+    </>
+  );
+  return onClick ? (
+    <button type="button" onClick={onClick} className="glass flex items-center gap-3 rounded-2xl p-3 transition-colors hover:border-brand-2" title="Abrir Clientes ganados">
+      {contenido}
+    </button>
+  ) : (
+    <div className="glass flex items-center gap-3 rounded-2xl p-3">{contenido}</div>
   );
 }
 
