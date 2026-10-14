@@ -428,7 +428,7 @@ footer a{color:var(--ink-soft)}
 <script>
 (function () {
   const GASTOS_FINALES = 60000;
-  const EDAD_MIN = 18, EDAD_MAX = 70;
+  const EDAD_MIN = 18, EDAD_MAX = 64; // 64 = edad límite para contratar un seguro de vida
   const WHATSAPP = "528182800234";
   const $ = (id) => document.getElementById(id);
   const fmt = new Intl.NumberFormat("es-MX", { maximumFractionDigits: 0 });
@@ -530,7 +530,8 @@ footer a{color:var(--ink-soft)}
     const e = parseInt(edad.value, 10);
     let primero = null;
     if (isNaN(e)) { marcar("f-edad", "e-edad", "Escribe tu edad (con los botones o el teclado)."); primero = primero || edad; }
-    else if (e < EDAD_MIN || e > EDAD_MAX) { marcar("f-edad", "e-edad", "Calculamos de " + EDAD_MIN + " a " + EDAD_MAX + " años. Si estás fuera de ese rango, escríbele a Roberto y lo revisan juntos."); primero = primero || edad; }
+    else if (e < EDAD_MIN) { marcar("f-edad", "e-edad", "Para contratar un seguro de vida necesitas tener al menos " + EDAD_MIN + " años."); primero = primero || edad; }
+    else if (e > EDAD_MAX) { marcar("f-edad", "e-edad", "La edad máxima para contratar un seguro de vida es de " + EDAD_MAX + " años. Escríbele a Roberto y revisan otras opciones para ti."); primero = primero || edad; }
     if (!elegido("genero")) { marcar("f-genero", "e-genero", "Elige una opción."); primero = primero || document.querySelector('input[name="genero"]'); }
     if (!elegido("fuma")) { marcar("f-fuma", "e-fuma", "Elige una opción."); primero = primero || document.querySelector('input[name="fuma"]'); }
     if (primero) { primero.focus(); return false; }
