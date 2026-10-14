@@ -239,7 +239,7 @@ function laPoliza(p: Poliza): string {
 }
 
 /** Pesos con centavos cuando los hay: $8,520.13 · $4,644 (en un cobro importan los centavos). */
-function pesosExactos(n: number): string {
+export function pesosExactos(n: number): string {
   return n.toLocaleString("es-MX", {
     style: "currency",
     currency: "MXN",

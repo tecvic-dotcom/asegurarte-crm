@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Icon } from "@iconify/react";
 import { crmPolizas } from "@/lib/api";
+import { textoDeCobro } from "@/lib/clientes-reglas";
 import { moneda } from "@/lib/crm-data";
 import { infoRamo, RAMOS } from "@/lib/ramos";
 import { whatsappDe } from "@/lib/seguimiento-reglas";
@@ -221,12 +222,17 @@ export function ClientesGanados({ leads, esAdmin, soloSinRamo = false, onAbrir, 
                     </button>
                   )}
                 </div>
+                {suyas.length > 0 && (
+                  <p className="mt-1.5 text-xs text-ink-soft" data-testid="cobro-del-cliente">
+                    {suyas.slice(0, 2).map((p) => textoDeCobro(p)).join(" | ")}
+                  </p>
+                )}
 
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <button type="button" onClick={() => onAbrir(c.id)} className="btn-ghost px-3 py-2 text-xs">
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <button type="button" onClick={() => onAbrir(c.id)} className="btn-ghost w-full justify-center text-xs" style={{ padding: "0.6rem 0.5rem" }}>
                     <Icon icon="flat-color-icons:view-details" width={16} aria-hidden /> Ver ficha
                   </button>
-                  <button type="button" onClick={() => onCotizar(c)} className="btn-ghost px-3 py-2 text-xs" title="Cotizarle otro seguro">
+                  <button type="button" onClick={() => onCotizar(c)} className="btn-ghost w-full justify-center text-xs" style={{ padding: "0.6rem 0.5rem" }} title="Cotizarle otro seguro">
                     <Icon icon="flat-color-icons:calculator" width={16} aria-hidden /> Cotizar otro seguro
                   </button>
                 </div>

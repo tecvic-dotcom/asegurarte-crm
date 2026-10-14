@@ -2,8 +2,7 @@
  * Reglas del reporte «Clientes por ramo» de Clara (cliente y servidor, sin IA y sin costo): agrupa la cartera de pólizas por
  * ramo y arma, para cada renglón, su vigencia y su estatus. También produce el texto para copiar y el CSV.
  */
-import { moneda } from "./crm-data";
-import { COLOR_ESTADO, DIAS_RENOVACION, FORMAS_PAGO, ICONO_ESTADO, estadoDe, etiquetaEstado } from "./cobranza-reglas";
+import { COLOR_ESTADO, DIAS_RENOVACION, FORMAS_PAGO, ICONO_ESTADO, estadoDe, etiquetaEstado, pesosExactos } from "./cobranza-reglas";
 import { diasEntre, fechaCorta } from "./fechas";
 import { RAMOS } from "./ramos";
 import type { EstadoCobro, Poliza, Ramo } from "./types";
@@ -59,15 +58,21 @@ export interface GrupoRamo {
 
 /** "$1,850" · o, si el primer pago es distinto: "1er pago $2,150 · luego $1,850". Null si no hay monto. */
 function textoDeMontos(p: Poliza): string | null {
+  // Con centavos cuando los hay: en un cobro importan ($4,930.29, no $4,930).
   if (p.forma_pago !== "anual" && p.primer_pago > 0) {
-    return `1er pago ${moneda(p.primer_pago)}${p.monto_pago > 0 ? ` · luego ${moneda(p.monto_pago)}` : ""}`;
+    return `1er pago ${pesosExactos(p.primer_pago)}${p.monto_pago > 0 ? ` · luego ${pesosExactos(p.monto_pago)}` : ""}`;
   }
-  return p.monto_pago > 0 ? moneda(p.monto_pago) : null;
+  return p.monto_pago > 0 ? pesosExactos(p.monto_pago) : null;
+}
+
+/** Cómo se paga una póliza: "Trimestral · 1er pago $4,930.29 · luego $3,612.97" (o "Anual · $22,000"). */
+export function textoDeCobro(p: Poliza): string {
+  const forma = FORMAS_PAGO.find((f) => f.id === p.forma_pago)?.nombre ?? "";
+  return [forma, textoDeMontos(p)].filter(Boolean).join(" · ");
 }
 
 export function filaDe(p: Poliza, hoy: string): FilaCliente {
   const { estado, dias } = estadoDe(p, hoy);
-  const forma = FORMAS_PAGO.find((f) => f.id === p.forma_pago)?.nombre ?? "";
   return {
     poliza: p,
     estado,
@@ -76,7 +81,7 @@ export function filaDe(p: Poliza, hoy: string): FilaCliente {
     icono: ICONO_ESTADO[estado],
     vigencia: textoVigencia(p),
     aviso: notaVigencia(p, hoy),
-    cobro: [forma, textoDeMontos(p)].filter(Boolean).join(" · "),
+    cobro: textoDeCobro(p),
   };
 }
 

@@ -42,6 +42,9 @@ interface CobranzaProps {
   /** Datos de un cliente ganado para dar de alta su póliza (desde su expediente). */
   prefill: Partial<DatosPoliza> | null;
   onPrefillUsado: () => void;
+  /** Una póliza que ya existe, para abrirla de entrada en su formulario de edición (desde el expediente del cliente). */
+  abrir?: Poliza | null;
+  onAbrirUsado?: () => void;
 }
 
 type Formulario = { poliza: Poliza | null; inicial: Partial<DatosPoliza> | null };
@@ -61,10 +64,10 @@ const FILTROS: Record<FiltroCobro, { titulo: string; motivos: MotivoCobro[]; vac
  * riesgo y el mensaje de WhatsApp listo. Tú lo envías; Valeri no manda nada sola.
  * No usa IA: trabaja con reglas fijas, sin costo.
  */
-export function Cobranza({ prefill, onPrefillUsado }: CobranzaProps) {
+export function Cobranza({ prefill, onPrefillUsado, abrir = null, onAbrirUsado }: CobranzaProps) {
   const [polizas, setPolizas] = useState<Poliza[] | null>(null);
   const [error, setError] = useState<Error | null>(null);
-  const [form, setForm] = useState<Formulario | null>(() => (prefill ? { poliza: null, inicial: prefill } : null));
+  const [form, setForm] = useState<Formulario | null>(() => (prefill ? { poliza: null, inicial: prefill } : abrir ? { poliza: abrir, inicial: null } : null));
   const [guardando, setGuardando] = useState(false);
   const [errorForm, setErrorForm] = useState<string | null>(null);
   const [busca, setBusca] = useState("");
@@ -146,6 +149,7 @@ export function Cobranza({ prefill, onPrefillUsado }: CobranzaProps) {
     setForm(null);
     setErrorForm(null);
     onPrefillUsado();
+    onAbrirUsado?.();
   }
 
   async function guardar(datos: DatosPoliza) {

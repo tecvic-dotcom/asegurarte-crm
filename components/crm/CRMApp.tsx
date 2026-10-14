@@ -24,7 +24,7 @@ import { ReportesClara } from "./ReportesClara";
 import { MenuLateral, opcionDe, type Pestana } from "./MenuLateral";
 import { polizaDesdeVenta } from "@/lib/poliza-desde-venta";
 import type { Cotizacion } from "@/lib/cotizaciones-reglas";
-import type { Lead, Sesion, EtapaId, DatosPoliza, FormaPago } from "@/lib/types";
+import type { Lead, Sesion, EtapaId, DatosPoliza, FormaPago, Poliza } from "@/lib/types";
 
 interface CRMAppProps {
   sesion: Sesion;
@@ -45,6 +45,8 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
   // Póliza prellenada desde un cliente ganado ("Agregar a cobranza"). "vez" reinicia la pestaña de Valeri solo al llegar una nueva.
   const [polizaNueva, setPolizaNueva] = useState<Partial<DatosPoliza> | null>(null);
   const [vezPoliza, setVezPoliza] = useState(0);
+  // Una póliza que ya existe y se abre para verla o editarla en Valeri (desde la ficha del cliente).
+  const [polizaAEditar, setPolizaAEditar] = useState<Poliza | null>(null);
   // El prospecto al que se le cotiza (se conserva al cambiar de pestaña y volver).
   const [cotizarLeadId, setCotizarLeadId] = useState<string | null>(null);
   // Llegó desde el Panel de Mando («ganadas sin ramo»): Clientes ganados se abre ya filtrado.
@@ -146,6 +148,16 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
     setVezPoliza((v) => v + 1);
     setSeleccion(null);
     setPestana("valeri");
+  }
+
+  /** Desde el expediente de un cliente ganado: abre en Valeri la póliza que ya tiene. */
+  function verPolizaEnValeri(p: Poliza) {
+    setPolizaAEditar(p);
+    setPolizaNueva(null);
+    setVezPoliza((v) => v + 1);
+    setSeleccion(null);
+    setPestana("valeri");
+    window.scrollTo({ top: 0 });
   }
 
   /** Desde el expediente de un prospecto: lo lleva a Cotizaciones ya elegido. */
@@ -287,6 +299,8 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
               key={vezPoliza}
               prefill={polizaNueva}
               onPrefillUsado={() => setPolizaNueva(null)}
+              abrir={polizaAEditar}
+              onAbrirUsado={() => setPolizaAEditar(null)}
             />
           )}
 
@@ -298,6 +312,7 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
               onClose={() => setSeleccion(null)}
               onCambio={recargar}
               onAgregarCobranza={esAdmin ? agregarACobranza : undefined}
+              onVerPoliza={esAdmin ? verPolizaEnValeri : undefined}
               onCotizar={cotizarA}
             />
           )}

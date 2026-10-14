@@ -3,15 +3,17 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Icon } from "@iconify/react";
-import { crmCotizaciones, crmLead, crmMover, crmActualizar, crmAgregarActividad, crmPlantillas } from "@/lib/api";
+import { crmCotizaciones, crmLead, crmMover, crmActualizar, crmAgregarActividad, crmPlantillas, crmPolizas } from "@/lib/api";
 import { ETAPAS, etapa as etapaPorId, ICONO_ACTIVIDAD } from "@/lib/crm-data";
-import { FORMAS_PAGO } from "@/lib/cobranza-reglas";
+import { COLOR_ESTADO, FORMAS_PAGO, esPrimerPago, estadoDe, etiquetaEstado } from "@/lib/cobranza-reglas";
+import { textoDeCobro } from "@/lib/clientes-reglas";
+import { hoyLocal } from "@/lib/fechas";
 import { avisoDeMontos, cotizacionElegida } from "@/lib/poliza-desde-venta";
 import type { Cotizacion } from "@/lib/cotizaciones-reglas";
 import { aplicarPlantilla } from "@/lib/plantillas";
 import { RAMOS } from "@/lib/ramos";
 import { DictadoBoton } from "./DictadoBoton";
-import type { Lead, Actividad, EtapaId, TipoActividad, Genero, PlantillaMensaje, Ramo, FormaPago } from "@/lib/types";
+import type { Lead, Actividad, EtapaId, TipoActividad, Genero, PlantillaMensaje, Ramo, FormaPago, Poliza } from "@/lib/types";
 
 /** Mensual → anual, como se elige de corto a largo. */
 const FORMAS_DE_CORTO_A_LARGO = [...FORMAS_PAGO].reverse();
@@ -22,11 +24,13 @@ interface LeadPanelProps {
   onCambio: () => void;
   /** Solo admin: lleva al cliente ganado con Valeri para dar de alta su póliza en cobranza (con la frecuencia de pago elegida). */
   onAgregarCobranza?: (lead: Lead, forma: FormaPago, cotizacion: Cotizacion | null) => void;
+  /** Abre en Valeri la póliza que ya tiene el cliente para verla o editarla. */
+  onVerPoliza?: (poliza: Poliza) => void;
   /** Lleva a Cotizaciones con este prospecto ya elegido. */
   onCotizar?: (lead: Lead) => void;
 }
 
-export function LeadPanel({ id, onClose, onCambio, onAgregarCobranza, onCotizar }: LeadPanelProps) {
+export function LeadPanel({ id, onClose, onCambio, onAgregarCobranza, onVerPoliza, onCotizar }: LeadPanelProps) {
   const puedeAgregarCobranza = Boolean(onAgregarCobranza);
   const [lead, setLead] = useState<Lead | null>(null);
   const [actividad, setActividad] = useState<Actividad[]>([]);
@@ -43,6 +47,9 @@ export function LeadPanel({ id, onClose, onCambio, onAgregarCobranza, onCotizar 
   const [formaPago, setFormaPago] = useState<FormaPago>("anual");
   // La cotización que elegiste para este cliente (si hay): de ella salen la prima, el primer pago y los pagos subsecuentes.
   const [elegida, setElegida] = useState<Cotizacion | null>(null);
+  // Las pólizas que este cliente YA tiene en Valeri: null = revisando · "no" = no se pudo leer la cartera.
+  const [susPolizas, setSusPolizas] = useState<Poliza[] | null | "no">(null);
+  const [agregandoOtra, setAgregandoOtra] = useState(false);
 
   function cargarDesde(l: Lead) {
     setLead(l);
@@ -73,7 +80,12 @@ export function LeadPanel({ id, onClose, onCambio, onAgregarCobranza, onCotizar 
       setActividad(r.actividad);
       setCargando(false);
       setElegida(null);
+      setSusPolizas(null);
+      setAgregandoOtra(false);
       if (r.lead.etapa === "ganado" && puedeAgregarCobranza) {
+        crmPolizas()
+          .then((todas) => vivo && setSusPolizas(todas.filter((p) => p.lead_id === r.lead.id)))
+          .catch(() => vivo && setSusPolizas("no")); // sin acceso a la cartera: se ofrece agregar como siempre
         crmCotizaciones(id)
           .then((lista) => vivo && setElegida(cotizacionElegida(lista)))
           .catch(() => {}); // sin cotizaciones (o sin su SQL) se usa el estimado de siempre
@@ -236,7 +248,46 @@ export function LeadPanel({ id, onClose, onCambio, onAgregarCobranza, onCotizar 
             )}
             {lead.etapa === "ganado" && onAgregarCobranza && (
               <>
-                <label className="field-label mt-4" htmlFor="lead-forma-pago">Frecuencia de pago de su póliza</label>
+                {susPolizas === null && <p className="mt-4 text-xs text-ink-mute">Revisando su póliza en Valeri…</p>}
+
+                {/* Lo que este cliente ya tiene en Valeri: su frecuencia de pago REAL y cómo quedan sus pagos */}
+                {Array.isArray(susPolizas) && susPolizas.length > 0 && (
+                  <div className="mt-4 space-y-2" data-testid="polizas-del-cliente">
+                    <p className="field-label !mb-0">Su póliza en Valeri</p>
+                    {susPolizas.slice(0, 3).map((p) => {
+                      const { estado, dias } = estadoDe(p, hoyLocal());
+                      return (
+                        <div key={p.id} className="rounded-xl border border-line bg-glass p-3 text-sm">
+                          <p className="font-semibold text-ink">
+                            {[p.aseguradora, p.numero].filter(Boolean).join(" ") || "Póliza sin número"}
+                          </p>
+                          <p className="mt-0.5 text-ink-soft" data-testid="cobro-de-poliza">{textoDeCobro(p) || "Sin montos capturados"}</p>
+                          {esPrimerPago(p) && <p className="mt-0.5 text-xs text-ink-mute">El próximo pago que toca cobrar es el primero (lleva el derecho de póliza).</p>}
+                          <p className="mt-1 text-xs font-semibold" style={{ color: COLOR_ESTADO[estado] }}>
+                            {p.fecha_limite_pago ? `Próximo pago: ${p.fecha_limite_pago.split("-").reverse().join("/")} · ` : ""}
+                            {etiquetaEstado(estado, dias, p)}
+                          </p>
+                          {onVerPoliza && (
+                            <button type="button" onClick={() => onVerPoliza(p)} className="btn-ghost mt-2 px-3 py-2 text-xs">
+                              <Icon icon="flat-color-icons:debt" width={16} aria-hidden /> Ver o editar en Valeri
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                    {!agregandoOtra && (
+                      <button type="button" onClick={() => setAgregandoOtra(true)} className="text-xs text-ink-soft underline underline-offset-2 hover:text-ink">
+                        Agregar otra póliza de este cliente
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {susPolizas !== null && (susPolizas === "no" || susPolizas.length === 0 || agregandoOtra) && (
+                  <>
+                <label className="field-label mt-4" htmlFor="lead-forma-pago">
+                  {agregandoOtra ? "Frecuencia de pago de la otra póliza" : "Frecuencia de pago de su póliza"}
+                </label>
                 <select
                   id="lead-forma-pago"
                   value={formaPago}
@@ -255,8 +306,10 @@ export function LeadPanel({ id, onClose, onCambio, onAgregarCobranza, onCotizar 
                   </p>
                 )}
                 <button type="button" onClick={() => onAgregarCobranza(lead, formaPago, elegida)} className="btn-ghost mt-3 w-full py-2.5 text-sm">
-                  <Icon icon="flat-color-icons:debt" width={18} aria-hidden /> Agregar su póliza a cobranza (Valeri)
+                  <Icon icon="flat-color-icons:debt" width={18} aria-hidden /> {agregandoOtra ? "Agregar la otra póliza a cobranza (Valeri)" : "Agregar su póliza a cobranza (Valeri)"}
                 </button>
+                  </>
+                )}
               </>
             )}
 
