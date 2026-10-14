@@ -31,7 +31,7 @@ function traePagosEn(cot: Cotizacion, forma: FormaPago): boolean {
 /** Lo que se prellena en el formulario de la póliza de Valeri. */
 export function polizaDesdeVenta(lead: Lead, forma: FormaPago, cotizacion: Cotizacion | null): Partial<DatosPoliza> {
   const cot = enPesos(cotizacion);
-  // La prima de contado de la cotización es la prima de todo el año; sin cotización se usa el valor estimado del prospecto.
+  // La prima de contado de la cotización es la prima de todo el año; sin cotización se usa la prima total capturada en el prospecto.
   const prima = cot ? cot.prima : lead.valor;
   const ramoCot = cot && esRamo(cot.ramo) ? cot.ramo : null;
 

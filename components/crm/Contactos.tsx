@@ -99,7 +99,7 @@ function FormularioProspecto({ onGuardado, onCancelar, onAbrir }: { onGuardado: 
           </select>
         </label>
         <label className="block text-xs text-ink-mute">
-          Valor estimado (MXN)
+          Prima total (MXN)
           <input className="field-input mt-1" type="number" min={0} inputMode="numeric" value={f.valor || ""} onChange={(e) => set({ valor: Number(e.target.value) || 0 })} placeholder="0" />
         </label>
         <label className="block text-xs text-ink-mute">
@@ -199,7 +199,7 @@ export function Contactos({ leads, onAbrir, onCambio }: ContactosProps) {
               <th className="px-4 py-3">Ramo</th>
               <th className="px-4 py-3">WhatsApp</th>
               <th className="px-4 py-3">Etapa</th>
-              <th className="px-4 py-3">Valor (MXN)</th>
+              <th className="px-4 py-3">Prima total (MXN)</th>
               <th className="px-4 py-3">Origen</th>
               <th className="px-4 py-3" />
             </tr>

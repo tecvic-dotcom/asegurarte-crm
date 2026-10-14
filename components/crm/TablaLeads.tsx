@@ -36,7 +36,7 @@ export function TablaLeads({ leads, onAbrir }: TablaLeadsProps) {
             <th className="px-4 py-3 font-semibold">Etapa</th>
             <th className="px-4 py-3 font-semibold">Ramo</th>
             <th className="px-4 py-3 font-semibold">Origen</th>
-            <th className="px-4 py-3 text-right font-semibold">Valor</th>
+            <th className="px-4 py-3 text-right font-semibold">Prima total</th>
             <th className="px-4 py-3 font-semibold">Llegó</th>
             <th className="px-4 py-3" />
           </tr>

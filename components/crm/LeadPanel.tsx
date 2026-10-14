@@ -314,7 +314,7 @@ export function LeadPanel({ id, onClose, onCambio, onAgregarCobranza, onVerPoliz
             )}
 
             {/* Valor */}
-            <label className="field-label mt-4">Valor estimado (MXN)</label>
+            <label className="field-label mt-4">Prima total (MXN)</label>
             <input
               type="number"
               min={0}

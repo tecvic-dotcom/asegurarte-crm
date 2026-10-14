@@ -93,7 +93,7 @@ export function ClientesGanados({ leads, esAdmin, soloSinRamo = false, onAbrir, 
       {/* Cuántos son y cuánto vale lo vendido; las alertas se tocan para filtrar */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Cifra icono="flat-color-icons:approval" etiqueta="Clientes ganados" valor={String(clientes.length)} />
-        <Cifra icono="flat-color-icons:money-transfer" etiqueta="Valor de lo vendido" valor={moneda(total)} />
+        <Cifra icono="flat-color-icons:money-transfer" etiqueta="Prima total vendida" valor={moneda(total)} />
         {esAdmin && (
           <Cifra
             icono="flat-color-icons:debt"
@@ -207,7 +207,7 @@ export function ClientesGanados({ leads, esAdmin, soloSinRamo = false, onAbrir, 
 
                 <div className="mt-3 flex items-end justify-between gap-2">
                   <div>
-                    <p className="text-[11px] uppercase tracking-wide text-ink-mute">Valor</p>
+                    <p className="text-[11px] uppercase tracking-wide text-ink-mute">Prima total</p>
                     <p className="text-lg font-bold text-ink">{c.valor > 0 ? moneda(c.valor) : "Sin capturar"}</p>
                   </div>
                   {sabeDePolizas && (
