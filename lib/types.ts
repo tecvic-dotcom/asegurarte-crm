@@ -514,6 +514,8 @@ export interface ResumenCobranza {
   porVencer: number;
   montoPorVencer: number;
   promesas: number;
+  /** Pólizas al corriente: su próximo recibo vence en más de 15 días (ya pagaron el de este periodo). */
+  alCorriente: number;
   renuevan: number;
   sinWhatsapp: number;
   recordadasHoy: number;

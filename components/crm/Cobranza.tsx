@@ -49,13 +49,20 @@ interface CobranzaProps {
 
 type Formulario = { poliza: Poliza | null; inicial: Partial<DatosPoliza> | null };
 
-type FiltroCobro = "vencidas" | "por_vencer" | "promesas" | "renuevan";
+// 5 cajas que se acomodan al ancho (sin scroll a la derecha): 2 por fila en celular, 3 en pantallas medianas y las 5 juntas en pantalla grande.
+const CUADRICULA = "grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5";
+// En celular la quinta caja ocupa el ancho completo para no quedar sola y chiquita.
+const ULTIMA_CAJA = "col-span-2 sm:col-span-1";
+
+type FiltroCobro = "vencidas" | "por_vencer" | "promesas" | "renuevan" | "pagadas";
 
 const FILTROS: Record<FiltroCobro, { titulo: string; motivos: MotivoCobro[]; vacio: string }> = {
   vencidas: { titulo: "Vencidas", motivos: ["vencida", "promesa_vencida"], vacio: "Nadie está vencido. 🎉" },
   por_vencer: { titulo: "Por vencer", motivos: ["por_vencer"], vacio: "Nadie vence en los próximos días." },
   promesas: { titulo: "Promesas de pago", motivos: ["promesa"], vacio: "No hay promesas de pago en espera." },
   renuevan: { titulo: "Renuevan", motivos: ["renovacion"], vacio: "Ninguna póliza renueva en los próximos días." },
+  // Las pagadas no se cobran: tienen su propia lista (ver `pagadas`), sin mensajes de cobro.
+  pagadas: { titulo: "Pagadas", motivos: [], vacio: "Todavía no hay pólizas al corriente." },
 };
 
 /**
@@ -102,8 +109,18 @@ export function Cobranza({ prefill, onPrefillUsado, abrir = null, onAbrirUsado }
   const mostradas = useMemo(() => {
     if (!filtro) return pendientes;
     if (filtro === "renuevan") return polizas ? listaDeRenovaciones(polizas, hoy) : [];
+    if (filtro === "pagadas") return [];
     return pendientes.filter((x) => FILTROS[filtro].motivos.includes(x.motivo));
   }, [filtro, pendientes, polizas, hoy]);
+  // Pólizas pagadas = al corriente: ya cubrieron el recibo de este periodo; primero las que antes vuelven a tocar.
+  const pagadas = useMemo(
+    () =>
+      (polizas ?? [])
+        .filter((p) => estadoDe(p, hoy).estado === "al_corriente")
+        .sort((a, b) => (a.fecha_limite_pago ?? "").localeCompare(b.fecha_limite_pago ?? "") || a.asegurado.localeCompare(b.asegurado, "es")),
+    [polizas, hoy],
+  );
+  const cuentaFiltro = filtro === "pagadas" ? pagadas.length : mostradas.length;
 
   function elegirFiltro(f: FiltroCobro) {
     const nuevo = filtro === f ? null : f;
@@ -250,9 +267,9 @@ export function Cobranza({ prefill, onPrefillUsado, abrir = null, onAbrirUsado }
       )}
 
       {polizas === null && !error && (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4" aria-label="Cargando tu cartera">
-          {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="h-[110px] animate-pulse rounded-2xl bg-bg-3/70" />
+        <div className={CUADRICULA} aria-label="Cargando tu cartera">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <div key={i} className={`h-[110px] animate-pulse rounded-2xl bg-bg-3/70 ${i === 4 ? ULTIMA_CAJA : ""}`} />
           ))}
         </div>
       )}
@@ -274,7 +291,7 @@ export function Cobranza({ prefill, onPrefillUsado, abrir = null, onAbrirUsado }
 
       {resumen && polizas && polizas.length > 0 && (
         <>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className={CUADRICULA}>
             <Cifra
               titulo="Vencidas"
               valor={resumen.vencidas}
@@ -317,12 +334,24 @@ export function Cobranza({ prefill, onPrefillUsado, abrir = null, onAbrirUsado }
               activa={filtro === "renuevan"}
               onClick={() => elegirFiltro("renuevan")}
             />
+            <Cifra
+              id="pagadas"
+              titulo="Pagadas"
+              valor={resumen.alCorriente}
+              nota={`su próximo recibo vence en más de ${DIAS_AVISO} días`}
+              color="var(--green)"
+              icono="flat-color-icons:ok"
+              palabra="Al corriente"
+              activa={filtro === "pagadas"}
+              onClick={() => elegirFiltro("pagadas")}
+              className={ULTIMA_CAJA}
+            />
           </div>
 
           <section id="lista-cobranza" className="scroll-mt-4">
             <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
               <h3 className="font-semibold text-ink">
-                {filtro ? `${FILTROS[filtro].titulo} (${mostradas.length})` : "A quién cobrarle hoy"}
+                {filtro ? `${FILTROS[filtro].titulo} (${cuentaFiltro})` : "A quién cobrarle hoy"}
                 {filtro && (
                   <button type="button" onClick={() => setFiltro(null)} className="ml-3 text-xs font-normal text-ink-mute underline hover:text-ink">
                     Ver todos los pendientes ({pendientes.length})
@@ -353,7 +382,29 @@ export function Cobranza({ prefill, onPrefillUsado, abrir = null, onAbrirUsado }
                 />
               </div>
             )}
-            {mostradas.length === 0 ? (
+            {filtro === "pagadas" ? (
+              pagadas.length === 0 ? (
+                <p className="glass rounded-2xl p-5 text-center text-sm text-ink-soft">{FILTROS.pagadas.vacio}</p>
+              ) : (
+                <ul className="space-y-2" data-testid="lista-pagadas">
+                  {pagadas.map((p) => (
+                    <li key={p.id} data-testid="poliza-pagada" className="glass flex flex-wrap items-center justify-between gap-2 rounded-2xl p-3 sm:p-4">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-ink">{p.asegurado}</p>
+                        <p className="text-xs text-ink-mute">{[p.ramo ? infoRamo(p.ramo).corto : null, p.aseguradora, p.numero].filter(Boolean).join(" · ")}</p>
+                        <p className="mt-0.5 text-xs font-semibold" style={{ color: "var(--green)" }}>
+                          Al corriente{p.fecha_limite_pago ? ` · próximo recibo ${fechaCorta(p.fecha_limite_pago)}` : ""}
+                          {montoDelProximoPago(p) > 0 ? ` · ${moneda(montoDelProximoPago(p))}` : ""}
+                        </p>
+                      </div>
+                      <button type="button" onClick={() => abrirFormulario({ poliza: p, inicial: null })} className="btn-ghost px-3 py-2 text-xs">
+                        <Icon icon="flat-color-icons:edit-image" width={16} aria-hidden /> Ver o editar
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )
+            ) : mostradas.length === 0 ? (
               <p className="glass rounded-2xl p-5 text-center text-sm text-ink-soft">
                 {filtro ? FILTROS[filtro].vacio : "Todo al corriente: hoy nadie te debe. 🎉"}
               </p>
@@ -454,6 +505,8 @@ export function Cobranza({ prefill, onPrefillUsado, abrir = null, onAbrirUsado }
 }
 
 function Cifra({
+  id,
+  className = "",
   titulo,
   valor,
   monto,
@@ -464,6 +517,8 @@ function Cifra({
   activa,
   onClick,
 }: {
+  id?: string;
+  className?: string;
   titulo: string;
   valor: number;
   monto?: number;
@@ -482,7 +537,8 @@ function Cifra({
       onClick={onClick}
       aria-pressed={activa}
       title="Toca para ver solo estas pólizas"
-      className={`glass flex min-h-[124px] w-full flex-col rounded-2xl p-3.5 text-left transition-transform hover:-translate-y-0.5 sm:p-4 ${activa ? "ring-2 ring-brand-2" : ""}`}
+      data-testid={id ? `cifra-${id}` : undefined}
+      className={`glass flex min-h-[124px] w-full min-w-0 flex-col rounded-2xl p-3.5 text-left transition-transform hover:-translate-y-0.5 sm:p-4 ${activa ? "ring-2 ring-brand-2" : ""} ${className}`}
       style={conSenal || activa ? { borderColor: `color-mix(in srgb, ${color} 55%, transparent)` } : undefined}
     >
       <span className="text-[13px] font-semibold text-ink-soft">{titulo}</span>

@@ -348,6 +348,7 @@ export function resumenCobranza(polizas: Poliza[], hoy: string): ResumenCobranza
   let porVencer = 0;
   let montoPorVencer = 0;
   let promesas = 0;
+  let alCorriente = 0;
   let renuevan = 0;
   for (const p of activas) {
     const { estado } = estadoDe(p, hoy);
@@ -359,6 +360,8 @@ export function resumenCobranza(polizas: Poliza[], hoy: string): ResumenCobranza
       montoPorVencer += montoDelProximoPago(p);
     } else if (estado === "promesa") {
       promesas += 1;
+    } else if (estado === "al_corriente") {
+      alCorriente += 1;
     }
     if (p.renovacion) {
       const r = diasEntre(hoy, p.renovacion);
@@ -394,6 +397,7 @@ export function resumenCobranza(polizas: Poliza[], hoy: string): ResumenCobranza
     porVencer,
     montoPorVencer: Math.round(montoPorVencer),
     promesas,
+    alCorriente,
     renuevan,
     sinWhatsapp,
     recordadasHoy,
