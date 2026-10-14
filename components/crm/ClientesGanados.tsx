@@ -98,6 +98,7 @@ export function ClientesGanados({ leads, esAdmin, soloSinRamo = false, onAbrir, 
           <Cifra
             icono="flat-color-icons:debt"
             etiqueta="Sin póliza en Valeri"
+            bien={sabeDePolizas && sinPoliza === 0 ? "✓ Todos ya están en Valeri" : undefined}
             valor={sabeDePolizas ? String(sinPoliza) : polizas === "no" ? "—" : "…"}
             alerta={sinPoliza > 0}
             activa={faltaPoliza}
@@ -107,6 +108,7 @@ export function ClientesGanados({ leads, esAdmin, soloSinRamo = false, onAbrir, 
         <Cifra
           icono="flat-color-icons:medium-priority"
           etiqueta="Sin ramo asignado"
+          bien={sinRamo === 0 ? "✓ Todos tienen su ramo" : undefined}
           valor={String(sinRamo)}
           alerta={sinRamo > 0}
           activa={ramo === "sin_ramo"}
@@ -158,7 +160,9 @@ export function ClientesGanados({ leads, esAdmin, soloSinRamo = false, onAbrir, 
           </button>
         )}
         <p className="ml-auto text-xs text-ink-mute">
-          {visibles.length === clientes.length ? `${clientes.length} clientes` : `${visibles.length} de ${clientes.length} clientes`}
+          {visibles.length === clientes.length
+            ? `${clientes.length} ${clientes.length === 1 ? "cliente" : "clientes"}`
+            : `${visibles.length} de ${clientes.length} ${clientes.length === 1 ? "cliente" : "clientes"}`}
         </p>
       </div>
 
@@ -250,6 +254,7 @@ function Cifra({
   etiqueta,
   valor,
   alerta = false,
+  bien,
   activa = false,
   onClick,
 }: {
@@ -257,6 +262,8 @@ function Cifra({
   etiqueta: string;
   valor: string;
   alerta?: boolean;
+  /** Cuando el 0 es una buena noticia: un texto en verde que lo explica. */
+  bien?: string;
   activa?: boolean;
   onClick?: () => void;
 }) {
@@ -264,10 +271,15 @@ function Cifra({
     <>
       <Icon icon={icono} width={30} aria-hidden />
       <span className="text-left">
-        <span className="block text-lg font-bold text-ink" style={alerta ? { color: "var(--amber)" } : undefined}>
+        <span className="block text-lg font-bold text-ink" style={alerta ? { color: "var(--amber)" } : bien ? { color: "var(--green)" } : undefined}>
           {valor}
         </span>
         <span className="block text-xs text-ink-mute">{etiqueta}</span>
+        {bien && (
+          <span className="block text-[11px] font-semibold" style={{ color: "var(--green)" }}>
+            {bien}
+          </span>
+        )}
       </span>
     </>
   );
