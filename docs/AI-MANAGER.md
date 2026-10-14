@@ -121,6 +121,23 @@ A un costado de cada renglón están los 5 botones de acción:
 
 Un globito en 💵 y 📋 te dice cuántos movimientos hay. **Una sola vez**, para encender el historial, corre en Supabase el archivo `supabase/migrations/0013_polizas_historial.sql` (Valeri sigue funcionando igual aunque todavía no lo corras; solo no se anotarán los pagos).
 
+## Camila · Venta cruzada y expediente único del cliente
+
+**Camila** (menú «Tu equipo digital») junta en un solo **expediente** todo lo de cada cliente: sus pólizas de **Valeri** y las que se conocen por tus **reportes de AXA** (2022 en adelante), aunque AXA escriba el nombre en otro orden o lo corte. Con eso ve **qué seguro tiene y cuál le falta** y te dice a quién ofrecerle qué. No usa IA y no manda nada sola: tú envías el WhatsApp.
+
+| Pestaña | Qué ves |
+|---|---|
+| **Oportunidades** | «Para hoy» (un solo seguro por cliente, los mejores primero), clientes que no han contestado, cotizaciones en curso, los que esperan respuesta y a quién **no** se le ofrece ahora (y por qué). Cada oferta trae sus razones y el WhatsApp ya escrito. |
+| **Mapa de cobertura** | Cada cliente contra los 5 ramos: ✓ lo tiene (con su renovación), ↺ lo tuvo, — nunca lo ha tenido. Arriba de cada ramo, cuántos clientes lo tienen. |
+| **Clientes** | Tus expedientes y **datos por completar** (WhatsApp, ramo, fecha de nacimiento, renovación, correo). Toca uno para ver todas sus pólizas y corregir sus datos. |
+| **Mis mensajes** | Los 6 textos de WhatsApp (uno por seguro y uno para reactivar), editables con `{saludo}`, `{nombre}`, `{tiene}`, `{seguro}` y `{tuvo}`. |
+
+**Los candados:** solo clientes con una póliza vigente · nunca a quien tiene un pago vencido (primero se cobra) · nunca a quien marcaste «no ofrecer» ni a quien dijo que no hasta la fecha que elegiste · lo que ya ofreciste espera una semana antes de insistir · empresas solo vida, GMM y autos. El puntaje sube si ya tiene seguros afines, si una de sus pólizas renueva pronto o si su edad lo hace buena idea.
+
+**Para encenderla (una sola vez):** corre en Supabase `supabase/migrations/0016_venta_cruzada.sql`; luego, en una terminal dentro de la carpeta del CRM, `node scripts/importar-libro-axa.cjs` (ensayo: solo cuenta) y `node scripts/importar-libro-axa.cjs --guardar`. Cuando lleguen reportes nuevos de AXA, vuelve a correrlo: no duplica nada. Las pólizas nuevas que captures en Valeri se ligan solas a su cliente.
+
+**Lo que hay que saber:** «vigente» en lo que viene de AXA es una **estimación** por sus pagos (¿sigue pagando al ritmo que le toca?); la renovación solo se conoce en pólizas anuales; tus reportes de AXA no distinguen el **ahorro** del seguro de Vida; y los nombres que AXA cortó se corrigen a mano en el expediente.
+
 ## Lo que NO se instaló del kit (y por qué)
 
 `skills-recomendadas.md` sugiere apps externas (QuickBooks, Xero, Ramp, Zapier, Lindy, Looker Studio, Gemini en Sheets) y “enchufes” MCP. Son cuentas de terceros y la mayoría de pago; no hacen falta para lo que ya tienes. Se conectan solo si tú lo decides, una a la vez, empezando por la que de verdad uses (por ejemplo, Google Sheets si llevas ahí tus números).
@@ -135,4 +152,5 @@ Un globito en 💵 y 📋 te dice cuántos movimientos hay. **Una sola vez**, pa
 - `supabase/migrations/0004_cobranza.sql`, `lib/cobranza.ts`, `lib/cobranza-reglas.ts`, `app/api/crm/cobranza` — Valeri (cartera, reglas de cobro y mensajes).
 - `lib/reportes-reglas.ts`, `lib/reportes.ts`, `app/api/crm/reportes` — Clara (reportes mensual y trimestral; sin tabla nueva: lee las que ya existen).
 - `supabase/migrations/0013_polizas_historial.sql`, `lib/polizas-historial.ts`, `lib/historial-reglas.ts`, `lib/clientes-reglas.ts`, `app/api/crm/historial`, `components/crm/clientes/*` — Clara · Clientes por ramo (listado, historial de pagos, renovaciones y endosos; las renovaciones pasan por `app/api/crm/cobranza`, acción `renovar`).
+- `supabase/migrations/0016_venta_cruzada.sql`, `lib/cruzada-reglas.ts`, `lib/cruzada.ts`, `lib/clientes.ts`, `lib/clientes-plan.ts`, `lib/clientes-agrupar.ts`, `lib/libro-axa-reglas.ts`, `scripts/importar-libro-axa.cjs`, `app/api/crm/cruzada`, `components/crm/Camila.tsx`, `components/crm/camila/*` — Camila (venta cruzada, expediente único del cliente y libro de AXA).
 - `components/crm/PanelMando.tsx`, `components/crm/panel/*`, `components/crm/ManagerIA.tsx`, `components/crm/Cobranza.tsx`, `components/crm/cobranza/*`, `components/crm/ReportesClara.tsx`, `components/crm/AvatarEmpleado.tsx`, `components/crm/SlotRoro.tsx` — pantallas.

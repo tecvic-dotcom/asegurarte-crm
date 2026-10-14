@@ -11,7 +11,7 @@ import "server-only";
  * tabla (RLS cerrado) y las rutas exigen sesión de ADMIN.
  */
 import { adminDb, cloudReady } from "./supabase-admin";
-import { faltaMigracion, MENSAJE_MIGRACION_COBRANZA, MENSAJE_MIGRACION_PRIMER_PAGO, MigracionPendienteError } from "./migracion";
+import { faltaMigracion, MENSAJE_MIGRACION_COBRANZA, MENSAJE_MIGRACION_CRUZADA, MENSAJE_MIGRACION_PRIMER_PAGO, MigracionPendienteError } from "./migracion";
 import { esRamo } from "./ramos";
 import { esFechaValida, hoyLocal, maxFecha, sumarDias } from "./fechas";
 import { esPrimerPago, FORMAS_PAGO, montoDelProximoPago, siguienteFechaPago } from "./cobranza-reglas";
@@ -24,6 +24,9 @@ import type { DatosPoliza, DatosRenovacion, FormaPago, Poliza, Ramo } from "./ty
 const TABLA = "polizas";
 
 function errorDeBase(error: { code?: string; message: string }): Error {
+  if (faltaMigracion(error) && /cliente_id/.test(error.message)) {
+    return new MigracionPendienteError(MENSAJE_MIGRACION_CRUZADA, "0016_venta_cruzada.sql");
+  }
   if (faltaMigracion(error) && /primer_pago/.test(error.message)) {
     return new MigracionPendienteError(MENSAJE_MIGRACION_PRIMER_PAGO, "0015_primer_pago.sql");
   }
@@ -60,6 +63,7 @@ function normalizar(f: Record<string, unknown>): Poliza {
     ultimo_pago: fecha(f.ultimo_pago),
     ultimo_recordatorio: f.ultimo_recordatorio ? String(f.ultimo_recordatorio) : null,
     lead_id: f.lead_id ? String(f.lead_id) : null,
+    cliente_id: f.cliente_id ? String(f.cliente_id) : null,
     notas: String(f.notas ?? ""),
     creado_en: String(f.creado_en ?? ""),
     actualizado_en: String(f.actualizado_en ?? ""),
@@ -107,6 +111,7 @@ function semilla(): StoreCobranza {
     ultimo_pago: null,
     ultimo_recordatorio: null,
     lead_id: null,
+    cliente_id: null,
     notas: "",
     creado_en: new Date().toISOString(),
     actualizado_en: new Date().toISOString(),
@@ -179,6 +184,7 @@ export async function crearPoliza(datos: DatosPoliza): Promise<Poliza> {
     promesa_fecha: null,
     ultimo_pago: null,
     ultimo_recordatorio: null,
+    cliente_id: null,
     creado_en: ahora,
     actualizado_en: ahora,
   };
@@ -389,4 +395,25 @@ export function marcarRecordada(id: string): Promise<Poliza | null> {
 /** Cancelada = Valeri deja de cobrarla (se puede reactivar). */
 export function cancelarPoliza(id: string, cancelada: boolean): Promise<Poliza | null> {
   return actualizar(id, { estatus_manual: cancelada ? "cancelada" : null, promesa_fecha: null });
+}
+
+/** Liga pólizas a su cliente (expediente único). Agrupa por cliente para hacer pocas consultas. */
+export async function ligarPolizasACliente(asignaciones: { id: string; cliente_id: string }[]): Promise<void> {
+  if (!asignaciones.length) return;
+  const porCliente = new Map<string, string[]>();
+  for (const a of asignaciones) porCliente.set(a.cliente_id, [...(porCliente.get(a.cliente_id) ?? []), a.id]);
+  if (cloudReady && adminDb) {
+    for (const [cliente_id, ids] of porCliente) {
+      for (let i = 0; i < ids.length; i += 200) {
+        const { error } = await adminDb.from(TABLA).update({ cliente_id }).in("id", ids.slice(i, i + 200));
+        if (error) throw errorDeBase(error);
+      }
+    }
+    return;
+  }
+  const s = store();
+  for (const a of asignaciones) {
+    const p = s.polizas.find((x) => x.id === a.id);
+    if (p) p.cliente_id = a.cliente_id;
+  }
 }

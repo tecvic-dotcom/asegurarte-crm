@@ -57,3 +57,6 @@ export const MENSAJE_MIGRACION_PRIMER_PAGO =
 
 export const MENSAJE_MIGRACION_DOBLE_FACTOR =
   "Falta un paso para encender el doble factor de tu CRM: abre Supabase → SQL Editor → New query, pega el archivo supabase/migrations/0014_doble_factor.sql y dale Run.";
+
+export const MENSAJE_MIGRACION_CRUZADA =
+  "Falta un paso para encender a Camila (venta cruzada) y los expedientes de tus clientes: abre Supabase → SQL Editor → New query, pega el archivo supabase/migrations/0016_venta_cruzada.sql y dale Run.";

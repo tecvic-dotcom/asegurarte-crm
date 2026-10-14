@@ -43,6 +43,7 @@ const MUESTRA: Poliza = {
   ultimo_pago: null,
   ultimo_recordatorio: null,
   lead_id: null,
+  cliente_id: null,
   notas: "",
   creado_en: "",
   actualizado_en: "",

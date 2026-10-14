@@ -350,6 +350,8 @@ export interface Poliza {
   ultimo_pago: string | null;
   ultimo_recordatorio: string | null;
   lead_id: string | null;
+  /** A qué cliente (expediente único) pertenece. Null = todavía sin ligar. */
+  cliente_id: string | null;
   notas: string;
   creado_en: string;
   actualizado_en: string;
@@ -375,6 +377,68 @@ export type DatosPoliza = Pick<
   | "notas"
   | "lead_id"
 >;
+
+// ----------------------------------------------------------------------------
+// VENTA CRUZADA: Camila y el expediente único del cliente
+// ----------------------------------------------------------------------------
+
+export type TipoCliente = "persona" | "empresa";
+
+/** Una persona o empresa a la que le has vendido (o le puedes vender): su expediente único. */
+export interface Cliente {
+  id: string;
+  nombre: string;
+  tipo: TipoCliente;
+  whatsapp: string;
+  correo: string;
+  fecha_nacimiento: string | null;
+  genero: Genero | null;
+  codigo_postal: string | null;
+  /** El prospecto con el que se le vendió o cotizó. */
+  lead_id: string | null;
+  /** true = no ofrecerle venta cruzada. */
+  no_ofrecer: boolean;
+  notas: string;
+  creado_en: string;
+  actualizado_en: string;
+}
+
+/** Lo que se puede capturar o corregir de un cliente. */
+export type DatosCliente = Pick<
+  Cliente,
+  "nombre" | "tipo" | "whatsapp" | "correo" | "fecha_nacimiento" | "genero" | "codigo_postal" | "no_ofrecer" | "notas"
+>;
+
+/** Una póliza que se conoce por tus reportes de AXA (no es cobranza: solo sirve para saber qué tiene el cliente). */
+export interface LibroPoliza {
+  numero: string;
+  cliente_id: string | null;
+  asegurado: string;
+  ramo: Ramo;
+  subramo: string;
+  aseguradora: string;
+  inicio_vigencia: string | null;
+  ultimo_pago: string | null;
+  /** Próxima renovación; solo viene cuando se pudo saber con confianza. */
+  renovacion: string | null;
+  pagos_12m: number;
+  prima_ultima: number;
+  vigente: boolean;
+  fuente: string;
+}
+
+export type EstadoOferta = "pendiente" | "ofrecida" | "cotizada" | "cerrada" | "no_interesa";
+
+/** Cómo va lo que se le ofreció a un cliente en un ramo. */
+export interface EstadoCruzada {
+  cliente_id: string;
+  ramo: Ramo;
+  estado: EstadoOferta;
+  ofrecida_en: string | null;
+  volver_a_ofrecer: string | null;
+  nota: string;
+  actualizado_en: string;
+}
 
 export type EstadoCobro = "vencida" | "promesa_vencida" | "promesa" | "por_vencer" | "al_corriente" | "sin_fecha" | "cancelada";
 

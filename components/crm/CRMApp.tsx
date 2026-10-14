@@ -22,6 +22,7 @@ import { PanelAdmin } from "./PanelAdmin";
 import { PolizasAdjuntas } from "./PolizasAdjuntas";
 import { SeguimientoSofi } from "./SeguimientoSofi";
 import { ReportesClara } from "./ReportesClara";
+import { Camila } from "./Camila";
 import { MenuLateral, opcionDe, type Pestana } from "./MenuLateral";
 import { polizaDesdeVenta } from "@/lib/poliza-desde-venta";
 import type { Cotizacion } from "@/lib/cotizaciones-reglas";
@@ -161,6 +162,14 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
     setVezPoliza((v) => v + 1);
     setSeleccion(null);
     setPestana("valeri");
+    window.scrollTo({ top: 0 });
+  }
+
+  /** Desde Camila: abre Cotizaciones con el prospecto de ese cliente (se recargan los prospectos por si se creó uno nuevo). */
+  async function cotizarPorId(leadId: string) {
+    await recargar();
+    setCotizarLeadId(leadId);
+    setPestana("cotizaciones");
     window.scrollTo({ top: 0 });
   }
 
@@ -313,6 +322,8 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
               onAbrirUsado={() => setPolizaAEditar(null)}
             />
           )}
+
+          {esAdmin && pestana === "camila" && <Camila onCotizar={cotizarPorId} onVerPoliza={verPolizaEnValeri} />}
 
           {esAdmin && pestana === "clara" && <ReportesClara />}
 

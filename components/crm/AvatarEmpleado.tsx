@@ -2,13 +2,14 @@
 
 import { useId } from "react";
 
-export type VarianteAvatar = "roro" | "valeri" | "clara" | "sofi";
+export type VarianteAvatar = "roro" | "valeri" | "clara" | "sofi" | "camila";
 
 const ESTILO: Record<VarianteAvatar, { claro: string; oscuro: string; ojos: string; nombre: string }> = {
   roro: { claro: "var(--brand-2)", oscuro: "var(--brand)", ojos: "var(--sky)", nombre: "Robert, tu gerente digital" },
   valeri: { claro: "var(--violet)", oscuro: "var(--brand)", ojos: "var(--ink)", nombre: "Valeri, tu cobranza digital" },
   clara: { claro: "var(--sky)", oscuro: "var(--brand-deep)", ojos: "var(--ink)", nombre: "Clara, tus reportes" },
   sofi: { claro: "var(--green)", oscuro: "var(--brand)", ojos: "var(--ink)", nombre: "Sofi, tu seguimiento a prospectos" },
+  camila: { claro: "var(--amber)", oscuro: "var(--violet)", ojos: "var(--ink)", nombre: "Camila, tu venta cruzada" },
 };
 
 interface AvatarEmpleadoProps {
@@ -22,7 +23,8 @@ interface AvatarEmpleadoProps {
 /**
  * La cara de tus empleados digitales: flotan, parpadean y "hablan".
  * Robert (gerente) lleva corbata; Valeri (cobranza) lleva audífonos para sus llamadas;
- * Clara (reportes) lleva lentes y su portapapeles con la gráfica; Sofi (seguimiento) lleva coleta y su globo de mensaje.
+ * Clara (reportes) lleva lentes y su portapapeles con la gráfica; Sofi (seguimiento) lleva coleta y su globo de mensaje;
+ * Camila (venta cruzada) lleva dos colitas y su gafete con el «+» de «¿te falta algo más?».
  * Solo SVG + animaciones baratas (transform/opacity): fluido en el celular.
  */
 export function AvatarEmpleado({ variante = "roro", tamano = 72, hablando = false, enLinea = true }: AvatarEmpleadoProps) {
@@ -47,6 +49,12 @@ export function AvatarEmpleado({ variante = "roro", tamano = 72, hablando = fals
         ) : variante === "valeri" ? (
           // Diadema de los audífonos
           <path d="M17 34 Q17 6 50 6 Q83 6 83 34" fill="none" strokeWidth="4" strokeLinecap="round" style={{ stroke: "var(--ink-soft)" }} />
+        ) : variante === "camila" ? (
+          // Dos colitas de Camila
+          <g style={{ fill: e.oscuro }}>
+            <circle cx="20" cy="20" r="8" />
+            <circle cx="80" cy="20" r="8" />
+          </g>
         ) : variante === "sofi" ? (
           // Coleta de lado de Sofi
           <g style={{ fill: e.oscuro }}>
@@ -99,6 +107,13 @@ export function AvatarEmpleado({ variante = "roro", tamano = 72, hablando = fals
             <rect x="40" y="91" width="4" height="5" rx="1" style={{ fill: "var(--brand)" }} />
             <rect x="48" y="87" width="4" height="9" rx="1" style={{ fill: "var(--brand)" }} />
             <rect x="56" y="84" width="4" height="12" rx="1" className="roro-foco" style={{ fill: "var(--green)" }} />
+          </g>
+        ) : variante === "camila" ? (
+          // Gafete con el «+» de la venta cruzada
+          <g>
+            <rect x="33" y="79" width="34" height="20" rx="5" style={{ fill: "var(--plata)" }} />
+            <rect x="46.5" y="83" width="7" height="12" rx="2" className="roro-foco" style={{ fill: "var(--green)" }} />
+            <rect x="41" y="86" width="18" height="6" rx="2" className="roro-foco" style={{ fill: "var(--green)" }} />
           </g>
         ) : variante === "sofi" ? (
           // Globo de mensaje con puntos "escribiendo"

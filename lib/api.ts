@@ -41,11 +41,16 @@ import type {
   DatosEvento,
   DatosRenovacion,
   TipoEvento,
+  Cliente,
+  DatosCliente,
+  EstadoCruzada,
 } from "./types";
 
 import type { MotivoCobro } from "./cobranza-reglas";
 import type { ConteoEventos } from "./historial-reglas";
 import type { MotivoSeguimiento } from "./seguimiento-reglas";
+import type { ClaveMensaje, DatosCamila, DatosEstado } from "./cruzada-reglas";
+import type { ResultadoSincronizar } from "./clientes-plan";
 import type { Cotizacion, DatosCotizacion, EstadoCotizacion, LecturaCotizacion } from "./cotizaciones-reglas";
 import type { DatosPendiente, Pendiente } from "./pendientes-reglas";
 
@@ -583,4 +588,40 @@ export async function adminExportCSV(code: string): Promise<string> {
   const res = await fetch("/api/admin?recurso=csv", { headers: adminHeaders(code), cache: "no-store" });
   if (!res.ok) throw new Error("No se pudo exportar.");
   return res.text();
+}
+
+// ---- Venta cruzada: Camila y los expedientes de clientes (solo admin) ----
+
+export async function crmCamila(): Promise<DatosCamila> {
+  const res = await fetch("/api/crm/cruzada", { cache: "no-store" });
+  return (await jsonOErrorCRM(res)) as DatosCamila;
+}
+
+async function accionCruzada(cuerpo: Record<string, unknown>): Promise<Record<string, unknown>> {
+  return (await jsonOErrorCRM(await postJSON("/api/crm/cruzada", cuerpo))) as Record<string, unknown>;
+}
+
+/** «Armar expedientes»: junta cada póliza con su cliente y crea los que falten. */
+export async function crmSincronizarClientes(): Promise<ResultadoSincronizar> {
+  return ((await accionCruzada({ accion: "sincronizar" })) as { resultado: ResultadoSincronizar }).resultado;
+}
+
+/** Corrige datos de un cliente (se manda solo lo que cambia). */
+export async function crmEditarCliente(id: string, cliente: Partial<DatosCliente>): Promise<Cliente> {
+  return ((await accionCruzada({ accion: "cliente", id, cliente })) as { cliente: Cliente }).cliente;
+}
+
+/** Anota cómo va lo que se le ofreció a un cliente en un ramo. */
+export async function crmEstadoOferta(cliente_id: string, estado: DatosEstado): Promise<EstadoCruzada> {
+  return ((await accionCruzada({ accion: "estado", cliente_id, estado })) as { estado: EstadoCruzada }).estado;
+}
+
+/** Guarda tu texto para un mensaje de Camila; con texto null vuelve al base. */
+export async function crmGuardarMensajeCruzada(clave: ClaveMensaje, texto: string | null): Promise<void> {
+  await accionCruzada({ accion: "mensaje", clave, texto });
+}
+
+/** Prepara la cotización de otro seguro: devuelve el prospecto con el que se abre Cotizaciones. */
+export async function crmCotizarCliente(cliente_id: string, ramo: Ramo): Promise<{ lead_id: string; creado: boolean }> {
+  return (await accionCruzada({ accion: "cotizar", cliente_id, ramo })) as { lead_id: string; creado: boolean };
 }

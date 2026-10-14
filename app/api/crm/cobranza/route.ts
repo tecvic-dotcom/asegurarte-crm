@@ -12,6 +12,7 @@ import {
   renovarPoliza,
 } from "@/lib/cobranza";
 import { resumenCobranza, validarPoliza } from "@/lib/cobranza-reglas";
+import { vincularPoliza } from "@/lib/clientes";
 import { validarRenovacion } from "@/lib/historial-reglas";
 import { esFechaValida, hoyLocal } from "@/lib/fechas";
 import { MigracionPendienteError } from "@/lib/migracion";
@@ -63,7 +64,10 @@ export async function POST(req: Request): Promise<Response> {
       case "crear": {
         const r = validarPoliza(body.poliza);
         if (!r.ok) return Response.json({ error: r.error }, { status: 422 });
-        return Response.json({ poliza: await crearPoliza(r.datos) });
+        const creada = await crearPoliza(r.datos);
+        // Su expediente de cliente: se liga a su cliente (o se crea). No estorba el guardado.
+        await vincularPoliza(creada);
+        return Response.json({ poliza: creada });
       }
       case "editar": {
         if (!body.id) break;
