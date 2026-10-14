@@ -9,6 +9,7 @@ import { TablaLeads } from "./TablaLeads";
 import { LeadPanel } from "./LeadPanel";
 import { Contactos } from "./Contactos";
 import { ClientesGanados } from "./ClientesGanados";
+import { ProspectosPerdidos } from "./ProspectosPerdidos";
 import { PendientesDia } from "./PendientesDia";
 import { Cotizaciones } from "./Cotizaciones";
 import { Seguimiento } from "./Seguimiento";
@@ -112,10 +113,13 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
     return q ? leads.filter((l) => l.nombre.toLowerCase().includes(q) || l.correo.toLowerCase().includes(q) || l.whatsapp.includes(q)) : leads;
   }, [leads, busca]);
 
-  // Los clientes ganados viven en su propio apartado: no salen en Prospectos ni al elegir a quién cotizarle.
+  // Los clientes ganados y los perdidos viven en su propio apartado: Prospectos muestra solo a quien sigues atendiendo.
+  // (Los perdidos NO se borran: se quedan en «Perdidos» para ofrecerles otro seguro.)
   const pipeline = useMemo(() => leads.filter((l) => l.etapa === "ganado"), [leads]);
-  const prospectos = useMemo(() => leads.filter((l) => l.etapa !== "ganado"), [leads]);
-  const prospectosFiltrados = useMemo(() => filtrados.filter((l) => l.etapa !== "ganado"), [filtrados]);
+  const perdidos = useMemo(() => leads.filter((l) => l.etapa === "perdido"), [leads]);
+  const enAtencion = (l: Lead) => l.etapa !== "ganado" && l.etapa !== "perdido";
+  const prospectos = useMemo(() => leads.filter((l) => l.etapa !== "ganado" && l.etapa !== "perdido"), [leads]);
+  const prospectosFiltrados = useMemo(() => filtrados.filter(enAtencion), [filtrados]);
   const esAdmin = sesion.rol === "admin";
   const actual = opcionDe(pestana);
 
@@ -124,8 +128,8 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
     if (id !== pestana) setBusca("");
     // Entrar a Clientes ganados desde el menú lo muestra completo; solo el Panel de Mando lo abre ya filtrado.
     if (id === "clientes") setClientesSinRamo(false);
-    // Un filtro «Cliente ganado» pendiente dejaría vacío Prospectos (los ganados ya no viven ahí).
-    if (id === "contactos" && filtroEtapa === "ganado") setFiltroEtapa("todas");
+    // Un filtro «Cliente ganado» o «Perdido» pendiente dejaría vacío Prospectos (esos ya no viven ahí).
+    if (id === "contactos" && (filtroEtapa === "ganado" || filtroEtapa === "perdido")) setFiltroEtapa("todas");
     // Tocar «Cotizaciones» estando ya en Cotizaciones te regresa a la lista (si no, el botón del menú parecía no hacer nada).
     if (id === "cotizaciones" && pestana === "cotizaciones") setCotizarLeadId(null);
     setPestana(id);
@@ -248,12 +252,17 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
                 className="rounded-xl border border-line bg-glass px-3 py-2 text-sm text-ink"
               >
                 <option value="todas">Todas las etapas</option>
-                {ETAPAS.filter((et) => !(pestana === "contactos" && et.id === "ganado")).map((et) => (
+                {ETAPAS.filter((et) => !(pestana === "contactos" && (et.id === "ganado" || et.id === "perdido"))).map((et) => (
                   <option key={et.id} value={et.id}>
                     {et.nombre}
                   </option>
                 ))}
               </select>
+              )}
+              {pestana === "contactos" && perdidos.length > 0 && (
+                <button type="button" onClick={() => elegir("perdidos")} className="btn-ghost ml-auto px-3 py-2 text-sm" title="Los perdidos no se borran: están en su propio apartado">
+                  <Icon icon="flat-color-icons:undo" width={18} aria-hidden /> Perdidos ({perdidos.length})
+                </button>
               )}
               {pestana === "tablero" && (
                 <div className="ml-auto flex rounded-xl border border-line bg-glass p-1">
@@ -286,6 +295,7 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
             />
           )}
           {pestana === "contactos" && <Contactos leads={prospectosFiltrados} onAbrir={setSeleccion} onCambio={recargar} />}
+          {pestana === "perdidos" && <ProspectosPerdidos leads={leads} onAbrir={setSeleccion} onCotizar={cotizarA} onReactivar={(l) => void mover(l.id, "contactado")} />}
           {pestana === "clientes" && <ClientesGanados leads={leads} esAdmin={esAdmin} soloSinRamo={clientesSinRamo} onAbrir={setSeleccion} onCotizar={cotizarA} />}
           {pestana === "reportes" && <EmbudoVentas leads={buscados} todos={leads} busca={busca} onQuitarBusqueda={() => setBusca("")} onMover={mover} onAbrir={setSeleccion} />}
           {esAdmin && pestana === "panel" && <PanelMando onVerSinRamo={verGanadasSinRamo} />}

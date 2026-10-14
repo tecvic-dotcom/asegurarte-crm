@@ -9,6 +9,7 @@ export type Pestana =
   | "cotizaciones"
   | "contactos"
   | "clientes"
+  | "perdidos"
   | "reportes"
   | "panel"
   | "crecimiento"
@@ -45,6 +46,7 @@ export const GRUPOS_MENU: GrupoMenu[] = [
       { id: "cotizaciones", nombre: "Cotizaciones", pista: "Compáralas y mándalas por WhatsApp", icono: "flat-color-icons:calculator" },
       { id: "contactos", nombre: "Prospectos", pista: "A quién sigues atendiendo", icono: "flat-color-icons:grid" },
       { id: "clientes", nombre: "Clientes ganados", pista: "Tus ventas cerradas y su póliza", icono: "flat-color-icons:approval" },
+      { id: "perdidos", nombre: "Perdidos", pista: "Para ofrecerles otro seguro", icono: "flat-color-icons:undo" },
       { id: "reportes", nombre: "Embudo de ventas", pista: "Arrastra cada prospecto de etapa", icono: "flat-color-icons:statistics" },
     ],
   },
