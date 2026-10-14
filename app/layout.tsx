@@ -35,7 +35,9 @@ const anton = Anton({
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
-const TITULO = "Roberto Rodríguez · Asegurarte — Asesoría gratis para tu embarazo";
+const TITULO = "Roberto Rodriguez - Especialista en Asegurarte";
+// Dirección que se muestra al compartir el sitio.
+const URL_COMPARTIR = "https://www.especialistaenasegurarte.lat/roberto";
 const DESCRIPCION =
   "Agenda una asesoría gratis de 30 minutos y sabe qué seguro necesita tu familia para que tu bebé nazca protegido desde el primer día.";
 
@@ -43,14 +45,14 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE),
   title: {
     default: TITULO,
-    template: "%s · Roberto Rodríguez Asegurarte",
+    template: "%s · Roberto Rodriguez - Especialista en Asegurarte",
   },
   description: DESCRIPCION,
   openGraph: {
     title: TITULO,
     description: DESCRIPCION,
-    url: SITE,
-    siteName: "Roberto Rodríguez · Asegurarte",
+    url: URL_COMPARTIR,
+    siteName: "Roberto Rodriguez - Especialista en Asegurarte",
     locale: "es_MX",
     type: "website",
     // ⚠️ Reemplaza /img/og-image.png por una imagen real de tu marca (1200x630)
