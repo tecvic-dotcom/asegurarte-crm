@@ -16,7 +16,7 @@ import { adminDb, cloudReady } from "./supabase-admin";
 import { normCorreo, normWhatsapp, normCodigoPostal } from "./normalize";
 import { validarLead, validarLeadManual } from "./validacion";
 import { hashPassword, verifyPassword } from "./auth";
-import { faltaMigracion, MENSAJE_MIGRACION, MENSAJE_MIGRACION_DOBLE_FACTOR, MigracionPendienteError } from "./migracion";
+import { etapaNoPermitida, faltaMigracion, MENSAJE_MIGRACION, MENSAJE_MIGRACION_DOBLE_FACTOR, MENSAJE_MIGRACION_STAND_BY, MigracionPendienteError } from "./migracion";
 import { esRamo } from "./ramos";
 import { ubicacionDeCP } from "./codigos-postales";
 import type {
@@ -134,7 +134,7 @@ function seed(): Store {
     lead("ld_2", "Roberto Cárdenas", "roberto@cardenas.mx", "5587654321", "propuesta", 42000, "Recomendación", "", 26),
     lead("ld_3", "María Fernanda López", "mafer.lopez@hotmail.com", "5511223344", "ganado", 25000, "Facebook", "facebook", 96),
     lead("ld_4", "Jorge Treviño", "jorge.trevino@gmail.com", "8112349876", "nuevo", 0, "Landing", "google", 1),
-    lead("ld_5", "Claudia Ríos", "claudia@boutique.mx", "3339998877", "contactado", 15000, "Facebook", "facebook", 24),
+    lead("ld_5", "Claudia Ríos", "claudia@boutique.mx", "3339998877", "stand_by", 15000, "Facebook", "facebook", 24),
     lead("ld_6", "Héctor Domínguez", "hector.dom@gmail.com", "5566778899", "cita", 20000, "Google", "google", 5),
     lead("ld_7", "Patricia Guzmán", "paty.guzman@gmail.com", "4412345566", "perdido", 0, "Instagram", "instagram", 336),
     lead("ld_8", "Andrés Salinas", "andres@salinas.mx", "8113344556", "propuesta", 68000, "Recomendación", "", 48),
@@ -302,7 +302,7 @@ export async function crearLead(input: NuevoLead, geo?: Partial<Geo>): Promise<C
   return { ok: true, duplicado: false, id };
 }
 
-const ETAPAS_VALIDAS: EtapaId[] = ["nuevo", "contactado", "cita", "propuesta", "ganado", "perdido"];
+const ETAPAS_VALIDAS: EtapaId[] = ["nuevo", "cita", "propuesta", "stand_by", "ganado", "perdido"];
 
 /**
  * Prospecto capturado a mano desde el CRM (sin formulario público, sin consentimiento en pantalla:
@@ -364,6 +364,7 @@ export async function crearLeadManual(input: NuevoLeadManual, autor: string, asi
       void _c;
       ({ data, error } = await adminDb.from("leads").insert(sinCamposNuevos).select("id").limit(1));
     }
+    if (etapaNoPermitida(error, input.etapa)) throw new MigracionPendienteError(MENSAJE_MIGRACION_STAND_BY, "0018_stand_by.sql");
     if (error) throw new Error(error.message);
     const id = (data?.[0] as { id: string } | undefined)?.id;
     if (id) await adminDb.from("actividad").insert({ lead_id: id, tipo: "nota", texto: textoActividad, autor });
@@ -473,6 +474,7 @@ export async function actualizarLead(
       void _c;
       ({ data, error } = await adminDb.from("leads").update(sinCamposNuevos).eq("id", id).select("*").limit(1));
     }
+    if (etapaNoPermitida(error, patch.etapa)) throw new MigracionPendienteError(MENSAJE_MIGRACION_STAND_BY, "0018_stand_by.sql");
     if (error) throw new Error(error.message);
     const lead = data?.[0] ? conCamposManager(data[0] as Lead) : null;
     if (lead && patch.etapa !== undefined) {
@@ -561,7 +563,7 @@ export async function agregarActividad(
 export async function metricas(): Promise<Metricas> {
   const leads = await listLeads();
   const hoy = new Date().toISOString().slice(0, 10);
-  const porEtapa = (["nuevo", "contactado", "cita", "propuesta", "ganado", "perdido"] as EtapaId[]).map(
+  const porEtapa = (["nuevo", "cita", "propuesta", "stand_by", "ganado", "perdido"] as EtapaId[]).map(
     (etapa) => ({ etapa, count: leads.filter((l) => l.etapa === etapa).length }),
   );
   const ganados = leads.filter((l) => l.etapa === "ganado").length;

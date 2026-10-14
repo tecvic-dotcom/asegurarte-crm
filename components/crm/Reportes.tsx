@@ -5,7 +5,7 @@ import { Icon } from "@iconify/react";
 import { ETAPAS, moneda } from "@/lib/crm-data";
 import type { Lead, EtapaId } from "@/lib/types";
 
-const ORDEN_EMBUDO: EtapaId[] = ["nuevo", "contactado", "cita", "propuesta", "ganado"];
+const ORDEN_EMBUDO: EtapaId[] = ["nuevo", "cita", "propuesta", "stand_by", "ganado"];
 
 /** Embudo de conversión + ventas del mes + leads por origen. */
 export function Reportes({ leads }: { leads: Lead[] }) {

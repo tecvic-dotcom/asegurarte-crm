@@ -7,9 +7,10 @@ import type { Etapa, EtapaId } from "./types";
 
 export const ETAPAS: Etapa[] = [
   { id: "nuevo", nombre: "Nuevo", color: "var(--sky)" },
-  { id: "contactado", nombre: "Contactado", color: "var(--violet)" },
   { id: "cita", nombre: "Cita agendada", color: "var(--brand-2)" },
   { id: "propuesta", nombre: "Propuesta enviada", color: "var(--amber)" },
+  // Ya decidió comprar, pero falta información o documentos para cerrar la venta.
+  { id: "stand_by", nombre: "Stand by", color: "var(--violet)" },
   { id: "ganado", nombre: "Cliente ganado", color: "var(--green)" },
   { id: "perdido", nombre: "Perdido", color: "var(--ink-mute)" },
 ];

@@ -10,7 +10,7 @@ import { adminDb, cloudReady } from "./supabase-admin";
 import { faltaMigracion, MENSAJE_MIGRACION_SEGUIMIENTO, MigracionPendienteError } from "./migracion";
 import type { MotivoSeguimiento } from "./seguimiento-reglas";
 
-const MOTIVOS: MotivoSeguimiento[] = ["nuevo", "contactado", "cita", "propuesta", "ultimo_intento"];
+const MOTIVOS: MotivoSeguimiento[] = ["nuevo", "cita", "propuesta", "stand_by", "ultimo_intento"];
 export function esMotivoSeguimiento(v: unknown): v is MotivoSeguimiento {
   return typeof v === "string" && (MOTIVOS as string[]).includes(v);
 }

@@ -25,7 +25,7 @@ interface PanelEnvioProps {
 const DIAS_SEGUIMIENTO = [1, 2, 3, 5, 7];
 /** Etapas en las que tiene sentido pasar a "Propuesta enviada" (no se retrocede a un cliente ganado). */
 // «perdido» cuenta: si le mandas una cotización a un prospecto perdido (venta cruzada), vuelve a estar en juego.
-const ETAPAS_PREVIAS = ["nuevo", "contactado", "cita", "perdido"];
+const ETAPAS_PREVIAS = ["nuevo", "cita", "perdido"];
 
 /** El mensaje de WhatsApp listo para revisar, editar y mandar. */
 export function PanelEnvio({ lead, cotizaciones, firma, onEnviar, onCerrar }: PanelEnvioProps) {

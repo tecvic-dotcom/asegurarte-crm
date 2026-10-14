@@ -185,7 +185,7 @@ export async function leadParaCotizar(cliente_id: string, ramo: Ramo, autor: str
   }
 
   const r = await crearLeadManual(
-    { nombre: cliente.nombre, whatsapp: w, correo: c, etapa: "contactado", ramo, valor: 0, origen: "Cliente actual", notas: "Venta cruzada: se le cotiza otro seguro (Camila)." },
+    { nombre: cliente.nombre, whatsapp: w, correo: c, etapa: "nuevo", ramo, valor: 0, origen: "Cliente actual", notas: "Venta cruzada: se le cotiza otro seguro (Camila)." },
     autor,
     null,
   );

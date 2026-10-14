@@ -10,21 +10,24 @@ import { saludoPara } from "./cobranza-reglas";
 import { diasEntre, fechaLocal } from "./fechas";
 import type { EtapaId, Lead, Ramo } from "./types";
 
-export type EtapaSeguimiento = Extract<EtapaId, "nuevo" | "contactado" | "cita" | "propuesta">;
+export type EtapaSeguimiento = Extract<EtapaId, "nuevo" | "cita" | "propuesta" | "stand_by">;
 
 /** Cada cuántos días SIN contacto le toca seguimiento a un prospecto, según su etapa. */
 export const DIAS_PARA_SEGUIR: Record<EtapaSeguimiento, number> = {
   nuevo: 0, // un prospecto nuevo se contacta el mismo día
-  contactado: 2,
   cita: 2,
   propuesta: 3,
+  stand_by: 2, // ya decidió y solo falta información: no se enfría
 };
 
+/** Un prospecto nuevo al que ya le escribiste o llamaste vuelve a tocar a los 2 días sin contacto. */
+const DIAS_NUEVO_YA_CONTACTADO = 2;
+
 /** Desde cuántos días sin contacto ya es urgente. */
-const DIAS_URGENTE: Record<EtapaSeguimiento, number> = { nuevo: 1, contactado: 4, cita: 4, propuesta: 6 };
+const DIAS_URGENTE: Record<EtapaSeguimiento, number> = { nuevo: 1, cita: 4, propuesta: 6, stand_by: 4 };
 
 /** Qué tan cerca del dinero está cada etapa (pesa en el orden de la lista). */
-const PESO_ETAPA: Record<EtapaSeguimiento, number> = { nuevo: 35, contactado: 20, cita: 30, propuesta: 40 };
+const PESO_ETAPA: Record<EtapaSeguimiento, number> = { nuevo: 35, cita: 30, propuesta: 40, stand_by: 45 };
 
 /** Pasados estos días en propuesta, el mensaje cambia a "último intento". */
 export const DIAS_ULTIMO_INTENTO = 14;
@@ -41,6 +44,8 @@ export interface PendienteSeguimiento {
   /** Frase corta de por qué le toca hoy. */
   motivo: string;
   ultimoIntento: boolean;
+  /** Prospecto nuevo al que todavía nadie le ha escrito ni llamado. */
+  sinContactar: boolean;
 }
 
 export interface ResumenSeguimiento {
@@ -56,7 +61,15 @@ export interface ResumenSeguimiento {
 }
 
 function esEtapaSeguimiento(e: EtapaId): e is EtapaSeguimiento {
-  return e === "nuevo" || e === "contactado" || e === "cita" || e === "propuesta";
+  return e === "nuevo" || e === "cita" || e === "propuesta" || e === "stand_by";
+}
+
+/**
+ * ¿Alguien ya trabajó a este prospecto? Cada contacto que anotas (o cambio que haces) mueve «actualizado_en»;
+ * si sigue igual a «creado_en» (con 10 segundos de margen), el prospecto está tal cual llegó, sin que nadie le haya escrito.
+ */
+function yaTrabajado(lead: Lead): boolean {
+  return Date.parse(lead.actualizado_en) - Date.parse(lead.creado_en) > 10_000;
 }
 
 function plural(n: number, uno: string, varios: string): string {
@@ -82,11 +95,14 @@ export function listaDeSeguimiento(leads: Lead[], hoy: string): PendienteSeguimi
     if (!esEtapaSeguimiento(lead.etapa)) continue;
     const etapa = lead.etapa;
     const dias = Math.max(0, diasEntre(fechaLocal(lead.actualizado_en), hoy));
-    if (dias < DIAS_PARA_SEGUIR[etapa]) continue;
-    const urgencia: Urgencia = dias >= DIAS_URGENTE[etapa] ? "alta" : "media";
+    const sinContactar = etapa === "nuevo" && !yaTrabajado(lead);
+    const tocaDesde = etapa === "nuevo" && !sinContactar ? DIAS_NUEVO_YA_CONTACTADO : DIAS_PARA_SEGUIR[etapa];
+    if (dias < tocaDesde) continue;
+    const urgente = etapa === "nuevo" && !sinContactar ? DIAS_URGENTE.cita : DIAS_URGENTE[etapa];
+    const urgencia: Urgencia = dias >= urgente ? "alta" : "media";
     const ultimoIntento = etapa === "propuesta" && dias >= DIAS_ULTIMO_INTENTO;
     const motivo =
-      etapa === "nuevo"
+      sinContactar
         ? dias === 0
           ? "Prospecto nuevo de hoy: contáctalo en la primera hora"
           : `Sigue sin contacto desde hace ${dias} ${plural(dias, "día", "días")}`
@@ -99,6 +115,7 @@ export function listaDeSeguimiento(leads: Lead[], hoy: string): PendienteSeguimi
       dias,
       urgencia,
       ultimoIntento,
+      sinContactar,
       motivo,
       prioridad: PESO_ETAPA[etapa] + Math.min(dias, 20) * 2 + Math.min(lead.valor / 5000, 10),
     });
@@ -110,7 +127,7 @@ export function resumenSeguimiento(leads: Lead[], hoy: string): ResumenSeguimien
   const activos = leads.filter((l) => esEtapaSeguimiento(l.etapa));
   const lista = listaDeSeguimiento(leads, hoy);
   const urgentes = lista.filter((p) => p.urgencia === "alta").length;
-  const nuevosSinContacto = lista.filter((p) => p.etapa === "nuevo").length;
+  const nuevosSinContacto = lista.filter((p) => p.sinContactar).length;
   const sinWhatsapp = lista.filter((p) => !whatsappDe(p.lead)).length;
   let frase: string;
   if (!activos.length) {
@@ -146,20 +163,20 @@ export type MotivoSeguimiento = EtapaSeguimiento | "ultimo_intento";
 export const PLANTILLAS_SEGUIMIENTO: Record<MotivoSeguimiento, string> = {
   nuevo:
     "{saludo}, soy Roberto Rodríguez de Asegurarte 👋 Vi que pediste información de {seguro}. ¿Tienes 5 minutos hoy para platicarte las opciones? Sin compromiso.",
-  contactado:
-    "{saludo}, ¿cómo estás? Te escribo para dar seguimiento a lo que platicamos de {seguro}. ¿Pudiste pensarlo o te surgió alguna duda? Con gusto la resolvemos.",
   cita: "{saludo}, ¿cómo vas? Quería confirmar nuestra cita para platicar de {seguro}. ¿Sigue en pie? Si necesitas moverla, dime qué día te acomoda.",
   propuesta:
     "{saludo}, ¿pudiste revisar la propuesta de {seguro} que te envié? Si quieres, te explico cualquier parte o ajustamos la cobertura al presupuesto que traes.",
+  stand_by:
+    "{saludo}, ¿cómo estás? Ya casi tenemos listo {seguro}. Para poder cerrarlo solo me falta la información que quedamos; ¿me la puedes mandar hoy? Así lo dejamos protegido cuanto antes.",
   ultimo_intento:
     "{saludo}, no quiero ser insistente: hace unos días te envié la propuesta de {seguro}. ¿Sigues interesado o prefieres que lo dejemos para más adelante? Cualquiera de las dos respuestas me sirve.",
 };
 
 export const MOTIVOS_SEGUIMIENTO: { id: MotivoSeguimiento; nombre: string; cuando: string }[] = [
-  { id: "nuevo", nombre: "Prospecto nuevo", cuando: "Acaba de entrar y aún no lo contactas" },
-  { id: "contactado", nombre: "Contactado", cuando: "Ya hablaron y lleva 2 días sin contacto" },
+  { id: "nuevo", nombre: "Prospecto nuevo", cuando: "Acaba de entrar y aún no lo contactas (o ya lo contactaste y lleva 2 días sin respuesta)" },
   { id: "cita", nombre: "Con cita", cuando: "Tiene cita agendada y lleva 2 días sin contacto" },
   { id: "propuesta", nombre: "Propuesta enviada", cuando: "Le mandaste la propuesta y lleva 3 días sin respuesta" },
+  { id: "stand_by", nombre: "Stand by", cuando: "Ya decidió y solo falta información; lleva 2 días sin contacto" },
   { id: "ultimo_intento", nombre: "Último intento", cuando: `La propuesta lleva ${DIAS_ULTIMO_INTENTO} días o más sin respuesta` },
 ];
 

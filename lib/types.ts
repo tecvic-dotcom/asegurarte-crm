@@ -6,9 +6,9 @@
 
 export type EtapaId =
   | "nuevo"
-  | "contactado"
   | "cita"
   | "propuesta"
+  | "stand_by"
   | "ganado"
   | "perdido";
 

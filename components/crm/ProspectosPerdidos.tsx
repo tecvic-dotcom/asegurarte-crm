@@ -18,7 +18,7 @@ interface ProspectosPerdidosProps {
   onAbrir: (id: string) => void;
   /** Ofrecerle otro seguro (venta cruzada): abre Cotizaciones con este prospecto ya elegido. */
   onCotizar: (lead: Lead) => void;
-  /** Lo regresa a Prospectos (etapa «Contactado»). */
+  /** Lo regresa a Prospectos (etapa «Nuevo»). */
   onReactivar: (lead: Lead) => void;
 }
 
@@ -52,7 +52,7 @@ export function ProspectosPerdidos({ leads, onAbrir, onCotizar, onReactivar }: P
 
   function reactivar(l: Lead) {
     onReactivar(l);
-    setAviso(`${l.nombre} volvió a Prospectos, en la etapa «Contactado».`);
+    setAviso(`${l.nombre} volvió a Prospectos, en la etapa «Nuevo».`);
     window.clearTimeout(reloj.current);
     reloj.current = window.setTimeout(() => setAviso(null), 5000);
   }

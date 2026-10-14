@@ -313,7 +313,7 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
             />
           )}
           {pestana === "contactos" && <Contactos leads={prospectosFiltrados} onAbrir={setSeleccion} onCambio={recargar} />}
-          {pestana === "perdidos" && <ProspectosPerdidos leads={leads} onAbrir={setSeleccion} onCotizar={cotizarA} onReactivar={(l) => void mover(l.id, "contactado")} />}
+          {pestana === "perdidos" && <ProspectosPerdidos leads={leads} onAbrir={setSeleccion} onCotizar={cotizarA} onReactivar={(l) => void mover(l.id, "nuevo")} />}
           {pestana === "clientes" && <ClientesGanados leads={leads} esAdmin={esAdmin} soloSinRamo={clientesSinRamo} onAbrir={setSeleccion} onCotizar={cotizarA} />}
           {pestana === "reportes" && <EmbudoVentas leads={buscados} todos={leads} busca={busca} onQuitarBusqueda={() => setBusca("")} onMover={mover} onAbrir={setSeleccion} />}
           {esAdmin && pestana === "panel" && <PanelMando onVerSinRamo={verGanadasSinRamo} />}

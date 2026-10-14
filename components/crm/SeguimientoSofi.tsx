@@ -62,7 +62,7 @@ export function SeguimientoSofi({ leads, onAbrir, onCambio }: SofiProps) {
     relojAviso.current = window.setTimeout(() => setAviso(null), 4500);
   }
 
-  /** Anota el contacto en el expediente (eso reinicia los días sin contacto) y avanza al prospecto nuevo. */
+  /** Anota el contacto en el expediente (eso reinicia los días sin contacto). */
   async function registrar(p: PendienteSeguimiento, que: Hecho) {
     const id = p.lead.id;
     setHechos((h) => ({ ...h, [id]: que }));
@@ -76,8 +76,6 @@ export function SeguimientoSofi({ leads, onAbrir, onCambio }: SofiProps) {
           que === "whatsapp" ? "mensaje" : "llamada",
           que === "whatsapp" ? "Sofi: WhatsApp de seguimiento enviado." : "Sofi: llamada de seguimiento realizada.",
         );
-        // Un prospecto nuevo ya contactado pasa a "Contactado".
-        if (p.etapa === "nuevo") await crmMover(id, "contactado");
       }
       onCambio();
     } catch (e) {
@@ -161,7 +159,7 @@ export function SeguimientoSofi({ leads, onAbrir, onCambio }: SofiProps) {
       )}
 
       <p className="text-xs text-ink-mute">
-        Cuándo le toca a cada quien: nuevos, el mismo día · contactados y con cita, a los 2 días sin contacto · con propuesta, a los 3. Cada vez que
+        Cuándo le toca a cada quien: nuevos, el mismo día (si ya los contactaste, a los 2 días) · con cita y en Stand by, a los 2 días sin contacto · con propuesta, a los 3. Cada vez que
         anotas un contacto, el conteo de días vuelve a cero.
       </p>
     </section>
