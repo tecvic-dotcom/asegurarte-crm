@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
-import { crmCamila, crmCotizarCliente, crmEstadoOferta, crmSincronizarClientes, ErrorCRM } from "@/lib/api";
+import { crmCamila, crmCotizarCliente, crmEditarCliente, crmEstadoOferta, crmSincronizarClientes, ErrorCRM } from "@/lib/api";
 import { fechaNumerica, hoyLocal } from "@/lib/fechas";
 import { infoRamo } from "@/lib/ramos";
 import {
@@ -11,6 +11,7 @@ import {
   claveDe,
   paraHoy,
   resumenCruzada,
+  whatsappValido,
   type ClaveMensaje,
   type DatosCamila,
   type DatosMensaje,
@@ -62,6 +63,7 @@ export function Camila({ onCotizar, onVerPoliza }: CamilaProps) {
   const [seccion, setSeccion] = useState<Seccion>("oportunidades");
   const [busca, setBusca] = useState("");
   const [filtroRamo, setFiltroRamo] = useState<Ramo | "todos">("todos");
+  const [soloWa, setSoloWa] = useState(false);
   const [abierto, setAbierto] = useState<string | null>(null);
   const [ocupados, setOcupados] = useState<string[]>([]);
   const [sincronizando, setSincronizando] = useState(false);
@@ -106,14 +108,17 @@ export function Camila({ onCotizar, onVerPoliza }: CamilaProps) {
 
   // Las listas de la pestaña Oportunidades.
   const q = busca.trim().toLowerCase();
+  // Los reportes de AXA no traen teléfonos: la mayoría de los clientes llega sin WhatsApp y se captura desde su tarjeta.
+  const tieneWhatsapp = useCallback((clienteId: string) => whatsappValido(clientes.get(clienteId)?.whatsapp ?? ""), [clientes]);
+  const conWhatsapp = useMemo(() => resultado.lista.filter((o) => o.principal && tieneWhatsapp(o.cliente_id)).length, [resultado.lista, tieneWhatsapp]);
   const visibles = useMemo(
-    () => resultado.lista.filter((o) => (filtroRamo === "todos" || o.ramo === filtroRamo) && (!q || o.nombre.toLowerCase().includes(q))),
-    [resultado.lista, filtroRamo, q],
+    () => resultado.lista.filter((o) => (filtroRamo === "todos" || o.ramo === filtroRamo) && (!q || o.nombre.toLowerCase().includes(q)) && (!soloWa || tieneWhatsapp(o.cliente_id))),
+    [resultado.lista, filtroRamo, q, soloWa, tieneWhatsapp],
   );
   const hoyLista = useMemo(() => {
-    if (filtroRamo === "todos" && !q) return paraHoy(resultado.lista);
+    if (filtroRamo === "todos" && !q) return paraHoy(visibles);
     return visibles.filter((o) => o.situacion === "para_hoy").slice(0, TOPE_LISTA);
-  }, [resultado.lista, visibles, filtroRamo, q]);
+  }, [visibles, filtroRamo, q]);
   const idsHoy = new Set(hoyLista.map((o) => `${o.cliente_id}:${o.ramo}`));
   const masOportunidades = visibles.filter((o) => o.situacion === "para_hoy" && !idsHoy.has(`${o.cliente_id}:${o.ramo}`));
   const seguimiento = visibles.filter((o) => o.situacion === "seguimiento");
@@ -180,6 +185,18 @@ export function Camila({ onCotizar, onVerPoliza }: CamilaProps) {
     }
   }
 
+  /** Captura el WhatsApp desde la tarjeta. Devuelve el motivo si no se pudo guardar. */
+  async function guardarWhatsapp(clienteId: string, numero: string): Promise<string | null> {
+    if (!whatsappValido(numero)) return "Escribe los 10 dígitos de su WhatsApp.";
+    try {
+      const c = await crmEditarCliente(clienteId, { whatsapp: numero });
+      setDatos((d) => (d ? { ...d, clientes: d.clientes.map((x) => (x.id === c.id ? c : x)) } : d));
+      return null;
+    } catch (e) {
+      return (e as Error).message || "No pude guardarlo. Intenta de nuevo.";
+    }
+  }
+
   async function armar() {
     setSincronizando(true);
     setSync(null);
@@ -209,7 +226,9 @@ export function Camila({ onCotizar, onVerPoliza }: CamilaProps) {
     : datos.clientes.length === 0
       ? "Todavía no tengo expedientes de tus clientes. Pulsa «Armar expedientes» y junto cada póliza con su dueño."
       : hoyLista.length > 0
-        ? `Hay ${resumen.paraHoy} ${resumen.paraHoy === 1 ? "cliente" : "clientes"} a quien conviene ofrecerle otro seguro hoy. Empieza por ${hoyLista[0].nombre}: ${infoRamo(hoyLista[0].ramo).corto}.`
+        ? `Hay ${resumen.paraHoy} ${resumen.paraHoy === 1 ? "cliente" : "clientes"} a quien conviene ofrecerle otro seguro hoy. Empieza por ${hoyLista[0].nombre}: ${infoRamo(hoyLista[0].ramo).corto}.${
+            hoyLista.some((o) => tieneWhatsapp(o.cliente_id)) ? "" : " Ninguno tiene WhatsApp todavía: captúralo en su tarjeta y queda listo para enviar."
+          }`
         : seguimiento.length > 0
           ? `Hoy no hay ofertas nuevas, pero ${seguimiento.length} ${seguimiento.length === 1 ? "cliente no ha contestado" : "clientes no han contestado"} lo que les ofreciste.`
           : "Hoy no hay a quién ofrecerle algo nuevo: ya les ofreciste a todos o están esperando su respuesta.";
@@ -229,6 +248,7 @@ export function Camila({ onCotizar, onVerPoliza }: CamilaProps) {
         onEstado={(estado, volver) => void cambiarEstado(o, estado, volver ?? null)}
         onCotizar={() => void cotizar(o.cliente_id, o.ramo)}
         onCopiar={(t) => void copiar(t)}
+        onWhatsapp={(numero) => guardarWhatsapp(o.cliente_id, numero)}
       />
     );
   };
@@ -360,6 +380,16 @@ export function Camila({ onCotizar, onVerPoliza }: CamilaProps) {
                     {r === "todos" ? "Todos los seguros" : infoRamo(r).corto}
                   </button>
                 ))}
+                <button
+                  type="button"
+                  aria-pressed={soloWa}
+                  data-testid="filtro-whatsapp"
+                  onClick={() => setSoloWa((v) => !v)}
+                  className={`rounded-xl border px-3 py-1.5 text-sm ${soloWa ? "border-brand-2 bg-brand/20 text-ink" : "border-line text-ink-soft hover:border-brand-2"}`}
+                  title="Muestra solo a quienes ya tienen WhatsApp: listos para enviar"
+                >
+                  <Icon icon="logos:whatsapp-icon" width={14} className="mr-1 inline" aria-hidden /> Solo con WhatsApp ({conWhatsapp})
+                </button>
               </div>
 
               <Lista titulo="Para hoy" vacio={resultado.lista.length ? "No hay nada nuevo que ofrecer con este filtro." : "Cuando haya clientes con póliza vigente, aquí te digo a quién ofrecerle qué."} id="lista-hoy" items={hoyLista.map(cardDe)} />

@@ -228,7 +228,7 @@ function puntuar(e: EntradaCliente, ramo: Ramo, tipo: TipoOportunidad, hoy: stri
     .filter((x): x is { p: PolizaDeCliente; d: number } => x !== null && x.d >= 0 && x.d <= 90)
     .sort((a, b) => a.d - b.d)[0];
   if (proxima) {
-    const que = proxima.p.ramo ? `su ${NOMBRE_RAMO[proxima.p.ramo]}` : "una de sus pólizas";
+    const que = proxima.p.ramo ? seguroDe(proxima.p.ramo).replace(/^tu /, "su ") : "una de sus pólizas";
     if (proxima.d <= 30) {
       puntos += 20;
       razones.push(`${capitalizarPrimera(que)} renueva en ${proxima.d} ${proxima.d === 1 ? "día" : "días"}: ya van a hablar`);
@@ -238,9 +238,10 @@ function puntuar(e: EntradaCliente, ramo: Ramo, tipo: TipoOportunidad, hoy: stri
     }
   }
 
-  if (vigentes.length >= 2) {
+  // Cuenta tipos de seguro distintos, no pólizas: dos pólizas de GMM de una misma familia no son dos productos.
+  if (tiene.length >= 2) {
     puntos += 10;
-    razones.push(`Ya tiene ${vigentes.length} seguros contigo`);
+    razones.push(`Ya tiene ${tiene.length} tipos de seguro contigo`);
   }
 
   const edad = edadDe(e.cliente.fecha_nacimiento, hoy);

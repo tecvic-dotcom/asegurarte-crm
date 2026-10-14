@@ -25,11 +25,16 @@ interface TarjetaOportunidadProps {
   onEstado: (estado: EstadoOferta, volverAOfrecer?: string | null) => void;
   onCotizar: () => void;
   onCopiar: (texto: string) => void;
+  /** Guarda el WhatsApp del cliente desde su tarjeta; devuelve el motivo si no se pudo. */
+  onWhatsapp: (numero: string) => Promise<string | null>;
 }
 
 /** Una oportunidad de venta cruzada: a quién, qué seguro, por qué, y el WhatsApp listo para mandar. */
-export function TarjetaOportunidad({ o, cliente, mensajes, ocupado, onAbrir, onEnviado, onEstado, onCotizar, onCopiar }: TarjetaOportunidadProps) {
+export function TarjetaOportunidad({ o, cliente, mensajes, ocupado, onAbrir, onEnviado, onEstado, onCotizar, onCopiar, onWhatsapp }: TarjetaOportunidadProps) {
   const [completo, setCompleto] = useState(false);
+  const [wa, setWa] = useState("");
+  const [errorWa, setErrorWa] = useState<string | null>(null);
+  const [guardandoWa, setGuardandoWa] = useState(false);
   const [descartando, setDescartando] = useState(false);
   const texto = mensajeCruzada(o, mensajes);
   const liga = ligaWhatsAppCliente(cliente.whatsapp, texto);
@@ -144,9 +149,39 @@ export function TarjetaOportunidad({ o, cliente, mensajes, ocupado, onAbrir, onE
               <Icon icon="logos:whatsapp-icon" width={18} aria-hidden /> {o.situacion === "seguimiento" ? "Dar seguimiento" : o.situacion === "esperando" ? "Escribirle de nuevo" : "Enviar WhatsApp"}
             </a>
           ) : (
-            <button type="button" onClick={onAbrir} className="btn-ghost col-span-2 w-full text-sm sm:w-auto">
-              <Icon icon="logos:whatsapp-icon" width={18} aria-hidden /> Agregar su WhatsApp
-            </button>
+            <form
+              className="col-span-2 flex w-full flex-wrap items-center gap-2 sm:w-auto"
+              data-testid="captura-whatsapp"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                setGuardandoWa(true);
+                setErrorWa(null);
+                const motivo = await onWhatsapp(wa);
+                if (motivo) setErrorWa(motivo);
+                setGuardandoWa(false);
+              }}
+            >
+              <input
+                inputMode="tel"
+                value={wa}
+                onChange={(e) => {
+                  setWa(e.target.value);
+                  setErrorWa(null);
+                }}
+                placeholder="WhatsApp: 81 1234 5678"
+                aria-label={`WhatsApp de ${cliente.nombre}`}
+                className="field-input"
+                style={{ width: "auto", flex: "1 1 170px", minWidth: 0 }}
+              />
+              <button type="submit" disabled={guardandoWa || ocupado} className="btn-primary px-4 py-2 text-sm">
+                <Icon icon="logos:whatsapp-icon" width={18} aria-hidden /> {guardandoWa ? "Guardando…" : "Guardar WhatsApp"}
+              </button>
+              {errorWa && (
+                <span className="w-full text-sm" style={{ color: "var(--red)" }} role="alert">
+                  {errorWa}
+                </span>
+              )}
+            </form>
           )}
           {o.situacion !== "cotizada" && (
             <button type="button" disabled={ocupado} onClick={onCotizar} className="btn-ghost w-full text-sm sm:w-auto">

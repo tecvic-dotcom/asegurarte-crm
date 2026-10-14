@@ -136,6 +136,8 @@ Un globito en 💵 y 📋 te dice cuántos movimientos hay. **Una sola vez**, pa
 
 **Para encenderla (una sola vez):** corre en Supabase `supabase/migrations/0016_venta_cruzada.sql`; luego, en una terminal dentro de la carpeta del CRM, `node scripts/importar-libro-axa.cjs` (ensayo: solo cuenta) y `node scripts/importar-libro-axa.cjs --guardar`. Cuando lleguen reportes nuevos de AXA, vuelve a correrlo: no duplica nada. Las pólizas nuevas que captures en Valeri se ligan solas a su cliente.
 
+**El WhatsApp:** los reportes de AXA no traen teléfonos, así que la mayoría de tus clientes entra a Camila sin WhatsApp. Cada tarjeta trae un campo para escribirlo ahí mismo («Guardar WhatsApp») y queda listo para enviar; el botón **Solo con WhatsApp** deja a la vista solo a quienes ya se les puede escribir. Para cotizarle a alguien necesitas su WhatsApp o su correo.
+
 **Lo que hay que saber:** «vigente» en lo que viene de AXA es una **estimación** por sus pagos (¿sigue pagando al ritmo que le toca?); la renovación solo se conoce en pólizas anuales; tus reportes de AXA no distinguen el **ahorro** del seguro de Vida; y los nombres que AXA cortó se corrigen a mano en el expediente.
 
 ## Lo que NO se instaló del kit (y por qué)
