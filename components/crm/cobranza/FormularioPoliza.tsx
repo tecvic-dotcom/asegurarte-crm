@@ -56,6 +56,10 @@ interface FormularioPolizaProps {
   onCancelar: () => void;
   onCancelarPoliza?: (cancelada: boolean) => void;
   onBorrar?: () => void;
+  /** Las demás pólizas de tu cartera: para avisarte si estás por repetir una. */
+  otras?: Poliza[];
+  /** Abre la póliza que ya existe para editarla (en vez de crear otra). */
+  onEditarOtra?: (p: Poliza) => void;
 }
 
 export function FormularioPoliza({
@@ -67,15 +71,33 @@ export function FormularioPoliza({
   onCancelar,
   onCancelarPoliza,
   onBorrar,
+  otras = [],
+  onEditarOtra,
 }: FormularioPolizaProps) {
   const [c, setC] = useState<Campos>(() => camposDe(poliza ?? inicial, !poliza));
   const [errorLocal, setErrorLocal] = useState<string | null>(null);
   const set = (cambios: Partial<Campos>) => setC((x) => ({ ...x, ...cambios }));
 
+  // Este cliente (la misma venta) ya tiene una póliza en Valeri: casi siempre lo que quieres es editarla, no crear otra.
+  const delMismoCliente = !poliza && c.lead_id ? otras.filter((p) => p.lead_id === c.lead_id) : [];
+
   function guardar() {
     const r = validarPoliza({ ...c, ramo: c.ramo || null });
     if (!r.ok) {
       setErrorLocal(r.error);
+      return;
+    }
+    // Dos pólizas con el mismo número son casi seguro un duplicado: se pregunta antes de guardar.
+    const numero = r.datos.numero.trim().toUpperCase();
+    const repetida = numero ? otras.find((p) => p.numero.trim().toUpperCase() === numero) : undefined;
+    if (
+      repetida &&
+      !window.confirm(
+        `Ya tienes otra póliza con el número ${repetida.numero} (${repetida.asegurado}). Normalmente lo correcto es editar la que ya existe para no duplicarla.
+
+¿Guardar esta de todos modos?`,
+      )
+    ) {
       return;
     }
     setErrorLocal(null);
@@ -90,6 +112,27 @@ export function FormularioPoliza({
       <p className="mb-4 text-xs text-ink-mute">
         Con el nombre, el WhatsApp y la fecha límite del próximo pago, Valeri ya puede trabajar. Lo demás es opcional.
       </p>
+
+      {delMismoCliente.length > 0 && onEditarOtra && (
+        <div
+          className="mb-4 rounded-xl border p-3 text-sm text-ink-soft"
+          style={{ borderColor: "color-mix(in srgb, var(--amber) 55%, transparent)" }}
+          role="status"
+          data-testid="aviso-ya-tiene-poliza"
+        >
+          <p>
+            <strong className="text-ink">Este cliente ya tiene su póliza en Valeri.</strong> Si es la misma, edítala en vez de crear otra:
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {delMismoCliente.slice(0, 3).map((p) => (
+              <button key={p.id} type="button" onClick={() => onEditarOtra(p)} className="btn-ghost px-3 py-2 text-xs">
+                Editar {p.numero || "esa póliza"} · {FORMAS_PAGO.find((f) => f.id === p.forma_pago)?.nombre ?? ""}
+              </button>
+            ))}
+          </div>
+          <p className="mt-2 text-xs text-ink-mute">Si es otra póliza distinta del mismo cliente, sigue llenando este formulario.</p>
+        </div>
+      )}
 
       <div className="grid gap-3 sm:grid-cols-2">
         <Campo id="pz-asegurado" etiqueta="Asegurado *" className="sm:col-span-2">

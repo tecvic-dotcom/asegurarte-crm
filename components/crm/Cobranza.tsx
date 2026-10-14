@@ -240,6 +240,8 @@ export function Cobranza({ prefill, onPrefillUsado }: CobranzaProps) {
               : undefined
           }
           onBorrar={form.poliza ? () => void borrar(form.poliza!) : undefined}
+          otras={(polizas ?? []).filter((p) => p.id !== form.poliza?.id)}
+          onEditarOtra={(p) => abrirFormulario({ poliza: p, inicial: null })}
         />
       )}
 
