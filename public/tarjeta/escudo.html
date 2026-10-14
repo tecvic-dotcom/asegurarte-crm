@@ -622,7 +622,6 @@ footer a{color:var(--ink-soft)}
       if (c.plazo) tips.push(["<strong>Pensando en los tuyos,</strong> conviene que el seguro dure al menos " + anios(c.plazo) + ", lo que les piensas apoyar."]);
     }
     if (fuma) tips.push(["<strong>Fumar sube tu prima.</strong> Si ya dejaste de fumar hace más de un año, díselo a Roberto: puede cambiar tu tarifa.", "warn"]);
-    if (e + c.plazo > 70) tips.push(["<strong>Por tu edad,</strong> Roberto revisará el plazo máximo que permite la aseguradora.", "warn"]);
     tips.push(["<strong>Tu prima exacta</strong> la calcula Roberto con tu edad y tus datos reales. Sin costo y sin compromiso."]);
     $("tips").innerHTML = tips.map((t) => "<li" + (t[1] ? ' class="warn"' : "") + ">" + t[0] + "</li>").join("");
 
