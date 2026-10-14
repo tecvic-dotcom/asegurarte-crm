@@ -44,12 +44,14 @@ import type {
   Cliente,
   DatosCliente,
   EstadoCruzada,
+  Parentesco,
 } from "./types";
 
 import type { MotivoCobro } from "./cobranza-reglas";
 import type { ConteoEventos } from "./historial-reglas";
 import type { MotivoSeguimiento } from "./seguimiento-reglas";
 import type { ClaveMensaje, DatosCamila, DatosEstado } from "./cruzada-reglas";
+import type { DatosFamiliar } from "./cruzada-familia";
 import type { ResultadoSincronizar } from "./clientes-plan";
 import type { Cotizacion, DatosCotizacion, EstadoCotizacion, LecturaCotizacion } from "./cotizaciones-reglas";
 import type { DatosPendiente, Pendiente } from "./pendientes-reglas";
@@ -622,6 +624,26 @@ export async function crmGuardarMensajeCruzada(clave: ClaveMensaje, texto: strin
 }
 
 /** Prepara la cotización de otro seguro: devuelve el prospecto con el que se abre Cotizaciones. */
-export async function crmCotizarCliente(cliente_id: string, ramo: Ramo): Promise<{ lead_id: string; creado: boolean }> {
-  return (await accionCruzada({ accion: "cotizar", cliente_id, ramo })) as { lead_id: string; creado: boolean };
+export async function crmCotizarCliente(cliente_id: string, ramo: Ramo): Promise<{ lead_id: string; creado: boolean; estado: EstadoCruzada }> {
+  return (await accionCruzada({ accion: "cotizar", cliente_id, ramo })) as { lead_id: string; creado: boolean; estado: EstadoCruzada };
+}
+
+/** «Lo contrató»: cierra la oferta y, si hay un prospecto abierto de esa cotización, lo pasa a Cliente ganado (suma a tu meta). */
+export async function crmVenderCruzada(cliente_id: string, ramo: Ramo): Promise<{ estado: EstadoCruzada; porProspecto: boolean; lead_id: string | null }> {
+  return (await accionCruzada({ accion: "vender", cliente_id, ramo })) as { estado: EstadoCruzada; porProspecto: boolean; lead_id: string | null };
+}
+
+/** Liga (o desliga, con titular null) a un cliente con su familia. */
+export async function crmFamilia(id: string, titular_id: string | null, parentesco: Parentesco | null): Promise<Cliente> {
+  return ((await accionCruzada({ accion: "familia", id, familia: { titular_id, parentesco } })) as { cliente: Cliente }).cliente;
+}
+
+/** Crea un familiar (todavía sin pólizas) ligado a su titular. */
+export async function crmCrearFamiliar(titular_id: string, familiar: Partial<DatosFamiliar>): Promise<Cliente> {
+  return ((await accionCruzada({ accion: "crear_familiar", titular_id, familiar })) as { cliente: Cliente }).cliente;
+}
+
+/** Marca un momento de confianza como atendido (cumpleaños, revisión, pago, referidos) para que deje de aparecer. */
+export async function crmMomentoHecho(cliente_id: string, clave: string): Promise<void> {
+  await accionCruzada({ accion: "momento", cliente_id, clave });
 }

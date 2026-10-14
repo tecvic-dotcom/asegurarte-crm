@@ -165,6 +165,15 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
     window.scrollTo({ top: 0 });
   }
 
+  /** Desde Camila: abre Valeri con una póliza nueva ya prellenada con los datos del cliente que acaba de contratar. */
+  function agregarPolizaDeCliente(datos: Partial<DatosPoliza>) {
+    setPolizaNueva(datos);
+    setPolizaAEditar(null);
+    setVezPoliza((v) => v + 1);
+    setPestana("valeri");
+    window.scrollTo({ top: 0 });
+  }
+
   /** Desde Camila: abre Cotizaciones con el prospecto de ese cliente (se recargan los prospectos por si se creó uno nuevo). */
   async function cotizarPorId(leadId: string) {
     await recargar();
@@ -323,7 +332,7 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
             />
           )}
 
-          {esAdmin && pestana === "camila" && <Camila onCotizar={cotizarPorId} onVerPoliza={verPolizaEnValeri} />}
+          {esAdmin && pestana === "camila" && <Camila onCotizar={cotizarPorId} onVerPoliza={verPolizaEnValeri} onAgregarPoliza={agregarPolizaDeCliente} />}
 
           {esAdmin && pestana === "clara" && <ReportesClara />}
 

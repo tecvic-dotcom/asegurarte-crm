@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
-import { crmCamila, crmCotizarCliente, crmEditarCliente, crmEstadoOferta, crmSincronizarClientes, ErrorCRM } from "@/lib/api";
+import { crmCamila, crmCotizarCliente, crmEditarCliente, crmEstadoOferta, crmMomentoHecho, crmSincronizarClientes, crmVenderCruzada, ErrorCRM } from "@/lib/api";
 import { fechaNumerica, hoyLocal } from "@/lib/fechas";
 import { infoRamo } from "@/lib/ramos";
 import {
@@ -17,26 +17,34 @@ import {
   type DatosMensaje,
   type Oportunidad,
 } from "@/lib/cruzada-reglas";
+import { calcularEmbudo, calcularMomentos, type Momento } from "@/lib/cruzada-momentos";
+import { temporadasActivas } from "@/lib/cruzada-temporadas";
 import type { ResultadoSincronizar } from "@/lib/clientes-plan";
-import type { Cliente, EstadoCruzada, EstadoOferta, Poliza, Ramo } from "@/lib/types";
+import type { Cliente, DatosPoliza, EstadoCruzada, EstadoOferta, Poliza, Ramo } from "@/lib/types";
 import { AvatarEmpleado } from "./AvatarEmpleado";
 import { TarjetaOportunidad } from "./camila/TarjetaOportunidad";
 import { MapaCobertura } from "./camila/MapaCobertura";
 import { ListaClientes } from "./camila/ListaClientes";
 import { ExpedienteCliente } from "./camila/ExpedienteCliente";
 import { EditorMensajesCamila } from "./camila/EditorMensajesCamila";
+import { Momentos } from "./camila/Momentos";
+import { Embudo } from "./camila/Embudo";
 
 interface CamilaProps {
   /** Abre Cotizaciones con este prospecto ya elegido. */
   onCotizar: (leadId: string) => void | Promise<void>;
   /** Abre una póliza en Valeri para verla o editarla. */
   onVerPoliza: (p: Poliza) => void;
+  /** Abre Valeri con una póliza nueva ya prellenada con los datos del cliente (después de «Lo contrató»). */
+  onAgregarPoliza: (datos: Partial<DatosPoliza>) => void;
 }
 
-type Seccion = "oportunidades" | "mapa" | "clientes" | "mensajes";
+type Seccion = "oportunidades" | "momentos" | "embudo" | "mapa" | "clientes" | "mensajes";
 
 const SECCIONES: { id: Seccion; nombre: string; icono: string }[] = [
   { id: "oportunidades", nombre: "Oportunidades", icono: "flat-color-icons:idea" },
+  { id: "momentos", nombre: "Momentos", icono: "flat-color-icons:calendar" },
+  { id: "embudo", nombre: "Embudo", icono: "flat-color-icons:filled-filter" },
   { id: "mapa", nombre: "Mapa de cobertura", icono: "flat-color-icons:grid" },
   { id: "clientes", nombre: "Clientes", icono: "flat-color-icons:contacts" },
   { id: "mensajes", nombre: "Mis mensajes", icono: "flat-color-icons:edit-image" },
@@ -55,7 +63,7 @@ function reemplazarEstado(lista: EstadoCruzada[], e: EstadoCruzada): EstadoCruza
  * y cada mañana te dice a quién ofrecerle qué, por qué, y deja el WhatsApp listo. Tú lo envías; Camila no manda nada sola.
  * No usa IA: trabaja con reglas fijas, sin costo, y los datos de tus clientes no salen de tu CRM.
  */
-export function Camila({ onCotizar, onVerPoliza }: CamilaProps) {
+export function Camila({ onCotizar, onVerPoliza, onAgregarPoliza }: CamilaProps) {
   const hoy = hoyLocal();
   const [datos, setDatos] = useState<DatosCamila | null>(null);
   const [cargando, setCargando] = useState(true);
@@ -70,6 +78,8 @@ export function Camila({ onCotizar, onVerPoliza }: CamilaProps) {
   const [sync, setSync] = useState<ResultadoSincronizar | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const [verMas, setVerMas] = useState(false);
+  // La última venta que registraste con «Lo contrató»: de ahí se salta a Valeri a agregar su póliza.
+  const [venta, setVenta] = useState<{ cliente: Cliente; ramo: Ramo } | null>(null);
   const relojAviso = useRef<number | undefined>(undefined);
 
   /** Pone en pantalla lo que respondió el servidor (o por qué no pudo). */
@@ -103,6 +113,9 @@ export function Camila({ onCotizar, onVerPoliza }: CamilaProps) {
   const entradas = useMemo(() => (datos ? armarEntradas(datos.clientes, datos.polizas, datos.libro, datos.estados, hoy) : []), [datos, hoy]);
   const resultado = useMemo(() => calcularOportunidades(entradas, hoy), [entradas, hoy]);
   const resumen = useMemo(() => resumenCruzada(entradas, resultado), [entradas, resultado]);
+  const momentos = useMemo(() => calcularMomentos(entradas, hoy, datos?.momentos ?? []), [entradas, hoy, datos]);
+  const embudo = useMemo(() => calcularEmbudo(entradas, resultado, datos?.estados ?? [], hoy), [entradas, resultado, datos, hoy]);
+  const temporadas = temporadasActivas(hoy);
   const clientes = useMemo(() => new Map((datos?.clientes ?? []).map((c) => [c.id, c])), [datos]);
   const sinExpediente = datos ? datos.polizas.filter((p) => !p.cliente_id && p.estatus_manual !== "cancelada").length : 0;
 
@@ -124,15 +137,25 @@ export function Camila({ onCotizar, onVerPoliza }: CamilaProps) {
   const seguimiento = visibles.filter((o) => o.situacion === "seguimiento");
   const cotizadas = visibles.filter((o) => o.situacion === "cotizada");
   const esperando = visibles.filter((o) => o.situacion === "esperando");
+  const enPausa = visibles.filter((o) => o.situacion === "pausa");
   const retenidas = resultado.retenidas.filter((r) => !q || r.nombre.toLowerCase().includes(q));
 
   const ejemplos = useMemo(() => {
     const salida: Partial<Record<ClaveMensaje, DatosMensaje>> = {};
     for (const o of [...resultado.lista].reverse()) {
-      if (o.situacion === "para_hoy") salida[claveDe(o)] = { nombre: o.nombre, ramo: o.ramo, tipo: o.tipo, tiene: o.tiene };
+      if (o.situacion === "para_hoy") salida[claveDe(o)] = { nombre: o.nombre, ramo: o.ramo, tipo: o.tipo, tiene: o.tiene, familiar: o.familiar };
+    }
+    for (const m of [...momentos].reverse()) {
+      salida[m.mensaje] = { nombre: m.nombre, ramo: m.polizaRamo ?? "vida", tipo: "nueva", tiene: m.tiene, polizaRamo: m.polizaRamo, fecha: m.fecha };
     }
     return salida;
-  }, [resultado.lista]);
+  }, [resultado.lista, momentos]);
+
+  /** Un cliente cambió o se creó (datos, familia…): se actualiza en pantalla. */
+  const upsertCliente = useCallback(
+    (c: Cliente) => setDatos((d) => (d ? { ...d, clientes: d.clientes.some((x) => x.id === c.id) ? d.clientes.map((x) => (x.id === c.id ? c : x)) : [...d.clientes, c] } : d)),
+    [],
+  );
 
   // ---- Acciones ----
 
@@ -140,16 +163,29 @@ export function Camila({ onCotizar, onVerPoliza }: CamilaProps) {
 
   async function cambiarEstado(o: Pick<Oportunidad, "cliente_id" | "ramo" | "nombre">, estado: EstadoOferta, volver: string | null = null) {
     const clave = `${o.cliente_id}:${o.ramo}`;
+    // Quien contrata es el cliente de la oferta (en una oferta familiar, el familiar; el mensaje se le escribió al titular).
+    const quien = clientes.get(o.cliente_id);
+    const cliente = quien?.nombre ?? o.nombre;
+    if (estado === "cerrada" && !window.confirm(`¿Registrar que ${cliente} contrató ${infoRamo(o.ramo).corto}? Suma a tu meta de ${infoRamo(o.ramo).corto}.`)) return;
     marcar(clave, true);
     try {
+      if (estado === "cerrada") {
+        const r = await crmVenderCruzada(o.cliente_id, o.ramo);
+        setDatos((d) => (d ? { ...d, estados: reemplazarEstado(d.estados, r.estado) } : d));
+        if (quien) setVenta({ cliente: quien, ramo: o.ramo });
+        avisar(
+          r.porProspecto
+            ? `¡Felicidades! ${cliente} pasó a Cliente ganado y suma a tu meta de ${infoRamo(o.ramo).corto}. Ahora agrega su póliza en Valeri.`
+            : `¡Felicidades! Quedó registrada y suma a tu meta de ${infoRamo(o.ramo).corto} (el Panel la cuenta desde Camila). Ahora agrega su póliza en Valeri.`,
+        );
+        return;
+      }
       const e = await crmEstadoOferta(o.cliente_id, { ramo: o.ramo, estado, volver_a_ofrecer: volver, nota: "" });
       setDatos((d) => (d ? { ...d, estados: reemplazarEstado(d.estados, e) } : d));
       avisar(
         estado === "ofrecida"
           ? `Anotado: se lo ofreciste a ${o.nombre}. Si no contesta, Camila te lo recuerda en una semana.`
-          : estado === "cerrada"
-            ? `¡Felicidades! Cuando tengas la póliza de ${o.nombre}, agrégala en Valeri para que quede en su mapa.`
-            : estado === "no_interesa"
+          : estado === "no_interesa"
               ? `Entendido: no vuelvo a sugerirte ${infoRamo(o.ramo).corto} para ${o.nombre}${volver ? ` hasta el ${fechaNumerica(volver)}` : ""}.`
               : estado === "pendiente"
                 ? `Listo: ${infoRamo(o.ramo).corto} de ${o.nombre} vuelve a «por ofrecer».`
@@ -166,17 +202,10 @@ export function Camila({ onCotizar, onVerPoliza }: CamilaProps) {
     const clave = `${clienteId}:${ramo}`;
     marcar(clave, true);
     try {
+      // El servidor prepara el prospecto y marca la oferta como «cotizada» (así Camila no se la vuelve a ofrecer mañana; se deshace desde su tarjeta).
       const r = await crmCotizarCliente(clienteId, ramo);
-      // Ir a cotizarle ya cuenta como «cotizada» para que Camila no se lo vuelva a ofrecer mañana (se deshace desde su tarjeta).
-      const nombre = clientes.get(clienteId)?.nombre ?? "";
-      try {
-        const e = await crmEstadoOferta(clienteId, { ramo, estado: "cotizada", volver_a_ofrecer: null, nota: "" });
-        setDatos((d) => (d ? { ...d, estados: reemplazarEstado(d.estados, e) } : d));
-      } catch {
-        /* no estorba: la cotización se abre igual */
-      }
+      setDatos((d) => (d ? { ...d, estados: reemplazarEstado(d.estados, r.estado) } : d));
       setAbierto(null);
-      void nombre;
       await onCotizar(r.lead_id);
     } catch (e) {
       avisar((e as Error).message || "No pude preparar la cotización.");
@@ -189,11 +218,34 @@ export function Camila({ onCotizar, onVerPoliza }: CamilaProps) {
   async function guardarWhatsapp(clienteId: string, numero: string): Promise<string | null> {
     if (!whatsappValido(numero)) return "Escribe los 10 dígitos de su WhatsApp.";
     try {
-      const c = await crmEditarCliente(clienteId, { whatsapp: numero });
-      setDatos((d) => (d ? { ...d, clientes: d.clientes.map((x) => (x.id === c.id ? c : x)) } : d));
+      upsertCliente(await crmEditarCliente(clienteId, { whatsapp: numero }));
       return null;
     } catch (e) {
       return (e as Error).message || "No pude guardarlo. Intenta de nuevo.";
+    }
+  }
+
+  /** Atendiste un momento de confianza (mandaste el mensaje o lo diste por hecho): deja de aparecer. */
+  async function momentoHecho(m: Momento) {
+    const clave = `${m.cliente_id}|${m.clave}`;
+    marcar(clave, true);
+    try {
+      await crmMomentoHecho(m.cliente_id, m.clave);
+      const ahora = new Date().toISOString();
+      setDatos((d) =>
+        d
+          ? {
+              ...d,
+              momentos: [...d.momentos.filter((x) => !(x.cliente_id === m.cliente_id && x.clave === m.clave)), { cliente_id: m.cliente_id, clave: m.clave, hecho_en: ahora }],
+              clientes: m.tipo === "referidos" ? d.clientes.map((c) => (c.id === m.cliente_id ? { ...c, referidos_pedidos_en: ahora } : c)) : d.clientes,
+            }
+          : d,
+      );
+      avisar(m.tipo === "referidos" ? "Anotado: ya le pediste referidos. No se los vuelvo a sugerir en 90 días." : "Anotado: ese momento ya está atendido.");
+    } catch (e) {
+      avisar((e as Error).message || "No pude anotarlo. Intenta de nuevo.");
+    } finally {
+      marcar(clave, false);
     }
   }
 
@@ -231,10 +283,12 @@ export function Camila({ onCotizar, onVerPoliza }: CamilaProps) {
           }`
         : seguimiento.length > 0
           ? `Hoy no hay ofertas nuevas, pero ${seguimiento.length} ${seguimiento.length === 1 ? "cliente no ha contestado" : "clientes no han contestado"} lo que les ofreciste.`
-          : "Hoy no hay a quién ofrecerle algo nuevo: ya les ofreciste a todos o están esperando su respuesta.";
+          : momentos.length > 0
+            ? `Hoy no hay ofertas nuevas, pero tienes ${momentos.length} ${momentos.length === 1 ? "momento" : "momentos"} de confianza: cumpleaños, renovaciones por venir o pagos recientes.`
+            : "Hoy no hay a quién ofrecerle algo nuevo: ya les ofreciste a todos o están esperando su respuesta.";
 
   const cardDe = (o: Oportunidad) => {
-    const cliente = clientes.get(o.cliente_id);
+    const cliente = clientes.get(o.destinatario_id);
     if (!cliente) return null;
     return (
       <TarjetaOportunidad
@@ -248,7 +302,7 @@ export function Camila({ onCotizar, onVerPoliza }: CamilaProps) {
         onEstado={(estado, volver) => void cambiarEstado(o, estado, volver ?? null)}
         onCotizar={() => void cotizar(o.cliente_id, o.ramo)}
         onCopiar={(t) => void copiar(t)}
-        onWhatsapp={(numero) => guardarWhatsapp(o.cliente_id, numero)}
+        onWhatsapp={(numero) => guardarWhatsapp(o.destinatario_id, numero)}
       />
     );
   };
@@ -283,6 +337,29 @@ export function Camila({ onCotizar, onVerPoliza }: CamilaProps) {
         <p className="rounded-xl border border-line bg-bg-3/70 px-4 py-3 text-sm text-ink" role="status">
           {aviso}
         </p>
+      )}
+
+      {venta && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border px-4 py-3 text-sm" style={{ borderColor: "var(--green)" }} data-testid="venta-registrada">
+          <span className="text-ink">
+            ¿Ya tienes la póliza de {venta.cliente.nombre} ({infoRamo(venta.ramo).corto})? Agrégala en Valeri para que quede en su mapa y se cobre.
+          </span>
+          <span className="flex gap-2">
+            <button
+              type="button"
+              className="btn-primary px-4 py-2 text-sm"
+              onClick={() => {
+                onAgregarPoliza({ asegurado: venta.cliente.nombre, whatsapp: venta.cliente.whatsapp, correo: venta.cliente.correo, ramo: venta.ramo });
+                setVenta(null);
+              }}
+            >
+              Agregar su póliza a Valeri
+            </button>
+            <button type="button" className="btn-ghost px-3 py-2 text-sm" onClick={() => setVenta(null)}>
+              Después
+            </button>
+          </span>
+        </div>
       )}
 
       {datos && (
@@ -324,11 +401,12 @@ export function Camila({ onCotizar, onVerPoliza }: CamilaProps) {
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
             <Cifra id="para-hoy" titulo="Para hoy" valor={resumen.paraHoy} nota="clientes a quien ofrecerle" color={resumen.paraHoy ? "var(--green)" : "var(--ink-mute)"} />
             <Cifra id="seguimiento" titulo="Sin respuesta" valor={resumen.seguimiento} nota="ofrecido hace más de una semana" color={resumen.seguimiento ? "var(--amber)" : "var(--green)"} />
             <Cifra id="cotizadas" titulo="Cotizadas" valor={resumen.cotizadas} nota="en seguimiento" color={resumen.cotizadas ? "var(--sky)" : "var(--green)"} />
-            <Cifra id="activos" titulo="Clientes activos" valor={resumen.activos} nota={`de ${resumen.clientes} expedientes`} color="var(--green)" />
+            <Cifra id="momentos" titulo="Momentos" valor={momentos.length} nota="ocasiones para escribirles" color={momentos.length ? "var(--violet)" : "var(--green)"} />
+            <Cifra id="activos" titulo="Clientes activos" valor={resumen.activos} nota={`de ${resumen.clientes} expedientes`} color="var(--green)" className="col-span-2 sm:col-span-1" />
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -347,7 +425,7 @@ export function Camila({ onCotizar, onVerPoliza }: CamilaProps) {
                 </button>
               ))}
             </div>
-            {seccion !== "mensajes" && (
+            {(seccion === "oportunidades" || seccion === "mapa" || seccion === "clientes") && (
               <div className="flex items-center gap-2 rounded-xl border border-line bg-glass px-3 py-2">
                 <Icon icon="flat-color-icons:search" width={18} aria-hidden />
                 <input
@@ -368,6 +446,12 @@ export function Camila({ onCotizar, onVerPoliza }: CamilaProps) {
 
           {seccion === "oportunidades" && (
             <div className="space-y-5">
+              {temporadas.map((t) => (
+                <p key={t.id} data-testid="temporada" className="rounded-xl border px-4 py-2.5 text-sm text-ink" style={{ borderColor: "var(--sky)" }}>
+                  <Icon icon="flat-color-icons:sports-mode" width={18} className="mr-1.5 inline" aria-hidden />
+                  {t.aviso}
+                </p>
+              ))}
               <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filtrar por seguro">
                 {(["todos", "vida", "gmm", "ahorro", "autos", "hogar"] as const).map((r) => (
                   <button
@@ -400,6 +484,11 @@ export function Camila({ onCotizar, onVerPoliza }: CamilaProps) {
                   <ul className="space-y-3">{esperando.slice(0, TOPE_LISTA).map(cardDe)}</ul>
                 </Plegable>
               )}
+              {enPausa.length > 0 && (
+                <Plegable titulo={`En pausa: se les ofreció otro seguro hace poco (${enPausa.length})`} id="lista-pausa">
+                  <ul className="space-y-3">{enPausa.slice(0, TOPE_LISTA).map(cardDe)}</ul>
+                </Plegable>
+              )}
               {masOportunidades.length > 0 && (
                 <Plegable titulo={`Más oportunidades (${masOportunidades.length})`} id="lista-mas" onAbrir={() => setVerMas(true)}>
                   <ul className="space-y-3">{(verMas ? masOportunidades.slice(0, TOPE_LISTA) : []).map(cardDe)}</ul>
@@ -427,12 +516,25 @@ export function Camila({ onCotizar, onVerPoliza }: CamilaProps) {
                 </Plegable>
               )}
               <p className="text-xs text-ink-mute">
-                Camila sugiere un solo seguro por cliente a la vez, no insiste antes de una semana, y no le ofrece nada a quien tiene un pago vencido. Los puntos suben cuando ya tiene
-                seguros afines, cuando una de sus pólizas renueva pronto o cuando su edad lo hace buena idea.
+                Camila sugiere un solo seguro por cliente a la vez, no insiste antes de una semana, no le ofrece otro seguro antes de 30 días y no le ofrece nada a quien tiene un pago
+                vencido. Los puntos suben cuando ya tiene seguros afines, cuando una de sus pólizas renueva pronto, por la temporada del año o cuando su edad lo hace buena idea.
               </p>
             </div>
           )}
 
+          {seccion === "momentos" && (
+            <Momentos
+              momentos={momentos}
+              clientes={clientes}
+              mensajes={datos.mensajes}
+              ocupados={ocupados}
+              onAbrir={setAbierto}
+              onHecho={(m) => void momentoHecho(m)}
+              onCopiar={(t) => void copiar(t)}
+              onWhatsapp={guardarWhatsapp}
+            />
+          )}
+          {seccion === "embudo" && <Embudo embudo={embudo} onAbrir={setAbierto} />}
           {seccion === "mapa" && <MapaCobertura entradas={entradas} busca={busca} onAbrir={setAbierto} />}
           {seccion === "clientes" && <ListaClientes entradas={entradas} busca={busca} onAbrir={setAbierto} />}
           {seccion === "mensajes" && (
@@ -462,8 +564,10 @@ export function Camila({ onCotizar, onVerPoliza }: CamilaProps) {
           valeri={datos.polizas.filter((p) => p.cliente_id === abiertoEntrada.cliente.id)}
           libro={datos.libro.filter((l) => l.cliente_id === abiertoEntrada.cliente.id)}
           oportunidades={resultado.lista.filter((o) => o.cliente_id === abiertoEntrada.cliente.id)}
+          todos={datos.clientes}
+          onAbrir={setAbierto}
           onCerrar={() => setAbierto(null)}
-          onGuardado={(c: Cliente) => setDatos((d) => (d ? { ...d, clientes: d.clientes.map((x) => (x.id === c.id ? c : x)) } : d))}
+          onGuardado={upsertCliente}
           onVerPoliza={(p) => {
             setAbierto(null);
             onVerPoliza(p);
@@ -475,9 +579,9 @@ export function Camila({ onCotizar, onVerPoliza }: CamilaProps) {
   );
 }
 
-function Cifra({ id, titulo, valor, nota, color }: { id: string; titulo: string; valor: number; nota: string; color: string }) {
+function Cifra({ id, titulo, valor, nota, color, className = "" }: { id: string; titulo: string; valor: number; nota: string; color: string; className?: string }) {
   return (
-    <div className="glass flex min-h-[110px] flex-col rounded-2xl p-3.5 sm:p-4" data-testid={`cifra-${id}`}>
+    <div className={`glass flex min-h-[110px] min-w-0 flex-col rounded-2xl p-3.5 sm:p-4 ${className}`} data-testid={`cifra-${id}`}>
       <span className="text-[13px] font-semibold text-ink-soft">{titulo}</span>
       <span className="mt-1 text-[28px] font-bold leading-tight" style={{ color }}>
         {valor}

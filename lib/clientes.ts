@@ -11,7 +11,8 @@ import "server-only";
  */
 import { randomUUID } from "node:crypto";
 import { adminDb, cloudReady } from "./supabase-admin";
-import { faltaMigracion, MENSAJE_MIGRACION_CRUZADA, MigracionPendienteError } from "./migracion";
+import { faltaMigracion, MENSAJE_MIGRACION_CRUZADA, MENSAJE_MIGRACION_CRUZADA_2, MigracionPendienteError } from "./migracion";
+import { esParentesco, type DatosFamiliar } from "./cruzada-familia";
 import { esRamo } from "./ramos";
 import { esFechaValida, hoyLocal, sumarDias } from "./fechas";
 import { listarPolizas, ligarPolizasACliente } from "./cobranza";
@@ -19,8 +20,14 @@ import { listLeads } from "./db";
 import { planearClientes, type PlanClientes, type ResultadoSincronizar } from "./clientes-plan";
 import type { Cliente, DatosCliente, Genero, LibroPoliza, Poliza } from "./types";
 
+/** Lo que trajo la segunda parte (SQL 0017): si lo que falta es eso, se pide el archivo 0017 y no el 0016. */
+const DE_LA_SEGUNDA_PARTE = /titular_id|parentesco|referidos_pedidos_en|cruzada_estado\.lead_id|cruzada_momentos/;
+
 export function errorDeCruzada(error: { code?: string; message: string }): Error {
-  return faltaMigracion(error) ? new MigracionPendienteError(MENSAJE_MIGRACION_CRUZADA, "0016_venta_cruzada.sql") : new Error(error.message);
+  if (!faltaMigracion(error)) return new Error(error.message);
+  return DE_LA_SEGUNDA_PARTE.test(error.message)
+    ? new MigracionPendienteError(MENSAJE_MIGRACION_CRUZADA_2, "0017_venta_cruzada_2.sql")
+    : new MigracionPendienteError(MENSAJE_MIGRACION_CRUZADA, "0016_venta_cruzada.sql");
 }
 
 function fecha(v: unknown): string | null {
@@ -43,6 +50,9 @@ function normalizarCliente(f: Record<string, unknown>): Cliente {
     lead_id: f.lead_id ? String(f.lead_id) : null,
     no_ofrecer: f.no_ofrecer === true,
     notas: String(f.notas ?? ""),
+    titular_id: f.titular_id ? String(f.titular_id) : null,
+    parentesco: esParentesco(f.parentesco) ? f.parentesco : null,
+    referidos_pedidos_en: f.referidos_pedidos_en ? String(f.referidos_pedidos_en) : null,
     creado_en: String(f.creado_en ?? ""),
     actualizado_en: String(f.actualizado_en ?? ""),
   };
@@ -171,6 +181,62 @@ export async function editarCliente(id: string, datos: DatosCliente): Promise<Cl
   if (!c) return null;
   Object.assign(c, cambios);
   return c;
+}
+
+/** Crea un familiar (un cliente más, sin pólizas todavía) ligado a su titular. */
+export async function crearFamiliar(titular_id: string, d: DatosFamiliar): Promise<Cliente> {
+  const ahora = new Date().toISOString();
+  const fila = {
+    id: randomUUID(),
+    nombre: d.nombre,
+    tipo: "persona",
+    whatsapp: d.whatsapp,
+    correo: "",
+    fecha_nacimiento: d.fecha_nacimiento,
+    genero: d.genero,
+    codigo_postal: null,
+    lead_id: null,
+    no_ofrecer: false,
+    notas: "",
+    titular_id,
+    parentesco: d.parentesco,
+    creado_en: ahora,
+    actualizado_en: ahora,
+  };
+  if (cloudReady && adminDb) {
+    const { data, error } = await adminDb.from("clientes").insert(fila).select("*").limit(1);
+    if (error) throw errorDeCruzada(error);
+    return normalizarCliente((data?.[0] ?? fila) as Record<string, unknown>);
+  }
+  const c = normalizarCliente(fila);
+  store().clientes.push(c);
+  return c;
+}
+
+/** Liga (o desliga, con titular null) a un cliente con su familia. */
+export async function ligarFamilia(id: string, titular_id: string | null, parentesco: Cliente["parentesco"]): Promise<Cliente | null> {
+  const cambios = { titular_id, parentesco, actualizado_en: new Date().toISOString() };
+  if (cloudReady && adminDb) {
+    const { data, error } = await adminDb.from("clientes").update(cambios).eq("id", id).select("*").limit(1);
+    if (error) throw errorDeCruzada(error);
+    return data?.[0] ? normalizarCliente(data[0] as Record<string, unknown>) : null;
+  }
+  const c = store().clientes.find((x) => x.id === id);
+  if (!c) return null;
+  Object.assign(c, cambios);
+  return c;
+}
+
+/** Anota que hoy se le pidieron referidos (no se vuelven a pedir en 90 días). */
+export async function marcarReferidos(id: string): Promise<void> {
+  const ahora = new Date().toISOString();
+  if (cloudReady && adminDb) {
+    const { error } = await adminDb.from("clientes").update({ referidos_pedidos_en: ahora, actualizado_en: ahora }).eq("id", id);
+    if (error) throw errorDeCruzada(error);
+    return;
+  }
+  const c = store().clientes.find((x) => x.id === id);
+  if (c) Object.assign(c, { referidos_pedidos_en: ahora, actualizado_en: ahora });
 }
 
 /** Liga el prospecto con el que se le cotiza (para que Cotizaciones abra con él). */

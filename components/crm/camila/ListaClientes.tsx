@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Icon } from "@iconify/react";
 import { infoRamo } from "@/lib/ramos";
 import { esActivo, faltantesDe, ramosVigentes, type EntradaCliente, type TipoFaltante } from "@/lib/cruzada-reglas";
+import { palabraDeParentesco } from "@/lib/cruzada-familia";
 
 const ETIQUETA_FALTANTE: Record<TipoFaltante, string> = {
   whatsapp: "Sin WhatsApp",
@@ -24,6 +25,7 @@ export function ListaClientes({ entradas, busca, onAbrir }: ListaClientesProps) 
   const [filtro, setFiltro] = useState<TipoFaltante | null>(null);
 
   const conFaltantes = useMemo(() => entradas.map((e) => ({ e, faltan: faltantesDe(e) })), [entradas]);
+  const nombres = useMemo(() => new Map(entradas.map((e) => [e.cliente.id, e.cliente.nombre])), [entradas]);
   const conteo = useMemo(() => {
     const c: Record<TipoFaltante, number> = { whatsapp: 0, sin_ramo: 0, nacimiento: 0, renovacion: 0, correo: 0 };
     for (const { e, faltan } of conFaltantes) if (esActivo(e.polizas)) for (const f of faltan) c[f.tipo]++;
@@ -74,6 +76,11 @@ export function ListaClientes({ entradas, busca, onAbrir }: ListaClientesProps) 
                   <span className="block text-[15px] font-semibold text-ink hover:underline">{e.cliente.nombre}</span>
                   <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-ink-mute">
                     {e.cliente.tipo === "empresa" && <span className="rounded-md border border-line px-1.5 py-0.5">Empresa</span>}
+                    {e.cliente.titular_id && nombres.has(e.cliente.titular_id) && (
+                      <span className="rounded-md border border-line px-1.5 py-0.5">
+                        {palabraDeParentesco(e.cliente.parentesco ?? "otro", e.cliente.genero)} de {nombres.get(e.cliente.titular_id)}
+                      </span>
+                    )}
                     {e.cliente.no_ofrecer && <span className="rounded-md border border-line px-1.5 py-0.5">No ofrecer</span>}
                     {!activo && <span style={{ color: "var(--amber)" }}>Sin póliza vigente</span>}
                     {ramos.map((r) => (

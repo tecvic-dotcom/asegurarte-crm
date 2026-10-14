@@ -60,3 +60,6 @@ export const MENSAJE_MIGRACION_DOBLE_FACTOR =
 
 export const MENSAJE_MIGRACION_CRUZADA =
   "Falta un paso para encender a Camila (venta cruzada) y los expedientes de tus clientes: abre Supabase → SQL Editor → New query, pega el archivo supabase/migrations/0016_venta_cruzada.sql y dale Run.";
+
+export const MENSAJE_MIGRACION_CRUZADA_2 =
+  "Falta un paso para activar las familias, los momentos de confianza y las ventas cruzadas en tu meta: abre Supabase → SQL Editor → New query, pega el archivo supabase/migrations/0017_venta_cruzada_2.sql y dale Run.";

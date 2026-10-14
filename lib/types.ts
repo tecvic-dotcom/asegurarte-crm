@@ -385,6 +385,9 @@ export type DatosPoliza = Pick<
 export type TipoCliente = "persona" | "empresa";
 
 /** Una persona o empresa a la que le has vendido (o le puedes vender): su expediente único. */
+/** Cómo se relaciona un familiar con el titular (el cliente que tiene las pólizas). */
+export type Parentesco = "conyuge" | "hijo" | "padre_madre" | "otro";
+
 export interface Cliente {
   id: string;
   nombre: string;
@@ -399,6 +402,11 @@ export interface Cliente {
   /** true = no ofrecerle venta cruzada. */
   no_ofrecer: boolean;
   notas: string;
+  /** Si es familiar de otro cliente: el titular (null = es titular o no tiene familia ligada). */
+  titular_id: string | null;
+  parentesco: Parentesco | null;
+  /** Cuándo se le pidieron referidos por última vez (para no pedirlos otra vez en 90 días). */
+  referidos_pedidos_en: string | null;
   creado_en: string;
   actualizado_en: string;
 }
@@ -434,10 +442,19 @@ export interface EstadoCruzada {
   cliente_id: string;
   ramo: Ramo;
   estado: EstadoOferta;
+  /** El prospecto de Cotizaciones que lleva esta venta cruzada (para registrarla como cliente ganado al cerrarla). */
+  lead_id: string | null;
   ofrecida_en: string | null;
   volver_a_ofrecer: string | null;
   nota: string;
   actualizado_en: string;
+}
+
+/** Un momento de confianza que ya atendiste (cumpleaños, revisión de renovación, pago…): deja de aparecer. */
+export interface MomentoHecho {
+  cliente_id: string;
+  clave: string;
+  hecho_en: string;
 }
 
 export type EstadoCobro = "vencida" | "promesa_vencida" | "promesa" | "por_vencer" | "al_corriente" | "sin_fecha" | "cancelada";

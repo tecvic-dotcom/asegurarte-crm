@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { Icon } from "@iconify/react";
 import { crmGuardarMensajeCruzada } from "@/lib/api";
+import { hoyLocal, sumarDias } from "@/lib/fechas";
 import {
   MENSAJES_CRUZADA,
   PLANTILLAS_CRUZADA,
@@ -11,7 +12,9 @@ import {
   validarMensajeCruzada,
   type ClaveMensaje,
   type DatosMensaje,
+  type GrupoMensaje,
 } from "@/lib/cruzada-reglas";
+import type { Ramo } from "@/lib/types";
 
 interface EditorMensajesCamilaProps {
   /** Lo que ya personalizaste (solo los que cambiaste). */
@@ -21,8 +24,21 @@ interface EditorMensajesCamilaProps {
   onCambio: (clave: ClaveMensaje, texto: string | null) => void;
 }
 
+const GRUPOS: { id: GrupoMensaje; titulo: string }[] = [
+  { id: "seguros", titulo: "Ofrecer un seguro" },
+  { id: "familia", titulo: "Familia y referidos" },
+  { id: "momentos", titulo: "Momentos de confianza" },
+];
+
+/** Un cliente de ejemplo para la vista previa de cada texto. */
 function muestra(clave: ClaveMensaje): DatosMensaje {
-  return { nombre: "MYRNA MURGA CHAPA", ramo: clave === "reactivar" ? "autos" : clave, tipo: clave === "reactivar" ? "reactivar" : "nueva", tiene: ["gmm", "hogar"] };
+  const base: DatosMensaje = { nombre: "MYRNA MURGA CHAPA", ramo: "vida", tipo: "nueva", tiene: ["gmm", "hogar"] };
+  if (clave === "reactivar") return { ...base, ramo: "autos", tipo: "reactivar" };
+  if (clave === "familiar") return { ...base, tipo: "familiar", familiar: { nombre: "Ana", parentesco: "esposa" } };
+  if (clave === "revision") return { ...base, polizaRamo: "gmm", fecha: sumarDias(hoyLocal(), 45) };
+  if (clave === "pago") return { ...base, polizaRamo: "gmm" };
+  if (clave === "cumple" || clave === "referidos") return base;
+  return { ...base, ramo: clave as Ramo };
 }
 
 /** Escribe tus propios mensajes de WhatsApp para cada seguro que Camila ofrece. {saludo}, {tiene}… se rellenan solos con los datos de cada cliente. */
@@ -45,11 +61,16 @@ export function EditorMensajesCamila({ personalizadas, ejemplos, onCambio }: Edi
         ))}
       </div>
 
-      <div className="space-y-4">
-        {MENSAJES_CRUZADA.map((m) => (
-          <Mensaje key={m.id} clave={m.id} nombre={m.nombre} cuando={m.cuando} guardado={personalizadas[m.id]} ejemplo={ejemplos[m.id]} onCambio={onCambio} />
-        ))}
-      </div>
+      {GRUPOS.map((g) => (
+        <div key={g.id} data-grupo={g.id}>
+          <h4 className="mb-2 font-semibold text-ink">{g.titulo}</h4>
+          <div className="space-y-4">
+            {MENSAJES_CRUZADA.filter((m) => m.grupo === g.id).map((m) => (
+              <Mensaje key={m.id} clave={m.id} nombre={m.nombre} cuando={m.cuando} guardado={personalizadas[m.id]} ejemplo={ejemplos[m.id]} onCambio={onCambio} />
+            ))}
+          </div>
+        </div>
+      ))}
     </section>
   );
 }

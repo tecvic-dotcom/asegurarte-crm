@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { Icon } from "@iconify/react";
-import { hoyLocal, sumarMeses } from "@/lib/fechas";
+import { fechaNumerica, hoyLocal, sumarMeses } from "@/lib/fechas";
 import { infoRamo } from "@/lib/ramos";
 import { ligaWhatsAppCliente, mensajeCruzada, type ClaveMensaje, type Oportunidad } from "@/lib/cruzada-reglas";
 import type { Cliente, EstadoOferta } from "@/lib/types";
+import { CapturaWhatsapp } from "./CapturaWhatsapp";
 
 const PRIORIDAD = {
   alta: { texto: "Prioridad alta", color: "var(--green)" },
@@ -32,9 +33,6 @@ interface TarjetaOportunidadProps {
 /** Una oportunidad de venta cruzada: a quién, qué seguro, por qué, y el WhatsApp listo para mandar. */
 export function TarjetaOportunidad({ o, cliente, mensajes, ocupado, onAbrir, onEnviado, onEstado, onCotizar, onCopiar, onWhatsapp }: TarjetaOportunidadProps) {
   const [completo, setCompleto] = useState(false);
-  const [wa, setWa] = useState("");
-  const [errorWa, setErrorWa] = useState<string | null>(null);
-  const [guardandoWa, setGuardandoWa] = useState(false);
   const [descartando, setDescartando] = useState(false);
   const texto = mensajeCruzada(o, mensajes);
   const liga = ligaWhatsAppCliente(cliente.whatsapp, texto);
@@ -49,8 +47,11 @@ export function TarjetaOportunidad({ o, cliente, mensajes, ocupado, onAbrir, onE
         ? `Se lo ofreciste hace ${o.diasDesdeOferta} días y no ha contestado`
         : o.situacion === "cotizada"
           ? "Ya le cotizaste: dale seguimiento"
-          : null;
-  const atenuada = o.situacion === "esperando";
+          : o.situacion === "pausa"
+            ? `Se le ofreció otro seguro hace poco: Camila espera hasta el ${o.pausaHasta ? fechaNumerica(o.pausaHasta) : "próximo mes"} para no escribirle dos veces seguidas`
+            : null;
+  const atenuada = o.situacion === "esperando" || o.situacion === "pausa";
+  const aSuFamiliar = o.tipo === "familiar" && o.familiar;
 
   return (
     <li
@@ -64,7 +65,7 @@ export function TarjetaOportunidad({ o, cliente, mensajes, ocupado, onAbrir, onE
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide" style={{ color: p.color }}>
           <Icon icon={ramo.icono} width={16} aria-hidden />
-          {o.tipo === "reactivar" ? `Reactivar ${ramo.corto}` : `Ofrecer ${ramo.corto}`}
+          {o.tipo === "reactivar" ? `Reactivar ${ramo.corto}` : aSuFamiliar ? `Familia · ${ramo.corto}` : `Ofrecer ${ramo.corto}`}
         </span>
         <span className="text-xs font-semibold" style={{ color: p.color }}>
           {p.texto}
@@ -74,6 +75,7 @@ export function TarjetaOportunidad({ o, cliente, mensajes, ocupado, onAbrir, onE
       <button type="button" onClick={onAbrir} className="mt-1.5 block text-left">
         <span className="block text-[16px] font-semibold text-ink hover:underline">{cliente.nombre}</span>
         <span className="block text-xs text-ink-mute">
+          {aSuFamiliar ? `Para su ${o.familiar!.parentesco} ${o.familiar!.nombre} · ` : ""}
           {o.tiene.length ? `Ya tiene: ${o.tiene.map((r) => infoRamo(r).corto).join(", ")}` : "Sin seguros vigentes registrados"}
         </span>
       </button>
@@ -143,45 +145,13 @@ export function TarjetaOportunidad({ o, cliente, mensajes, ocupado, onAbrir, onE
               href={liga}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => o.situacion !== "esperando" && onEnviado()}
-              className={`${o.situacion === "esperando" ? "btn-ghost" : "btn-primary"} col-span-2 w-full text-sm sm:w-auto`}
+              onClick={() => o.situacion !== "esperando" && o.situacion !== "pausa" && onEnviado()}
+              className={`${o.situacion === "esperando" || o.situacion === "pausa" ? "btn-ghost" : "btn-primary"} col-span-2 w-full text-sm sm:w-auto`}
             >
-              <Icon icon="logos:whatsapp-icon" width={18} aria-hidden /> {o.situacion === "seguimiento" ? "Dar seguimiento" : o.situacion === "esperando" ? "Escribirle de nuevo" : "Enviar WhatsApp"}
+              <Icon icon="logos:whatsapp-icon" width={18} aria-hidden /> {o.situacion === "seguimiento" ? "Dar seguimiento" : o.situacion === "esperando" ? "Escribirle de nuevo" : o.situacion === "pausa" ? "Escribirle de todos modos" : "Enviar WhatsApp"}
             </a>
           ) : (
-            <form
-              className="col-span-2 flex w-full flex-wrap items-center gap-2 sm:w-auto"
-              data-testid="captura-whatsapp"
-              onSubmit={async (e) => {
-                e.preventDefault();
-                setGuardandoWa(true);
-                setErrorWa(null);
-                const motivo = await onWhatsapp(wa);
-                if (motivo) setErrorWa(motivo);
-                setGuardandoWa(false);
-              }}
-            >
-              <input
-                inputMode="tel"
-                value={wa}
-                onChange={(e) => {
-                  setWa(e.target.value);
-                  setErrorWa(null);
-                }}
-                placeholder="WhatsApp: 81 1234 5678"
-                aria-label={`WhatsApp de ${cliente.nombre}`}
-                className="field-input"
-                style={{ width: "auto", flex: "1 1 170px", minWidth: 0 }}
-              />
-              <button type="submit" disabled={guardandoWa || ocupado} className="btn-primary px-4 py-2 text-sm">
-                <Icon icon="logos:whatsapp-icon" width={18} aria-hidden /> {guardandoWa ? "Guardando…" : "Guardar WhatsApp"}
-              </button>
-              {errorWa && (
-                <span className="w-full text-sm" style={{ color: "var(--red)" }} role="alert">
-                  {errorWa}
-                </span>
-              )}
-            </form>
+            <CapturaWhatsapp nombre={cliente.nombre} ocupado={ocupado} onGuardar={onWhatsapp} />
           )}
           {o.situacion !== "cotizada" && (
             <button type="button" disabled={ocupado} onClick={onCotizar} className="btn-ghost w-full text-sm sm:w-auto">
@@ -193,7 +163,7 @@ export function TarjetaOportunidad({ o, cliente, mensajes, ocupado, onAbrir, onE
               <Icon icon="flat-color-icons:ok" width={18} aria-hidden /> Ya se lo ofrecí
             </button>
           )}
-          {o.situacion !== "para_hoy" && (
+          {o.situacion !== "para_hoy" && o.situacion !== "pausa" && (
             <button type="button" disabled={ocupado} onClick={() => onEstado("cerrada")} className="btn-ghost w-full text-sm sm:w-auto">
               <Icon icon="flat-color-icons:approval" width={18} aria-hidden /> Lo contrató
             </button>
@@ -211,7 +181,7 @@ export function TarjetaOportunidad({ o, cliente, mensajes, ocupado, onAbrir, onE
         <button type="button" onClick={onAbrir} className="min-h-[36px] text-ink-mute underline hover:text-ink">
           Abrir expediente
         </button>
-        {o.situacion !== "para_hoy" && (
+        {o.situacion !== "para_hoy" && o.situacion !== "pausa" && (
           <button type="button" disabled={ocupado} onClick={() => onEstado("pendiente")} className="min-h-[36px] text-ink-mute underline hover:text-ink">
             Deshacer (volver a «por ofrecer»)
           </button>

@@ -1,6 +1,7 @@
 import { exigirAdmin } from "@/lib/sesion-admin";
-import { editarCliente, obtenerCliente, sincronizarClientes } from "@/lib/clientes";
-import { datosCamila, guardarEstado, guardarMensajeCruzada, leadParaCotizar } from "@/lib/cruzada";
+import { crearFamiliar, editarCliente, ligarFamilia, listarClientes, marcarReferidos, obtenerCliente, sincronizarClientes } from "@/lib/clientes";
+import { cerrarProspectoDeOferta, datosCamila, guardarEstado, guardarMensajeCruzada, leadParaCotizar, marcarMomento, venderCruzada } from "@/lib/cruzada";
+import { validarFamilia, validarFamiliar } from "@/lib/cruzada-familia";
 import { esClaveMensaje, validarCliente, validarEstado, validarMensajeCruzada } from "@/lib/cruzada-reglas";
 import { hoyLocal } from "@/lib/fechas";
 import { esRamo } from "@/lib/ramos";
@@ -35,7 +36,19 @@ export async function POST(req: Request): Promise<Response> {
   const puerta = exigirAdmin(req, "a tus clientes");
   if ("respuesta" in puerta) return puerta.respuesta;
 
-  let body: { accion?: string; id?: string; cliente?: unknown; cliente_id?: string; estado?: unknown; clave?: unknown; texto?: unknown; ramo?: unknown };
+  let body: {
+    accion?: string;
+    id?: string;
+    cliente?: unknown;
+    cliente_id?: string;
+    estado?: unknown;
+    clave?: unknown;
+    texto?: unknown;
+    ramo?: unknown;
+    familia?: unknown;
+    familiar?: unknown;
+    titular_id?: string;
+  };
   try {
     body = (await req.json()) as typeof body;
   } catch {
@@ -63,7 +76,56 @@ export async function POST(req: Request): Promise<Response> {
         if (!(await obtenerCliente(body.cliente_id))) return noExiste();
         const r = validarEstado(body.estado, hoyLocal());
         if (!r.ok) return Response.json({ error: r.error }, { status: 422 });
-        return Response.json({ estado: await guardarEstado(body.cliente_id, r.datos) });
+        const guardado = await guardarEstado(body.cliente_id, r.datos);
+        // «No le interesa»: el prospecto que dejó la cotización (si lo creó Camila) pasa a Perdidos para que Sofi no lo persiga.
+        if (r.datos.estado === "no_interesa") {
+          try {
+            await cerrarProspectoDeOferta(body.cliente_id, r.datos.ramo, puerta.sesion.nombre);
+          } catch (e) {
+            console.error("[cruzada] no se pudo cerrar el prospecto de la oferta", e);
+          }
+        }
+        return Response.json({ estado: guardado });
+      }
+
+      case "vender": {
+        if (!body.cliente_id || !esRamo(body.ramo)) break;
+        const r = await venderCruzada(body.cliente_id, body.ramo, puerta.sesion.nombre);
+        if (!r.ok) return Response.json({ error: r.error }, { status: r.noExiste ? 404 : 422 });
+        return Response.json({ estado: r.estado, porProspecto: r.porProspecto, lead_id: r.lead_id });
+      }
+
+      case "familia": {
+        if (!body.id) break;
+        const todos = await listarClientes();
+        const cliente = todos.find((c) => c.id === body.id);
+        if (!cliente) return noExiste();
+        const r = validarFamilia(body.familia, cliente, todos);
+        if (!r.ok) return Response.json({ error: r.error }, { status: 422 });
+        const guardado = await ligarFamilia(cliente.id, r.titular_id, r.parentesco);
+        return guardado ? Response.json({ cliente: guardado }) : noExiste();
+      }
+
+      case "crear_familiar": {
+        if (!body.titular_id) break;
+        const titular = await obtenerCliente(body.titular_id);
+        if (!titular) return noExiste();
+        if (titular.titular_id) return Response.json({ error: "Elige al titular de la familia, no a otro familiar." }, { status: 422 });
+        const r = validarFamiliar(body.familiar, hoyLocal());
+        if (!r.ok) return Response.json({ error: r.error }, { status: 422 });
+        return Response.json({ cliente: await crearFamiliar(titular.id, r.datos) });
+      }
+
+      case "momento": {
+        if (!body.cliente_id || typeof body.clave !== "string") break;
+        if (!/^(cumple|revision|pago|referidos):/.test(body.clave) || body.clave.length > 120) {
+          return Response.json({ error: "Momento no válido." }, { status: 400 });
+        }
+        if (!(await obtenerCliente(body.cliente_id))) return noExiste();
+        // Pedir referidos se anota en el cliente (no se repite en 90 días); todo momento atendido deja de aparecer.
+        if (body.clave.startsWith("referidos:")) await marcarReferidos(body.cliente_id);
+        await marcarMomento(body.cliente_id, body.clave);
+        return Response.json({ ok: true });
       }
 
       case "mensaje": {
@@ -82,7 +144,9 @@ export async function POST(req: Request): Promise<Response> {
         if (!body.cliente_id || !esRamo(body.ramo)) break;
         const r = await leadParaCotizar(body.cliente_id, body.ramo, puerta.sesion.nombre);
         if (!r.ok) return Response.json({ error: r.error }, { status: r.noExiste ? 404 : 422 });
-        return Response.json({ lead_id: r.lead_id, creado: r.creado });
+        // Ir a cotizarle cuenta como «cotizada» (así Camila no se lo vuelve a ofrecer mañana) y recuerda su prospecto, por si lo contrata.
+        const estado = await guardarEstado(body.cliente_id, { ramo: body.ramo, estado: "cotizada", volver_a_ofrecer: null, nota: "" }, r.lead_id);
+        return Response.json({ lead_id: r.lead_id, creado: r.creado, estado });
       }
     }
     return Response.json({ error: "Acción no reconocida" }, { status: 400 });

@@ -12,10 +12,12 @@
  *  · «Para hoy» propone un solo seguro por cliente, y pocos clientes a la vez.
  */
 import { estadoDe, saludoPara } from "./cobranza-reglas";
-import { diasEntre, esFechaValida, fechaLocal, sumarDias } from "./fechas";
+import { diasEntre, esFechaValida, fechaLarga, fechaLocal, sumarDias } from "./fechas";
+import { nombreDePila, palabraDeParentesco } from "./cruzada-familia";
+import { temporadaDe } from "./cruzada-temporadas";
 import { normCodigoPostal, normCorreo, normWhatsapp } from "./normalize";
 import { esRamo, RAMOS } from "./ramos";
-import type { Cliente, DatosCliente, EstadoCruzada, EstadoOferta, Genero, LibroPoliza, Poliza, Ramo } from "./types";
+import type { Cliente, DatosCliente, EstadoCruzada, EstadoOferta, Genero, LibroPoliza, MomentoHecho, Poliza, Ramo } from "./types";
 
 // ----------------------------------------------------------------------------
 // Lo que se sabe de las pólizas de un cliente (de Valeri o de tus reportes de AXA)
@@ -143,13 +145,21 @@ export function coberturaGlobal(entradas: EntradaCliente[]): CoberturaGlobal[] {
 // Oportunidades: a quién ofrecerle qué, y por qué
 // ----------------------------------------------------------------------------
 
-export type TipoOportunidad = "nueva" | "reactivar";
+/** nueva: no tiene ese seguro · reactivar: lo tuvo y ya no está vigente · familiar: lo necesita un familiar suyo (se le pregunta al titular). */
+export type TipoOportunidad = "nueva" | "reactivar" | "familiar";
 export type Prioridad = "alta" | "media" | "baja";
-/** para_hoy: toca ofrecerlo · esperando: se ofreció hace poco · seguimiento: se ofreció y no contestó · cotizada: ya se le cotizó. */
-export type SituacionOferta = "para_hoy" | "esperando" | "seguimiento" | "cotizada";
+/**
+ * para_hoy: toca ofrecerlo · esperando: se ofreció hace poco · seguimiento: se ofreció y no contestó · cotizada: ya se le cotizó ·
+ * pausa: se le ofreció OTRO seguro hace menos de 30 días (no se le escribe dos veces seguidas).
+ */
+export type SituacionOferta = "para_hoy" | "esperando" | "seguimiento" | "cotizada" | "pausa";
 
 export interface Oportunidad {
+  /** El cliente al que se le ofrece (en «familiar», el familiar que necesita el seguro). Con él se guarda cómo va la oferta. */
   cliente_id: string;
+  /** A quién se le escribe: el mismo cliente, o el titular cuando la oferta es para un familiar. */
+  destinatario_id: string;
+  /** El nombre del destinatario (el que recibe el WhatsApp). */
   nombre: string;
   ramo: Ramo;
   tipo: TipoOportunidad;
@@ -164,6 +174,10 @@ export interface Oportunidad {
   principal: boolean;
   /** Los ramos que tiene vigentes (para el mensaje y para explicar). */
   tiene: Ramo[];
+  /** Hasta cuándo está en pausa (solo cuando la situación es «pausa»). */
+  pausaHasta: string | null;
+  /** Para ofertas «familiar»: de quién se trata y qué es del titular. */
+  familiar: { nombre: string; parentesco: string } | null;
 }
 
 export type MotivoRetenida = "adeudo" | "no_ofrecer" | "no_interesa";
@@ -186,6 +200,10 @@ export const DIAS_ENFRIADA = 45;
 export const DIAS_DESCANSO = 180;
 /** Cuántos clientes caben en «Para hoy». */
 export const MAX_PARA_HOY = 8;
+/** Entre una oferta y la siguiente (de otro seguro) a un mismo cliente pasan al menos estos días. */
+export const DIAS_ENTRE_OFERTAS = 30;
+/** Cada cuántos días se le vuelven a pedir referidos a un cliente. */
+export const DIAS_ENTRE_REFERIDOS = 90;
 
 /** Qué seguros hacen natural ofrecer cada uno de los demás. */
 const AFINIDAD: Record<Ramo, Ramo[]> = {
@@ -210,7 +228,7 @@ function prioridadDe(puntos: number): Prioridad {
   return puntos >= 75 ? "alta" : puntos >= 60 ? "media" : "baja";
 }
 
-function puntuar(e: EntradaCliente, ramo: Ramo, tipo: TipoOportunidad, hoy: string): { puntos: number; razones: string[] } {
+function puntuar(e: EntradaCliente, ramo: Ramo, tipo: TipoOportunidad, hoy: string, hijosMenores = 0): { puntos: number; razones: string[] } {
   const razones: string[] = [];
   const vigentes = e.polizas.filter((p) => p.vigente);
   const tiene = ramosVigentes(e.polizas);
@@ -220,6 +238,19 @@ function puntuar(e: EntradaCliente, ramo: Ramo, tipo: TipoOportunidad, hoy: stri
   if (afines.length) {
     puntos += Math.min(20, afines.length * 10);
     razones.push(`Ya tiene ${listaDeRamos(afines)} contigo: ${nombreCorto(ramo)} es el paso natural`);
+  }
+
+  // La temporada del año que favorece a este seguro (lluvias → hogar y auto, aguinaldo → ahorro y vida, declaración → ahorro).
+  const temporada = temporadaDe(ramo, hoy);
+  if (temporada) {
+    puntos += 10;
+    razones.push(temporada.razon);
+  }
+
+  // Hijos menores de edad: el ahorro educativo es la oferta natural.
+  if (ramo === "ahorro" && hijosMenores > 0) {
+    puntos += 15;
+    razones.push(hijosMenores === 1 ? "Tiene un hijo menor de edad: un ahorro educativo es una buena idea" : `Tiene ${hijosMenores} hijos menores de edad: un ahorro educativo es una buena idea`);
   }
 
   // Si una de sus pólizas renueva pronto ya van a hablar: es el mejor momento para mencionar otra.
@@ -298,12 +329,61 @@ export interface ResultadoOportunidades {
   retenidas: Retenida[];
 }
 
-const ORDEN_SITUACION: Record<SituacionOferta, number> = { para_hoy: 0, seguimiento: 1, cotizada: 2, esperando: 3 };
+const ORDEN_SITUACION: Record<SituacionOferta, number> = { para_hoy: 0, seguimiento: 1, cotizada: 2, esperando: 3, pausa: 4 };
+
+type EvaluacionEstado = { omitir: true } | { retenerHasta: string } | { situacion: SituacionOferta; dias: number | null };
+
+/** Qué toca hacer con una oferta según cómo va (ofrecida, cotizada, cerrada, no le interesa…). */
+function evaluarEstado(est: EstadoCruzada | null, hoy: string): EvaluacionEstado {
+  let situacion: SituacionOferta = "para_hoy";
+  let dias: number | null = null;
+  if (est?.estado === "no_interesa") {
+    const hasta = est.volver_a_ofrecer ?? sumarDias(fechaLocal(est.actualizado_en), DIAS_DESCANSO);
+    if (hoy < hasta) return { retenerHasta: hasta };
+  } else if (est?.estado === "cerrada") {
+    // Dijo que sí: la póliza aparecerá en su mapa cuando se capture. Mientras tanto no se le vuelve a ofrecer.
+    return { omitir: true };
+  } else if (est?.estado === "cotizada") {
+    situacion = "cotizada";
+    if (est.ofrecida_en) dias = diasEntre(fechaLocal(est.ofrecida_en), hoy);
+  } else if (est?.estado === "ofrecida" && est.ofrecida_en) {
+    dias = diasEntre(fechaLocal(est.ofrecida_en), hoy);
+    situacion = dias < DIAS_ESPERA ? "esperando" : dias <= DIAS_ENFRIADA ? "seguimiento" : "para_hoy";
+  }
+  if (est?.volver_a_ofrecer && hoy < est.volver_a_ofrecer && est.estado !== "no_interesa") {
+    // Pidió que le escribas después de cierta fecha.
+    situacion = "esperando";
+  }
+  return { situacion, dias };
+}
+
+/** Si se le ofreció (o cotizó) otro seguro hace menos de 30 días, hasta cuándo hay que esperar para escribirle de nuevo. */
+function pausaDe(otrasOfertas: EstadoCruzada[], hoy: string): string | null {
+  let ultima: string | null = null;
+  for (const x of otrasOfertas) {
+    if ((x.estado === "ofrecida" || x.estado === "cotizada") && x.ofrecida_en) {
+      const f = fechaLocal(x.ofrecida_en);
+      if (!ultima || f > ultima) ultima = f;
+    }
+  }
+  if (!ultima) return null;
+  const hasta = sumarDias(ultima, DIAS_ENTRE_OFERTAS);
+  return hoy < hasta ? hasta : null;
+}
 
 /** Todas las oportunidades de venta cruzada de la cartera, ya ordenadas: primero lo que toca hacer hoy, de mayor a menor puntaje. */
 export function calcularOportunidades(entradas: EntradaCliente[], hoy: string): ResultadoOportunidades {
   const lista: Oportunidad[] = [];
   const retenidas: Retenida[] = [];
+  /** Hijos menores de edad por titular (para el ahorro educativo). */
+  const hijosMenores = new Map<string, number>();
+  for (const e of entradas) {
+    const c = e.cliente;
+    if (c.titular_id && c.parentesco === "hijo") {
+      const edad = edadDe(c.fecha_nacimiento, hoy);
+      if (edad !== null && edad < 18) hijosMenores.set(c.titular_id, (hijosMenores.get(c.titular_id) ?? 0) + 1);
+    }
+  }
 
   for (const e of entradas) {
     if (!esActivo(e.polizas)) continue;
@@ -319,40 +399,26 @@ export function calcularOportunidades(entradas: EntradaCliente[], hoy: string): 
 
     const celdas = mapaDeCobertura(e.polizas);
     const tiene = ramosVigentes(e.polizas);
-    const delCliente: Oportunidad[] = [];
 
     for (const ramo of ramosOfrecibles(c)) {
       const celda = celdas.find((x) => x.ramo === ramo)!;
       if (celda.estado === "vigente") continue;
       const tipo: TipoOportunidad = celda.estado === "tuvo" ? "reactivar" : "nueva";
       const est = e.estados.find((x) => x.ramo === ramo) ?? null;
-      let situacion: SituacionOferta = "para_hoy";
-      let diasDesdeOferta: number | null = null;
-
-      if (est?.estado === "no_interesa") {
-        const hasta = est.volver_a_ofrecer ?? sumarDias(fechaLocal(est.actualizado_en), DIAS_DESCANSO);
-        if (hoy < hasta) {
-          retenidas.push({ cliente_id: c.id, nombre: c.nombre, motivo: "no_interesa", ramo, hasta });
-          continue;
-        }
-      } else if (est?.estado === "cerrada") {
-        // Dijo que sí: la póliza aparecerá en su mapa cuando se capture. Mientras tanto no se le vuelve a ofrecer.
+      const ev = evaluarEstado(est, hoy);
+      if ("omitir" in ev) continue;
+      if ("retenerHasta" in ev) {
+        retenidas.push({ cliente_id: c.id, nombre: c.nombre, motivo: "no_interesa", ramo, hasta: ev.retenerHasta });
         continue;
-      } else if (est?.estado === "cotizada") {
-        situacion = "cotizada";
-        if (est.ofrecida_en) diasDesdeOferta = diasEntre(fechaLocal(est.ofrecida_en), hoy);
-      } else if (est?.estado === "ofrecida" && est.ofrecida_en) {
-        diasDesdeOferta = diasEntre(fechaLocal(est.ofrecida_en), hoy);
-        situacion = diasDesdeOferta < DIAS_ESPERA ? "esperando" : diasDesdeOferta <= DIAS_ENFRIADA ? "seguimiento" : "para_hoy";
       }
-      if (est?.volver_a_ofrecer && hoy < est.volver_a_ofrecer && est.estado !== "no_interesa") {
-        // Pidió que le escribas después de cierta fecha.
-        situacion = "esperando";
-      }
+      let situacion = ev.situacion;
+      const pausaHasta = situacion === "para_hoy" ? pausaDe(e.estados.filter((x) => x.ramo !== ramo), hoy) : null;
+      if (pausaHasta) situacion = "pausa";
 
-      const { puntos, razones } = puntuar(e, ramo, tipo, hoy);
-      delCliente.push({
+      const { puntos, razones } = puntuar(e, ramo, tipo, hoy, hijosMenores.get(c.id) ?? 0);
+      lista.push({
         cliente_id: c.id,
+        destinatario_id: c.id,
         nombre: c.nombre,
         ramo,
         tipo,
@@ -361,17 +427,70 @@ export function calcularOportunidades(entradas: EntradaCliente[], hoy: string): 
         razones,
         situacion,
         estado: est?.estado ?? null,
-        diasDesdeOferta,
+        diasDesdeOferta: ev.dias,
         principal: false,
         tiene,
+        pausaHasta,
+        familiar: null,
       });
     }
 
-    // La mejor opción «para hoy» de cada cliente es la principal: así nunca le llegan dos ofertas a la vez.
-    const candidatas = delCliente.filter((o) => o.situacion === "para_hoy").sort((a, b) => b.puntos - a.puntos);
-    if (candidatas.length) candidatas[0].principal = true;
-    lista.push(...delCliente);
+    // Ofertas para la familia: el cónyuge del titular que no tiene seguro de vida (se le pregunta al titular).
+    const tieneBase = tiene.includes("vida") || tiene.includes("gmm");
+    if (c.titular_id || !tieneBase) continue;
+    for (const m of entradas) {
+      const M = m.cliente;
+      if (M.titular_id !== c.id || M.parentesco !== "conyuge" || M.no_ofrecer) continue;
+      if (ramosVigentes(m.polizas).includes("vida")) continue;
+      const est = m.estados.find((x) => x.ramo === "vida") ?? null;
+      const ev = evaluarEstado(est, hoy);
+      if ("omitir" in ev) continue;
+      if ("retenerHasta" in ev) {
+        retenidas.push({ cliente_id: M.id, nombre: M.nombre, motivo: "no_interesa", ramo: "vida", hasta: ev.retenerHasta });
+        continue;
+      }
+      let situacion = ev.situacion;
+      const pausaHasta = situacion === "para_hoy" ? pausaDe([...e.estados, ...m.estados.filter((x) => x.ramo !== "vida")], hoy) : null;
+      if (pausaHasta) situacion = "pausa";
+
+      const palabra = palabraDeParentesco("conyuge", M.genero);
+      const razones = [`Su ${palabra} ${nombreDePila(M.nombre)} no tiene seguro de vida contigo`, `${nombreDePila(c.nombre)} ya tiene ${listaDeRamos(tiene)} contigo`];
+      let puntos = BASE.vida + 15;
+      const edad = edadDe(M.fecha_nacimiento, hoy);
+      if (edad !== null && edad >= 25 && edad <= 55) {
+        puntos += 10;
+        razones.push(`A los ${edad} años es buena edad para un seguro de vida (sale más barato)`);
+      }
+      const temporada = temporadaDe("vida", hoy);
+      if (temporada) {
+        puntos += 10;
+        razones.push(temporada.razon);
+      }
+      puntos = Math.max(0, Math.min(100, puntos));
+      lista.push({
+        cliente_id: M.id,
+        destinatario_id: c.id,
+        nombre: c.nombre,
+        ramo: "vida",
+        tipo: "familiar",
+        puntos,
+        prioridad: prioridadDe(puntos),
+        razones,
+        situacion,
+        estado: est?.estado ?? null,
+        diasDesdeOferta: ev.dias,
+        principal: false,
+        tiene,
+        pausaHasta,
+        familiar: { nombre: nombreDePila(M.nombre), parentesco: palabra },
+      });
+    }
   }
+
+  // La mejor opción «para hoy» de cada destinatario es la principal: así nunca le llegan dos ofertas a la vez.
+  const porDestinatario = new Map<string, Oportunidad[]>();
+  for (const o of lista) if (o.situacion === "para_hoy") porDestinatario.set(o.destinatario_id, [...(porDestinatario.get(o.destinatario_id) ?? []), o]);
+  for (const ofertas of porDestinatario.values()) ofertas.sort((a, b) => b.puntos - a.puntos)[0].principal = true;
 
   lista.sort(
     (a, b) =>
@@ -426,34 +545,64 @@ export function faltantesDe(e: EntradaCliente): Faltante[] {
 // Mensajes de WhatsApp (textos fijos que tú editas, igual que Valeri y Sofi)
 // ----------------------------------------------------------------------------
 
-/** Un texto por ramo que se ofrece, y uno para reactivar un seguro que dejó de estar vigente. */
-export type ClaveMensaje = Ramo | "reactivar";
+/** Un texto por seguro que se ofrece, uno para reactivar, uno para la familia y los de los momentos de confianza. */
+export type ClaveMensaje = Ramo | "reactivar" | "familiar" | "revision" | "cumple" | "pago" | "referidos";
+
+const CLAVES_EXTRA: ClaveMensaje[] = ["reactivar", "familiar", "revision", "cumple", "pago", "referidos"];
 
 export function esClaveMensaje(v: unknown): v is ClaveMensaje {
-  return typeof v === "string" && (v === "reactivar" || RAMOS.some((r) => r.id === v));
+  return typeof v === "string" && ((CLAVES_EXTRA as string[]).includes(v) || RAMOS.some((r) => r.id === v));
 }
+
+/** Se agrega a los mensajes que ofrecen algo: quien no quiera recibir más, lo dice y queda en «no ofrecer». */
+const BAJA = " Si prefieres que no te escriba de otros seguros, solo avísame.";
 
 /** Texto base (el que Camila usa mientras no escribas el tuyo). Suena a Roberto, no a robot. */
 export const PLANTILLAS_CRUZADA: Record<ClaveMensaje, string> = {
-  vida: "{saludo}, soy Roberto Rodríguez de Asegurarte 👋 Gracias por confiar en mí con {tiene}. Te escribo porque veo que todavía no tienes un seguro de vida, que es lo que respalda a tu familia si algún día faltas. ¿Te platico en 5 minutos cómo funciona y cuánto costaría? Sin compromiso.",
-  gmm: "{saludo}, soy Roberto Rodríguez de Asegurarte 👋 Gracias por tener {tiene} conmigo. Te escribo porque veo que aún no cuentas con un seguro de gastos médicos, y una sola hospitalización sin seguro puede costar más que años de prima. ¿Te armo una cotización sin compromiso?",
+  vida:
+    "{saludo}, soy Roberto Rodríguez de Asegurarte 👋 Gracias por confiar en mí con {tiene}. Te escribo porque veo que todavía no tienes un seguro de vida, que es lo que respalda a tu familia si algún día faltas. ¿Te platico en 5 minutos cómo funciona y cuánto costaría? Sin compromiso." +
+    BAJA,
+  gmm:
+    "{saludo}, soy Roberto Rodríguez de Asegurarte 👋 Gracias por tener {tiene} conmigo. Te escribo porque veo que aún no cuentas con un seguro de gastos médicos, y una sola hospitalización sin seguro puede costar más que años de prima. ¿Te armo una cotización sin compromiso?" +
+    BAJA,
   ahorro:
-    "{saludo}, soy Roberto Rodríguez de Asegurarte 👋 Ya que tienes {tiene} conmigo, quería preguntarte si te interesa un plan de ahorro: vas juntando una cantidad cada mes para algo concreto (retiro, estudios de tus hijos, un proyecto) y te disciplinas sin sentirlo. ¿Te muestro cómo quedaría con lo que puedes apartar?",
+    "{saludo}, soy Roberto Rodríguez de Asegurarte 👋 Ya que tienes {tiene} conmigo, quería preguntarte si te interesa un plan de ahorro: vas juntando una cantidad cada mes para algo concreto (retiro, estudios de tus hijos, un proyecto) y te disciplinas sin sentirlo. ¿Te muestro cómo quedaría con lo que puedes apartar?" +
+    BAJA,
   autos:
-    "{saludo}, soy Roberto Rodríguez de Asegurarte 👋 Gracias por tener {tiene} conmigo. ¿Tu auto ya está asegurado? Si lo tienes con otra compañía, con gusto te cotizo para que compares precio y coberturas, sin compromiso.",
+    "{saludo}, soy Roberto Rodríguez de Asegurarte 👋 Gracias por tener {tiene} conmigo. ¿Tu auto ya está asegurado? Si lo tienes con otra compañía, con gusto te cotizo para que compares precio y coberturas, sin compromiso." +
+    BAJA,
   hogar:
-    "{saludo}, soy Roberto Rodríguez de Asegurarte 👋 Gracias por tener {tiene} conmigo. ¿Tu casa o departamento ya está asegurado? Cubre incendio, robo y daños, y suele costar menos de lo que se piensa. ¿Te cotizo sin compromiso?",
+    "{saludo}, soy Roberto Rodríguez de Asegurarte 👋 Gracias por tener {tiene} conmigo. ¿Tu casa o departamento ya está asegurado? Cubre incendio, robo y daños, y suele costar menos de lo que se piensa. ¿Te cotizo sin compromiso?" +
+    BAJA,
   reactivar:
-    "{saludo}, soy Roberto Rodríguez de Asegurarte 👋 Vi que {tuvo} ya no está vigente. ¿Quieres que lo revisemos y te cotice para que vuelvas a estar protegido? Sin compromiso.",
+    "{saludo}, soy Roberto Rodríguez de Asegurarte 👋 Vi que {tuvo} ya no está vigente. ¿Quieres que lo revisemos y te cotice para que vuelvas a estar protegido? Sin compromiso." +
+    BAJA,
+  familiar:
+    "{saludo}, soy Roberto Rodríguez de Asegurarte 👋 Ya que tienes {tiene} conmigo, quería preguntarte: ¿tu {parentesco} {familiar} ya cuenta con su propio seguro de vida? Si quieres, se lo cotizo sin compromiso." +
+    BAJA,
+  revision:
+    "{saludo}, soy Roberto Rodríguez de Asegurarte 👋 Te escribo porque {poliza} renueva el {fecha}. Antes de que llegue, quiero revisar contigo tus coberturas para confirmar que sigan siendo las que necesitas (¿cambió algo en tu familia, tu auto o tu casa?). ¿Cuándo tienes 10 minutos para platicarlo?",
+  cumple:
+    "{saludo}, ¡feliz cumpleaños! 🎂 Que este nuevo año venga lleno de salud y buenos momentos. Un abrazo de parte de todos en Asegurarte. — Roberto",
+  pago: "{saludo}, gracias por tu pago de {poliza} 🙌 Me da mucho gusto tenerte como cliente. Si surge cualquier duda con tu seguro, aquí estoy. — Roberto",
+  referidos:
+    "{saludo}, gracias por tu confianza 🙏 Si conoces a alguien (familia, amigos o compañeros de trabajo) a quien le pueda servir revisar sus seguros, con gusto lo atiendo igual que a ti. ¿Me compartes su contacto? Sin compromiso.",
 };
 
-export const MENSAJES_CRUZADA: { id: ClaveMensaje; nombre: string; cuando: string }[] = [
-  { id: "vida", nombre: "Ofrecer seguro de vida", cuando: "A un cliente que aún no tiene vida" },
-  { id: "gmm", nombre: "Ofrecer gastos médicos", cuando: "A un cliente que aún no tiene GMM" },
-  { id: "ahorro", nombre: "Ofrecer ahorro", cuando: "A un cliente que aún no tiene un plan de ahorro" },
-  { id: "autos", nombre: "Ofrecer seguro de auto", cuando: "A un cliente que aún no tiene auto contigo" },
-  { id: "hogar", nombre: "Ofrecer seguro de hogar", cuando: "A un cliente que aún no tiene hogar" },
-  { id: "reactivar", nombre: "Reactivar un seguro", cuando: "A un cliente cuyo seguro de ese ramo ya no está vigente" },
+export type GrupoMensaje = "seguros" | "familia" | "momentos";
+
+export const MENSAJES_CRUZADA: { id: ClaveMensaje; nombre: string; cuando: string; grupo: GrupoMensaje }[] = [
+  { id: "vida", nombre: "Ofrecer seguro de vida", cuando: "A un cliente que aún no tiene vida", grupo: "seguros" },
+  { id: "gmm", nombre: "Ofrecer gastos médicos", cuando: "A un cliente que aún no tiene GMM", grupo: "seguros" },
+  { id: "ahorro", nombre: "Ofrecer ahorro", cuando: "A un cliente que aún no tiene un plan de ahorro", grupo: "seguros" },
+  { id: "autos", nombre: "Ofrecer seguro de auto", cuando: "A un cliente que aún no tiene auto contigo", grupo: "seguros" },
+  { id: "hogar", nombre: "Ofrecer seguro de hogar", cuando: "A un cliente que aún no tiene hogar", grupo: "seguros" },
+  { id: "reactivar", nombre: "Reactivar un seguro", cuando: "A un cliente cuyo seguro de ese ramo ya no está vigente", grupo: "seguros" },
+  { id: "familiar", nombre: "Preguntar por un familiar", cuando: "Al titular, cuando su cónyuge no tiene seguro de vida", grupo: "familia" },
+  { id: "referidos", nombre: "Pedir referidos", cuando: "Después de un pago o una venta, cada 90 días como máximo", grupo: "familia" },
+  { id: "revision", nombre: "Revisión de coberturas", cuando: "30 a 60 días antes de que renueve una póliza", grupo: "momentos" },
+  { id: "cumple", nombre: "Felicitación de cumpleaños", cuando: "El día de su cumpleaños (o la semana de antes)", grupo: "momentos" },
+  { id: "pago", nombre: "Agradecer un pago", cuando: "Hasta 7 días después de que pagó", grupo: "momentos" },
 ];
 
 export const VARIABLES_CRUZADA: { clave: string; ejemplo: string; descripcion: string }[] = [
@@ -462,6 +611,10 @@ export const VARIABLES_CRUZADA: { clave: string; ejemplo: string; descripcion: s
   { clave: "tiene", ejemplo: "tus seguros de auto y hogar", descripcion: "Lo que ya tiene vigente contigo" },
   { clave: "seguro", ejemplo: "un seguro de vida", descripcion: "El seguro que le ofreces" },
   { clave: "tuvo", ejemplo: "tu seguro de auto", descripcion: "El seguro que dejó de estar vigente (para «Reactivar»)" },
+  { clave: "poliza", ejemplo: "tu seguro de gastos médicos", descripcion: "La póliza de la que se trata (renovación o pago)" },
+  { clave: "fecha", ejemplo: "15 de noviembre", descripcion: "La fecha de renovación de esa póliza" },
+  { clave: "familiar", ejemplo: "Ana", descripcion: "El nombre de pila del familiar (para «Preguntar por un familiar»)" },
+  { clave: "parentesco", ejemplo: "esposa", descripcion: "Qué es del titular: esposa, esposo, hijo…" },
 ];
 
 const CLAVES_VALIDAS = new Set(VARIABLES_CRUZADA.map((v) => v.clave));
@@ -483,7 +636,7 @@ export function validarMensajeCruzada(entrada: unknown): ResultadoMensajeCruzada
   return { ok: true, texto };
 }
 
-function seguroDe(r: Ramo): string {
+export function seguroDe(r: Ramo): string {
   return r === "ahorro" ? "tu plan de ahorro" : `tu seguro de ${NOMBRE_RAMO[r]}`;
 }
 
@@ -499,6 +652,12 @@ export interface DatosMensaje {
   ramo: Ramo;
   tipo: TipoOportunidad;
   tiene: Ramo[];
+  /** La póliza de la que se trata (para los momentos de renovación y pago). */
+  polizaRamo?: Ramo | null;
+  /** La fecha de renovación (AAAA-MM-DD). */
+  fecha?: string | null;
+  /** Para las ofertas a un familiar. */
+  familiar?: { nombre: string; parentesco: string } | null;
 }
 
 /** Rellena una plantilla con los datos del cliente (el saludo cuida mayúsculas y razones sociales, igual que Valeri). */
@@ -510,6 +669,10 @@ export function rellenarCruzada(plantilla: string, d: DatosMensaje): string {
     tiene: textoTiene(d.tiene),
     seguro: nombreCorto(d.ramo),
     tuvo: seguroDe(d.ramo),
+    poliza: d.polizaRamo ? seguroDe(d.polizaRamo) : "tu póliza",
+    fecha: d.fecha ? fechaLarga(d.fecha) : "la fecha de tu renovación",
+    familiar: d.familiar?.nombre ?? "tu familiar",
+    parentesco: d.familiar?.parentesco ?? "familiar",
   };
   return plantilla
     .replace(/\{([^{}]*)\}/g, (todo, clave: string) => (clave in valores ? valores[clave] : todo))
@@ -518,15 +681,15 @@ export function rellenarCruzada(plantilla: string, d: DatosMensaje): string {
     .trim();
 }
 
-/** La clave del texto que toca: el de reactivar si el seguro ya existió, o el del ramo que se ofrece. */
+/** La clave del texto que toca: familiar, reactivar si el seguro ya existió, o el del ramo que se ofrece. */
 export function claveDe(o: Pick<Oportunidad, "ramo" | "tipo">): ClaveMensaje {
-  return o.tipo === "reactivar" ? "reactivar" : o.ramo;
+  return o.tipo === "familiar" ? "familiar" : o.tipo === "reactivar" ? "reactivar" : o.ramo;
 }
 
 /** El WhatsApp listo para mandar: tu texto si lo personalizaste; si no, el base. */
-export function mensajeCruzada(o: Pick<Oportunidad, "nombre" | "ramo" | "tipo" | "tiene">, personalizadas: Partial<Record<ClaveMensaje, string>> = {}): string {
+export function mensajeCruzada(o: Pick<Oportunidad, "nombre" | "ramo" | "tipo" | "tiene" | "familiar">, personalizadas: Partial<Record<ClaveMensaje, string>> = {}): string {
   const clave = claveDe(o);
-  return rellenarCruzada(personalizadas[clave] || PLANTILLAS_CRUZADA[clave], { nombre: o.nombre, ramo: o.ramo, tipo: o.tipo, tiene: o.tiene });
+  return rellenarCruzada(personalizadas[clave] || PLANTILLAS_CRUZADA[clave], { nombre: o.nombre, ramo: o.ramo, tipo: o.tipo, tiene: o.tiene, familiar: o.familiar });
 }
 
 /** Liga de WhatsApp al cliente, o null si no tiene un número de 10 dígitos. */
@@ -547,6 +710,8 @@ export interface ResumenCruzada {
   esperando: number;
   seguimiento: number;
   cotizadas: number;
+  /** Ofertas en pausa porque se le ofreció otra cosa hace menos de 30 días. */
+  pausa: number;
   retenidas: number;
   /** Clientes activos con algún dato importante por completar. */
   porCompletar: number;
@@ -567,6 +732,7 @@ export function resumenCruzada(entradas: EntradaCliente[], r: ResultadoOportunid
     esperando: r.lista.filter((o) => o.situacion === "esperando").length,
     seguimiento: r.lista.filter((o) => o.situacion === "seguimiento").length,
     cotizadas: r.lista.filter((o) => o.situacion === "cotizada").length,
+    pausa: r.lista.filter((o) => o.situacion === "pausa").length,
     retenidas: r.retenidas.length,
     porCompletar: activos.filter((e) => faltantesDe(e).some((f) => f.importancia === "alta")).length,
   };
@@ -679,4 +845,6 @@ export interface DatosCamila {
   libro: LibroPoliza[];
   estados: EstadoCruzada[];
   mensajes: Partial<Record<ClaveMensaje, string>>;
+  /** Momentos de confianza que ya atendiste (para que no se repitan). */
+  momentos: MomentoHecho[];
 }

@@ -9,6 +9,7 @@ import { formatoWhatsapp, textoDeCobro } from "@/lib/clientes-reglas";
 import { ESTADOS_OFERTA, esActivo, mapaDeCobertura, type EntradaCliente, type Oportunidad } from "@/lib/cruzada-reglas";
 import type { Cliente, Genero, LibroPoliza, Poliza, Ramo } from "@/lib/types";
 import { Modal } from "../clientes/Modal";
+import { SeccionFamilia } from "./SeccionFamilia";
 
 interface ExpedienteClienteProps {
   entrada: EntradaCliente;
@@ -16,14 +17,19 @@ interface ExpedienteClienteProps {
   valeri: Poliza[];
   libro: LibroPoliza[];
   oportunidades: Oportunidad[];
+  /** Todos los clientes (para ligar la familia). */
+  todos: Cliente[];
+  /** Abrir el expediente de otro cliente (el titular o un familiar). */
+  onAbrir: (clienteId: string) => void;
   onCerrar: () => void;
+  /** Un cliente cambió (o se creó): la pantalla lo actualiza. */
   onGuardado: (c: Cliente) => void;
   onVerPoliza: (p: Poliza) => void;
   onCotizar: (clienteId: string, ramo: Ramo) => void;
 }
 
 /** Todo lo de un cliente en un solo lugar: sus datos, todas sus pólizas y lo que Camila le sugiere. */
-export function ExpedienteCliente({ entrada, valeri, libro, oportunidades, onCerrar, onGuardado, onVerPoliza, onCotizar }: ExpedienteClienteProps) {
+export function ExpedienteCliente({ entrada, valeri, libro, oportunidades, todos, onAbrir, onCerrar, onGuardado, onVerPoliza, onCotizar }: ExpedienteClienteProps) {
   const c = entrada.cliente;
   const [f, setF] = useState({
     nombre: c.nombre,
@@ -128,6 +134,8 @@ export function ExpedienteCliente({ entrada, valeri, libro, oportunidades, onCer
           </ul>
         </section>
 
+        <SeccionFamilia cliente={c} todos={todos} onCambio={onGuardado} onAbrir={onAbrir} />
+
         <section aria-label="Sus datos" className="space-y-3">
           <h3 className="font-semibold text-ink">Sus datos</h3>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -172,7 +180,7 @@ export function ExpedienteCliente({ entrada, valeri, libro, oportunidades, onCer
           <label className="flex min-h-[44px] items-start gap-2 text-sm text-ink-soft">
             <input type="checkbox" className="mt-1" checked={f.no_ofrecer} onChange={(e) => set({ no_ofrecer: e.target.checked })} />
             <span>
-              <span className="font-semibold text-ink">No ofrecerle más seguros.</span> Camila lo deja fuera de sus sugerencias (por ejemplo si te lo pidió o es de la familia).
+              <span className="font-semibold text-ink">No ofrecerle más seguros ni escribirle.</span> Camila lo deja fuera de sus sugerencias y de sus momentos (por ejemplo si te pidió no recibir mensajes).
             </span>
           </label>
           {aviso && (

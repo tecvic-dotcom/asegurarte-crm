@@ -12,6 +12,7 @@ import "server-only";
  * (CRM + finanzas) y decide qué aguja mostrar y cuándo prender la luz ámbar.
  */
 import { listLeads, isCloud } from "./db";
+import { listarEstados } from "./cruzada";
 import { listarMovimientos } from "./finanzas";
 import { listarPolizas } from "./cobranza";
 import { resumenCobranza } from "./cobranza-reglas";
@@ -30,6 +31,7 @@ import {
   ultimoDeMes,
   mesAnterior,
   sumarDias,
+  diasEntre,
   diasIncluidos,
   diasTraslape,
   minFecha,
@@ -66,6 +68,8 @@ interface Rango {
 interface Contexto {
   hoy: string;
   leads: Lead[];
+  /** Ventas cruzadas cerradas en Camila que no pasaron por un prospecto ganado (se suman a la meta, no al embudo). */
+  ventasCruzadas: Lead[];
   movimientos: Movimiento[];
   config: ManagerConfig;
   ventanaMeta: Rango;
@@ -150,15 +154,68 @@ async function cargarContexto(periodos: PeriodoPanel[], configDada?: ManagerConf
   for (const p of periodos) desde = minFecha(desde, calcularPeriodo(p, hoy, config).anterior.desde);
 
   const [leads, movimientos] = await Promise.all([listLeads(), listarMovimientos(desde, hoy)]);
-  return { hoy, leads, movimientos, config, ventanaMeta, diasMeta };
+  return { hoy, leads, ventasCruzadas: await ventasCruzadasDeCamila(leads), movimientos, config, ventanaMeta, diasMeta };
+}
+
+/**
+ * Las ventas que cerraste con «Lo contrató» en Camila y que NO quedaron como «Cliente ganado» de un prospecto (el CRM guarda un
+ * prospecto por persona: a un cliente que ya compró antes no se le puede abrir otro). Se cuentan para tu meta y tus pólizas del
+ * periodo como una venta más de ese ramo; si la venta sí pasó por un prospecto, ya cuenta ahí y no se suma dos veces.
+ * Si Camila todavía no tiene sus tablas (SQL 0016/0017), el Panel sigue igual que siempre.
+ */
+async function ventasCruzadasDeCamila(leads: Lead[]): Promise<Lead[]> {
+  let estados;
+  try {
+    estados = await listarEstados();
+  } catch {
+    return [];
+  }
+  const porId = new Map(leads.map((l) => [l.id, l]));
+  const salida: Lead[] = [];
+  for (const e of estados) {
+    if (e.estado !== "cerrada") continue;
+    const lead = e.lead_id ? porId.get(e.lead_id) : undefined;
+    // Ya cuenta por su prospecto: ganado con ese ramo y cerrado en esos mismos días.
+    if (lead && lead.etapa === "ganado" && lead.ramo === e.ramo && lead.cerrado_en && Math.abs(diasEntre(fechaLocal(lead.cerrado_en), fechaLocal(e.actualizado_en))) <= 1) continue;
+    salida.push({
+      id: `cruzada:${e.cliente_id}:${e.ramo}`,
+      nombre: "Venta cruzada",
+      correo: "",
+      whatsapp: "",
+      mensaje: "",
+      etapa: "ganado",
+      valor: 0,
+      origen: "Venta cruzada",
+      utm_source: "",
+      utm_medium: "",
+      utm_campaign: "",
+      utm_term: "",
+      utm_content: "",
+      pais: null,
+      ciudad: null,
+      region: null,
+      dispositivo: null,
+      asignado_a: null,
+      notas: "",
+      genero: null,
+      fecha_nacimiento: null,
+      codigo_postal: null,
+      ramo: e.ramo,
+      cerrado_en: e.actualizado_en,
+      creado_en: e.actualizado_en,
+      actualizado_en: e.actualizado_en,
+    });
+  }
+  return salida;
 }
 
 // ----------------------------------------------------------------------------
 // Cálculos
 // ----------------------------------------------------------------------------
 
-function ganadasEn(leads: Lead[], r: Rango): Lead[] {
-  return leads.filter((l) => l.etapa === "ganado" && l.cerrado_en !== null && enRango(fechaLocal(l.cerrado_en), r));
+/** Las pólizas cerradas en un rango: prospectos pasados a «Cliente ganado» más las ventas cruzadas de Camila. */
+function ganadasEn(ctx: Contexto, r: Rango): Lead[] {
+  return [...ctx.leads, ...ctx.ventasCruzadas].filter((l) => l.etapa === "ganado" && l.cerrado_en !== null && enRango(fechaLocal(l.cerrado_en), r));
 }
 
 function suma(movs: Movimiento[], tipo: TipoMovimiento, r: Rango): number {
@@ -170,7 +227,7 @@ function suma(movs: Movimiento[], tipo: TipoMovimiento, r: Rango): number {
 function resumen(ctx: Contexto, r: Rango): Resumen {
   const entro = suma(ctx.movimientos, "ingreso", r);
   const salio = suma(ctx.movimientos, "gasto", r);
-  return { polizas: ganadasEn(ctx.leads, r).length, entro, salio, quedo: Math.round((entro - salio) * 100) / 100 };
+  return { polizas: ganadasEn(ctx, r).length, entro, salio, quedo: Math.round((entro - salio) * 100) / 100 };
 }
 
 /** Cuántas pólizas de UN ramo te tocan en un rango: tu meta repartida por día. */
@@ -374,7 +431,7 @@ function avanceMeta(ctx: Contexto) {
   }
   const hasta = minFecha(ctx.hoy, fin);
   const r = { desde: inicio, hasta };
-  const ganadas = ganadasEn(ctx.leads, r);
+  const ganadas = ganadasEn(ctx, r);
   const ritmoRamo = prorrateo(ctx, r);
   const ramos = RAMOS.map((ramo) => {
     const cerradas = ganadas.filter((l) => l.ramo === ramo.id).length;
@@ -490,7 +547,7 @@ export async function panelSnapshot(periodo: PeriodoPanel): Promise<PanelSnapsho
     anterior: p.anterior,
     frase: armarFrase(ctx),
     kpis: armarKpis(ctx, p, act, ant, hayFinanzas),
-    ramos: armarRamos(ctx, periodo, p, ganadasEn(ctx.leads, p.actual)),
+    ramos: armarRamos(ctx, periodo, p, ganadasEn(ctx, p.actual)),
     meta: {
       inicio: meta.inicio,
       fin: meta.fin,
