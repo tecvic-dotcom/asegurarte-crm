@@ -156,6 +156,10 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 .live span{font:700 12px/1.25 var(--display);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft)}
 .live strong{font:900 26px/1 var(--display);font-variant-numeric:tabular-nums;color:#fff;overflow-wrap:anywhere;text-align:right}
 
+.live-hint{margin:10px 2px 0;font-size:14px;line-height:1.5;color:var(--ink-mute)}
+.live-hint b{color:var(--ink-soft);font-weight:600}
+.live-hint.cubierto{padding:10px 12px;border-radius:12px;border:1px solid rgba(255,194,75,.35);background:rgba(255,194,75,.08);color:var(--ink-soft)}
+
 /* Botones */
 .btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:54px;padding:0 18px;border-radius:14px;border:1px solid transparent;
   font:700 16px/1.2 var(--body);text-decoration:none;text-align:center;cursor:pointer;transition:background .15s,border-color .15s,transform .15s,filter .15s;-webkit-tap-highlight-color:transparent}
@@ -375,6 +379,7 @@ footer a{color:var(--ink-soft)}
     </div>
 
     <div class="live" aria-live="polite"><span>Cobertura<br>sugerida</span><strong id="liveNum">$0</strong></div>
+    <p class="live-hint" id="liveHint" aria-live="polite"></p>
     <div class="nav"><button type="button" class="btn btn-ghost" data-ir="2">Atrás</button><button type="button" class="btn btn-next" data-ir="4">Ver mi resultado</button></div>
   </section>
 
@@ -575,30 +580,42 @@ footer a{color:var(--ink-soft)}
   function calcular() {
     const para = elegido("para") || "familia";
     const filas = [];
-    let total = 0, plazo = 0;
+    let total = 0, plazo = 0, necesidad = 0, ahorros = 0;
     if (para === "familia") {
       plazo = parseInt($("anios").value, 10);
-      const proteccion = leer("ingreso") * 12 * plazo, deudas = leer("deudasF"), ahorros = leer("ahorrosF");
+      const proteccion = leer("ingreso") * 12 * plazo, deudas = leer("deudasF"); ahorros = leer("ahorrosF");
       filas.push(["Ingreso protegido (" + anios(plazo) + ")", money(proteccion)], ["Deudas a cubrir", money(deudas)], ["Gastos finales (estimado)", money(GASTOS_FINALES)], ["Ahorros y seguros actuales", "− " + money(ahorros), true]);
-      total = proteccion + deudas + GASTOS_FINALES - ahorros;
+      necesidad = proteccion + deudas + GASTOS_FINALES;
     } else if (para === "joven") {
       const apoya = elegido("apoyo") === "si";
       plazo = apoya ? parseInt($("aniosJ").value, 10) : 0;
-      const apoyo = apoya ? leer("apoyoJ") * 12 * plazo : 0, deudas = leer("deudasJ"), ahorros = leer("ahorrosJ");
+      const apoyo = apoya ? leer("apoyoJ") * 12 * plazo : 0, deudas = leer("deudasJ"); ahorros = leer("ahorrosJ");
       if (apoya) filas.push(["Apoyo a los tuyos (" + anios(plazo) + ")", money(apoyo)]);
       filas.push(["Deudas a cubrir", money(deudas)], ["Gastos finales (estimado)", money(GASTOS_FINALES)], ["Ahorros y seguros actuales", "− " + money(ahorros), true]);
-      total = apoyo + deudas + GASTOS_FINALES - ahorros;
+      necesidad = apoyo + deudas + GASTOS_FINALES;
     } else {
       plazo = parseInt($("aniosH").value, 10);
-      const saldo = leer("saldoH"), ahorros = leer("ahorrosH");
+      const saldo = leer("saldoH"); ahorros = leer("ahorrosH");
       filas.push(["Saldo de tu hipoteca", money(saldo)], ["Seguro o ahorros que ya la cubren", "− " + money(ahorros), true]);
-      total = saldo - ahorros;
+      necesidad = saldo;
     }
-    return { para, filas, total: Math.max(total, 0), plazo };
+    total = necesidad - ahorros;
+    return { para, filas, total: Math.max(total, 0), plazo, necesidad, ahorros };
   }
 
+  // Debajo de la cobertura se explica el cálculo; si es $0 se dice por qué (sus ahorros o seguros ya cubren lo que necesita).
+  const SI_ES_CERO = {
+    familia: "Revisa que el ingreso y los años a proteger sean los reales.",
+    joven: "Si alguien depende de tu apoyo, elige «Sí, apoyo a alguien» para sumarlo.",
+    hipoteca: "Tu hipoteca ya está cubierta.",
+  };
   function recalc() {
-    $("liveNum").textContent = money(calcular().total);
+    const c = calcular(), h = $("liveHint");
+    $("liveNum").textContent = money(c.total);
+    h.classList.toggle("cubierto", c.total === 0);
+    h.innerHTML = c.total === 0
+      ? "<b>Tus ahorros o seguros (" + money(c.ahorros) + ") ya cubren lo que necesitas (" + money(c.necesidad) + ").</b> " + SI_ES_CERO[c.para]
+      : "Necesitas cubrir <b>" + money(c.necesidad) + "</b> y ya tienes <b>" + money(c.ahorros) + "</b>; falta cubrir <b>" + money(c.total) + "</b>.";
   }
 
   /* ---------- Resultado ---------- */
@@ -626,7 +643,9 @@ footer a{color:var(--ink-soft)}
     $("tips").innerHTML = tips.map((t) => "<li" + (t[1] ? ' class="warn"' : "") + ">" + t[0] + "</li>").join("");
 
     const msg = "Hola Roberto, hice el cálculo de Tu Escudo Familiar. Mi objetivo: " + obj.wa + ". Soy " + (mujer ? "mujer" : "hombre") + " de " + e + " años y " + (fuma ? "sí fumo" : "no fumo") + ". " +
-      "Mi cobertura sugerida fue " + money(c.total) + (c.plazo ? " a " + anios(c.plazo) : "") + ". Quiero que me ayudes a cotizar mi seguro de vida.";
+      (c.total > 0
+        ? "Mi cobertura sugerida fue " + money(c.total) + (c.plazo ? " a " + anios(c.plazo) : "") + ". Quiero que me ayudes a cotizar mi seguro de vida."
+        : "Con mis ahorros y seguros actuales el cálculo salió en $0, pero quiero que me ayudes a revisar mi protección y cotizar un seguro de vida.");
     $("waButton").href = "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(msg);
   }
 
