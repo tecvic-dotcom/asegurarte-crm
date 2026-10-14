@@ -55,6 +55,13 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
   const [clientesSinRamo, setClientesSinRamo] = useState(false);
   // Celular: el menú vive escondido a la izquierda y se abre con el botón "Menú".
   const [menuAbierto, setMenuAbierto] = useState(false);
+  // Si el servidor rechaza mover a un prospecto de etapa, se dice por qué (antes la tarjeta solo regresaba sin explicar).
+  const [falloMover, setFalloMover] = useState<string | null>(null);
+  useEffect(() => {
+    if (!falloMover) return;
+    const reloj = window.setTimeout(() => setFalloMover(null), 12000);
+    return () => window.clearTimeout(reloj);
+  }, [falloMover]);
 
   useEffect(() => {
     if (!menuAbierto) return;
@@ -85,7 +92,8 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
     setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, etapa } : l))); // optimista
     try {
       await crmMover(id, etapa);
-    } catch {
+    } catch (e) {
+      setFalloMover((e as Error).message || "No pude mover al prospecto. Inténtalo de nuevo.");
       void recargar();
     }
   }
@@ -348,6 +356,22 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
           )}
         </div>
       </main>
+
+      {falloMover && (
+        <div
+          role="alert"
+          className="fixed inset-x-3 bottom-4 z-[60] mx-auto flex max-w-xl items-start gap-3 rounded-2xl border p-4 text-sm text-ink shadow-2xl backdrop-blur"
+          style={{ borderColor: "color-mix(in srgb, var(--amber) 55%, transparent)", background: "color-mix(in srgb, var(--amber) 14%, var(--bg-2))" }}
+        >
+          <Icon icon="flat-color-icons:high-priority" width={22} aria-hidden className="mt-0.5 shrink-0" />
+          <p className="flex-1">
+            <strong>No se pudo mover al prospecto.</strong> {falloMover}
+          </p>
+          <button type="button" onClick={() => setFalloMover(null)} className="shrink-0 text-ink-mute underline hover:text-ink">
+            Cerrar
+          </button>
+        </div>
+      )}
     </div>
   );
 }
