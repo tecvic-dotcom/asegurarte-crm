@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#06070f">
 <title>Tu Escudo Familiar · Roberto Rodríguez</title>
-<meta name="description" content="Calcula en un minuto cuánto seguro de vida necesitas para proteger a tu familia. Herramienta gratuita de Roberto Rodríguez, asesor de seguros en Monterrey.">
+<meta name="description" content="Calcula en un minuto cuánto seguro de vida necesitas para proteger a tu familia, cubrir tu hipoteca o arrancar joven y sin hijos. Herramienta gratuita de Roberto Rodríguez, asesor de seguros en Monterrey.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Tu Escudo Familiar · ¿Cuánto seguro de vida necesitas?">
-<meta property="og:description" content="Calcula en un minuto la suma asegurada que protege a tu familia. Gratis y sin registro.">
+<meta property="og:description" content="Responde 3 pasos rápidos y descubre la suma asegurada que necesitas. Gratis y sin registro.">
 <meta property="og:url" content="https://www.especialistaenasegurarte.lat/escudo">
 <meta property="og:image" content="https://www.especialistaenasegurarte.lat/tarjeta/img/roberto-og.jpg">
 <meta property="og:image:width" content="1200">
@@ -23,11 +23,11 @@
 @font-face{font-family:'Montserrat';font-style:normal;font-weight:600 900;font-display:swap;src:url(/tarjeta/fonts/montserrat-latin.woff2) format('woff2')}
 
 /* Marca de especialistaenasegurarte.lat: azul-noche, azul royal eléctrico, vidrio; Montserrat + Inter + Anton (logo).
-   Layout: una columna de 520px máx. — datos → resultado → desglose → contacto. */
+   Layout: una columna de 520px máx. Asistente de 3 pasos (objetivo → tú → tus números) y una pantalla de resultado. */
 :root{
   --bg:#06070f; --bg-2:#0a0c1c; --bg-3:#101536;
   --ink:#f2f4ff; --ink-soft:#b8bedd; --ink-mute:#7d83a8;
-  --brand:#2a22f5; --brand-2:#5b7bff;
+  --brand:#2a22f5; --brand-2:#5b7bff; --warn:#ffc24b; --err:#ff8f8f;
   --line:rgba(180,192,255,.10); --line-strong:rgba(180,192,255,.20);
   --glass:rgba(120,140,255,.05); --glass-2:rgba(120,140,255,.09);
   --wa:#25D366; --wa-hover:#45E07F; --wa-ink:#04230F;
@@ -37,6 +37,7 @@
   color-scheme:dark;
 }
 *,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
 html{background:var(--bg);-webkit-text-size-adjust:100%}
 body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font:400 17px/1.55 var(--body);-webkit-font-smoothing:antialiased;
   padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
@@ -70,14 +71,69 @@ a{color:inherit}
 h1{margin:16px 0 0;font:900 clamp(34px,10vw,46px)/1.05 var(--display);letter-spacing:-.015em;text-wrap:balance;
   background:linear-gradient(100deg,#ffffff,var(--brand-2) 70%,#c3ccff);-webkit-background-clip:text;background-clip:text;color:transparent}
 .hero p{margin:12px auto 0;max-width:34ch;color:var(--ink-soft);font-size:17.5px}
-.sample{margin:0;text-align:center;font-size:14px;color:var(--ink-mute)}
 
-/* Datos */
-.card{border-radius:22px;padding:22px 20px}
-h2{margin:0 0 18px;font:800 20px/1.2 var(--display)}
-.field + .field{margin-top:20px}
-.field label{display:block;font-weight:600;font-size:16px;margin-bottom:8px}
+/* Progreso */
+.progress-box{padding:0 2px}
+.progress{height:6px;border-radius:999px;background:rgba(180,192,255,.14);overflow:hidden}
+.progress span{display:block;height:100%;width:33.3%;border-radius:inherit;background:linear-gradient(90deg,var(--brand),var(--brand-2));transition:width .35s ease}
+.stepof{margin:10px 0 0;font:600 13.5px/1.3 var(--body);color:var(--ink-mute);display:flex;justify-content:space-between;gap:10px}
+.stepof b{color:var(--ink-soft);font-weight:600}
+
+/* Pasos */
+.card{border-radius:22px;padding:24px 20px}
+@media (prefers-reduced-motion:no-preference){ .step{animation:in .28s ease both} }
+@keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+h2{margin:0 0 6px;font:800 22px/1.2 var(--display);outline:none}
+.lead{margin:0 0 20px;font-size:15.5px;line-height:1.5;color:var(--ink-soft)}
+.field + .field{margin-top:22px}
+fieldset.field{border:0;padding:0;margin-inline:0;min-width:0}
+.field label,.field legend{display:block;padding:0;font-weight:600;font-size:16px;margin-bottom:8px}
 .hint{display:block;margin-top:2px;font-weight:400;font-size:14px;color:var(--ink-mute)}
+.err{margin:8px 0 0;font-size:14px;line-height:1.4;color:var(--err);min-height:0}
+.err:empty{display:none}
+.example{margin:0 0 18px;font-size:14px;color:var(--ink-mute)}
+.note{margin:18px 0 0;display:flex;gap:8px;align-items:flex-start;font-size:13.5px;line-height:1.5;color:var(--ink-mute)}
+.note .ic{width:16px;height:16px;margin-top:3px;color:var(--brand-2)}
+
+/* Tarjetas de opción (radios) */
+.choices{display:grid;gap:12px}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.choice{position:relative;display:block}
+.choice input{position:absolute;opacity:0;width:1px;height:1px;margin:0}
+.choice .box{display:flex;align-items:center;gap:14px;min-height:58px;padding:12px 16px;border-radius:16px;border:1px solid var(--line-strong);background:rgba(6,7,15,.45);cursor:pointer;
+  transition:border-color .15s,background .15s,box-shadow .15s,transform .15s;-webkit-tap-highlight-color:transparent}
+.choice .box:hover{border-color:var(--brand-2)}
+.choice .box:active{transform:scale(.99)}
+.choice input:checked + .box{border-color:var(--brand-2);background:linear-gradient(160deg,rgba(91,123,255,.24),rgba(42,34,245,.14));box-shadow:0 0 0 3px rgba(91,123,255,.2)}
+.choice input:focus-visible + .box{outline:2px solid var(--brand-2);outline-offset:3px}
+.choice.big .box{min-height:84px;padding:14px;gap:12px}
+.choice .ico{display:grid;place-items:center;width:44px;height:44px;border-radius:14px;background:var(--glass-2);color:var(--brand-2);flex:none}
+.choice .ico .ic{width:24px;height:24px}
+.choice .txt{flex:1;min-width:0}
+.choice b{display:block;font:800 17px/1.2 var(--display)}
+.choice small{display:block;margin-top:3px;font-size:14px;line-height:1.4;color:var(--ink-mute)}
+.choice .tick{flex:none;width:22px;height:22px;border-radius:50%;border:2px solid var(--line-strong);position:relative;transition:background .15s,border-color .15s}
+.choice input:checked + .box .tick{background:var(--brand-2);border-color:var(--brand-2)}
+.choice input:checked + .box .tick::after{content:"";position:absolute;left:6px;top:2px;width:5px;height:10px;border:solid #fff;border-width:0 2.5px 2.5px 0;transform:rotate(45deg)}
+.duo .choice .box{justify-content:center;text-align:center;flex-direction:column;gap:2px}
+.duo .choice .tick{display:none}
+.duo .choice b{font-size:16px}
+.duo .choice small{margin-top:0;font-size:13px}
+
+/* Edad con − / + */
+.stepper{display:flex;align-items:center;gap:10px}
+.stp{flex:none;width:54px;height:54px;border-radius:14px;border:1px solid var(--line-strong);background:var(--glass);color:var(--ink);font:600 26px/1 var(--display);cursor:pointer;
+  display:grid;place-items:center;transition:border-color .15s,background .15s;-webkit-tap-highlight-color:transparent}
+.stp:hover{border-color:var(--brand-2);background:var(--glass-2)}
+.stp:active{transform:scale(.96)}
+.age{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;min-height:54px;border-radius:14px;border:1px solid var(--line-strong);background:rgba(6,7,15,.55);transition:border-color .15s,box-shadow .15s}
+.age:focus-within{border-color:var(--brand-2);box-shadow:0 0 0 3px rgba(91,123,255,.25)}
+.age input{width:3.2ch;min-width:0;border:0;background:transparent;color:var(--ink);text-align:center;font:800 26px/1 var(--display);font-variant-numeric:tabular-nums;outline:none;padding:12px 0}
+.age input::placeholder{color:var(--ink-mute);opacity:.55}
+.age span{color:var(--ink-mute);font-size:15px}
+.is-bad .age,.is-bad .money,.is-bad .choice .box{border-color:var(--err)}
+
+/* Dinero y años */
 .money{display:flex;align-items:center;min-height:54px;border-radius:14px;border:1px solid var(--line-strong);background:rgba(6,7,15,.55);transition:border-color .15s,box-shadow .15s}
 .money:focus-within{border-color:var(--brand-2);box-shadow:0 0 0 3px rgba(91,123,255,.25)}
 .money span{padding-left:16px;color:var(--ink-mute);font:600 18px/1 var(--display)}
@@ -92,8 +148,32 @@ input[type=range]::-moz-range-progress{height:8px;border-radius:999px;background
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;margin-top:-10px;border-radius:50%;background:#fff;border:4px solid var(--brand);box-shadow:0 4px 14px rgba(42,34,245,.6)}
 input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#fff;border:4px solid var(--brand);box-shadow:0 4px 14px rgba(42,34,245,.6)}
 .scale{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-mute);margin-top:-2px}
+.sub-field{margin-top:16px;padding-left:14px;border-left:2px solid var(--line-strong)}
+
+/* Cobertura en vivo (paso 3) */
+.live{margin-top:22px;padding:14px 16px;border-radius:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  background:linear-gradient(160deg,rgba(120,140,255,.16),rgba(42,34,245,.12));border:1px solid var(--line-strong)}
+.live span{font:700 12px/1.25 var(--display);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft)}
+.live strong{font:900 26px/1 var(--display);font-variant-numeric:tabular-nums;color:#fff;overflow-wrap:anywhere;text-align:right}
+
+/* Botones */
+.btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:54px;padding:0 18px;border-radius:14px;border:1px solid transparent;
+  font:700 16px/1.2 var(--body);text-decoration:none;text-align:center;cursor:pointer;transition:background .15s,border-color .15s,transform .15s,filter .15s;-webkit-tap-highlight-color:transparent}
+.btn:active{transform:translateY(1px)}
+.btn-next{background:linear-gradient(100deg,var(--brand),var(--brand-2));color:#fff;box-shadow:0 14px 34px -16px rgba(42,34,245,.9)}
+.btn-next:hover{filter:brightness(1.1)}
+.btn-wa{background:var(--wa);color:var(--wa-ink);box-shadow:0 14px 34px -16px rgba(37,211,102,.7)}
+.btn-wa:hover{background:var(--wa-hover)}
+.btn-ghost{background:var(--glass);color:var(--ink);border-color:var(--line-strong);font-weight:600}
+.btn-ghost:hover{background:var(--glass-2);border-color:var(--brand-2)}
+.btn-ghost .ic{color:var(--brand-2)}
+.nav{display:grid;grid-template-columns:auto 1fr;gap:12px;margin-top:26px}
+.nav .btn-ghost{width:auto;padding:0 20px}
+.nav.solo{grid-template-columns:1fr}
 
 /* Resultado */
+.who-for{margin:0;text-align:center;font-size:14px;line-height:1.5;color:var(--ink-mute)}
+.who-for b{color:var(--ink-soft);font-weight:600}
 .result{position:relative;overflow:hidden;border-radius:24px;padding:26px 20px;text-align:center;
   background:linear-gradient(160deg,rgba(120,140,255,.18),rgba(42,34,245,.14));border:1px solid var(--line-strong);
   box-shadow:0 24px 60px -24px rgba(42,34,245,.7)}
@@ -103,12 +183,15 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 .result .label{margin:0;font:700 12.5px/1.2 var(--display);letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft)}
 .result .num{margin:10px 0 0;font:900 clamp(38px,12vw,52px)/1.05 var(--display);letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:#fff;overflow-wrap:anywhere}
 .result .sub{margin:8px 0 0;font-size:14.5px;color:var(--ink-soft)}
-@media (prefers-reduced-motion:no-preference){ .num.pulse{animation:pulse .32s ease} }
-@keyframes pulse{0%{transform:scale(1)}40%{transform:scale(1.035)}100%{transform:scale(1)}}
 
-/* Desglose */
-.ledger{border-radius:22px;padding:20px}
-.ledger h2{margin-bottom:8px;font-size:18px}
+.panel{border-radius:22px;padding:20px}
+.panel h2{margin-bottom:10px;font-size:18px}
+.tips{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.tips li{position:relative;padding-left:30px;font-size:15.5px;line-height:1.5;color:var(--ink-soft)}
+.tips li::before{content:"";position:absolute;left:2px;top:3px;width:18px;height:18px;border-radius:50%;background:var(--brand-2) no-repeat center/11px
+  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7.5'/%3E%3C/svg%3E")}
+.tips li.warn::before{background-color:var(--warn);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2306070f' stroke-width='3.4' stroke-linecap='round'%3E%3Cpath d='M12 6v7'/%3E%3Cpath d='M12 18h.01'/%3E%3C/svg%3E")}
+.tips strong{color:var(--ink);font-weight:600}
 .row{display:flex;align-items:baseline;gap:8px;padding:11px 0;border-bottom:1px solid var(--line)}
 .row .l{font-size:15px;color:var(--ink-soft)}
 .row .fill{flex:1;border-bottom:1px dotted rgba(180,192,255,.22);transform:translateY(-4px);min-width:12px}
@@ -118,6 +201,9 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 .row.total .l{color:var(--ink);font-weight:700}
 .row.total .v{color:var(--brand-2);font-weight:800;font-size:18px}
 .disclaimer{margin:0;font-size:13.5px;line-height:1.6;color:var(--ink-mute)}
+.again{display:flex;justify-content:center;gap:22px;flex-wrap:wrap}
+.linkbtn{min-height:44px;padding:0 4px;border:0;background:none;color:var(--ink-soft);font:600 15px/1 var(--body);text-decoration:underline;text-underline-offset:4px;cursor:pointer}
+.linkbtn:hover{color:var(--ink)}
 
 /* Contacto */
 .cta{border-radius:24px;padding:22px 20px;display:flex;flex-direction:column;gap:12px}
@@ -126,14 +212,6 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 .who img{object-fit:cover;object-position:50% 12%;box-shadow:0 0 0 2px var(--bg),0 0 0 3px var(--brand-2)}
 .who strong{display:block;font:800 18px/1.2 var(--display)}
 .who span{display:block;font-size:14px;color:var(--ink-mute)}
-.btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:54px;padding:0 18px;border-radius:14px;border:1px solid transparent;
-  font:700 16px/1.2 var(--body);text-decoration:none;text-align:center;cursor:pointer;transition:background .15s,border-color .15s,transform .15s}
-.btn:active{transform:translateY(1px)}
-.btn-wa{background:var(--wa);color:var(--wa-ink);box-shadow:0 14px 34px -16px rgba(37,211,102,.7)}
-.btn-wa:hover{background:var(--wa-hover)}
-.btn-ghost{background:var(--glass);color:var(--ink);border-color:var(--line-strong);font-weight:600}
-.btn-ghost:hover{background:var(--glass-2);border-color:var(--brand-2)}
-.btn-ghost .ic{color:var(--brand-2)}
 
 footer{margin-top:8px;padding-top:18px;border-top:1px solid var(--line);font-size:12.5px;line-height:1.65;color:var(--ink-mute)}
 footer p{margin:0 0 8px}
@@ -145,6 +223,10 @@ footer a{color:var(--ink-soft)}
   <symbol id="i-wa" viewBox="0 0 24 24"><path d="M3.6 20.4l1.25-4.3A8.6 8.6 0 1 1 8 19.3z"/><path d="M9.2 8.1c-.4.4-.6 1-.4 1.8.6 2.2 2.6 4.3 4.9 4.9.8.2 1.4 0 1.8-.4l.4-.6-1.9-1.1-.8.7c-.9-.4-1.8-1.3-2.2-2.2l.7-.8-1.1-1.9z"/></symbol>
   <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M8 15h.01"/><path d="M12 15h.01"/><path d="M16 15h.01"/></symbol>
   <symbol id="i-back" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+  <symbol id="i-family" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
 </defs></svg>
 
 <div class="wrap">
@@ -153,64 +235,189 @@ footer a{color:var(--ink-soft)}
     <a class="back" href="/roberto"><svg class="ic" aria-hidden="true"><use href="#i-back"/></svg>Inicio</a>
   </header>
 
-  <section class="hero">
+  <section class="hero" id="hero">
     <span class="chip">Herramienta gratuita</span>
     <h1>Tu Escudo Familiar</h1>
-    <p>Calcula en un minuto cuánto seguro de vida necesitas para proteger a los tuyos.</p>
+    <p>Responde 3 pasos rápidos y descubre cuánto seguro de vida necesitas.</p>
   </section>
 
-  <p class="sample">Ejemplo precargado. Cámbialo por tus propios números.</p>
+  <div class="progress-box" id="progreso" aria-live="polite">
+    <div class="progress" role="progressbar" aria-label="Progreso" aria-valuemin="1" aria-valuemax="3" aria-valuenow="1"><span id="barra"></span></div>
+    <p class="stepof"><b id="pasoTxt">Paso 1 de 3</b><span id="pasoNombre">Tu objetivo</span></p>
+  </div>
 
-  <section class="card glass" aria-labelledby="h-datos">
-    <h2 id="h-datos">Tus datos</h2>
-    <div class="field">
-      <label for="ingreso">Tu ingreso mensual</label>
-      <div class="money"><span>$</span><input id="ingreso" type="text" inputmode="numeric" autocomplete="off" value="15,000"><small>MXN</small></div>
+  <!-- PASO 1 · objetivo -->
+  <section class="card glass step" id="paso1" aria-labelledby="t1">
+    <h2 id="t1" tabindex="-1">¿Qué quieres proteger?</h2>
+    <p class="lead">Elige lo que más se parezca a tu situación. Con eso ajustamos las preguntas.</p>
+    <div class="choices" role="radiogroup" aria-labelledby="t1">
+      <label class="choice big"><input type="radio" name="para" value="familia"><span class="box">
+        <span class="ico"><svg class="ic" aria-hidden="true"><use href="#i-family"/></svg></span>
+        <span class="txt"><b>Proteger a mi familia</b><small>Mi pareja, hijos o papás dependen de mi ingreso</small></span><span class="tick" aria-hidden="true"></span></span></label>
+      <label class="choice big"><input type="radio" name="para" value="joven"><span class="box">
+        <span class="ico"><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg></span>
+        <span class="txt"><b>Soy joven y sin hijos</b><small>Quiero empezar con una protección barata y no dejar deudas a otros</small></span><span class="tick" aria-hidden="true"></span></span></label>
+      <label class="choice big"><input type="radio" name="para" value="hipoteca"><span class="box">
+        <span class="ico"><svg class="ic" aria-hidden="true"><use href="#i-home"/></svg></span>
+        <span class="txt"><b>Cubrir mi hipoteca</b><small>Que mi casa quede pagada si yo falto</small></span><span class="tick" aria-hidden="true"></span></span></label>
     </div>
-    <div class="field">
-      <div class="years"><label for="anios">¿Cuántos años quieres proteger ese ingreso?</label><output id="aniosLabel" for="anios">10 años</output></div>
-      <input id="anios" type="range" min="5" max="20" step="1" value="10">
-      <div class="scale"><span>5 años</span><span>20 años</span></div>
-    </div>
-    <div class="field">
-      <label for="deudas">Deudas pendientes<span class="hint">Tarjetas, auto, hipoteca</span></label>
-      <div class="money"><span>$</span><input id="deudas" type="text" inputmode="numeric" autocomplete="off" value="50,000"><small>MXN</small></div>
-    </div>
-    <div class="field">
-      <label for="ahorros">Ahorros o seguros que ya tienes</label>
-      <div class="money"><span>$</span><input id="ahorros" type="text" inputmode="numeric" autocomplete="off" value="20,000"><small>MXN</small></div>
-    </div>
+    <p class="err" id="e-para" role="alert"></p>
+    <div class="nav solo"><button type="button" class="btn btn-next" data-ir="2">Continuar</button></div>
   </section>
 
-  <section class="result" aria-live="polite">
-    <p class="label">Cobertura sugerida</p>
-    <p class="num" id="resultNumber">$0</p>
-    <p class="sub">Suma asegurada para tu seguro de vida</p>
-  </section>
+  <!-- PASO 2 · sobre ti -->
+  <section class="card glass step" id="paso2" aria-labelledby="t2" hidden>
+    <h2 id="t2" tabindex="-1">Cuéntanos de ti</h2>
+    <p class="lead">Tu edad y tus hábitos cambian lo que cuesta tu seguro. Son 3 respuestas rápidas.</p>
 
-  <section class="ledger glass" aria-labelledby="h-calc">
-    <h2 id="h-calc">Cómo se calculó</h2>
-    <div class="row"><span class="l">Ingreso protegido</span><span class="fill"></span><span class="v" id="lineProteccion">$0</span></div>
-    <div class="row"><span class="l">Deudas a cubrir</span><span class="fill"></span><span class="v" id="lineDeudas">$0</span></div>
-    <div class="row"><span class="l">Gastos finales (estimado)</span><span class="fill"></span><span class="v" id="lineGastos">$0</span></div>
-    <div class="row minus"><span class="l">Ahorros y seguros actuales</span><span class="fill"></span><span class="v" id="lineAhorros">− $0</span></div>
-    <div class="row total"><span class="l">Cobertura sugerida</span><span class="fill"></span><span class="v" id="lineTotal">$0</span></div>
-  </section>
-
-  <p class="disclaimer">Este cálculo es un estimado educativo para orientarte, no una cotización oficial. Tu prima real depende de tu edad, tu salud y el plan que elijas. Por eso el siguiente paso es platicarlo con Roberto.</p>
-
-  <section class="cta glass" aria-label="Contacto">
-    <div class="who">
-      <picture>
-        <source type="image/avif" srcset="/tarjeta/img/roberto-600.avif">
-        <source type="image/webp" srcset="/tarjeta/img/roberto-600.webp">
-        <img src="/tarjeta/img/roberto-600.jpg" alt="Roberto Rodríguez" width="60" height="60" loading="lazy" decoding="async">
-      </picture>
-      <div><strong>Roberto Rodríguez</strong><span>Asesor de Seguros · Cédula CNSF V394637</span></div>
+    <div class="field" id="f-edad">
+      <label for="edad">¿Qué edad tienes?</label>
+      <div class="stepper">
+        <button type="button" class="stp" data-edad="-1" aria-label="Restar un año">−</button>
+        <div class="age"><input id="edad" type="text" inputmode="numeric" autocomplete="off" maxlength="2" placeholder="35" aria-describedby="e-edad"><span>años</span></div>
+        <button type="button" class="stp" data-edad="1" aria-label="Sumar un año">+</button>
+      </div>
+      <p class="err" id="e-edad" role="alert"></p>
     </div>
-    <a class="btn btn-wa" id="waButton" href="https://wa.me/528182800234" target="_blank" rel="noopener"><svg class="ic" aria-hidden="true"><use href="#i-wa"/></svg>Cotizar mi seguro por WhatsApp</a>
-    <a class="btn btn-ghost" href="https://calendar.app.google/dxf4aRZFHkux6MqL8" target="_blank" rel="noopener"><svg class="ic" aria-hidden="true"><use href="#i-cal"/></svg>Agendar una cita</a>
+
+    <fieldset class="field" id="f-genero">
+      <legend>Eres</legend>
+      <div class="duo">
+        <label class="choice"><input type="radio" name="genero" value="mujer"><span class="box"><b>Mujer</b></span></label>
+        <label class="choice"><input type="radio" name="genero" value="hombre"><span class="box"><b>Hombre</b></span></label>
+      </div>
+      <p class="err" id="e-genero" role="alert"></p>
+    </fieldset>
+
+    <fieldset class="field" id="f-fuma">
+      <legend>¿Fumas?<span class="hint">Cigarro, vapeo o tabaco, aunque sea de vez en cuando</span></legend>
+      <div class="duo">
+        <label class="choice"><input type="radio" name="fuma" value="no"><span class="box"><b>No fumo</b></span></label>
+        <label class="choice"><input type="radio" name="fuma" value="si"><span class="box"><b>Sí fumo</b></span></label>
+      </div>
+      <p class="err" id="e-fuma" role="alert"></p>
+    </fieldset>
+
+    <p class="note"><svg class="ic" aria-hidden="true"><use href="#i-lock"/></svg><span>Solo los usamos para orientarte. Esta calculadora no guarda tus datos.</span></p>
+    <div class="nav"><button type="button" class="btn btn-ghost" data-ir="1">Atrás</button><button type="button" class="btn btn-next" data-ir="3">Continuar</button></div>
   </section>
+
+  <!-- PASO 3 · números (cada objetivo trae sus propias preguntas) -->
+  <section class="card glass step" id="paso3" aria-labelledby="t3" hidden>
+    <h2 id="t3" tabindex="-1">Tus números</h2>
+    <p class="lead" id="lead3"></p>
+    <p class="example">Ejemplo precargado. Cámbialo por tus propios números.</p>
+
+    <div id="b-familia" hidden>
+      <div class="field">
+        <label for="ingreso">Tu ingreso mensual<span class="hint">Lo que tu familia perdería si tú faltaras</span></label>
+        <div class="money"><span>$</span><input id="ingreso" type="text" inputmode="numeric" autocomplete="off" value="15,000"><small>MXN</small></div>
+      </div>
+      <div class="field">
+        <div class="years"><label for="anios">¿Cuántos años quieres proteger ese ingreso?</label><output id="aniosOut" for="anios">10 años</output></div>
+        <input id="anios" type="range" min="5" max="20" step="1" value="10" data-out="aniosOut">
+        <div class="scale"><span>5 años</span><span>20 años</span></div>
+        <span class="hint">Piensa en cuánto tardarían tus hijos en ser independientes.</span>
+      </div>
+      <div class="field">
+        <label for="deudasF">Deudas pendientes<span class="hint">Tarjetas, auto, hipoteca</span></label>
+        <div class="money"><span>$</span><input id="deudasF" type="text" inputmode="numeric" autocomplete="off" value="50,000"><small>MXN</small></div>
+      </div>
+      <div class="field">
+        <label for="ahorrosF">Ahorros o seguros que ya tienes</label>
+        <div class="money"><span>$</span><input id="ahorrosF" type="text" inputmode="numeric" autocomplete="off" value="20,000"><small>MXN</small></div>
+      </div>
+    </div>
+
+    <div id="b-joven" hidden>
+      <div class="field">
+        <label for="deudasJ">Deudas pendientes<span class="hint">Tarjetas, auto, crédito personal</span></label>
+        <div class="money"><span>$</span><input id="deudasJ" type="text" inputmode="numeric" autocomplete="off" value="30,000"><small>MXN</small></div>
+      </div>
+      <div class="field">
+        <label for="ahorrosJ">Ahorros o seguros que ya tienes</label>
+        <div class="money"><span>$</span><input id="ahorrosJ" type="text" inputmode="numeric" autocomplete="off" value="10,000"><small>MXN</small></div>
+      </div>
+      <fieldset class="field">
+        <legend>¿Alguien depende de tu apoyo económico?<span class="hint">Tus papás, tu pareja, un hermano…</span></legend>
+        <div class="duo">
+          <label class="choice"><input type="radio" name="apoyo" value="no" checked><span class="box"><b>No, solo yo</b></span></label>
+          <label class="choice"><input type="radio" name="apoyo" value="si"><span class="box"><b>Sí, apoyo a alguien</b></span></label>
+        </div>
+      </fieldset>
+      <div class="sub-field" id="b-apoyo" hidden>
+        <div class="field">
+          <label for="apoyoJ">¿Cuánto les das al mes?</label>
+          <div class="money"><span>$</span><input id="apoyoJ" type="text" inputmode="numeric" autocomplete="off" value="5,000"><small>MXN</small></div>
+        </div>
+        <div class="field">
+          <div class="years"><label for="aniosJ">¿Durante cuántos años?</label><output id="aniosJOut" for="aniosJ">10 años</output></div>
+          <input id="aniosJ" type="range" min="5" max="20" step="1" value="10" data-out="aniosJOut">
+          <div class="scale"><span>5 años</span><span>20 años</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="b-hipoteca" hidden>
+      <div class="field">
+        <label for="saldoH">¿Cuánto debes de tu hipoteca?<span class="hint">El saldo pendiente: búscalo en tu estado de cuenta o en la app de tu banco</span></label>
+        <div class="money"><span>$</span><input id="saldoH" type="text" inputmode="numeric" autocomplete="off" value="800,000"><small>MXN</small></div>
+      </div>
+      <div class="field">
+        <div class="years"><label for="aniosH">¿Cuántos años te faltan por pagar?</label><output id="aniosHOut" for="aniosH">15 años</output></div>
+        <input id="aniosH" type="range" min="1" max="30" step="1" value="15" data-out="aniosHOut">
+        <div class="scale"><span>1 año</span><span>30 años</span></div>
+      </div>
+      <div class="field">
+        <label for="ahorrosH">Seguro o ahorros que ya cubren esa deuda<span class="hint">Si no tienes, déjalo en 0</span></label>
+        <div class="money"><span>$</span><input id="ahorrosH" type="text" inputmode="numeric" autocomplete="off" value="0"><small>MXN</small></div>
+      </div>
+    </div>
+
+    <div class="live" aria-live="polite"><span>Cobertura<br>sugerida</span><strong id="liveNum">$0</strong></div>
+    <div class="nav"><button type="button" class="btn btn-ghost" data-ir="2">Atrás</button><button type="button" class="btn btn-next" data-ir="4">Ver mi resultado</button></div>
+  </section>
+
+  <!-- PASO 4 · resultado -->
+  <div id="paso4" class="step" hidden style="display:flex;flex-direction:column;gap:16px">
+    <p class="who-for" id="quien"></p>
+
+    <section class="result" aria-live="polite" aria-labelledby="t4">
+      <h2 id="t4" class="label" tabindex="-1">Cobertura sugerida</h2>
+      <p class="num" id="resultNumber">$0</p>
+      <p class="sub" id="resultSub"></p>
+    </section>
+
+    <section class="panel glass" aria-labelledby="h-rec">
+      <h2 id="h-rec">Lo que te recomendamos</h2>
+      <ul class="tips" id="tips"></ul>
+    </section>
+
+    <section class="panel glass" aria-labelledby="h-calc">
+      <h2 id="h-calc">Cómo se calculó</h2>
+      <div id="ledger"></div>
+    </section>
+
+    <p class="disclaimer">Este cálculo es un estimado educativo para orientarte, no una cotización oficial. Tu prima real depende de tu edad, tu género, tu salud, si fumas y el plan que elijas. Por eso el siguiente paso es platicarlo con Roberto.</p>
+
+    <section class="cta glass" aria-label="Contacto">
+      <div class="who">
+        <picture>
+          <source type="image/avif" srcset="/tarjeta/img/roberto-600.avif">
+          <source type="image/webp" srcset="/tarjeta/img/roberto-600.webp">
+          <img src="/tarjeta/img/roberto-600.jpg" alt="Roberto Rodríguez" width="60" height="60" loading="lazy" decoding="async">
+        </picture>
+        <div><strong>Roberto Rodríguez</strong><span>Asesor de Seguros · Cédula CNSF V394637</span></div>
+      </div>
+      <a class="btn btn-wa" id="waButton" href="https://wa.me/528182800234" target="_blank" rel="noopener"><svg class="ic" aria-hidden="true"><use href="#i-wa"/></svg>Cotizar mi seguro por WhatsApp</a>
+      <a class="btn btn-ghost" href="https://calendar.app.google/dxf4aRZFHkux6MqL8" target="_blank" rel="noopener"><svg class="ic" aria-hidden="true"><use href="#i-cal"/></svg>Agendar una cita</a>
+    </section>
+
+    <div class="again">
+      <button type="button" class="linkbtn" data-ir="3">Ajustar mis números</button>
+      <button type="button" class="linkbtn" data-ir="1">Empezar de nuevo</button>
+    </div>
+  </div>
 
   <footer>
     <p>Roberto Rodríguez · Agente de seguros · Cédula CNSF V394637. Herramienta informativa; no constituye oferta ni cotización. Coberturas y primas dependen de las condiciones generales de cada aseguradora y de la evaluación del riesgo.</p>
@@ -221,15 +428,126 @@ footer a{color:var(--ink-soft)}
 <script>
 (function () {
   const GASTOS_FINALES = 60000;
+  const EDAD_MIN = 18, EDAD_MAX = 70;
   const WHATSAPP = "528182800234";
   const $ = (id) => document.getElementById(id);
   const fmt = new Intl.NumberFormat("es-MX", { maximumFractionDigits: 0 });
   const money = (n) => "$" + fmt.format(Math.max(0, Math.round(n)));
   const leer = (id) => parseInt(($(id).value || "").replace(/\D/g, ""), 10) || 0;
+  const elegido = (name) => { const r = document.querySelector('input[name="' + name + '"]:checked'); return r ? r.value : null; };
+  const anios = (n) => n + (n === 1 ? " año" : " años");
 
-  // Separador de miles mientras se escribe, sin mover el cursor de lugar
-  ["ingreso", "deudas", "ahorros"].forEach((id) => {
-    const el = $(id);
+  const NOMBRES = { 1: "Tu objetivo", 2: "Sobre ti", 3: "Tus números", 4: "Resultado" };
+  const OBJETIVO = {
+    familia: { corto: "Proteger a mi familia", lead: "Cuéntanos qué necesita tu familia para seguir adelante si tú faltaras.",
+      sub: "Suma asegurada para que tu familia mantenga su nivel de vida", wa: "proteger a mi familia" },
+    joven: { corto: "Joven y sin hijos", lead: "Sin hijos, lo que más importa son tus deudas y no dejar cargas a tus seres queridos.",
+      sub: "Suma asegurada para que tus deudas y gastos no pesen en los tuyos", wa: "arrancar mi protección siendo joven y sin hijos" },
+    hipoteca: { corto: "Cubrir mi hipoteca", lead: "Con estos datos calculamos lo que debe cubrir tu seguro para dejar la casa pagada.",
+      sub: "Suma asegurada para que tu casa quede pagada", wa: "cubrir mi hipoteca" },
+  };
+
+  let paso = 1, primera = true;
+
+  /* ---------- Navegación ---------- */
+  function mostrar(n, empujar) {
+    paso = n;
+    for (let i = 1; i <= 4; i++) $("paso" + i).hidden = i !== n;
+    $("hero").hidden = n !== 1;
+    $("progreso").hidden = n === 4;
+    const p = Math.min(n, 3);
+    $("barra").style.width = (p / 3 * 100) + "%";
+    document.querySelector(".progress").setAttribute("aria-valuenow", String(p));
+    $("pasoTxt").textContent = "Paso " + p + " de 3";
+    $("pasoNombre").textContent = NOMBRES[n];
+    if (n === 3) prepararPaso3();
+    if (n === 4) pintarResultado();
+    if (empujar) history.pushState({ p: n }, "", "#paso" + n);
+    window.scrollTo({ top: 0, behavior: "auto" });
+    const t = $("t" + n);
+    if (t && !primera) t.focus({ preventScroll: true });
+    primera = false;
+  }
+
+  function ir(n) {
+    // Hacia adelante solo si lo anterior está completo; hacia atrás siempre.
+    if (n > paso) {
+      if (paso === 1 && !validar1()) return;
+      if (paso === 2 && !validar2()) return;
+    }
+    mostrar(n, true);
+  }
+
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-ir]");
+    if (b) ir(parseInt(b.dataset.ir, 10));
+  });
+  window.addEventListener("popstate", (e) => {
+    let n = (e.state && e.state.p) || 1;
+    if (n > 1 && !elegido("para")) n = 1;
+    else if (n > 2 && !completo2()) n = 2;
+    mostrar(n, false);
+  });
+
+  /* ---------- Paso 1: tocar una opción avanza solo (con ratón o dedo); con teclado se usa «Continuar» ---------- */
+  document.querySelectorAll("#paso1 .choice").forEach((l) => {
+    l.addEventListener("click", (e) => {
+      $("e-para").textContent = "";
+      if (e.detail > 0) setTimeout(() => { if (paso === 1 && elegido("para")) ir(2); }, 180);
+    });
+  });
+  function validar1() {
+    if (elegido("para")) return true;
+    $("e-para").textContent = "Elige una opción para seguir.";
+    return false;
+  }
+
+  /* ---------- Paso 2: edad, género, tabaco ---------- */
+  const edad = $("edad");
+  edad.addEventListener("input", () => {
+    edad.value = edad.value.replace(/\D/g, "").slice(0, 2);
+    marcar("f-edad", "e-edad", "");
+  });
+  edad.addEventListener("focus", () => { try { edad.select(); } catch (e) {} });
+  document.querySelectorAll("[data-edad]").forEach((b) => b.addEventListener("click", () => {
+    const base = parseInt(edad.value, 10);
+    const v = isNaN(base) ? 30 : Math.min(EDAD_MAX, Math.max(EDAD_MIN, base + parseInt(b.dataset.edad, 10)));
+    edad.value = String(v);
+    marcar("f-edad", "e-edad", "");
+  }));
+  ["genero", "fuma"].forEach((n) => document.querySelectorAll('input[name="' + n + '"]').forEach((r) =>
+    r.addEventListener("change", () => marcar("f-" + n, "e-" + n, ""))));
+
+  function marcar(campo, errId, msg) {
+    $(errId).textContent = msg;
+    $(campo).classList.toggle("is-bad", Boolean(msg));
+  }
+  function completo2() {
+    const e = parseInt(edad.value, 10);
+    return e >= EDAD_MIN && e <= EDAD_MAX && Boolean(elegido("genero")) && Boolean(elegido("fuma"));
+  }
+  function validar2() {
+    const e = parseInt(edad.value, 10);
+    let primero = null;
+    if (isNaN(e)) { marcar("f-edad", "e-edad", "Escribe tu edad (con los botones o el teclado)."); primero = primero || edad; }
+    else if (e < EDAD_MIN || e > EDAD_MAX) { marcar("f-edad", "e-edad", "Calculamos de " + EDAD_MIN + " a " + EDAD_MAX + " años. Si estás fuera de ese rango, escríbele a Roberto y lo revisan juntos."); primero = primero || edad; }
+    if (!elegido("genero")) { marcar("f-genero", "e-genero", "Elige una opción."); primero = primero || document.querySelector('input[name="genero"]'); }
+    if (!elegido("fuma")) { marcar("f-fuma", "e-fuma", "Elige una opción."); primero = primero || document.querySelector('input[name="fuma"]'); }
+    if (primero) { primero.focus(); return false; }
+    return true;
+  }
+
+  /* ---------- Paso 3: preguntas según el objetivo ---------- */
+  function prepararPaso3() {
+    const para = elegido("para") || "familia";
+    ["familia", "joven", "hipoteca"].forEach((k) => { $("b-" + k).hidden = k !== para; });
+    $("lead3").textContent = OBJETIVO[para].lead;
+    $("b-apoyo").hidden = elegido("apoyo") !== "si";
+    pintarRangos();
+    recalc();
+  }
+
+  document.querySelectorAll(".money input").forEach((el) => {
     el.addEventListener("input", () => {
       const pos = el.selectionStart ?? el.value.length;
       const digitosAntes = el.value.slice(0, pos).replace(/\D/g, "").length;
@@ -238,42 +556,84 @@ footer a{color:var(--ink-soft)}
       let p = 0, d = 0;
       while (p < el.value.length && d < digitosAntes) { if (/\d/.test(el.value[p])) d++; p++; }
       try { el.setSelectionRange(p, p); } catch (e) {}
-      recalc(true);
+      recalc();
     });
     el.addEventListener("focus", () => { try { el.select(); } catch (e) {} });
   });
 
-  const rango = $("anios");
-  function pintarRango() {
-    const p = ((rango.value - rango.min) / (rango.max - rango.min)) * 100;
-    rango.style.setProperty("--p", p + "%");
+  function pintarRangos() {
+    document.querySelectorAll("input[type=range]").forEach((r) => {
+      r.style.setProperty("--p", ((r.value - r.min) / (r.max - r.min)) * 100 + "%");
+      $(r.dataset.out).textContent = anios(parseInt(r.value, 10));
+    });
   }
-  rango.addEventListener("input", () => { pintarRango(); recalc(true); });
+  document.querySelectorAll("input[type=range]").forEach((r) => r.addEventListener("input", () => { pintarRangos(); recalc(); }));
+  document.querySelectorAll('input[name="apoyo"]').forEach((r) => r.addEventListener("change", () => { $("b-apoyo").hidden = elegido("apoyo") !== "si"; recalc(); }));
 
-  function recalc(pulse) {
-    const ingreso = leer("ingreso"), deudas = leer("deudas"), ahorros = leer("ahorros");
-    const anios = parseInt(rango.value, 10) || 0;
-    $("aniosLabel").textContent = anios + (anios === 1 ? " año" : " años");
+  /* ---------- Cálculo ---------- */
+  function calcular() {
+    const para = elegido("para") || "familia";
+    const filas = [];
+    let total = 0, plazo = 0;
+    if (para === "familia") {
+      plazo = parseInt($("anios").value, 10);
+      const proteccion = leer("ingreso") * 12 * plazo, deudas = leer("deudasF"), ahorros = leer("ahorrosF");
+      filas.push(["Ingreso protegido (" + anios(plazo) + ")", money(proteccion)], ["Deudas a cubrir", money(deudas)], ["Gastos finales (estimado)", money(GASTOS_FINALES)], ["Ahorros y seguros actuales", "− " + money(ahorros), true]);
+      total = proteccion + deudas + GASTOS_FINALES - ahorros;
+    } else if (para === "joven") {
+      const apoya = elegido("apoyo") === "si";
+      plazo = apoya ? parseInt($("aniosJ").value, 10) : 0;
+      const apoyo = apoya ? leer("apoyoJ") * 12 * plazo : 0, deudas = leer("deudasJ"), ahorros = leer("ahorrosJ");
+      if (apoya) filas.push(["Apoyo a los tuyos (" + anios(plazo) + ")", money(apoyo)]);
+      filas.push(["Deudas a cubrir", money(deudas)], ["Gastos finales (estimado)", money(GASTOS_FINALES)], ["Ahorros y seguros actuales", "− " + money(ahorros), true]);
+      total = apoyo + deudas + GASTOS_FINALES - ahorros;
+    } else {
+      plazo = parseInt($("aniosH").value, 10);
+      const saldo = leer("saldoH"), ahorros = leer("ahorrosH");
+      filas.push(["Saldo de tu hipoteca", money(saldo)], ["Seguro o ahorros que ya la cubren", "− " + money(ahorros), true]);
+      total = saldo - ahorros;
+    }
+    return { para, filas, total: Math.max(total, 0), plazo };
+  }
 
-    const proteccion = ingreso * 12 * anios;
-    const total = Math.max(proteccion + deudas + GASTOS_FINALES - ahorros, 0);
+  function recalc() {
+    $("liveNum").textContent = money(calcular().total);
+  }
 
-    $("lineProteccion").textContent = money(proteccion);
-    $("lineDeudas").textContent = money(deudas);
-    $("lineGastos").textContent = money(GASTOS_FINALES);
-    $("lineAhorros").textContent = "− " + money(ahorros);
-    $("lineTotal").textContent = money(total);
+  /* ---------- Resultado ---------- */
+  function pintarResultado() {
+    const c = calcular();
+    const e = parseInt(edad.value, 10), mujer = elegido("genero") === "mujer", fuma = elegido("fuma") === "si";
+    const obj = OBJETIVO[c.para];
 
-    const r = $("resultNumber");
-    r.textContent = money(total);
-    if (pulse) { r.classList.remove("pulse"); void r.offsetWidth; r.classList.add("pulse"); }
+    $("quien").innerHTML = "<b>" + obj.corto + "</b> · " + (mujer ? "Mujer" : "Hombre") + ", " + e + " años · " + (fuma ? "Fumas" : "No fumas");
+    $("resultNumber").textContent = money(c.total);
+    $("resultSub").textContent = c.total > 0 ? obj.sub : "Con tus ahorros y seguros actuales ya cubres esto. Platica con Roberto para revisar que tu protección sea suficiente.";
 
-    const msg = "Hola Roberto, hice el cálculo de Tu Escudo Familiar y mi resultado fue " + money(total) + ". Quiero que me ayudes a cotizar mi seguro de vida.";
+    $("ledger").innerHTML = c.filas.map((f) => '<div class="row' + (f[2] ? " minus" : "") + '"><span class="l">' + f[0] + '</span><span class="fill"></span><span class="v">' + f[1] + "</span></div>").join("") +
+      '<div class="row total"><span class="l">Cobertura sugerida</span><span class="fill"></span><span class="v">' + money(c.total) + "</span></div>";
+
+    const tips = [];
+    if (c.para === "familia") tips.push(["<strong>Seguro de vida temporal a " + anios(c.plazo) + ".</strong> Te protege justo el tiempo en que tu familia más depende de tu ingreso."]);
+    if (c.para === "hipoteca") tips.push(["<strong>Seguro de vida temporal a " + anios(c.plazo) + ",</strong> el mismo plazo que te falta de crédito. Si algo te pasa, tu familia conserva la casa."]);
+    if (c.para === "joven") {
+      tips.push(["<strong>Aprovecha tu edad.</strong> Entre más joven y sano te aseguras, más baja es tu prima: hoy tienes la tarifa más barata de tu vida."]);
+      if (c.plazo) tips.push(["<strong>Pensando en los tuyos,</strong> conviene que el seguro dure al menos " + anios(c.plazo) + ", lo que les piensas apoyar."]);
+    }
+    if (fuma) tips.push(["<strong>Fumar sube tu prima.</strong> Si ya dejaste de fumar hace más de un año, díselo a Roberto: puede cambiar tu tarifa.", "warn"]);
+    if (e + c.plazo > 70) tips.push(["<strong>Por tu edad,</strong> Roberto revisará el plazo máximo que permite la aseguradora.", "warn"]);
+    tips.push(["<strong>Tu prima exacta</strong> la calcula Roberto con tu edad y tus datos reales. Sin costo y sin compromiso."]);
+    $("tips").innerHTML = tips.map((t) => "<li" + (t[1] ? ' class="warn"' : "") + ">" + t[0] + "</li>").join("");
+
+    const msg = "Hola Roberto, hice el cálculo de Tu Escudo Familiar. Mi objetivo: " + obj.wa + ". Soy " + (mujer ? "mujer" : "hombre") + " de " + e + " años y " + (fuma ? "sí fumo" : "no fumo") + ". " +
+      "Mi cobertura sugerida fue " + money(c.total) + (c.plazo ? " a " + anios(c.plazo) : "") + ". Quiero que me ayudes a cotizar mi seguro de vida.";
     $("waButton").href = "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(msg);
   }
 
-  pintarRango();
-  recalc(false);
+  // Si recargan estando en #paso3 o #paso4 no hay respuestas guardadas: se empieza limpio en el paso 1.
+  history.replaceState({ p: 1 }, "", location.pathname + location.search);
+  pintarRangos();
+  mostrar(1, false);
 })();
 </script>
 </body>
