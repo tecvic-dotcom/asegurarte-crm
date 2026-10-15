@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import VolverAtras from "@/components/VolverAtras";
 import { getAjustes } from "@/lib/db";
 import { CONTENIDO } from "@/lib/landing-content";
 
@@ -21,11 +21,9 @@ export default async function PrivacidadPage() {
 
   return (
     <main className="mx-auto max-w-3xl px-5 py-16">
-      <Link href="/" className="text-sm text-ink-mute underline hover:text-ink-soft">
-        ← Volver
-      </Link>
+      <VolverAtras className="text-sm text-ink-mute underline hover:text-ink-soft" />
       <h1 className="mt-6 font-display text-3xl sm:text-4xl">Aviso de privacidad</h1>
-      <p className="mt-2 text-sm text-ink-mute">Última actualización: edítala con tu fecha real.</p>
+      <p className="mt-2 text-sm text-ink-mute">Última actualización: 14 de octubre de 2026.</p>
 
       <div className="prose-acm mt-8 space-y-5 text-ink-soft">
         <section>

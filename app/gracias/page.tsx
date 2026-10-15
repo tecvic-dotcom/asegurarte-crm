@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Icon } from "@/components/ui/Icono";
 import { ConversionYRedireccion } from "@/components/gracias/ConversionYRedireccion";
 import { Logo } from "@/components/ui/Logo";
@@ -67,9 +66,10 @@ export default async function GraciasPage() {
           </ol>
         </div>
 
-        <Link href="/" className="mt-8 inline-block text-sm text-ink-mute underline hover:text-ink-soft">
+        {/* <a> normal: /roberto es un archivo estático (rewrite), no una página de Next */}
+        <a href="/roberto" className="mt-8 inline-block text-sm text-ink-mute underline hover:text-ink-soft">
           Volver al inicio
-        </Link>
+        </a>
       </div>
     </main>
   );
