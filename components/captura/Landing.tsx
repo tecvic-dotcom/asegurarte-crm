@@ -32,10 +32,16 @@ export function Landing({ negocio, popupActivo, heroTitulo, heroCta }: LandingPr
 
   return (
     <main className="relative mx-auto max-w-6xl px-5 pb-24 pt-6 sm:pt-16">
+      {/* Regreso a la página principal (la tarjeta de Roberto). <a> normal: /roberto es un
+          archivo estático (rewrite), no una página de Next. */}
+      <a href="/roberto" className="chip lift mb-3">
+        <Icon icon="flat-color-icons:home" width={16} /> Ir a la página principal
+      </a>
+
       {/* Marca */}
       <header className="flex items-center justify-between gap-3">
         <Logo compacto />
-        <a href="#form" className="chip lift shrink-0">
+        <a href={c.contacto.agendaUrl} target="_blank" rel="noopener noreferrer" className="chip lift shrink-0">
           <span className="dot-online" /> Agenda gratis
         </a>
       </header>
@@ -64,7 +70,7 @@ export function Landing({ negocio, popupActivo, heroTitulo, heroCta }: LandingPr
         <motion.div {...aparecer} className="order-first lg:order-last">
           {/* Video sin audio. Celular/tablet: franja a lo ancho cuyo alto se ajusta a la
               pantalla (svh) para que el título se lea sin hacer scroll. Desktop: vertical 9:16. */}
-          <div className="glass relative mx-auto h-[clamp(130px,calc(100svh-445px),420px)] w-full overflow-hidden rounded-[28px] sm:max-w-xl lg:aspect-[9/16] lg:h-auto lg:max-w-[340px]">
+          <div className="glass relative mx-auto h-[clamp(130px,calc(100svh-490px),420px)] w-full overflow-hidden rounded-[28px] sm:max-w-xl lg:aspect-[9/16] lg:h-auto lg:max-w-[340px]">
             <video
               src="/video/maternidad.mp4"
               poster="/video/maternidad-poster.jpg"

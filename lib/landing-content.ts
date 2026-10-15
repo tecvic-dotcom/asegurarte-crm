@@ -38,7 +38,7 @@ export interface PreguntaFrecuente {
 export interface LandingContent {
   negocio: string;
   /** Para el aviso de privacidad (LFPDPPP): responsable, correo y domicilio reales. */
-  contacto: { correo: string; domicilio: string };
+  contacto: { correo: string; domicilio: string; agendaUrl: string };
   eyebrow: string;
   hero: { gancho: string; titulo: string; subtitulo: string; cta: string };
   confianza: string[];
@@ -59,6 +59,8 @@ export const CONTENIDO: LandingContent = {
   contacto: {
     correo: "rdz.roberto@outlook.com",
     domicilio: "América #520, Colonia Centro, Monterrey, N.L.",
+    // "Agenda de citas" de Google Calendar (45 min, L-V): la misma de la tarjeta /roberto.
+    agendaUrl: "https://calendar.app.google/dxf4aRZFHkux6MqL8",
   },
   eyebrow: "Para parejas que están pensando en embarazarse pronto",
 
