@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#06070f">
 <meta name="description" content="Roberto Rodríguez, asesor de seguros en Monterrey: vida, gastos médicos mayores, ahorro y retiro, PPR, hogar y autos.">
 <meta property="og:type" content="profile">
-<meta property="og:title" content="Roberto Rodriguez - Especialista en Asegurarte">
+<meta property="og:title" content="Roberto Rodríguez · Especialista en Asegurarte">
 <meta property="og:description" content="Protejo lo que más importa: tu salud, tu patrimonio y el futuro de tu familia.">
 <meta property="og:url" content="https://www.especialistaenasegurarte.lat/roberto">
 <link rel="canonical" href="https://www.especialistaenasegurarte.lat/roberto">
@@ -15,7 +15,7 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<title>Roberto Rodriguez - Especialista en Asegurarte</title>
+<title>Roberto Rodríguez · Especialista en Asegurarte</title>
 <style>
 @font-face {
   font-family: 'Anton';
@@ -535,6 +535,7 @@ const CONFIG = {
   nombre: "Roberto Rodríguez",
   cargo: "Asesor de Seguros",
   marca: "Especialista en Asegur-Arte",
+  firma: "Roberto Rodríguez · Especialista en Asegurarte",   // igual que el pie de la landing, /escudo y /guias
   // Logotipo en texto, igual al de especialistaenasegurarte.lat
   logo: { linea1: "ROBERTO RODRIGUEZ", linea2: "ESPECIALISTA EN", marca: "Asegur-Arte" },
   logoUrl: "",                       // si pones una imagen, reemplaza al logotipo en texto
@@ -739,11 +740,10 @@ function vcardTexto() {
   if (C.cedulaCNSF) $("#ced").textContent = "Cédula CNSF " + C.cedulaCNSF; else $("#ced").hidden = true;
 
   // Pie y aviso legal
-  const year = new Date().getFullYear();
   $("#legal").innerHTML = `
     <p class="legal">${esc(C.nombre)} · Agente de seguros${C.cedulaCNSF ? ` · Cédula CNSF ${esc(C.cedulaCNSF)}` : ""}. La información de esta tarjeta es informativa y no constituye una oferta ni una cotización. Coberturas, sumas aseguradas, deducibles, exclusiones y primas dependen de las condiciones generales de cada aseguradora y de la evaluación del riesgo.</p>
     <p class="legal">Los beneficios fiscales de los Planes Personales de Retiro aplican conforme a la Ley del ISR vigente, con sus límites, y según tu situación fiscal. Tus datos se usan solo para atender tu solicitud${C.avisoPrivacidad ? `; consulta el <a href="${esc(C.avisoPrivacidad)}" target="_blank" rel="noopener">aviso de privacidad</a>` : ""}.</p>
-    <p class="legal">© ${year} ${esc(C.nombre)}</p>`;
+    <p class="legal">© ${esc(C.firma)}</p>`;
 
   // Aviso breve
   const toastEl = $("#toast"); let tt;

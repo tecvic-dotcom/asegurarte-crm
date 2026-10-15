@@ -55,7 +55,7 @@ export interface LandingContent {
 }
 
 export const CONTENIDO: LandingContent = {
-  negocio: "Roberto Rodríguez · Asegurarte",
+  negocio: "Roberto Rodríguez · Especialista en Asegurarte",
   contacto: {
     correo: "rdz.roberto@outlook.com",
     domicilio: "América #520, Colonia Centro, Monterrey, N.L.",

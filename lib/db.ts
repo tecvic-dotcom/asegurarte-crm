@@ -173,7 +173,7 @@ function seed(): Store {
     whatsapp_url: "https://wa.me/528182800234",
     group_url: "",
     popup_activo: "false",
-    negocio_nombre: "Roberto Rodríguez · Asegurarte",
+    negocio_nombre: "Roberto Rodríguez · Especialista en Asegurarte",
     hero_titulo: "",
     hero_cta: "",
   };
@@ -612,7 +612,7 @@ export async function getAjustes(): Promise<Ajustes> {
       whatsapp_url: map.get("whatsapp_url") ?? "",
       group_url: map.get("group_url") ?? "",
       popup_activo: aBool(map.get("popup_activo")),
-      negocio_nombre: map.get("negocio_nombre") ?? "Roberto Rodríguez · Asegurarte",
+      negocio_nombre: map.get("negocio_nombre") ?? "Roberto Rodríguez · Especialista en Asegurarte",
       hero_titulo: map.get("hero_titulo") ?? "",
       hero_cta: map.get("hero_cta") ?? "",
     };
@@ -622,7 +622,7 @@ export async function getAjustes(): Promise<Ajustes> {
     whatsapp_url: a.whatsapp_url ?? "",
     group_url: a.group_url ?? "",
     popup_activo: aBool(a.popup_activo),
-    negocio_nombre: a.negocio_nombre ?? "Roberto Rodríguez · Asegurarte",
+    negocio_nombre: a.negocio_nombre ?? "Roberto Rodríguez · Especialista en Asegurarte",
     hero_titulo: a.hero_titulo ?? "",
     hero_cta: a.hero_cta ?? "",
   };

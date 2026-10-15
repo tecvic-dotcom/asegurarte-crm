@@ -35,7 +35,8 @@ const anton = Anton({
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
-const TITULO = "Roberto Rodriguez - Especialista en Asegurarte";
+// Firma de la marca: igual en el pie de todas las páginas, los títulos y los ajustes.
+const TITULO = "Roberto Rodríguez · Especialista en Asegurarte";
 // Dirección que se muestra al compartir el sitio.
 const URL_COMPARTIR = "https://www.especialistaenasegurarte.lat/roberto";
 const DESCRIPCION =
@@ -45,14 +46,14 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE),
   title: {
     default: TITULO,
-    template: "%s · Roberto Rodriguez - Especialista en Asegurarte",
+    template: `%s · ${TITULO}`,
   },
   description: DESCRIPCION,
   openGraph: {
     title: TITULO,
     description: DESCRIPCION,
     url: URL_COMPARTIR,
-    siteName: "Roberto Rodriguez - Especialista en Asegurarte",
+    siteName: TITULO,
     locale: "es_MX",
     type: "website",
     // ⚠️ Reemplaza /img/og-image.png por una imagen real de tu marca (1200x630)
