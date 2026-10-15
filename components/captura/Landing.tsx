@@ -41,9 +41,6 @@ export function Landing({ negocio, popupActivo, heroTitulo, heroCta }: LandingPr
       {/* Marca */}
       <header className="flex items-center justify-between gap-3">
         <Logo compacto />
-        <a href={c.contacto.agendaUrl} target="_blank" rel="noopener noreferrer" className="chip lift shrink-0">
-          <span className="dot-online" /> Agenda gratis
-        </a>
       </header>
 
       {/* 1. HÉROE */}
@@ -57,7 +54,7 @@ export function Landing({ negocio, popupActivo, heroTitulo, heroCta }: LandingPr
           </h1>
           <p className="mt-5 max-w-xl text-lg text-ink-soft">{c.hero.subtitulo}</p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <a href="#form" className="btn-primary anim-pulse-glow scanbeam-once text-lg">
+            <a href={c.contacto.agendaUrl} target="_blank" rel="noopener noreferrer" className="btn-primary anim-pulse-glow scanbeam-once text-lg">
               <Icon icon="flat-color-icons:calendar" width={22} /> {cta}
             </a>
             <a href="#como-funciona" className="btn-ghost">Ver cómo funciona</a>
