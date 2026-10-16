@@ -1214,8 +1214,10 @@ function vcardTexto() {
   const ruta = (p) => (window.EMBED && window.EMBED[p]) || p;
   const mm = (seg) => `${Math.floor(seg / 60)}:${String(Math.round(seg % 60)).padStart(2, "0")}`;
   const vEl = $("#vidEl");
+  const mp4De = (v) => v.src || ruta(`/tarjeta/reels/${v.id}.mp4`);
+  const posterDe = (v) => (v.src ? v.poster || "" : ruta(`/tarjeta/reels/${v.id}.jpg`));
   const abrirVideo = (v, desde) => {
-    const mp4 = ruta(`/tarjeta/reels/${v.id}.mp4`);
+    const mp4 = mp4De(v);
     track("reel", v.titulo);
     if (!hayDialog) { window.open(mp4, "_blank", "noopener"); return; }
     $("#vidTitulo").textContent = v.titulo;
@@ -1223,8 +1225,8 @@ function vcardTexto() {
     const vi = `vi tu video «${v.titulo}» en tu tarjeta digital y quiero información.`;
     $("#vidWa").href = wa(v.clave ? `${v.clave}. Hola Roberto, ${vi}` : `Hola Roberto, ${vi}`);
     $("#vidWa").dataset.d = "video:" + v.titulo;
-    $("#vidIa").textContent = v.real ? C.eventos.avisoIa : C.videos.aviso;
-    vEl.poster = ruta(`/tarjeta/reels/${v.id}.jpg`);
+    $("#vidIa").textContent = v.ia === false ? "" : v.real ? C.eventos.avisoIa : C.videos.aviso;
+    vEl.poster = posterDe(v);
     vEl.src = mp4;
     abrir(vdlg, desde, { video: v.id });
     const p = vEl.play(); if (p && p.catch) p.catch(() => {});   // si el navegador pide un toque, queda el botón de reproducir
@@ -1246,16 +1248,33 @@ function vcardTexto() {
       <span class="cap">${esc(f.pie)}</span>
     </button>`;
 
-  const rd = C.videos.lista;
+  // Videos: los fijos de siempre + los que subes desde el CRM (salen primero). Se piden al abrir la tarjeta; si algo falla, quedan los fijos.
+  const fijos = C.videos.lista;
   $("#avisoIa").textContent = C.videos.aviso;
-  $("#reels").innerHTML = rd.map((v, i) => slideDe(i, rd.length, `
-    <button type="button" class="reel" data-i="${i}" aria-label="Ver video: ${esc(v.titulo)} (${mm(v.dur)})">
-      <img src="${ruta(`/tarjeta/reels/${v.id}.jpg`)}" alt="" width="360" height="640" loading="lazy" decoding="async">
-      <span class="play" aria-hidden="true"><svg class="ic"><use href="#i-tri"/></svg></span>
-      <span class="meta"><span class="t">${esc(v.titulo)}</span><span class="d">${esc(v.tema)} · ${mm(v.dur)}</span></span>
-    </button>`)).join("");
-  carrusel($("#carReels"), "videos");
-  $("#reels").addEventListener("click", (e) => { const bt = e.target.closest(".reel"); if (bt) abrirVideo(rd[+bt.dataset.i], bt); });
+  const pintarReels = () => {
+    const rd = C.videos.lista;
+    $("#carReels").innerHTML = '<div class="car-track" id="reels" tabindex="0" aria-label="Videos: desliza para ver más"></div><div class="car-ctl"></div>';
+    $("#reels").innerHTML = rd.map((v, i) => slideDe(i, rd.length, `
+      <button type="button" class="reel" data-i="${i}" aria-label="Ver video: ${esc(v.titulo)} (${mm(v.dur)})">
+        ${posterDe(v) ? `<img src="${esc(posterDe(v))}" alt="" width="360" height="640" loading="lazy" decoding="async">` : ""}
+        <span class="play" aria-hidden="true"><svg class="ic"><use href="#i-tri"/></svg></span>
+        <span class="meta"><span class="t">${esc(v.titulo)}</span><span class="d">${esc(v.tema)} · ${mm(v.dur)}</span></span>
+      </button>`)).join("");
+    carrusel($("#carReels"), "videos");
+    $("#reels").addEventListener("click", (e) => { const bt = e.target.closest(".reel"); if (bt) abrirVideo(C.videos.lista[+bt.dataset.i], bt); });
+  };
+  pintarReels();
+  // Solo se aceptan archivos del cajón público de Supabase (o de la tarjeta en modo demo): nada más entra a la página
+  const urlValida = (u) => typeof u === "string" && (/^https:\/\/[a-z0-9-]+\.supabase\.co\/storage\/v1\/object\/public\/tarjeta-videos\/[\w./-]+$/i.test(u) || /^\/tarjeta\/reels\/[\w-]+\.(mp4|jpg)$/.test(u));
+  fetch("/api/tarjeta/videos", { cache: "no-cache" }).then((r) => (r.ok ? r.json() : { videos: [] })).then((j) => {
+    const nuevos = ((j && j.videos) || []).filter((v) => v && typeof v.titulo === "string" && urlValida(v.src) && (!v.poster || urlValida(v.poster)))
+      .map((v) => ({ id: String(v.id), titulo: v.titulo, tema: "Video", dur: Math.max(1, +v.dur || 1), clave: v.clave || "", src: v.src, poster: v.poster || "", ia: v.ia !== false }));
+    // Si la persona ya movió el carrusel o abrió algo, no se le cambia la pantalla: lo verá en su próxima visita
+    if (!nuevos.length || $("#reels").scrollLeft > 10 || document.querySelector("dialog[open]")) return;
+    C.videos.lista = [...nuevos, ...fijos];
+    pintarReels();
+    if (typeof actualizarParaTi === "function") actualizarParaTi();
+  }).catch(() => {});
 
   const evV = C.eventos.video, evF = C.eventos.fotos, nEv = evF.length + 1;
   $("#avisoIaEv").textContent = C.eventos.avisoIa;
@@ -1301,7 +1320,7 @@ function vcardTexto() {
     const fila = (k, i, ico, titulo, sub) => `<button type="button" class="m-item" data-k="${k}" data-i="${i}">${ico}<span class="t"><strong>${esc(titulo)}</strong><small>${esc(sub)}</small></span>${ic("chev")}</button>`;
     box.innerHTML = `<p class="match-t">${ic("star")} Para ti, según lo que marcaste</p><div class="match-list">`
       + mejores(C.productos, 2).map((q) => fila("p", q.i, `<span class="mi">${ic(q.x.icono)}</span>`, q.x.titulo, "Seguro · ver detalle")).join("")
-      + mejores(C.videos.lista, 2).map((q) => fila("v", q.i, `<img class="mi" src="${ruta(`/tarjeta/reels/${q.x.id}.jpg`)}" alt="" width="36" height="64" loading="lazy">`, q.x.titulo, `Video · ${mm(q.x.dur)}`)).join("")
+      + mejores(C.videos.lista, 2).map((q) => fila("v", q.i, (posterDe(q.x) ? `<img class="mi" src="${esc(posterDe(q.x))}" alt="" width="36" height="64" loading="lazy">` : `<span class="mi">${ic("play")}</span>`), q.x.titulo, `Video · ${mm(q.x.dur)}`)).join("")
       + mejores(C.faq, 2).map((q) => fila("f", q.i, `<span class="mi">${ic("book")}</span>`, q.x.p, "Pregunta frecuente")).join("")
       + "</div>";
     box.hidden = false;

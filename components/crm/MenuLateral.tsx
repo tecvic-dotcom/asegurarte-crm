@@ -14,6 +14,7 @@ export type Pestana =
   | "panel"
   | "crecimiento"
   | "tarjeta"
+  | "videos-tarjeta"
   | "polizas"
   | "roro"
   | "sofi"
@@ -61,6 +62,7 @@ export const GRUPOS_MENU: GrupoMenu[] = [
       { id: "crecimiento", nombre: "Crecimiento", pista: "Producción por año y ramo", icono: "flat-color-icons:line-chart" },
       { id: "polizas", nombre: "Pólizas", pista: "Adjunta nuevas y renovaciones", icono: "flat-color-icons:file" },
       { id: "tarjeta", nombre: "Tarjeta web", pista: "Qué toca la gente en tu tarjeta", icono: "flat-color-icons:globe" },
+      { id: "videos-tarjeta", nombre: "Videos de la tarjeta", pista: "Sube un video y sale solo", icono: "flat-color-icons:film-reel" },
     ],
   },
   {

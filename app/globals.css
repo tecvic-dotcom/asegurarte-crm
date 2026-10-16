@@ -485,3 +485,40 @@ optgroup {
     break-inside: avoid;
   }
 }
+
+
+/* ============================================================
+   Agenda de citas en ventana (página de captura): pantalla completa en el celular,
+   ventana centrada en escritorio. El calendario de Google se carga solo al abrirla.
+   ============================================================ */
+dialog.agenda-cita {
+  position: fixed; inset: 0; margin: 0; width: 100%; max-width: none; height: 100%; max-height: none;
+  padding: 0; overflow: hidden; border: 0; background: #05060d; color: var(--ink);
+}
+dialog.agenda-cita::backdrop { background: rgba(0, 0, 0, 0.86); }
+dialog.agenda-cita[open] { animation: agenda-subir 0.25s ease-out; }
+.agenda-cita-x {
+  position: absolute; top: max(10px, env(safe-area-inset-top, 0px)); right: 10px; z-index: 3;
+  display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%;
+  border: 1px solid var(--line-strong); background: rgba(10, 12, 28, 0.8); color: var(--ink); cursor: pointer;
+}
+.agenda-cita-dentro { height: 100%; display: flex; flex-direction: column; padding: max(8px, env(safe-area-inset-top, 0px)) 0 0; }
+.agenda-cita-cabeza { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 64px 10px 18px; }
+.agenda-cita-cabeza h3 { margin: 0; font-family: var(--font-display, inherit); font-weight: 800; font-size: 18px; line-height: 1.2; }
+.agenda-cita-cabeza a { font-size: 13px; color: var(--ink-soft); text-underline-offset: 3px; text-decoration: underline; }
+.agenda-cita-caja { position: relative; flex: 1; min-height: 0; background: #fff; }
+.agenda-cita-caja iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #fff; }
+.agenda-cita-carga { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; color: #475; font-weight: 600; font-size: 15px; }
+@keyframes agenda-subir { from { transform: translateY(48px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes agenda-aparecer { from { opacity: 0; transform: translate(-50%, -46%); } to { opacity: 1; transform: translate(-50%, -50%); } }
+@media (min-width: 700px) {
+  dialog.agenda-cita {
+    inset: 50% auto auto 50%; transform: translate(-50%, -50%); width: min(94vw, 780px); height: min(90dvh, 860px);
+    border: 1px solid var(--line-strong); border-radius: 26px; background: var(--bg-3);
+  }
+  dialog.agenda-cita[open] { animation: agenda-aparecer 0.24s ease-out; }
+  .agenda-cita-dentro { padding-top: 6px; }
+  .agenda-cita-cabeza { padding-top: 10px; }
+  .agenda-cita-x { top: 8px; right: 8px; }
+}
+@media (prefers-reduced-motion: reduce) { dialog.agenda-cita[open] { animation: none; } }

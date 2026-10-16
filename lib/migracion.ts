@@ -74,3 +74,6 @@ export const MENSAJE_MIGRACION_CRUZADA_2 =
 
 export const MENSAJE_MIGRACION_TARJETA =
   "Falta un paso para medir tu tarjeta web: abre Supabase → SQL Editor → New query, pega el archivo supabase/migrations/0019_tarjeta_eventos.sql y dale Run.";
+
+export const MENSAJE_MIGRACION_VIDEOS =
+  "Falta un paso para subir videos a tu tarjeta: abre Supabase → SQL Editor → New query, pega el archivo supabase/migrations/0020_tarjeta_videos.sql y dale Run.";

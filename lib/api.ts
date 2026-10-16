@@ -5,6 +5,7 @@
  * directo con Supabase; todo pasa por el servidor con la secret key.
  */
 import type { ResumenTarjeta } from "./tarjeta-reglas";
+import type { CambiosVideo, DatosNuevoVideo, PermisoSubida, VideoTarjeta } from "./tarjeta-videos-reglas";
 import type {
   Lead,
   Actividad,
@@ -428,6 +429,45 @@ export async function crmCrecimiento(): Promise<{ filas: ProduccionMes[]; cloud:
 export async function crmTarjeta(dias: number): Promise<ResumenTarjeta> {
   const res = await fetch(`/api/crm/tarjeta?dias=${dias}`, { cache: "no-store" });
   return (await jsonOErrorCRM(res)) as ResumenTarjeta;
+}
+
+// ---- Videos de la tarjeta: los que subes desde el CRM y salen solos en /roberto (solo admin) ----
+
+export async function crmVideosTarjeta(): Promise<{ videos: VideoTarjeta[]; cloud: boolean }> {
+  const res = await fetch("/api/crm/tarjeta-videos", { cache: "no-store" });
+  return (await jsonOErrorCRM(res)) as { videos: VideoTarjeta[]; cloud: boolean };
+}
+
+/** Pide un id y los permisos de un solo uso para subir el video y su portada directo al cajón de Supabase. */
+export async function crmPrepararVideo(): Promise<PermisoSubida> {
+  return (await jsonOErrorCRM(await postJSON("/api/crm/tarjeta-videos", { accion: "preparar" }))) as PermisoSubida;
+}
+
+/** Sube un archivo al cajón con el permiso de un solo uso (en modo demo no sube nada). */
+export async function crmSubirArchivoVideo(permiso: PermisoSubida, cual: "video" | "poster", archivo: Blob): Promise<void> {
+  const n = permiso.nube;
+  if (permiso.demo || !n) return;
+  const { createClient } = await import("@supabase/supabase-js");
+  const sb = createClient(n.url, n.anonKey, { auth: { persistSession: false, autoRefreshToken: false } });
+  const destino = cual === "video" ? n.video : n.poster;
+  const { error } = await sb.storage.from(n.bucket).uploadToSignedUrl(destino.path, destino.token, archivo, {
+    contentType: cual === "video" ? "video/mp4" : "image/jpeg",
+  });
+  if (error) throw new Error(cual === "video" ? "No pude subir el video. Revisa tu internet e intenta de nuevo." : "No pude subir la portada del video.");
+}
+
+export async function crmCrearVideo(datos: DatosNuevoVideo): Promise<VideoTarjeta> {
+  const data = await jsonOErrorCRM(await postJSON("/api/crm/tarjeta-videos", { accion: "crear", ...datos }));
+  return (data as { video: VideoTarjeta }).video;
+}
+
+export async function crmEditarVideo(id: string, cambios: CambiosVideo): Promise<VideoTarjeta> {
+  const data = await jsonOErrorCRM(await postJSON("/api/crm/tarjeta-videos", { accion: "editar", id, cambios }));
+  return (data as { video: VideoTarjeta }).video;
+}
+
+export async function crmEliminarVideo(id: string): Promise<void> {
+  await jsonOErrorCRM(await postJSON("/api/crm/tarjeta-videos", { accion: "eliminar", id }));
 }
 
 // ---- Pólizas adjuntas: nuevas y renovaciones (solo admin) ----

@@ -17,6 +17,8 @@ const csp = [
   "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://connect.facebook.net https://analytics.tiktok.com https://challenges.cloudflare.com",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
+  // Videos de la tarjeta (/roberto): los que subes desde el CRM viven en el cajón público de Supabase; blob: es la vista previa al comprimirlos.
+  "media-src 'self' blob: https://*.supabase.co",
   "font-src 'self' data:",
   // connect-src: tu base de datos (Supabase), el API de íconos a color y los píxeles.
   "connect-src 'self' https://*.supabase.co https://api.iconify.design https://api.simplesvg.com https://api.unisvg.com https://www.facebook.com https://analytics.tiktok.com https://challenges.cloudflare.com",
