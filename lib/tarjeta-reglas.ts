@@ -21,6 +21,9 @@ export const EVENTOS_TARJETA = [
   "recurso", // tocó un recurso (guía, calculadora…)
   "chip", // marcó «qué quieres proteger»
   "historia", // abrió una historia completa
+  "reel", // abrió un video
+  "foto", // amplió una foto del evento
+  "faq", // abrió una pregunta frecuente
   "car", // deslizó un carrusel
 ] as const;
 export type EventoTarjeta = (typeof EVENTOS_TARJETA)[number];
@@ -53,6 +56,9 @@ export const SECCIONES_TARJETA: ReadonlyArray<{ id: string; nombre: string }> = 
   { id: "seguros", nombre: "Seguros" },
   { id: "asesoria", nombre: "Asesoría (¿qué quieres proteger?)" },
   { id: "opiniones", nombre: "Opiniones" },
+  { id: "videos", nombre: "Videos" },
+  { id: "eventos", nombre: "Eventos" },
+  { id: "faq", nombre: "Preguntas frecuentes" },
   { id: "recursos", nombre: "Recursos" },
   { id: "contacto", nombre: "Contacto" },
 ];
@@ -64,6 +70,8 @@ const LUGAR_WA: Record<string, string> = {
   contacto: "Sección Contacto",
   historia: "Historia completa de un cliente",
   producto: "Botón de un producto",
+  video: "Dentro de un video",
+  faq: "Preguntas frecuentes",
 };
 
 export interface Conteo {
@@ -86,8 +94,11 @@ export interface ResumenTarjeta {
   secciones: Array<{ id: string; nombre: string; n: number }>;
   productos: Conteo[];
   historias: Conteo[];
+  videos: Conteo[];
+  fotos: Conteo[];
+  preguntas: Conteo[];
   intereses: Conteo[];
-  carruseles: { productos: number; testimonios: number };
+  carruseles: { productos: number; testimonios: number; videos: number; eventos: number };
   redes: Conteo[];
   recursos: Conteo[];
 }
@@ -150,10 +161,15 @@ export function resumir(filas: FilaEvento[], dias: number, hoy: string): Omit<Re
     secciones: SECCIONES_TARJETA.map((s) => ({ ...s, n: dentro.filter((f) => f.evento === "sec" && f.detalle === s.id).length })),
     productos: contar(dentro, "wa", (f) => (f.detalle.startsWith("producto:") ? f.detalle.slice(9) : ""), 8),
     historias: contar(dentro, "historia", (f) => f.detalle, 5),
+    videos: contar(dentro, "reel", (f) => f.detalle, 10),
+    fotos: contar(dentro, "foto", (f) => f.detalle, 6),
+    preguntas: contar(dentro, "faq", (f) => f.detalle, 6),
     intereses: contar(dentro, "chip", (f) => f.detalle, 8),
     carruseles: {
       productos: dentro.filter((f) => f.evento === "car" && f.detalle === "productos").length,
       testimonios: dentro.filter((f) => f.evento === "car" && f.detalle === "testimonios").length,
+      videos: dentro.filter((f) => f.evento === "car" && f.detalle === "videos").length,
+      eventos: dentro.filter((f) => f.evento === "car" && f.detalle === "eventos").length,
     },
     redes: contar(dentro, "red", (f) => f.detalle, 6),
     recursos: contar(dentro, "recurso", (f) => f.detalle, 6),

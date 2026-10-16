@@ -22,6 +22,9 @@ function semilla(): FilaEvento[] {
   const elige = <T,>(a: readonly T[]): T => a[Math.floor(rnd() * a.length)];
   const productos = ["Seguro de Vida", "Gastos Médicos Mayores", "Ahorro y Retiro", "PPR / Planeación Fiscal", "Protección Patrimonial", "Seguro de Auto"];
   const historias = ["Istmenia y Carlos", "Tere y Mauricio", "Nere y Sergio"];
+  const videos = ["Todo estaba bien… hasta que sonó el teléfono", "¿Planean tener un bebé? Esto casi nadie lo dice", "¿Casados… o socios financieros?", "Tus hijos podrían terminar manteniéndote", "¿Los seguros son un lujo o una herramienta?"];
+  const preguntas = ["¿Los seguros son demasiado caros?", "¿La aseguradora realmente me va a pagar?", "¿Qué seguro debería contratar primero?", "¿Puedo contratar un seguro si ya tengo una enfermedad?"];
+  const fotos = ["En la recepción", "Sala de rayos X", "La entrada de la nueva clínica"];
   const chips = ["Mi salud", "Mi familia", "Mi retiro", "Mi casa", "Mi auto", "Mis impuestos"];
   const fuentes = ["directo", "directo", "wa", "wa", "ig", "qr", "l.facebook.com", "tiktok"];
   for (let d = 29; d >= 0; d--) {
@@ -31,12 +34,15 @@ function semilla(): FilaEvento[] {
       const base = { dispositivo: rnd() < 0.82 ? "movil" : "escritorio", fuente: elige(fuentes) };
       const e = (evento: string, detalle = "", dt = 0) => filas.push({ creado_en: new Date(t + dt * 1000).toISOString(), evento, detalle, ...base });
       e("vista");
-      const llega = ["quien", "seguros", "asesoria", "opiniones", "recursos", "contacto"];
-      const hasta = rnd() < 0.18 ? 0 : 1 + Math.floor(rnd() * rnd() * 6);
+      const llega = ["quien", "seguros", "asesoria", "opiniones", "videos", "eventos", "faq", "recursos", "contacto"];
+      const hasta = rnd() < 0.18 ? 0 : 1 + Math.floor(rnd() * rnd() * 9);
       llega.slice(0, hasta).forEach((id, k) => e("sec", id, 5 + k * 6));
       if (hasta > 1 && rnd() < 0.45) e("car", "productos", 20);
       if (hasta > 3 && rnd() < 0.5) e("car", "testimonios", 40);
       if (hasta > 3 && rnd() < 0.3) e("historia", elige(historias), 50);
+      if (hasta > 4 && rnd() < 0.5) { e("car", "videos", 55); e("reel", elige(videos), 58); }
+      if (hasta > 5 && rnd() < 0.35) { e("car", "eventos", 62); e("foto", elige(fotos), 64); }
+      if (hasta > 6 && rnd() < 0.4) e("faq", elige(preguntas), 70);
       if (hasta > 2 && rnd() < 0.2) e("chip", elige(chips), 35);
       if (rnd() < 0.09) e("wa", "hero", 12);
       if (hasta > 1 && rnd() < 0.05) e("wa", `producto:${elige(productos)}`, 30);

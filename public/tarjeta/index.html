@@ -223,10 +223,6 @@ h2{font:800 clamp(27px,7.4vw,34px)/1.12 var(--display);letter-spacing:-.01em;mar
 .stat span{font-size:13px;line-height:1.3;color:var(--ink-soft)}
 .stat.cred b{font-size:clamp(25px,7.6vw,33px);line-height:1.28}
 
-.checks{list-style:none;padding:0;margin:24px 0 0;display:grid;gap:10px}
-.checks li{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:16px;font-weight:600;font-size:16px;line-height:1.35}
-.tick{width:28px;height:28px;border-radius:50%;background:linear-gradient(180deg,var(--brand-2),var(--brand));color:#fff;display:grid;place-items:center;flex:none}
-.tick .ic{width:15px;height:15px;stroke-width:2.6}
 
 /* Carruseles: se deslizan con el dedo (scroll-snap), con flechas y puntos. Sin avance automático ni librerías. */
 .car{margin-top:24px}
@@ -359,6 +355,83 @@ dialog.story[open]{animation:subir .28s ease-out}
 .sharepanel .wide{grid-column:1/-1}
 .sharepanel p{grid-column:1/-1;margin:0 0 2px;font-size:14px;color:var(--ink-mute)}
 
+/* ---------- Así trabajo: 3 pasos con una línea que se dibuja al aparecer ---------- */
+.sub{margin:30px 0 0;font-size:11.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-mute)}
+.steps{position:relative;list-style:none;margin:16px 0 0;padding:0;display:grid;gap:20px}
+.steps::before{content:"";position:absolute;left:21px;top:24px;bottom:24px;width:2px;border-radius:2px;background:linear-gradient(180deg,var(--brand-2),rgba(91,123,255,.12));
+  transform-origin:top;transform:scaleY(0);transition:transform 1.2s ease .25s}
+.steps.in::before,.steps:not(.rv)::before{transform:scaleY(1)}
+.step{position:relative;display:flex;gap:16px;align-items:flex-start}
+.step .num{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font:800 19px/1 var(--display);color:#fff;
+  background:linear-gradient(180deg,var(--brand-2),var(--brand));box-shadow:0 0 0 5px var(--bg),0 10px 24px -8px rgba(42,34,245,.8)}
+.step h3{margin:2px 0 4px;font:700 18.5px/1.25 var(--display)}
+.step p{margin:0;color:var(--ink-soft);font-size:16px}
+
+/* ---------- Entrada suave al hacer scroll (solo opacidad y desplazamiento; la clase .rv la pone el script) ---------- */
+.rv{opacity:0;transform:translateY(20px);transition:opacity .6s ease var(--d,0s),transform .6s cubic-bezier(.2,.7,.2,1) var(--d,0s)}
+.rv.in{opacity:1;transform:none}
+.stat:nth-child(2){--d:.1s}
+.stat:nth-child(3){--d:.2s}
+
+/* ---------- Videos (tarjetas verticales) y fotos del evento ---------- */
+.car-reels .car-slide{flex-basis:min(46%,210px)}
+.car-fotos .car-slide{flex-basis:min(64%,270px)}
+@media (min-width:720px){
+  .car-reels .car-slide,.car-fotos .car-slide{flex-basis:calc((100% - 28px) / 3)}
+}
+.reel,.foto{position:relative;display:block;width:100%;padding:0;border:0;border-radius:var(--r);overflow:hidden;cursor:pointer;background:var(--bg-3);color:#fff;text-align:left;
+  box-shadow:0 0 0 1px var(--line-strong);-webkit-tap-highlight-color:transparent}
+.reel{aspect-ratio:9/16}
+.foto{aspect-ratio:4/5}
+.reel img,.foto img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .5s}
+.foto picture{display:block;position:absolute;inset:0}
+.reel:hover img,.foto:hover img{transform:scale(1.04)}
+.reel::after,.foto::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,7,15,0) 45%,rgba(6,7,15,.9) 100%)}
+.play{position:absolute;top:50%;left:50%;z-index:1;translate:-50% -50%;width:56px;height:56px;border-radius:50%;display:grid;place-items:center;
+  background:rgba(8,10,28,.55);border:1.5px solid rgba(255,255,255,.75)}
+.play .ic{width:24px;height:24px;margin-left:3px;color:#fff}
+.reel .meta,.foto .cap{position:absolute;left:0;right:0;bottom:0;z-index:1;display:grid;gap:5px;padding:12px}
+.reel .t{font:700 15px/1.25 var(--display)}
+.reel .d,.foto .cap{font:600 12.5px/1.3 var(--body);color:rgba(255,255,255,.85)}
+.foto .cap{font-size:14px;color:#fff}
+.foto{cursor:zoom-in}
+.foto.es-video{cursor:pointer}
+.aviso-ia{margin:12px 0 0;font-size:13.5px;color:var(--ink-mute);max-width:60ch}
+
+/* Video y foto ampliada: pantalla completa en el celular, ventana centrada en escritorio */
+dialog.vid{position:fixed;inset:0;margin:0;width:100%;max-width:none;height:100%;max-height:none;padding:0;overflow:auto;border:0;background:#05060d;color:var(--ink)}
+dialog.vid::backdrop{background:rgba(0,0,0,.86)}
+dialog.vid[open]{animation:subir .25s ease-out}
+.vid-in{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+  padding:max(58px,calc(env(safe-area-inset-top,0px) + 54px)) 14px max(16px,env(safe-area-inset-bottom,0px))}
+.vid-x{position:absolute;top:max(10px,env(safe-area-inset-top,0px));right:10px;z-index:3;display:grid;place-items:center;width:44px;height:44px;border-radius:50%;
+  border:1px solid var(--line-strong);background:rgba(10,12,28,.8);color:var(--ink);cursor:pointer}
+.vid-x .ic{width:20px;height:20px;stroke-width:2.2}
+.vid video{display:block;width:min(100%,calc(min(70dvh,760px) * 9 / 16));aspect-ratio:9/16;height:auto;border-radius:18px;background:#000}
+.vid img.big{display:block;width:min(100%,calc(min(70dvh,760px) * 4 / 5));aspect-ratio:4/5;height:auto;object-fit:cover;border-radius:18px;background:var(--bg-3)}
+.vid-cta{width:100%;max-width:420px;display:grid;gap:8px;text-align:center}
+.vid-cta h3{margin:0;font:700 17px/1.3 var(--display)}
+.vid-cta .note{margin:0;font-size:12.5px;color:var(--ink-mute)}
+@media (min-width:700px){
+  dialog.vid{inset:50% auto auto 50%;transform:translate(-50%,-50%);width:min(94vw,470px);height:auto;max-height:94dvh;border:1px solid var(--line-strong);border-radius:26px;background:var(--bg-3)}
+  dialog.vid[open]{animation:aparecer .24s ease-out}
+  .vid-in{min-height:0;padding:56px 20px 22px}
+  .vid-x{top:8px;right:8px}
+}
+
+/* ---------- Preguntas frecuentes ---------- */
+.faq{display:grid;gap:10px;margin-top:24px}
+.faq details{border-radius:18px;overflow:hidden}
+.faq summary{display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:62px;padding:14px 16px;cursor:pointer;list-style:none;
+  font:700 16.5px/1.35 var(--display);color:var(--ink)}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary .ic{width:20px;height:20px;color:var(--brand-2);transition:transform .25s;flex:none}
+.faq details[open] summary .ic{transform:rotate(90deg)}
+.faq details[open]{border-color:var(--brand-2)}
+.faq .ans{padding:0 16px 18px}
+.faq .ans p{margin:0 0 12px;color:var(--ink-soft);font-size:16px}
+.faq .ans .btn{margin-top:4px}
+
 /* ---------- Pie ---------- */
 footer{background:var(--bg-2);border-top:1px solid var(--line);padding:44px 20px 112px}
 footer .in{max-width:680px;margin:0 auto}
@@ -381,7 +454,6 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 
 /* ---------- Tamaños mayores ---------- */
-@media (min-width:480px){ .checks{grid-template-columns:1fr 1fr} }
 @media (min-width:720px){
   .car-track{margin-inline:0;padding-inline:0;scroll-padding-inline:0}
   .car-slide{flex-basis:calc((100% - 14px) / 2)}
@@ -432,6 +504,8 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
   .car-track{scroll-behavior:auto}
+  .rv{opacity:1;transform:none}
+  .steps::before{transform:scaleY(1)}
   *,*::before,*::after{transition:none!important;animation:none!important}
 }
 </style>
@@ -477,6 +551,7 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
     <symbol id="i-youtube" viewBox="0 0 24 24"><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17"/><path d="m10 15 5-3-5-3z"/></symbol>
     <symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
     <symbol id="i-star" viewBox="0 0 24 24"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></symbol>
+    <symbol id="i-tri" viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z" fill="currentColor" stroke="none"/></symbol>
     <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
     <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
   </defs>
@@ -523,7 +598,8 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
         <h2 id="h-quien" data-c="quienSoy.titulo"></h2>
         <p class="lead" data-c="quienSoy.texto"></p>
         <div class="stats" id="stats"></div>
-        <ul class="checks" id="checks"></ul>
+        <h3 class="sub">Así trabajo, en 3 pasos</h3>
+        <ol class="steps" id="steps"></ol>
       </section>
 
       <section class="sec" id="seguros" aria-labelledby="h-seguros">
@@ -551,6 +627,33 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
           <div class="car-track" id="quotes" tabindex="0" aria-label="Testimonios de clientes: desliza para ver más"></div>
           <div class="car-ctl"></div>
         </div>
+      </section>
+
+      <section class="sec" id="videos" aria-labelledby="h-videos">
+        <p class="eyebrow">Videos</p>
+        <h2 id="h-videos">Ideas claras sobre seguros y dinero</h2>
+        <p class="lead">Toca uno para verlo aquí mismo, sin salir de la tarjeta.</p>
+        <div class="car car-reels" id="carReels" role="group" aria-roledescription="carrusel" aria-label="Videos">
+          <div class="car-track" id="reels" tabindex="0" aria-label="Videos: desliza para ver más"></div>
+          <div class="car-ctl"></div>
+        </div>
+        <p class="aviso-ia" id="avisoIa"></p>
+      </section>
+
+      <section class="sec" id="eventos" aria-labelledby="h-eventos">
+        <p class="eyebrow">Eventos</p>
+        <h2 id="h-eventos" data-c="eventos.titulo"></h2>
+        <p class="lead" data-c="eventos.texto"></p>
+        <div class="car car-fotos" id="carEventos" role="group" aria-roledescription="carrusel" aria-label="Video y fotos del evento">
+          <div class="car-track" id="fotos" tabindex="0" aria-label="Video y fotos del evento: desliza para ver más"></div>
+          <div class="car-ctl"></div>
+        </div>
+      </section>
+
+      <section class="sec" id="faq" aria-labelledby="h-faq">
+        <p class="eyebrow">Preguntas frecuentes</p>
+        <h2 id="h-faq">Lo que casi todos me preguntan</h2>
+        <div class="faq" id="faqList"></div>
       </section>
 
       <section class="sec" id="recursos" aria-labelledby="h-recursos">
@@ -606,7 +709,7 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
 <dialog class="story" id="story" aria-labelledby="storyH">
   <div class="story-head">
     <p id="storyH">Historia completa</p>
-    <button type="button" class="story-x" id="storyX" aria-label="Cerrar"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button>
+    <button type="button" class="story-x" id="storyX" data-cerrar aria-label="Cerrar"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button>
   </div>
   <div class="story-in">
     <div class="who" id="storyWho"></div>
@@ -615,6 +718,24 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
   <div class="story-cta">
     <a class="btn btn-wa btn-big block" id="storyWa" target="_blank" rel="noopener" data-ev="wa" data-d="historia"><svg class="ic"><use href="#i-wa"/></svg>Quiero asesoría para mi familia</a>
     <p class="note">Se abre WhatsApp con tu mensaje listo para enviar.</p>
+  </div>
+</dialog>
+<dialog class="vid" id="vid" aria-labelledby="vidTitulo">
+  <button type="button" class="vid-x" data-cerrar aria-label="Cerrar video"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button>
+  <div class="vid-in">
+    <video id="vidEl" controls playsinline preload="none" disablepictureinpicture controlslist="nodownload"></video>
+    <div class="vid-cta">
+      <h3 id="vidTitulo"></h3>
+      <a class="btn btn-wa btn-big block" id="vidWa" target="_blank" rel="noopener" data-ev="wa" data-d="video"><svg class="ic"><use href="#i-wa"/></svg><span id="vidWaTxt"></span></a>
+      <p class="note" id="vidIa"></p>
+    </div>
+  </div>
+</dialog>
+<dialog class="vid" id="pic" aria-labelledby="picCap">
+  <button type="button" class="vid-x" data-cerrar aria-label="Cerrar foto"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button>
+  <div class="vid-in">
+    <img class="big" id="picImg" alt="">
+    <div class="vid-cta"><h3 id="picCap"></h3></div>
   </div>
 </dialog>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -664,7 +785,13 @@ const CONFIG = {
     titulo: "Asesoría clara, de la primera llamada a la renovación",
     texto: "Soy asesor de seguros en Monterrey y mi especialidad son los gastos médicos mayores y la protección de la familia. Te explico tus opciones en palabras simples, sin letras chiquitas ni presión de venta, y sigo contigo después de firmar: en renovaciones, dudas y, sobre todo, si llega un siniestro."
   },
-  confianza: ["Atención personalizada", "Análisis de necesidades", "Asesoría profesional", "Seguimiento durante la vigencia de tu póliza"],
+
+  // «Así trabajo»: con sus propias palabras (sin promesas de tiempos ni de precios)
+  pasos: [
+    { titulo: "Platicamos", texto: "Me cuentas tu situación y qué quieres proteger. La primera asesoría es gratis y sin compromiso." },
+    { titulo: "Te explico tus opciones", texto: "Comparamos coberturas y precios en palabras simples: qué cubre, qué no y cuánto cuesta. Sin letras chiquitas ni presión de venta." },
+    { titulo: "Sigo contigo", texto: "Te acompaño después de firmar: en renovaciones, en dudas y, sobre todo, si llega un siniestro." }
+  ],
 
   // Números reales de Roberto: los sellos de «Quién soy» cuentan al aparecer en pantalla
   experiencia: { anios: 15, familias: 500 },
@@ -691,6 +818,66 @@ const CONFIG = {
     { nombre: "Nere y Sergio", detalle: "Papás de Rafael · Gastos Médicos Mayores", foto: IMG.rafael,
       cita: "Un seguro de gastos médicos no evita que ocurran los problemas de salud. Pero sí puede evitar que una enfermedad o una cirugía se convierta, además, en un problema financiero para la familia.",
       historia: "Desde el embarazo de nuestro hijo menor, Rafael, los médicos detectaron un agrandamiento de su riñón izquierdo debido a una estenosis pieloureteral. El urólogo pediatra nos explicó que, al nacer, probablemente tendría que ser operado.\n\nComo padres, sentimos miedo e incertidumbre, pero también tuvimos una enorme tranquilidad: su mamá contaba con un seguro de gastos médicos mayores, y gracias a ello Rafael estaría cubierto desde su nacimiento y podría recibir la atención médica que necesitara. Y así fue.\n\nHoy, Rafael tiene 5 años, está completamente recuperado y sus riñones funcionan perfectamente.\n\nPrevenir no es pensar en que algo malo va a pasar. Es estar preparados para proteger lo que más amamos." }
+  ],
+
+  // Videos (archivos en /tarjeta/reels/<id>.mp4 y <id>.jpg). «clave» = la palabra que se dice al final del video: viaja en el mensaje de WhatsApp.
+  videos: {
+    aviso: "Estos videos se crearon con apoyo de inteligencia artificial.",
+    lista: [
+      { id: "gastos-medicos", titulo: "Todo estaba bien… hasta que sonó el teléfono", tema: "Gastos médicos", clave: "GASTOS MÉDICOS", dur: 46 },
+      { id: "maternidad", titulo: "¿Planean tener un bebé? Esto casi nadie lo dice", tema: "Maternidad", clave: "BEBÉ", dur: 39 },
+      { id: "enfermo", titulo: "¿Se puede contratar un seguro si ya tienes una enfermedad?", tema: "Enfermedad previa", clave: "EVALUACIÓN", dur: 48 },
+      { id: "ahorro", titulo: "Presumir que mantienes a tu familia no es suficiente", tema: "Ahorro y salud", clave: "GASTOS MÉDICOS", dur: 35 },
+      { id: "seguro-o-lujo", titulo: "¿Los seguros son un lujo o una herramienta?", tema: "Prioridades", clave: "SEGURO", dur: 77 },
+      { id: "amar-familia", titulo: "¿Y si mañana no pudieras trabajar?", tema: "Protección familiar", clave: "ESCUDO", dur: 66 },
+      { id: "hijos", titulo: "Tus hijos podrían terminar manteniéndote", tema: "Retiro", clave: "RETIRO", dur: 65 },
+      { id: "ganar-mas", titulo: "Ganar más NO te salva de la pobreza", tema: "Finanzas personales", clave: "AHORRO", dur: 66 },
+      { id: "casados-o-socios", titulo: "¿Casados… o socios financieros?", tema: "Pareja y dinero", clave: "SOCIOS", dur: 72 },
+      { id: "quien-gana-mas", titulo: "¿Quién gana más… manda más?", tema: "Pareja y dinero", clave: "PAREJA", dur: 58 }
+    ]
+  },
+
+  // Eventos: un video real y fotos (archivos en /tarjeta/eventos/<id>.jpg|webp, recorte 4:5)
+  eventos: {
+    titulo: "Estuve en la inauguración de una nueva clínica",
+    texto: "Recorrido por la clínica médica AXA Keralty Cumbres, en Monterrey (octubre de 2026).",
+    video: { id: "inauguracion", titulo: "Inauguración de la clínica AXA Keralty Cumbres", dur: 60, real: true },
+    fotos: [
+      { id: "entrada", pie: "La entrada de la nueva clínica", alt: "Entrada de la clínica médica AXA Keralty Cumbres" },
+      { id: "recepcion", pie: "En la recepción", alt: "Roberto Rodríguez en la recepción de la clínica" },
+      { id: "recorrido", pie: "El recorrido de la inauguración", alt: "Invitados recorriendo el pasillo de la clínica durante la inauguración" },
+      { id: "consultorio", pie: "Uno de los consultorios", alt: "Consultorio de la clínica decorado con globos azules" },
+      { id: "rayos-x", pie: "Sala de rayos X", alt: "Sala de rayos X de la clínica" },
+      { id: "terapia-fisica", pie: "Gimnasio de terapia física", alt: "Gimnasio de terapia física de la clínica" }
+    ]
+  },
+
+  // Preguntas frecuentes: de sus guiones de «5 preguntas frecuentes de seguros» (más la de enfermedad previa, de su video)
+  faq: [
+    { p: "¿Los seguros son demasiado caros?", clave: "PROTECCIÓN", r: [
+      "No necesitas ser rico para tener un seguro, pero sí podrías necesitar mucho dinero para no tenerlo. Una enfermedad, un accidente o la pérdida del principal proveedor puede desestabilizar las finanzas de una familia en cuestión de días.",
+      "La solución no es contratar el seguro más caro, sino encontrar una protección que se ajuste a tu presupuesto y a tus necesidades: revisamos tus prioridades y comparamos opciones."
+    ] },
+    { p: "¿Estoy tirando mi dinero si nunca uso mi seguro?", clave: "SEGURO", r: [
+      "El seguro no se contrata esperando enfermarte o tener un accidente: se contrata para reducir el impacto económico de ciertos imprevistos. Si nunca lo has usado, quizá nunca enfrentaste una emergencia cubierta.",
+      "Antes de cancelarlo, revisa qué riesgos cubre tu póliza, cuáles son sus exclusiones y si la protección sigue siendo adecuada para ti."
+    ] },
+    { p: "¿La aseguradora realmente me va a pagar?", clave: "LETRAS PEQUEÑAS", r: [
+      "Tener una póliza no garantiza que cualquier gasto te lo paguen: hay exclusiones, periodos de espera, deducibles y requisitos para presentar una reclamación.",
+      "Para evitar sorpresas, antes de contratar pide que te expliquen con claridad qué cubre, qué no cubre y en qué condiciones responde la aseguradora. Parte de mi trabajo es ayudarte a entender tu póliza."
+    ] },
+    { p: "¿Qué seguro debería contratar primero?", clave: "PRIORIDADES", r: [
+      "No necesitas todos los seguros: necesitas atender el riesgo que más podría afectar tus finanzas. No es lo mismo una persona con hijos pequeños, una hipoteca y un solo ingreso que alguien soltero o cercano a jubilarse.",
+      "Empezamos por tus ingresos, tus dependientes económicos, tus deudas y tu capacidad de ahorro; después se prioriza la protección médica, el respaldo económico familiar y tu futuro financiero."
+    ] },
+    { p: "¿Qué pasaría si mañana dejara de generar ingresos?", clave: "FUTURO", r: [
+      "Si por una enfermedad, una incapacidad o un fallecimiento dejaras de generar ingresos, ¿cuánto tiempo podría tu familia pagar la casa, la comida, la escuela y las deudas? El cariño es indispensable, pero no sustituye los recursos económicos.",
+      "La solución es un plan con fondo de emergencia, protección adecuada y ahorro para el futuro. Según tu caso, pueden ayudarte un seguro de vida, una cobertura por incapacidad o un plan de retiro."
+    ] },
+    { p: "¿Puedo contratar un seguro si ya tengo una enfermedad?", clave: "EVALUACIÓN", r: [
+      "Una enfermedad preexistente puede cambiar las condiciones de aceptación, generar exclusiones o incluso impedir que te aseguren. Pero eso no significa que todas las puertas estén cerradas: dependiendo de la aseguradora y del producto, podrían existir alternativas.",
+      "Solicita una evaluación, declara tus antecedentes médicos con honestidad y revisa las opciones disponibles. La aceptación no está garantizada."
+    ] }
   ],
 
   // url vacía + mensaje = se pide por WhatsApp; url vacía sin mensaje = no se muestra
@@ -793,7 +980,7 @@ function vcardTexto() {
     const ioN = new IntersectionObserver((ens) => ens.forEach((en) => { if (en.isIntersecting) { ioN.unobserve(en.target); contar(en.target); } }), { threshold: 0.6 });
     document.querySelectorAll(".stat b[data-n]").forEach((b) => ioN.observe(b));
   }
-  $("#checks").innerHTML = C.confianza.map((t) => `<li class="glass"><span class="tick">${ic("check")}</span>${esc(t)}</li>`).join("");
+  $("#steps").innerHTML = C.pasos.map((p, i) => `<li class="step" style="--d:${(i * 0.16).toFixed(2)}s"><span class="num">${i + 1}</span><div><h3>${esc(p.titulo)}</h3><p>${esc(p.texto)}</p></div></li>`).join("");
 
   // Carruseles: se deslizan con el dedo, con flechas o con los puntos. Sin avance automático.
   function carrusel(root, nombre) {
@@ -890,28 +1077,113 @@ function vcardTexto() {
   }).join("");
   carrusel($("#carOpiniones"), "testimonios");
 
-  const dlg = $("#story"), htmlEl = document.documentElement;
+  // Ventanas (historia, video, foto): misma lógica para abrir y cerrar, y el gesto «atrás» del celular las cierra en vez de salir de la página
+  const htmlEl = document.documentElement;
+  const dlg = $("#story"), vdlg = $("#vid"), pdlg = $("#pic");
+  const hayDialog = typeof dlg.showModal === "function";
   let volverA = null, apilado = false;
-  if (typeof dlg.showModal !== "function") document.querySelectorAll(".q-more").forEach((b) => { b.hidden = true; });   // navegador muy viejo: queda la cita
+  const abrir = (d, desde, estado) => {
+    volverA = desde; d.scrollTop = 0;
+    d.showModal(); htmlEl.classList.add("lock");
+    try { history.pushState(estado, ""); apilado = true; } catch {}
+  };
+  document.querySelectorAll("dialog").forEach((d) => {
+    d.addEventListener("close", () => {
+      htmlEl.classList.remove("lock");
+      if (apilado) { apilado = false; try { history.back(); } catch {} }
+      if (volverA) { try { volverA.focus({ preventScroll: true }); } catch {} volverA = null; }
+    });
+    d.addEventListener("click", (e) => { if (e.target === d) d.close(); });   // toque fuera de la hoja
+  });
+  document.querySelectorAll("[data-cerrar]").forEach((x) => x.addEventListener("click", () => x.closest("dialog").close()));
+  window.addEventListener("popstate", () => { document.querySelectorAll("dialog[open]").forEach((d) => { apilado = false; d.close(); }); });
+  if (!hayDialog) document.querySelectorAll(".q-more").forEach((x) => { x.hidden = true; });   // navegador muy viejo: queda la cita
+
   const abrirHistoria = (i, desde) => {
     const t = C.testimonios[i]; if (!t || !t.historia) return;
     $("#storyWho").innerHTML = `${t.foto ? `<img src="${t.foto}" alt="" width="56" height="56">` : ""}<div><strong>${esc(t.nombre)}</strong><span>${esc(t.detalle)}</span></div>`;
     $("#storyBody").innerHTML = t.historia.split(/\n\n+/).map((p) => `<p>${esc(p)}</p>`).join("");
     $("#storyWa").href = wa(`Hola Roberto, leí la historia de ${t.nombre} en tu tarjeta digital y quiero asesoría para proteger a mi familia.`);
-    volverA = desde; dlg.scrollTop = 0;
-    dlg.showModal(); htmlEl.classList.add("lock");
-    try { history.pushState({ historia: i }, ""); apilado = true; } catch {}   // así el gesto «atrás» del celular cierra la ventana en vez de salir de la página
+    abrir(dlg, desde, { historia: i });
     track("historia", t.nombre);
   };
-  dlg.addEventListener("close", () => {
-    htmlEl.classList.remove("lock");
-    if (apilado) { apilado = false; try { history.back(); } catch {} }
-    if (volverA) { try { volverA.focus({ preventScroll: true }); } catch {} volverA = null; }
-  });
-  dlg.addEventListener("click", (e) => { if (e.target === dlg) dlg.close(); });   // toque fuera de la hoja
-  $("#storyX").addEventListener("click", () => dlg.close());
-  window.addEventListener("popstate", () => { if (dlg.open) { apilado = false; dlg.close(); } });
   $("#quotes").addEventListener("click", (e) => { const bt = e.target.closest(".q-more"); if (bt) abrirHistoria(+bt.dataset.i, bt); });
+
+  // Videos y fotos del evento. «ruta» deja que la vista previa incruste los archivos; en el sitio devuelve la misma dirección.
+  const ruta = (p) => (window.EMBED && window.EMBED[p]) || p;
+  const mm = (seg) => `${Math.floor(seg / 60)}:${String(Math.round(seg % 60)).padStart(2, "0")}`;
+  const vEl = $("#vidEl");
+  const abrirVideo = (v, desde) => {
+    const mp4 = ruta(`/tarjeta/reels/${v.id}.mp4`);
+    track("reel", v.titulo);
+    if (!hayDialog) { window.open(mp4, "_blank", "noopener"); return; }
+    $("#vidTitulo").textContent = v.titulo;
+    $("#vidWaTxt").textContent = v.clave ? `Escríbeme «${v.clave}»` : "Contáctame por WhatsApp";
+    const vi = `vi tu video «${v.titulo}» en tu tarjeta digital y quiero información.`;
+    $("#vidWa").href = wa(v.clave ? `${v.clave}. Hola Roberto, ${vi}` : `Hola Roberto, ${vi}`);
+    $("#vidWa").dataset.d = "video:" + v.titulo;
+    $("#vidIa").textContent = v.real ? "" : C.videos.aviso;
+    vEl.poster = ruta(`/tarjeta/reels/${v.id}.jpg`);
+    vEl.src = mp4;
+    abrir(vdlg, desde, { video: v.id });
+    const p = vEl.play(); if (p && p.catch) p.catch(() => {});   // si el navegador pide un toque, queda el botón de reproducir
+  };
+  vdlg.addEventListener("close", () => { vEl.pause(); vEl.removeAttribute("src"); vEl.load(); });
+
+  const abrirFoto = (f, desde) => {
+    track("foto", f.pie);
+    if (!hayDialog) return;
+    const im = $("#picImg"); im.src = ruta(`/tarjeta/eventos/${f.id}.jpg`); im.alt = f.alt;
+    $("#picCap").textContent = f.pie;
+    abrir(pdlg, desde, { foto: f.id });
+  };
+
+  const rd = C.videos.lista;
+  $("#avisoIa").textContent = C.videos.aviso;
+  $("#reels").innerHTML = rd.map((v, i) => slideDe(i, rd.length, `
+    <button type="button" class="reel" data-i="${i}" aria-label="Ver video: ${esc(v.titulo)} (${mm(v.dur)})">
+      <img src="${ruta(`/tarjeta/reels/${v.id}.jpg`)}" alt="" width="360" height="640" loading="lazy" decoding="async">
+      <span class="play" aria-hidden="true"><svg class="ic"><use href="#i-tri"/></svg></span>
+      <span class="meta"><span class="t">${esc(v.titulo)}</span><span class="d">${esc(v.tema)} · ${mm(v.dur)}</span></span>
+    </button>`)).join("");
+  carrusel($("#carReels"), "videos");
+  $("#reels").addEventListener("click", (e) => { const bt = e.target.closest(".reel"); if (bt) abrirVideo(rd[+bt.dataset.i], bt); });
+
+  const evV = C.eventos.video, evF = C.eventos.fotos, nEv = evF.length + 1;
+  $("#fotos").innerHTML = slideDe(0, nEv, `
+    <button type="button" class="foto es-video" data-v="1" aria-label="Ver video: ${esc(evV.titulo)} (${mm(evV.dur)})">
+      <img src="${ruta(`/tarjeta/reels/${evV.id}.jpg`)}" alt="" width="360" height="640" loading="lazy" decoding="async" style="object-position:50% 58%">
+      <span class="play" aria-hidden="true"><svg class="ic"><use href="#i-tri"/></svg></span>
+      <span class="cap">Video · ${mm(evV.dur)} · Evento real</span>
+    </button>`) + evF.map((f, i) => slideDe(i + 1, nEv, `
+    <button type="button" class="foto" data-f="${i}" aria-label="Ampliar foto: ${esc(f.pie)}">
+      <picture><source type="image/webp" srcset="${ruta(`/tarjeta/eventos/${f.id}.webp`)}"><img src="${ruta(`/tarjeta/eventos/${f.id}.jpg`)}" alt="${esc(f.alt)}" width="720" height="900" loading="lazy" decoding="async"></picture>
+      <span class="cap">${esc(f.pie)}</span>
+    </button>`)).join("");
+  carrusel($("#carEventos"), "eventos");
+  $("#fotos").addEventListener("click", (e) => {
+    const bt = e.target.closest(".foto"); if (!bt) return;
+    if (bt.dataset.v) abrirVideo(evV, bt); else abrirFoto(evF[+bt.dataset.f], bt);
+  });
+
+  // Preguntas frecuentes (acordeón nativo: se abre una a la vez donde el navegador lo permite)
+  $("#faqList").innerHTML = C.faq.map((q) => `
+    <details class="glass" name="faq" data-p="${esc(q.p)}">
+      <summary><span>${esc(q.p)}</span>${ic("chev")}</summary>
+      <div class="ans">
+        ${q.r.map((t) => `<p>${esc(t)}</p>`).join("")}
+        <a class="btn btn-ghost" target="_blank" rel="noopener" data-ev="wa" data-d="faq:${esc(q.p)}" href="${wa(`${q.clave}. Hola Roberto, leí en tu tarjeta la pregunta «${q.p}» y quiero que platiquemos.`)}">${ic("wa")}Escríbeme «${esc(q.clave)}»</a>
+      </div>
+    </details>`).join("");
+  $("#faqList").addEventListener("toggle", (e) => { if (e.target.open) track("faq", e.target.dataset.p); }, true);
+
+  // Entrada suave de los bloques al aparecer en pantalla (nada queda oculto si el navegador no puede observar o la persona prefiere sin movimiento)
+  if ("IntersectionObserver" in window && !reducido) {
+    const rv = [...document.querySelectorAll(".sec > .eyebrow, .sec > h2, .sec > .lead, .sec > .sub, .stat, .steps, .step, .car, .aviso-ia, .faq details, .res a, .cta > *, .card, .share")];
+    rv.forEach((x) => x.classList.add("rv"));
+    const ioR = new IntersectionObserver((ens) => ens.forEach((en) => { if (en.isIntersecting) { en.target.classList.add("in"); ioR.unobserve(en.target); } }), { threshold: 0.12, rootMargin: "0px 0px -6% 0px" });
+    rv.forEach((x) => ioR.observe(x));
+  }
 
   // Recursos
   const recursos = C.recursos.filter((r) => r.url || r.mensaje);
