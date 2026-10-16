@@ -1,0 +1,168 @@
+/**
+ * Medición de la tarjeta digital (/roberto): reglas puras, sin servidor.
+ * Las comparten el endpoint que recibe los toques, el resumen y el panel «Tarjeta web».
+ * Nada de lo que se guarda identifica a una persona: solo qué se tocó, en qué tipo de pantalla y de dónde llegó.
+ */
+import { fechaLocal, sumarDias } from "./fechas";
+
+/** Eventos que la tarjeta puede mandar (lo demás se ignora). */
+export const EVENTOS_TARJETA = [
+  "vista", // se cargó la página
+  "sec", // llegó a ver una sección (una vez por visita)
+  "wa", // tocó un botón de WhatsApp
+  "llamar",
+  "agendar",
+  "guardar", // guardar contacto
+  "compartir",
+  "correo",
+  "sitio",
+  "copiar",
+  "red", // tocó una red social
+  "recurso", // tocó un recurso (guía, calculadora…)
+  "chip", // marcó «qué quieres proteger»
+  "historia", // abrió una historia completa
+  "car", // deslizó un carrusel
+] as const;
+export type EventoTarjeta = (typeof EVENTOS_TARJETA)[number];
+
+export function esEventoTarjeta(e: unknown): e is EventoTarjeta {
+  return typeof e === "string" && (EVENTOS_TARJETA as readonly string[]).includes(e);
+}
+
+/** Texto corto y seguro: letras, números, espacios y : _ - . + (nunca HTML ni saltos de línea). */
+export function limpiarTexto(t: unknown, max: number): string {
+  if (typeof t !== "string") return "";
+  return t
+    .normalize("NFC")
+    .replace(/[^\p{L}\p{N} :_.+\-·]/gu, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, max);
+}
+
+export interface FilaEvento {
+  creado_en: string;
+  evento: string;
+  detalle: string;
+  dispositivo: string;
+  fuente: string;
+}
+
+export const SECCIONES_TARJETA: ReadonlyArray<{ id: string; nombre: string }> = [
+  { id: "quien", nombre: "Quién soy" },
+  { id: "seguros", nombre: "Seguros" },
+  { id: "asesoria", nombre: "Asesoría (¿qué quieres proteger?)" },
+  { id: "opiniones", nombre: "Opiniones" },
+  { id: "recursos", nombre: "Recursos" },
+  { id: "contacto", nombre: "Contacto" },
+];
+
+const LUGAR_WA: Record<string, string> = {
+  hero: "Portada",
+  barra: "Barra fija de abajo",
+  asesoria: "Asesoría (¿qué quieres proteger?)",
+  contacto: "Sección Contacto",
+  historia: "Historia completa de un cliente",
+  producto: "Botón de un producto",
+};
+
+export interface Conteo {
+  nombre: string;
+  n: number;
+}
+
+export interface ResumenTarjeta {
+  dias: number;
+  desde: string;
+  hasta: string;
+  cloud: boolean;
+  /** Veces que se cargó la página (no son personas únicas). */
+  visitas: number;
+  visitasPorDia: Array<{ dia: string; n: number }>;
+  dispositivos: { movil: number; escritorio: number };
+  fuentes: Conteo[];
+  toques: { wa: number; llamar: number; agendar: number; guardar: number; compartir: number; correo: number };
+  waPorLugar: Conteo[];
+  secciones: Array<{ id: string; nombre: string; n: number }>;
+  productos: Conteo[];
+  historias: Conteo[];
+  intereses: Conteo[];
+  carruseles: { productos: number; testimonios: number };
+  redes: Conteo[];
+  recursos: Conteo[];
+}
+
+function contar(filas: FilaEvento[], evento: string, clave: (f: FilaEvento) => string, max = 8): Conteo[] {
+  const m = new Map<string, number>();
+  for (const f of filas) {
+    if (f.evento !== evento) continue;
+    const k = clave(f);
+    if (k) m.set(k, (m.get(k) ?? 0) + 1);
+  }
+  return [...m.entries()]
+    .map(([nombre, n]) => ({ nombre, n }))
+    .sort((a, b) => b.n - a.n || a.nombre.localeCompare(b.nombre, "es"))
+    .slice(0, max);
+}
+
+/** Arma el resumen de los últimos `dias` días (incluye hoy) con las filas que se le den. */
+export function resumir(filas: FilaEvento[], dias: number, hoy: string): Omit<ResumenTarjeta, "cloud"> {
+  const desde = sumarDias(hoy, -(dias - 1));
+  const dentro = filas.filter((f) => {
+    const d = fechaLocal(f.creado_en);
+    return d >= desde && d <= hoy;
+  });
+  const vistas = dentro.filter((f) => f.evento === "vista");
+  const porDia = new Map<string, number>();
+  for (const f of vistas) {
+    const d = fechaLocal(f.creado_en);
+    porDia.set(d, (porDia.get(d) ?? 0) + 1);
+  }
+  const visitasPorDia = Array.from({ length: dias }, (_, i) => {
+    const dia = sumarDias(desde, i);
+    return { dia, n: porDia.get(dia) ?? 0 };
+  });
+  const total = (e: string) => dentro.filter((f) => f.evento === e).length;
+  const lugar = (f: FilaEvento) => {
+    const clave = f.detalle.split(":")[0];
+    return LUGAR_WA[clave] ?? (f.detalle ? f.detalle : "Otro");
+  };
+  return {
+    dias,
+    desde,
+    hasta: hoy,
+    visitas: vistas.length,
+    visitasPorDia,
+    dispositivos: {
+      movil: vistas.filter((f) => f.dispositivo === "movil").length,
+      escritorio: vistas.filter((f) => f.dispositivo === "escritorio").length,
+    },
+    fuentes: contar(dentro, "vista", (f) => f.fuente || "directo"),
+    toques: {
+      wa: total("wa"),
+      llamar: total("llamar"),
+      agendar: total("agendar"),
+      guardar: total("guardar"),
+      compartir: total("compartir"),
+      correo: total("correo"),
+    },
+    waPorLugar: contar(dentro, "wa", lugar, 10),
+    secciones: SECCIONES_TARJETA.map((s) => ({ ...s, n: dentro.filter((f) => f.evento === "sec" && f.detalle === s.id).length })),
+    productos: contar(dentro, "wa", (f) => (f.detalle.startsWith("producto:") ? f.detalle.slice(9) : ""), 8),
+    historias: contar(dentro, "historia", (f) => f.detalle, 5),
+    intereses: contar(dentro, "chip", (f) => f.detalle, 8),
+    carruseles: {
+      productos: dentro.filter((f) => f.evento === "car" && f.detalle === "productos").length,
+      testimonios: dentro.filter((f) => f.evento === "car" && f.detalle === "testimonios").length,
+    },
+    redes: contar(dentro, "red", (f) => f.detalle, 6),
+    recursos: contar(dentro, "recurso", (f) => f.detalle, 6),
+  };
+}
+
+/** Toques de contacto (WhatsApp + llamada + cita) por cada 100 visitas, o null si aún no hay visitas. */
+export function contactosPor100(r: Pick<ResumenTarjeta, "visitas" | "toques">): number | null {
+  if (!r.visitas) return null;
+  const c = r.toques.wa + r.toques.llamar + r.toques.agendar;
+  return Math.round((c / r.visitas) * 1000) / 10;
+}

@@ -71,3 +71,6 @@ export function etapaNoPermitida(error: { code?: string } | null | undefined, et
 
 export const MENSAJE_MIGRACION_CRUZADA_2 =
   "Falta un paso para activar las familias, los momentos de confianza y las ventas cruzadas en tu meta: abre Supabase → SQL Editor → New query, pega el archivo supabase/migrations/0017_venta_cruzada_2.sql y dale Run.";
+
+export const MENSAJE_MIGRACION_TARJETA =
+  "Falta un paso para medir tu tarjeta web: abre Supabase → SQL Editor → New query, pega el archivo supabase/migrations/0019_tarjeta_eventos.sql y dale Run.";

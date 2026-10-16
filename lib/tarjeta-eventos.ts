@@ -1,0 +1,102 @@
+import "server-only";
+
+/**
+ * Medición ANÓNIMA de la tarjeta digital (/roberto) — SOLO SERVIDOR.
+ *  - NUBE: tabla tarjeta_eventos (sin IP ni datos personales; ver supabase/migrations/0019_tarjeta_eventos.sql).
+ *  - DEMO: eventos en memoria; arranca con una muestra inventada para ver cómo luce el panel.
+ */
+import { adminDb, cloudReady } from "./supabase-admin";
+import { faltaMigracion, MENSAJE_MIGRACION_TARJETA, MigracionPendienteError } from "./migracion";
+import { hoyLocal } from "./fechas";
+import { resumir, type FilaEvento, type ResumenTarjeta } from "./tarjeta-reglas";
+
+const MAX_DEMO = 20_000;
+const PAGINA = 1000; // PostgREST entrega 1000 filas por consulta: se pide por páginas
+const MAX_FILAS = 100_000;
+
+/** Muestra de demostración: ~30 días de visitas con un embudo creíble (determinista). */
+function semilla(): FilaEvento[] {
+  const filas: FilaEvento[] = [];
+  let s = 11;
+  const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647);
+  const elige = <T,>(a: readonly T[]): T => a[Math.floor(rnd() * a.length)];
+  const productos = ["Seguro de Vida", "Gastos Médicos Mayores", "Ahorro y Retiro", "PPR / Planeación Fiscal", "Protección Patrimonial", "Seguro de Auto"];
+  const historias = ["Istmenia y Carlos", "Tere y Mauricio", "Nere y Sergio"];
+  const chips = ["Mi salud", "Mi familia", "Mi retiro", "Mi casa", "Mi auto", "Mis impuestos"];
+  const fuentes = ["directo", "directo", "wa", "wa", "ig", "qr", "l.facebook.com", "tiktok"];
+  for (let d = 29; d >= 0; d--) {
+    const visitas = 14 + Math.floor(rnd() * 30) + (d % 7 === 2 ? 14 : 0);
+    for (let i = 0; i < visitas; i++) {
+      const t = Date.now() - d * 86_400_000 - Math.floor(rnd() * 12 * 3_600_000);
+      const base = { dispositivo: rnd() < 0.82 ? "movil" : "escritorio", fuente: elige(fuentes) };
+      const e = (evento: string, detalle = "", dt = 0) => filas.push({ creado_en: new Date(t + dt * 1000).toISOString(), evento, detalle, ...base });
+      e("vista");
+      const llega = ["quien", "seguros", "asesoria", "opiniones", "recursos", "contacto"];
+      const hasta = rnd() < 0.18 ? 0 : 1 + Math.floor(rnd() * rnd() * 6);
+      llega.slice(0, hasta).forEach((id, k) => e("sec", id, 5 + k * 6));
+      if (hasta > 1 && rnd() < 0.45) e("car", "productos", 20);
+      if (hasta > 3 && rnd() < 0.5) e("car", "testimonios", 40);
+      if (hasta > 3 && rnd() < 0.3) e("historia", elige(historias), 50);
+      if (hasta > 2 && rnd() < 0.2) e("chip", elige(chips), 35);
+      if (rnd() < 0.09) e("wa", "hero", 12);
+      if (hasta > 1 && rnd() < 0.05) e("wa", `producto:${elige(productos)}`, 30);
+      if (hasta > 2 && rnd() < 0.05) e("wa", "asesoria:Mi familia", 45);
+      if (rnd() < 0.015) e("llamar", "hero", 10);
+      if (rnd() < 0.02) e("agendar", "hero", 14);
+      if (rnd() < 0.04) e("guardar", "hero", 16);
+      if (hasta > 4 && rnd() < 0.08) e("red", elige(["Instagram", "Facebook", "TikTok", "YouTube", "LinkedIn"]), 70);
+    }
+  }
+  return filas;
+}
+
+function demoStore(): FilaEvento[] {
+  const g = globalThis as typeof globalThis & { __tarjetaEventos?: FilaEvento[] };
+  if (!g.__tarjetaEventos) g.__tarjetaEventos = semilla();
+  return g.__tarjetaEventos;
+}
+
+export type NuevoEvento = Pick<FilaEvento, "evento" | "detalle" | "dispositivo" | "fuente">;
+
+/** Guarda un toque. Nunca lanza: si falla, la tarjeta sigue igual. */
+export async function registrarEventoTarjeta(ev: NuevoEvento): Promise<void> {
+  try {
+    if (cloudReady && adminDb) {
+      const { error } = await adminDb.from("tarjeta_eventos").insert(ev);
+      if (error && !faltaMigracion(error)) console.error("[tarjeta-eventos]", error.message);
+      return;
+    }
+    const s = demoStore();
+    s.push({ creado_en: new Date().toISOString(), ...ev });
+    if (s.length > MAX_DEMO) s.splice(0, s.length - MAX_DEMO);
+  } catch (e) {
+    console.error("[tarjeta-eventos]", e);
+  }
+}
+
+async function leerDesde(desdeISO: string): Promise<FilaEvento[]> {
+  if (!(cloudReady && adminDb)) return demoStore().filter((f) => f.creado_en >= desdeISO);
+  const filas: FilaEvento[] = [];
+  for (let a = 0; a < MAX_FILAS; a += PAGINA) {
+    const { data, error } = await adminDb
+      .from("tarjeta_eventos")
+      .select("creado_en, evento, detalle, dispositivo, fuente")
+      .gte("creado_en", desdeISO)
+      .order("id", { ascending: true })
+      .range(a, a + PAGINA - 1);
+    if (error) {
+      if (faltaMigracion(error)) throw new MigracionPendienteError(MENSAJE_MIGRACION_TARJETA, "0019_tarjeta_eventos.sql");
+      throw new Error(error.message);
+    }
+    filas.push(...(data as FilaEvento[]));
+    if (!data || data.length < PAGINA) break;
+  }
+  return filas;
+}
+
+/** Resumen de los últimos 7, 30 o 90 días. */
+export async function resumenTarjeta(dias: number): Promise<ResumenTarjeta> {
+  const d = [7, 30, 90].includes(dias) ? dias : 30;
+  const filas = await leerDesde(new Date(Date.now() - (d + 1) * 86_400_000).toISOString());
+  return { ...resumir(filas, d, hoyLocal()), cloud: cloudReady };
+}

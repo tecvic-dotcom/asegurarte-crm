@@ -25,7 +25,7 @@ export default async function PrivacidadPage() {
         ← Volver
       </a>
       <h1 className="mt-6 font-display text-3xl sm:text-4xl">Aviso de privacidad</h1>
-      <p className="mt-2 text-sm text-ink-mute">Última actualización: 14 de octubre de 2026.</p>
+      <p className="mt-2 text-sm text-ink-mute">Última actualización: 15 de octubre de 2026.</p>
 
       <div className="prose-acm mt-8 space-y-5 text-ink-soft">
         <section>
@@ -85,6 +85,17 @@ export default async function PrivacidadPage() {
           <p>
             Resguardamos tus datos con medidas técnicas razonables. Tu información se almacena de forma protegida y solo
             nuestro equipo autorizado puede consultarla.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="font-display text-xl text-ink">6. Medición de la tarjeta digital</h2>
+          <p>
+            En la tarjeta digital (/roberto) contamos de forma <strong>anónima</strong> qué se toca —por ejemplo, «se vio la
+            sección Seguros» o «se tocó el botón de WhatsApp»—, si la visita fue desde un celular o una computadora y, si el
+            enlace lo indica, desde qué red llegaste (por ejemplo, Instagram). Esta medición <strong>no usa cookies, no guarda
+            tu dirección IP, tu nombre ni tu teléfono</strong> y no puede relacionarse contigo; sirve únicamente para saber qué
+            partes de la tarjeta funcionan y mejorarlas.
           </p>
         </section>
       </div>

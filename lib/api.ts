@@ -4,6 +4,7 @@
  * Cliente HTTP hacia los route handlers (app/api/*). El navegador NUNCA habla
  * directo con Supabase; todo pasa por el servidor con la secret key.
  */
+import type { ResumenTarjeta } from "./tarjeta-reglas";
 import type {
   Lead,
   Actividad,
@@ -420,6 +421,13 @@ export async function crmEliminarEvento(id: string): Promise<void> {
 export async function crmCrecimiento(): Promise<{ filas: ProduccionMes[]; cloud: boolean }> {
   const res = await fetch("/api/crm/crecimiento", { cache: "no-store" });
   return (await jsonOErrorCRM(res)) as { filas: ProduccionMes[]; cloud: boolean };
+}
+
+// ---- Tarjeta web: qué se toca en /roberto (solo admin) ----
+
+export async function crmTarjeta(dias: number): Promise<ResumenTarjeta> {
+  const res = await fetch(`/api/crm/tarjeta?dias=${dias}`, { cache: "no-store" });
+  return (await jsonOErrorCRM(res)) as ResumenTarjeta;
 }
 
 // ---- Pólizas adjuntas: nuevas y renovaciones (solo admin) ----

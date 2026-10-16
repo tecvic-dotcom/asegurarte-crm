@@ -13,6 +13,7 @@ export type Pestana =
   | "reportes"
   | "panel"
   | "crecimiento"
+  | "tarjeta"
   | "polizas"
   | "roro"
   | "sofi"
@@ -59,6 +60,7 @@ export const GRUPOS_MENU: GrupoMenu[] = [
       { id: "panel", nombre: "Panel de Mando", pista: "Tu meta y tu dinero", icono: "flat-color-icons:combo-chart" },
       { id: "crecimiento", nombre: "Crecimiento", pista: "Producción por año y ramo", icono: "flat-color-icons:line-chart" },
       { id: "polizas", nombre: "Pólizas", pista: "Adjunta nuevas y renovaciones", icono: "flat-color-icons:file" },
+      { id: "tarjeta", nombre: "Tarjeta web", pista: "Qué toca la gente en tu tarjeta", icono: "flat-color-icons:globe" },
     ],
   },
   {
