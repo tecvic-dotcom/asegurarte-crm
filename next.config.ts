@@ -21,7 +21,8 @@ const csp = [
   // connect-src: tu base de datos (Supabase), el API de íconos a color y los píxeles.
   "connect-src 'self' https://*.supabase.co https://api.iconify.design https://api.simplesvg.com https://api.unisvg.com https://www.facebook.com https://analytics.tiktok.com https://challenges.cloudflare.com",
   // El captcha del login (Cloudflare Turnstile) se dibuja en un iframe de Cloudflare.
-  "frame-src https://challenges.cloudflare.com",
+  // La tarjeta /roberto abre la agenda de citas (Google Calendar) dentro de una ventana: solo se carga al tocar «Agendar cita».
+  "frame-src https://challenges.cloudflare.com https://calendar.google.com",
   "frame-ancestors 'self'",
   "base-uri 'self'",
   "form-action 'self'",

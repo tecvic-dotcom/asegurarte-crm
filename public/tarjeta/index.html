@@ -433,6 +433,54 @@ dialog.vid[open]{animation:subir .25s ease-out}
 .faq .ans p{margin:0 0 12px;color:var(--ink-soft);font-size:16px}
 .faq .ans .btn{margin-top:4px}
 
+/* ---------- Fase 3: «Para ti», calculadora y agenda ---------- */
+.car-slide{position:relative}
+.car-slide.para-ti::after{content:"Para ti";position:absolute;top:10px;right:10px;z-index:2;padding:5px 10px;border-radius:999px;background:linear-gradient(180deg,var(--brand-2),var(--brand));
+  color:#fff;font:700 11.5px/1 var(--display);letter-spacing:.06em;text-transform:uppercase;box-shadow:0 6px 16px -6px rgba(42,34,245,.9);pointer-events:none}
+.car-slide.para-ti > .product,.car-slide.para-ti > .reel{box-shadow:0 0 0 2px var(--brand-2)}
+.car-slide.flash > *,details.flash{animation:destello 1.9s ease-out}
+@keyframes destello{0%{box-shadow:0 0 0 0 rgba(91,123,255,.95)}60%{box-shadow:0 0 0 16px rgba(91,123,255,0)}100%{box-shadow:0 0 0 0 rgba(91,123,255,0)}}
+.match{margin-top:20px;padding:16px;border-radius:20px;background:rgba(6,7,15,.38);border:1px solid var(--line-strong);animation:subir .3s ease-out}
+.match-t{display:flex;align-items:center;gap:8px;margin:0 0 10px;font:700 12.5px/1.2 var(--display);letter-spacing:.12em;text-transform:uppercase;color:var(--ink)}
+.match-t .ic{width:16px;height:16px;color:var(--brand-2)}
+.match-list{display:grid;gap:8px}
+.m-item{display:flex;align-items:center;gap:12px;width:100%;min-height:58px;padding:8px 12px;border-radius:14px;border:1px solid var(--line);background:var(--glass);color:var(--ink);text-align:left;cursor:pointer;
+  transition:border-color .15s,background .15s;-webkit-tap-highlight-color:transparent}
+.m-item:hover{border-color:var(--brand-2);background:var(--glass-2)}
+.m-item .mi{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--glass-2);color:var(--brand-2)}
+.m-item .mi .ic{width:20px;height:20px}
+.m-item img.mi{width:36px;height:64px;height:auto;aspect-ratio:9/16;object-fit:cover;border-radius:8px;padding:0}
+.m-item .t{flex:1;min-width:0}
+.m-item strong{display:block;font:700 15px/1.3 var(--display)}
+.m-item small{display:block;font-size:12.5px;color:var(--ink-mute)}
+.m-item > .ic{width:18px;height:18px;color:var(--brand-2);flex:none}
+.cta .btn.alt{margin-top:12px}
+.teaser{display:flex;align-items:center;gap:14px;margin-top:28px;padding:16px;border-radius:20px;text-decoration:none;color:var(--ink);
+  background:linear-gradient(135deg,rgba(91,123,255,.24),rgba(42,34,245,.12));border:1px solid var(--line-strong);transition:border-color .15s,transform .15s}
+.teaser:hover{border-color:var(--brand-2)}
+.teaser:active{transform:translateY(1px)}
+.teaser .ico{flex:none;width:48px;height:48px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(180deg,var(--brand-2),var(--brand));color:#fff}
+.teaser .ico .ic{width:24px;height:24px}
+.teaser .t{flex:1;min-width:0}
+.teaser strong{display:block;font:800 17.5px/1.25 var(--display)}
+.teaser .t span{display:block;margin-top:3px;font-size:14px;line-height:1.4;color:var(--ink-soft)}
+.teaser .go{width:20px;height:20px;color:var(--brand-2);flex:none}
+
+/* Agenda de citas dentro de la tarjeta (pantalla completa en el celular, ventana en escritorio) */
+dialog.agenda{overflow:hidden}
+.agenda-in{height:100%;display:flex;flex-direction:column;padding:max(8px,env(safe-area-inset-top,0px)) 0 0}
+.agenda-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 64px 10px 18px}
+.agenda-head h3{margin:0;font:800 18px/1.2 var(--display)}
+.agenda-head a{font-size:13px;color:var(--ink-soft);text-underline-offset:3px}
+.agenda-box{position:relative;flex:1;min-height:0;background:#fff}
+.agenda-box iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff}
+.agenda-carga{position:absolute;inset:0;display:grid;place-items:center;margin:0;color:#475;font:600 15px var(--body)}
+@media (min-width:700px){
+  dialog.vid.agenda{width:min(94vw,780px);height:min(90dvh,860px)}
+  .agenda-in{padding-top:6px}
+  .agenda-head{padding-top:10px}
+}
+
 /* ---------- Pie ---------- */
 footer{background:var(--bg-2);border-top:1px solid var(--line);padding:44px 20px 112px}
 footer .in{max-width:680px;margin:0 auto}
@@ -573,7 +621,7 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
           <button class="btn btn-save" id="saveHero" type="button" data-ev="guardar" data-d="hero"><svg class="ic"><use href="#i-userplus"/></svg><span class="two"><strong>Guarda mi contacto</strong><small>Lo vas a necesitar</small></span></button>
           <div class="quick">
             <a class="tile" id="callHero" data-ev="llamar" data-d="hero"><svg class="ic"><use href="#i-phone"/></svg>Llamar</a>
-            <a class="tile" id="agendaHero" target="_blank" rel="noopener" data-ev="agendar" data-d="hero"><svg class="ic"><use href="#i-cal"/></svg>Agendar cita</a>
+            <a class="tile" id="agendaHero" data-agenda target="_blank" rel="noopener" data-ev="agendar" data-d="hero"><svg class="ic"><use href="#i-cal"/></svg>Agendar cita</a>
             <button class="tile" id="shareHero" type="button" data-ev="compartir" data-d="hero"><svg class="ic"><use href="#i-share"/></svg>Compartir</button>
           </div>
           <div class="hero-social" id="heroSocial"><p class="social-label">Sigue mis canales</p><div class="social" id="socialHero"></div></div>
@@ -601,6 +649,11 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
         <div class="stats" id="stats"></div>
         <h3 class="sub">Así trabajo, en 3 pasos</h3>
         <ol class="steps" id="steps"></ol>
+        <a class="teaser" href="https://www.especialistaenasegurarte.lat/escudo" data-ev="recurso" data-d="Escudo Familiar (inicio)">
+          <span class="ico"><svg class="ic" aria-hidden="true"><use href="#i-calc"/></svg></span>
+          <span class="t"><strong>¿Cuánta suma asegurada necesito?</strong><span>Calcula tu «Escudo Familiar» en 3 pasos · 1 minuto</span></span>
+          <svg class="ic go" aria-hidden="true"><use href="#i-arrow"/></svg>
+        </a>
       </section>
 
       <section class="sec" id="seguros" aria-labelledby="h-seguros">
@@ -617,8 +670,10 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
         <h2 id="h-asesoria">¿Qué quieres proteger hoy?</h2>
         <p class="lead">Permíteme ayudarte a encontrar la protección adecuada para ti y tu familia. Marca lo que te interesa (opcional):</p>
         <div class="chips" id="chips" role="group" aria-label="Qué quieres proteger"></div>
+        <div class="match" id="match" hidden aria-live="polite"></div>
         <a class="btn btn-primary btn-caps btn-big block" id="waAsesoria" target="_blank" rel="noopener" data-ev="wa" data-d="asesoria"><svg class="ic"><use href="#i-wa"/></svg>Quiero una asesoría</a>
         <p class="note">Se abre WhatsApp con tu mensaje listo para enviar.</p>
+        <a class="btn btn-ghost block alt" id="agendaAsesoria" data-agenda data-ev="agendar" data-d="asesoria" target="_blank" rel="noopener"><svg class="ic"><use href="#i-cal"/></svg>Prefiero agendar una cita</a>
       </section>
 
       <section class="sec" id="opiniones" aria-labelledby="h-opiniones">
@@ -743,6 +798,13 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
     </div>
   </div>
 </dialog>
+<dialog class="vid agenda" id="agenda" aria-labelledby="agendaT">
+  <button type="button" class="vid-x" data-cerrar aria-label="Cerrar agenda"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button>
+  <div class="agenda-in">
+    <div class="agenda-head"><h3 id="agendaT">Agenda tu cita</h3><a id="agendaAbrir" target="_blank" rel="noopener">¿No carga? Ábrela en otra pestaña</a></div>
+    <div class="agenda-box"><p class="agenda-carga">Cargando la agenda…</p><iframe id="agendaFrame" title="Agenda de citas con Roberto Rodríguez" src="about:blank" referrerpolicy="no-referrer"></iframe></div>
+  </div>
+</dialog>
 <dialog class="vid" id="pic" aria-labelledby="picCap">
   <button type="button" class="vid-x" data-cerrar aria-label="Cerrar foto"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button>
   <div class="vid-in">
@@ -782,6 +844,7 @@ const CONFIG = {
   avisoPrivacidad: "https://www.especialistaenasegurarte.lat/privacidad",
   urlTarjeta: "https://www.especialistaenasegurarte.lat/roberto",   // a dónde apunta el QR
   vcardUrl: "/tarjeta/roberto-rodriguez.vcf",                      // archivo .vcf publicado; vacío = el contacto se arma en el momento
+  agendaEmbed: "https://calendar.google.com/calendar/appointments/schedules/AcZssZ23yt8JINAoiLLwoLTxqyG9FS7NXxh-2R3H6VONo3-hdG0Xyix-2PhjCXHTbVUKGaGzFcUcrfGK?gv=true&hl=es",   // la misma agenda de citas (en español), para abrirla dentro de la tarjeta; vacío = se abre en otra pestaña
   agendaUrl: "https://calendar.app.google/dxf4aRZFHkux6MqL8",   // Agenda de citas de Google Calendar (45 min, L-V); vacío = pide la cita por WhatsApp
   cedulaCNSF: "V394637",                  // número de cédula de agente; aparece en el aviso legal
 
@@ -809,16 +872,19 @@ const CONFIG = {
   experiencia: { anios: 15, familias: 500 },
 
   productos: [
-    { icono: "heart",   titulo: "Seguro de Vida", texto: "Protección económica para tu familia y planificación financiera.", detalle: "Suma asegurada a la medida de tus ingresos y compromisos." },
-    { icono: "medical", titulo: "Gastos Médicos Mayores", texto: "Protección ante enfermedades, accidentes y gastos médicos inesperados.", detalle: "Tú eliges deducible, coaseguro y red de hospitales." },
-    { icono: "coins",   titulo: "Ahorro y Retiro", texto: "Estrategias para construir patrimonio y prepararte para el futuro.", detalle: "Planes en pesos, dólares o UDIS." },
-    { icono: "trend",   titulo: "PPR / Planeación Fiscal", texto: "Alternativas de ahorro para el retiro y beneficios fiscales conforme a la legislación aplicable.", detalle: "Aportaciones deducibles según el art. 151 de la LISR, con sus topes." },
-    { icono: "home",    titulo: "Protección Patrimonial", texto: "Soluciones para proteger tu casa, tu patrimonio, tus ingresos y tus objetivos financieros.", detalle: "Incluye seguro de casa habitación y contenidos." },
-    { icono: "car",     titulo: "Seguro de Auto", texto: "Protección para tu vehículo y responsabilidad civil ante terceros.", detalle: "Cobertura amplia, limitada o de responsabilidad civil." }
+    { icono: "heart",   titulo: "Seguro de Vida", tags: ["familia"], texto: "Protección económica para tu familia y planificación financiera.", detalle: "Suma asegurada a la medida de tus ingresos y compromisos." },
+    { icono: "medical", titulo: "Gastos Médicos Mayores", tags: ["salud", "familia"], texto: "Protección ante enfermedades, accidentes y gastos médicos inesperados.", detalle: "Tú eliges deducible, coaseguro y red de hospitales." },
+    { icono: "coins",   titulo: "Ahorro y Retiro", tags: ["retiro"], texto: "Estrategias para construir patrimonio y prepararte para el futuro.", detalle: "Planes en pesos, dólares o UDIS." },
+    { icono: "trend",   titulo: "PPR / Planeación Fiscal", tags: ["retiro", "impuestos"], texto: "Alternativas de ahorro para el retiro y beneficios fiscales conforme a la legislación aplicable.", detalle: "Aportaciones deducibles según el art. 151 de la LISR, con sus topes." },
+    { icono: "home",    titulo: "Protección Patrimonial", tags: ["casa", "familia"], texto: "Soluciones para proteger tu casa, tu patrimonio, tus ingresos y tus objetivos financieros.", detalle: "Incluye seguro de casa habitación y contenidos." },
+    { icono: "car",     titulo: "Seguro de Auto", tags: ["auto"], texto: "Protección para tu vehículo y responsabilidad civil ante terceros.", detalle: "Cobertura amplia, limitada o de responsabilidad civil." }
   ],
 
   // Opciones del bloque "¿Qué quieres proteger hoy?"
-  intereses: ["Mi salud", "Mi familia", "Mi retiro", "Mi casa", "Mi auto", "Mis impuestos"],
+  intereses: [
+    { id: "salud", texto: "Mi salud" }, { id: "familia", texto: "Mi familia" }, { id: "retiro", texto: "Mi retiro" },
+    { id: "casa", texto: "Mi casa" }, { id: "auto", texto: "Mi auto" }, { id: "impuestos", texto: "Mis impuestos" }
+  ],
 
   testimonios: [
     { nombre: "Istmenia y Carlos", detalle: "Papás de Carlitos · Gastos Médicos Mayores", foto: IMG.istmenia,
@@ -836,16 +902,16 @@ const CONFIG = {
   videos: {
     aviso: "Estos videos se crearon con apoyo de inteligencia artificial.",
     lista: [
-      { id: "gastos-medicos", titulo: "Todo estaba bien… hasta que sonó el teléfono", tema: "Gastos médicos", clave: "GASTOS MÉDICOS", dur: 46 },
-      { id: "maternidad", titulo: "¿Planean tener un bebé? Esto casi nadie lo dice", tema: "Maternidad", clave: "BEBÉ", dur: 39 },
-      { id: "enfermo", titulo: "¿Se puede contratar un seguro si ya tienes una enfermedad?", tema: "Enfermedad previa", clave: "EVALUACIÓN", dur: 48 },
-      { id: "ahorro", titulo: "Presumir que mantienes a tu familia no es suficiente", tema: "Ahorro y salud", clave: "GASTOS MÉDICOS", dur: 35 },
-      { id: "seguro-o-lujo", titulo: "¿Los seguros son un lujo o una herramienta?", tema: "Prioridades", clave: "SEGURO", dur: 77 },
-      { id: "amar-familia", titulo: "¿Y si mañana no pudieras trabajar?", tema: "Protección familiar", clave: "ESCUDO", dur: 66 },
-      { id: "hijos", titulo: "Tus hijos podrían terminar manteniéndote", tema: "Retiro", clave: "RETIRO", dur: 65 },
-      { id: "ganar-mas", titulo: "Ganar más NO te salva de la pobreza", tema: "Finanzas personales", clave: "AHORRO", dur: 66 },
-      { id: "casados-o-socios", titulo: "¿Casados… o socios financieros?", tema: "Pareja y dinero", clave: "SOCIOS", dur: 72 },
-      { id: "quien-gana-mas", titulo: "¿Quién gana más… manda más?", tema: "Pareja y dinero", clave: "PAREJA", dur: 58 }
+      { id: "gastos-medicos", tags: ["salud", "familia"], titulo: "Todo estaba bien… hasta que sonó el teléfono", tema: "Gastos médicos", clave: "GASTOS MÉDICOS", dur: 46 },
+      { id: "maternidad", tags: ["familia", "salud"], titulo: "¿Planean tener un bebé? Esto casi nadie lo dice", tema: "Maternidad", clave: "BEBÉ", dur: 39 },
+      { id: "enfermo", tags: ["salud"], titulo: "¿Se puede contratar un seguro si ya tienes una enfermedad?", tema: "Enfermedad previa", clave: "EVALUACIÓN", dur: 48 },
+      { id: "ahorro", tags: ["salud"], titulo: "Presumir que mantienes a tu familia no es suficiente", tema: "Ahorro y salud", clave: "GASTOS MÉDICOS", dur: 35 },
+      { id: "seguro-o-lujo", tags: ["salud", "familia"], titulo: "¿Los seguros son un lujo o una herramienta?", tema: "Prioridades", clave: "SEGURO", dur: 77 },
+      { id: "amar-familia", tags: ["familia"], titulo: "¿Y si mañana no pudieras trabajar?", tema: "Protección familiar", clave: "ESCUDO", dur: 66 },
+      { id: "hijos", tags: ["retiro", "familia"], titulo: "Tus hijos podrían terminar manteniéndote", tema: "Retiro", clave: "RETIRO", dur: 65 },
+      { id: "ganar-mas", tags: ["retiro"], titulo: "Ganar más NO te salva de la pobreza", tema: "Finanzas personales", clave: "AHORRO", dur: 66 },
+      { id: "casados-o-socios", tags: ["familia"], titulo: "¿Casados… o socios financieros?", tema: "Pareja y dinero", clave: "SOCIOS", dur: 72 },
+      { id: "quien-gana-mas", tags: ["familia"], titulo: "¿Quién gana más… manda más?", tema: "Pareja y dinero", clave: "PAREJA", dur: 58 }
     ]
   },
 
@@ -884,27 +950,27 @@ const CONFIG = {
 
   // Preguntas frecuentes: de sus guiones de «5 preguntas frecuentes de seguros» (más la de enfermedad previa, de su video)
   faq: [
-    { p: "¿Los seguros son demasiado caros?", clave: "PROTECCIÓN", r: [
+    { p: "¿Los seguros son demasiado caros?", tags: ["salud", "familia", "retiro", "casa", "auto", "impuestos"], clave: "PROTECCIÓN", r: [
       "No necesitas ser rico para tener un seguro, pero sí podrías necesitar mucho dinero para no tenerlo. Una enfermedad, un accidente o la pérdida del principal proveedor puede desestabilizar las finanzas de una familia en cuestión de días.",
       "La solución no es contratar el seguro más caro, sino encontrar una protección que se ajuste a tu presupuesto y a tus necesidades: revisamos tus prioridades y comparamos opciones."
     ] },
-    { p: "¿Estoy tirando mi dinero si nunca uso mi seguro?", clave: "SEGURO", r: [
+    { p: "¿Estoy tirando mi dinero si nunca uso mi seguro?", tags: ["salud", "casa", "auto"], clave: "SEGURO", r: [
       "El seguro no se contrata esperando enfermarte o tener un accidente: se contrata para reducir el impacto económico de ciertos imprevistos. Si nunca lo has usado, quizá nunca enfrentaste una emergencia cubierta.",
       "Antes de cancelarlo, revisa qué riesgos cubre tu póliza, cuáles son sus exclusiones y si la protección sigue siendo adecuada para ti."
     ] },
-    { p: "¿La aseguradora realmente me va a pagar?", clave: "LETRAS PEQUEÑAS", r: [
+    { p: "¿La aseguradora realmente me va a pagar?", tags: ["salud", "casa", "auto"], clave: "LETRAS PEQUEÑAS", r: [
       "Tener una póliza no garantiza que cualquier gasto te lo paguen: hay exclusiones, periodos de espera, deducibles y requisitos para presentar una reclamación.",
       "Para evitar sorpresas, antes de contratar pide que te expliquen con claridad qué cubre, qué no cubre y en qué condiciones responde la aseguradora. Parte de mi trabajo es ayudarte a entender tu póliza."
     ] },
-    { p: "¿Qué seguro debería contratar primero?", clave: "PRIORIDADES", r: [
+    { p: "¿Qué seguro debería contratar primero?", tags: ["familia", "retiro", "casa", "salud"], clave: "PRIORIDADES", r: [
       "No necesitas todos los seguros: necesitas atender el riesgo que más podría afectar tus finanzas. No es lo mismo una persona con hijos pequeños, una hipoteca y un solo ingreso que alguien soltero o cercano a jubilarse.",
       "Empezamos por tus ingresos, tus dependientes económicos, tus deudas y tu capacidad de ahorro; después se prioriza la protección médica, el respaldo económico familiar y tu futuro financiero."
     ] },
-    { p: "¿Qué pasaría si mañana dejara de generar ingresos?", clave: "FUTURO", r: [
+    { p: "¿Qué pasaría si mañana dejara de generar ingresos?", tags: ["familia", "retiro"], clave: "FUTURO", r: [
       "Si por una enfermedad, una incapacidad o un fallecimiento dejaras de generar ingresos, ¿cuánto tiempo podría tu familia pagar la casa, la comida, la escuela y las deudas? El cariño es indispensable, pero no sustituye los recursos económicos.",
       "La solución es un plan con fondo de emergencia, protección adecuada y ahorro para el futuro. Según tu caso, pueden ayudarte un seguro de vida, una cobertura por incapacidad o un plan de retiro."
     ] },
-    { p: "¿Puedo contratar un seguro si ya tengo una enfermedad?", clave: "EVALUACIÓN", r: [
+    { p: "¿Puedo contratar un seguro si ya tengo una enfermedad?", tags: ["salud"], clave: "EVALUACIÓN", r: [
       "Una enfermedad preexistente puede cambiar las condiciones de aceptación, generar exclusiones o incluso impedir que te aseguren. Pero eso no significa que todas las puertas estén cerradas: dependiendo de la aseguradora y del producto, podrían existir alternativas.",
       "Solicita una evaluación, declara tus antecedentes médicos con honestidad y revisa las opciones disponibles. La aceptación no está garantizada."
     ] }
@@ -913,7 +979,7 @@ const CONFIG = {
   // url vacía + mensaje = se pide por WhatsApp; url vacía sin mensaje = no se muestra
   recursos: [
     { icono: "book",      titulo: "Guía para futuros papás", texto: "Qué seguro necesitan antes del embarazo", url: "https://www.especialistaenasegurarte.lat" },
-    { icono: "calc",      titulo: "Calcula tu suma asegurada", texto: "Calculadora Tu Escudo Familiar", url: "https://www.especialistaenasegurarte.lat/escudo" },
+    { icono: "calc",      titulo: "¿Cuánta suma asegurada necesito?", texto: "Calculadora Tu Escudo Familiar", url: "https://www.especialistaenasegurarte.lat/escudo" },
     { icono: "book",      titulo: "Guías de seguros", texto: "Salud, ahorro, hogar y autos", url: "https://www.especialistaenasegurarte.lat/guias" },
     { icono: "webinar",   titulo: "Webinars", texto: "Te aviso de la próxima fecha", url: "", mensaje: "Hola Roberto, avísame del próximo webinar, por favor." },
     { icono: "play",      titulo: "Videos", texto: "", url: "" },
@@ -991,7 +1057,6 @@ function vcardTexto() {
   const tel = "tel:" + C.telefonoIntl;
   $("#waHero").href = $("#waDock").href = wa(C.mensajes.hola);
   $("#callHero").href = $("#callDock").href = tel;
-  $("#agendaHero").href = C.agendaUrl || wa(C.mensajes.cita);
 
   // Quién soy
   const sellos = [
@@ -1070,24 +1135,26 @@ function vcardTexto() {
     </article>`)).join("");
   carrusel($("#carProductos"), "productos");
 
-  // Asesoría con intereses
-  const elegidos = new Set();
+  // Asesoría con intereses: los chips arman el mensaje de WhatsApp y, además, recomiendan («Para ti»)
+  const elegidos = new Set();   // ids de los intereses marcados
+  const textoDe = (id) => C.intereses.find((x) => x.id === id).texto;
   const msgAsesoria = () => {
     let m = C.mensajes.asesoria;
-    if (elegidos.size) m += " Me interesa proteger: " + [...elegidos].map((x) => x.toLowerCase()).join(", ") + ".";
+    if (elegidos.size) m += " Me interesa proteger: " + [...elegidos].map((id) => textoDe(id).toLowerCase()).join(", ") + ".";
     return m;
   };
   const btnAsesoria = $("#waAsesoria");
   btnAsesoria.href = wa(msgAsesoria());
-  $("#chips").innerHTML = C.intereses.map((t) => `<button type="button" class="chip" aria-pressed="false" data-v="${esc(t)}">${ic("check")}${esc(t)}</button>`).join("");
+  $("#chips").innerHTML = C.intereses.map((t) => `<button type="button" class="chip" aria-pressed="false" data-v="${esc(t.id)}">${ic("check")}${esc(t.texto)}</button>`).join("");
   $("#chips").addEventListener("click", (e) => {
-    const b = e.target.closest(".chip"); if (!b) return;
-    const on = b.getAttribute("aria-pressed") !== "true";
-    b.setAttribute("aria-pressed", String(on));
-    on ? elegidos.add(b.dataset.v) : elegidos.delete(b.dataset.v);
+    const bt = e.target.closest(".chip"); if (!bt) return;
+    const on = bt.getAttribute("aria-pressed") !== "true";
+    bt.setAttribute("aria-pressed", String(on));
+    on ? elegidos.add(bt.dataset.v) : elegidos.delete(bt.dataset.v);
     btnAsesoria.href = wa(msgAsesoria());
-    btnAsesoria.dataset.d = "asesoria:" + [...elegidos].join("+").slice(0, 45);
-    if (on) track("chip", b.dataset.v);
+    btnAsesoria.dataset.d = "asesoria:" + [...elegidos].map(textoDe).join("+").slice(0, 45);
+    if (on) track("chip", textoDe(bt.dataset.v));
+    actualizarParaTi();
   });
 
   // Testimonios (carrusel) + historia completa en una ventana
@@ -1206,6 +1273,57 @@ function vcardTexto() {
   carrusel($("#carReco"), "reconocimientos");
   $("#reco").addEventListener("click", (e) => { const bt = e.target.closest(".foto"); if (bt) abrirFoto(rcF[+bt.dataset.f], bt, "reconocimientos"); });
 
+  // «Para ti»: según los chips, se destacan seguros y videos en sus carruseles y se arma una lista corta de recomendaciones
+  const puntua = (tags) => (tags || []).filter((t) => elegidos.has(t)).length;
+  // Primero la mejor opción de CADA interés marcado (así «Mi retiro» y «Mi familia» tienen cada uno la suya); si sobra lugar, las que más coinciden
+  const mejores = (lista, n) => {
+    const pts = lista.map((x, i) => ({ x, i, p: puntua(x.tags) })).filter((q) => q.p > 0);
+    const orden = (u, v) => v.p - u.p || u.i - v.i;
+    const out = [];
+    const tomar = (q) => { if (q && !out.includes(q) && out.length < n) out.push(q); };
+    for (const id of elegidos) tomar(pts.filter((q) => (q.x.tags || []).includes(id)).sort(orden).find((q) => !out.includes(q)));
+    pts.sort(orden).forEach(tomar);
+    return out;
+  };
+  const destacar = (el) => {
+    el.scrollIntoView({ behavior: reducido ? "auto" : "smooth", block: "center", inline: "start" });
+    el.classList.add("flash"); setTimeout(() => el.classList.remove("flash"), 2200);
+  };
+  function actualizarParaTi() {
+    document.querySelectorAll("#products .car-slide").forEach((el, i) => el.classList.toggle("para-ti", puntua(C.productos[i].tags) > 0));
+    document.querySelectorAll("#reels .car-slide").forEach((el, i) => el.classList.toggle("para-ti", puntua(C.videos.lista[i].tags) > 0));
+    const box = $("#match");
+    if (!elegidos.size) { box.hidden = true; box.innerHTML = ""; return; }
+    const fila = (k, i, ico, titulo, sub) => `<button type="button" class="m-item" data-k="${k}" data-i="${i}">${ico}<span class="t"><strong>${esc(titulo)}</strong><small>${esc(sub)}</small></span>${ic("chev")}</button>`;
+    box.innerHTML = `<p class="match-t">${ic("star")} Para ti, según lo que marcaste</p><div class="match-list">`
+      + mejores(C.productos, 2).map((q) => fila("p", q.i, `<span class="mi">${ic(q.x.icono)}</span>`, q.x.titulo, "Seguro · ver detalle")).join("")
+      + mejores(C.videos.lista, 2).map((q) => fila("v", q.i, `<img class="mi" src="${ruta(`/tarjeta/reels/${q.x.id}.jpg`)}" alt="" width="36" height="64" loading="lazy">`, q.x.titulo, `Video · ${mm(q.x.dur)}`)).join("")
+      + mejores(C.faq, 2).map((q) => fila("f", q.i, `<span class="mi">${ic("book")}</span>`, q.x.p, "Pregunta frecuente")).join("")
+      + "</div>";
+    box.hidden = false;
+  }
+  $("#match").addEventListener("click", (e) => {
+    const bt = e.target.closest(".m-item"); if (!bt) return;
+    const i = +bt.dataset.i;
+    if (bt.dataset.k === "p") { track("rec", "producto:" + C.productos[i].titulo); destacar(document.querySelectorAll("#products .car-slide")[i]); }
+    else if (bt.dataset.k === "v") { track("rec", "video:" + C.videos.lista[i].titulo); abrirVideo(C.videos.lista[i], bt); }
+    else {
+      track("rec", "pregunta:" + C.faq[i].p);
+      const d = document.querySelectorAll("#faqList details")[i];
+      d.dataset.rec = "1"; d.open = true; setTimeout(() => delete d.dataset.rec, 300);   // ya se contó como recomendación: no se cuenta otra vez como pregunta
+      destacar(d);
+    }
+  });
+
+  // Agenda de citas dentro de la tarjeta (el iframe se carga solo al abrirla; si no se puede, se abre en otra pestaña)
+  const adlg = $("#agenda"), afr = $("#agendaFrame");
+  const agendaUrl = C.agendaUrl || wa(C.mensajes.cita);
+  document.querySelectorAll("[data-agenda]").forEach((a) => {
+    a.href = agendaUrl;
+    if (hayDialog && C.agendaEmbed) a.addEventListener("click", (e) => { e.preventDefault(); $("#agendaAbrir").href = agendaUrl; afr.src = C.agendaEmbed; abrir(adlg, a, { agenda: 1 }); });
+  });
+  adlg.addEventListener("close", () => { afr.src = "about:blank"; });
+
   // Preguntas frecuentes (acordeón nativo: se abre una a la vez donde el navegador lo permite)
   $("#faqList").innerHTML = C.faq.map((q) => `
     <details class="glass" name="faq" data-p="${esc(q.p)}">
@@ -1215,11 +1333,11 @@ function vcardTexto() {
         <a class="btn btn-ghost" target="_blank" rel="noopener" data-ev="wa" data-d="faq:${esc(q.p)}" href="${wa(`${q.clave}. Hola Roberto, leí en tu tarjeta la pregunta «${q.p}» y quiero que platiquemos.`)}">${ic("wa")}Escríbeme «${esc(q.clave)}»</a>
       </div>
     </details>`).join("");
-  $("#faqList").addEventListener("toggle", (e) => { if (e.target.open) track("faq", e.target.dataset.p); }, true);
+  $("#faqList").addEventListener("toggle", (e) => { if (e.target.open && !e.target.dataset.rec) track("faq", e.target.dataset.p); }, true);
 
   // Entrada suave de los bloques al aparecer en pantalla (nada queda oculto si el navegador no puede observar o la persona prefiere sin movimiento)
   if ("IntersectionObserver" in window && !reducido) {
-    const rv = [...document.querySelectorAll(".sec > .eyebrow, .sec > h2, .sec > .lead, .sec > .sub, .stat, .steps, .step, .car, .aviso-ia, .faq details, .res a, .cta > *, .card, .share")];
+    const rv = [...document.querySelectorAll(".sec > .eyebrow, .sec > h2, .sec > .lead, .sec > .sub, .stat, .steps, .step, .teaser, .car, .aviso-ia, .faq details, .res a, .cta > *, .card, .share")];
     rv.forEach((x) => x.classList.add("rv"));
     const ioR = new IntersectionObserver((ens) => ens.forEach((en) => { if (en.isIntersecting) { en.target.classList.add("in"); ioR.unobserve(en.target); } }), { threshold: 0.12, rootMargin: "0px 0px -6% 0px" });
     rv.forEach((x) => ioR.observe(x));
@@ -1227,9 +1345,11 @@ function vcardTexto() {
 
   // Recursos
   const recursos = C.recursos.filter((r) => r.url || r.mensaje);
+  // Las páginas de mi mismo sitio (guía, calculadora, guías) se abren en esta misma pestaña (el botón «atrás» regresa a la tarjeta); WhatsApp y otros sitios, en una nueva
+  const esMiSitio = (u) => { try { return /(^|\.)especialistaenasegurarte\.lat$/.test(new URL(u, location.href).hostname); } catch (e) { return false; } };
   if (recursos.length) {
     $("#res").innerHTML = recursos.map((r) => `
-      <a class="glass" data-ev="recurso" data-d="${esc(r.titulo)}" href="${r.url ? esc(r.url) : wa(r.mensaje)}" target="_blank" rel="noopener">
+      <a class="glass" data-ev="recurso" data-d="${esc(r.titulo)}" href="${r.url ? esc(r.url) : wa(r.mensaje)}"${r.url && esMiSitio(r.url) ? "" : ' target="_blank" rel="noopener"'}>
         <span class="ico">${ic(r.icono)}</span>
         <span class="t"><strong>${esc(r.titulo)}</strong>${r.texto ? `<span>${esc(r.texto)}</span>` : ""}</span>
         <svg class="ic go" aria-hidden="true"><use href="#i-arrow"/></svg>

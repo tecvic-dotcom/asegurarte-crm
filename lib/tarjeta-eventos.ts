@@ -44,6 +44,7 @@ function semilla(): FilaEvento[] {
       if (hasta > 5 && rnd() < 0.5) { e("car", "videos", 55); e("reel", elige(videos), 58); }
       if (hasta > 6 && rnd() < 0.35) { e("car", "eventos", 62); e("foto", elige(fotos), 64); }
       if (hasta > 7 && rnd() < 0.4) e("faq", elige(preguntas), 70);
+      if (hasta > 2 && rnd() < 0.12) e("rec", elige(["producto:Gastos Médicos Mayores", "producto:Seguro de Vida", "video:¿Casados… o socios financieros?", "pregunta:¿Qué seguro debería contratar primero?"]), 40);
       if (hasta > 2 && rnd() < 0.2) e("chip", elige(chips), 35);
       if (rnd() < 0.09) e("wa", "hero", 12);
       if (hasta > 1 && rnd() < 0.05) e("wa", `producto:${elige(productos)}`, 30);

@@ -218,6 +218,7 @@ export function TarjetaWeb() {
         <ListaBarras titulo="Historias que abren" ayuda="«Leer la historia completa» de cada cliente." filas={r.historias} vacio="Aún nadie abre una historia completa." />
         <ListaBarras titulo="Videos que abren" ayuda="Cuántas veces tocaron cada video para verlo." filas={r.videos} vacio="Aún nadie abre un video." />
         <ListaBarras titulo="Preguntas que abren" ayuda="Las preguntas frecuentes que más leen." filas={r.preguntas} vacio="Aún nadie abre una pregunta." />
+        <ListaBarras titulo="Recomendaciones «Para ti» que tocan" ayuda="Lo que eligen de la lista que aparece al marcar «¿Qué quieres proteger hoy?»." filas={r.recomendaciones} vacio="Aún nadie toca una recomendación." />
         <ListaBarras titulo="Fotos que amplían" ayuda="Fotos del evento y de reconocimientos que tocan para ver en grande." filas={r.fotos} vacio="Aún nadie amplía una foto." />
         <ListaBarras
           titulo="Carruseles"

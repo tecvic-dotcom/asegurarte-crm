@@ -24,6 +24,7 @@ export const EVENTOS_TARJETA = [
   "reel", // abrió un video
   "foto", // amplió una foto del evento
   "faq", // abrió una pregunta frecuente
+  "rec", // tocó una recomendación de «Para ti»
   "car", // deslizó un carrusel
 ] as const;
 export type EventoTarjeta = (typeof EVENTOS_TARJETA)[number];
@@ -98,6 +99,7 @@ export interface ResumenTarjeta {
   videos: Conteo[];
   fotos: Conteo[];
   preguntas: Conteo[];
+  recomendaciones: Conteo[];
   intereses: Conteo[];
   carruseles: { productos: number; testimonios: number; reconocimientos: number; videos: number; eventos: number };
   redes: Conteo[];
@@ -165,6 +167,7 @@ export function resumir(filas: FilaEvento[], dias: number, hoy: string): Omit<Re
     videos: contar(dentro, "reel", (f) => f.detalle, 10),
     fotos: contar(dentro, "foto", (f) => f.detalle, 6),
     preguntas: contar(dentro, "faq", (f) => f.detalle, 6),
+    recomendaciones: contar(dentro, "rec", (f) => f.detalle, 8),
     intereses: contar(dentro, "chip", (f) => f.detalle, 8),
     carruseles: {
       productos: dentro.filter((f) => f.evento === "car" && f.detalle === "productos").length,
