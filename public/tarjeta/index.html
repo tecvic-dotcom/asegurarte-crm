@@ -802,7 +802,7 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
   <button type="button" class="vid-x" data-cerrar aria-label="Cerrar agenda"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button>
   <div class="agenda-in">
     <div class="agenda-head"><h3 id="agendaT">Agenda tu cita</h3><a id="agendaAbrir" target="_blank" rel="noopener">¿No carga? Ábrela en otra pestaña</a></div>
-    <div class="agenda-box"><p class="agenda-carga">Cargando la agenda…</p><iframe id="agendaFrame" title="Agenda de citas con Roberto Rodríguez" src="about:blank" referrerpolicy="no-referrer"></iframe></div>
+    <div class="agenda-box" id="agendaBox"><p class="agenda-carga">Cargando la agenda…</p></div>
   </div>
 </dialog>
 <dialog class="vid" id="pic" aria-labelledby="picCap">
@@ -1178,9 +1178,10 @@ function vcardTexto() {
   const htmlEl = document.documentElement;
   const dlg = $("#story"), vdlg = $("#vid"), pdlg = $("#pic");
   const hayDialog = typeof dlg.showModal === "function";
-  let volverA = null, apilado = false;
+  let volverA = null, apilado = false, yAntes = null;
   const abrir = (d, desde, estado) => {
     volverA = desde; d.scrollTop = 0;
+    yAntes = window.scrollY; try { history.scrollRestoration = "manual"; } catch {}   // al cerrar, la tarjeta queda donde estaba (el navegador a veces la corre unos píxeles al volver)
     d.showModal(); htmlEl.classList.add("lock");
     try { history.pushState(estado, ""); apilado = true; } catch {}
   };
@@ -1193,7 +1194,10 @@ function vcardTexto() {
     d.addEventListener("click", (e) => { if (e.target === d) d.close(); });   // toque fuera de la hoja
   });
   document.querySelectorAll("[data-cerrar]").forEach((x) => x.addEventListener("click", () => x.closest("dialog").close()));
-  window.addEventListener("popstate", () => { document.querySelectorAll("dialog[open]").forEach((d) => { apilado = false; d.close(); }); });
+  window.addEventListener("popstate", () => {
+    document.querySelectorAll("dialog[open]").forEach((d) => { apilado = false; d.close(); });
+    if (yAntes !== null) { window.scrollTo(0, yAntes); yAntes = null; try { history.scrollRestoration = "auto"; } catch {} }
+  });
   if (!hayDialog) document.querySelectorAll(".q-more").forEach((x) => { x.hidden = true; });   // navegador muy viejo: queda la cita
 
   const abrirHistoria = (i, desde) => {
@@ -1315,14 +1319,15 @@ function vcardTexto() {
     }
   });
 
-  // Agenda de citas dentro de la tarjeta (el iframe se carga solo al abrirla; si no se puede, se abre en otra pestaña)
-  const adlg = $("#agenda"), afr = $("#agendaFrame");
+  // Agenda de citas dentro de la tarjeta (el marco se crea al abrirla y se quita al cerrarla: así no deja entradas en el historial y «atrás» siempre la cierra; si no se puede, se abre en otra pestaña)
+  const adlg = $("#agenda"), abox = $("#agendaBox");
+  let afr = null;
   const agendaUrl = C.agendaUrl || wa(C.mensajes.cita);
   document.querySelectorAll("[data-agenda]").forEach((a) => {
     a.href = agendaUrl;
-    if (hayDialog && C.agendaEmbed) a.addEventListener("click", (e) => { e.preventDefault(); $("#agendaAbrir").href = agendaUrl; afr.src = C.agendaEmbed; abrir(adlg, a, { agenda: 1 }); });
+    if (hayDialog && C.agendaEmbed) a.addEventListener("click", (e) => { e.preventDefault(); $("#agendaAbrir").href = agendaUrl; afr = document.createElement("iframe"); afr.title = "Agenda de citas con Roberto Rodríguez"; afr.referrerPolicy = "no-referrer"; afr.src = C.agendaEmbed; abox.appendChild(afr); abrir(adlg, a, { agenda: 1 }); });
   });
-  adlg.addEventListener("close", () => { afr.src = "about:blank"; });
+  adlg.addEventListener("close", () => { if (afr) { afr.remove(); afr = null; } });
 
   // Preguntas frecuentes (acordeón nativo: se abre una a la vez donde el navegador lo permite)
   $("#faqList").innerHTML = C.faq.map((q) => `
