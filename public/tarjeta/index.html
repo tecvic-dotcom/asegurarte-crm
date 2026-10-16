@@ -409,7 +409,7 @@ dialog.vid[open]{animation:subir .25s ease-out}
 .vid-x .ic{width:20px;height:20px;stroke-width:2.2}
 .vid video{display:block;width:min(100%,calc(min(70dvh,760px) * 9 / 16));aspect-ratio:9/16;height:auto;border-radius:18px;background:#000}
 .vid picture{display:contents}
-.vid img.big{display:block;width:min(100%,calc(min(70dvh,760px) * 4 / 5));aspect-ratio:4/5;height:auto;object-fit:cover;border-radius:18px;background:var(--bg-3)}
+.vid img.big{display:block;width:auto;height:auto;max-width:100%;max-height:min(70dvh,760px);object-fit:contain;border-radius:18px;background:var(--bg-3)}
 .vid-cta{width:100%;max-width:420px;display:grid;gap:8px;text-align:center}
 .vid-cta h3{margin:0;font:700 17px/1.3 var(--display)}
 .vid-cta .note{margin:0;font-size:12.5px;color:var(--ink-mute)}
@@ -630,6 +630,16 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
         </div>
       </section>
 
+      <section class="sec" id="reconocimientos" aria-labelledby="h-reco">
+        <p class="eyebrow">Reconocimientos</p>
+        <h2 id="h-reco" data-c="reconocimientos.titulo"></h2>
+        <p class="lead" data-c="reconocimientos.texto"></p>
+        <div class="car car-fotos" id="carReco" role="group" aria-roledescription="carrusel" aria-label="Fotos de reconocimientos">
+          <div class="car-track" id="reco" tabindex="0" aria-label="Fotos de reconocimientos: desliza para ver más"></div>
+          <div class="car-ctl"></div>
+        </div>
+      </section>
+
       <section class="sec" id="videos" aria-labelledby="h-videos">
         <p class="eyebrow">Videos</p>
         <h2 id="h-videos">Ideas claras sobre seguros y dinero</h2>
@@ -649,6 +659,7 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
           <div class="car-track" id="fotos" tabindex="0" aria-label="Video y fotos del evento: desliza para ver más"></div>
           <div class="car-ctl"></div>
         </div>
+        <p class="aviso-ia" id="avisoIaEv"></p>
       </section>
 
       <section class="sec" id="faq" aria-labelledby="h-faq">
@@ -841,15 +852,33 @@ const CONFIG = {
   // Eventos: un video real y fotos (archivos en /tarjeta/eventos/<id>.jpg|webp, recorte 4:5)
   eventos: {
     titulo: "Estuve en la inauguración de una nueva clínica",
-    texto: "Recorrido por la clínica médica AXA Keralty Cumbres, en Monterrey (octubre de 2026).",
-    video: { id: "inauguracion", titulo: "Inauguración de la clínica AXA Keralty Cumbres", dur: 60, real: true },
+    texto: "Recorrido por una nueva clínica médica en Cumbres, Monterrey (octubre de 2026).",
+    avisoIa: "Imágenes reales del evento; la narración del video se creó con inteligencia artificial.",
+    video: { id: "inauguracion", titulo: "Inauguración de una nueva clínica en Cumbres", dur: 60, real: true },
     fotos: [
-      { id: "entrada", pie: "La entrada de la nueva clínica", alt: "Entrada de la clínica médica AXA Keralty Cumbres" },
+      { id: "entrada", pie: "La entrada de la nueva clínica", alt: "Entrada de la nueva clínica médica en Cumbres" },
       { id: "recepcion", pie: "En la recepción", alt: "Roberto Rodríguez en la recepción de la clínica" },
       { id: "recorrido", pie: "El recorrido de la inauguración", alt: "Invitados recorriendo el pasillo de la clínica durante la inauguración" },
       { id: "consultorio", pie: "Uno de los consultorios", alt: "Consultorio de la clínica decorado con globos azules" },
       { id: "rayos-x", pie: "Sala de rayos X", alt: "Sala de rayos X de la clínica" },
       { id: "terapia-fisica", pie: "Gimnasio de terapia física", alt: "Gimnasio de terapia física de la clínica" }
+    ]
+  },
+
+  // Reconocimientos (archivos en /tarjeta/reconocimientos/<id>.jpg|webp, completos; «pos» = qué parte se ve en la tarjeta 4:5, la ventana los muestra enteros)
+  reconocimientos: {
+    titulo: "Reconocimientos a mi trabajo",
+    texto: "Algunos de los reconocimientos que he recibido a lo largo de mi trayectoria.",
+    fotos: [
+      { id: "entrega", pie: "Entrega de reconocimientos 2026", alt: "Cuatro agentes sostienen sus reconocimientos enmarcados en la entrega de reconocimientos 2026", pos: "50% 65%" },
+      { id: "mesa-campeones", pie: "Mesa de Campeones Vida", alt: "Roberto Rodríguez frente al letrero «Mesa de Campeones Vida: tu lugar entre los mejores»", pos: "86% 50%" },
+      { id: "regional-noreste", pie: "Regional Noreste: trayectoria y venta nueva de salud individual", alt: "Pantalla con la lista de reconocimientos de la Regional Noreste y los agentes reconocidos con sus placas", pos: "40% 55%" },
+      { id: "club-reclutamiento", pie: "Club de Reclutamiento y Desarrollo", alt: "Agentes con los brazos en alto sobre el escenario del Club de Reclutamiento y Desarrollo", pos: "62% 50%" },
+      { id: "congreso-agentes", pie: "Congreso Nacional de Agentes", alt: "Entrega de reconocimientos en el Congreso Nacional de Agentes", pos: "40% 50%" },
+      { id: "rompe-paradigmas", pie: "Reconocimiento «Rompe paradigmas»", alt: "Roberto Rodríguez con su reconocimiento «Rompe paradigmas»", pos: "50% 50%" },
+      { id: "escenario", pie: "Reconocimiento Agente ALFA", alt: "Roberto Rodríguez recibiendo la placa «Reconocimiento Agente ALFA» en el escenario", pos: "50% 50%" },
+      { id: "recibiendo", pie: "Entrega de premios campaña Salud", alt: "Roberto Rodríguez junto a un compañero con un obsequio en la entrega de premios de la campaña Salud", pos: "50% 40%" },
+      { id: "reconocimiento", pie: "Reconocimiento Agente Alfa", alt: "Roberto Rodríguez y compañeros con una placa del Reconocimiento Agente Alfa", pos: "50% 50%" }
     ]
   },
 
@@ -1123,7 +1152,7 @@ function vcardTexto() {
     const vi = `vi tu video «${v.titulo}» en tu tarjeta digital y quiero información.`;
     $("#vidWa").href = wa(v.clave ? `${v.clave}. Hola Roberto, ${vi}` : `Hola Roberto, ${vi}`);
     $("#vidWa").dataset.d = "video:" + v.titulo;
-    $("#vidIa").textContent = v.real ? "" : C.videos.aviso;
+    $("#vidIa").textContent = v.real ? C.eventos.avisoIa : C.videos.aviso;
     vEl.poster = ruta(`/tarjeta/reels/${v.id}.jpg`);
     vEl.src = mp4;
     abrir(vdlg, desde, { video: v.id });
@@ -1131,14 +1160,20 @@ function vcardTexto() {
   };
   vdlg.addEventListener("close", () => { vEl.pause(); vEl.removeAttribute("src"); vEl.load(); });
 
-  const abrirFoto = (f, desde) => {
+  const abrirFoto = (f, desde, dir) => {
     track("foto", f.pie);
     if (!hayDialog) return;
     // misma imagen WebP que ya cargó el carrusel (aparece al instante); el JPG solo es el respaldo
-    const im = $("#picImg"); $("#picSrc").srcset = ruta(`/tarjeta/eventos/${f.id}.webp`); im.src = ruta(`/tarjeta/eventos/${f.id}.jpg`); im.alt = f.alt;
+    const im = $("#picImg"); $("#picSrc").srcset = ruta(`/tarjeta/${dir}/${f.id}.webp`); im.src = ruta(`/tarjeta/${dir}/${f.id}.jpg`); im.alt = f.alt;
     $("#picCap").textContent = f.pie;
     abrir(pdlg, desde, { foto: f.id });
   };
+  // Tarjeta de foto (carrusel) con su recorte 4:5 (`pos` elige qué parte se ve)
+  const botonFoto = (f, i, dir) => `
+    <button type="button" class="foto" data-f="${i}" aria-label="Ampliar foto: ${esc(f.pie)}">
+      <picture><source type="image/webp" srcset="${ruta(`/tarjeta/${dir}/${f.id}.webp`)}"><img src="${ruta(`/tarjeta/${dir}/${f.id}.jpg`)}" alt="${esc(f.alt)}" width="720" height="900" loading="lazy" decoding="async"${f.pos ? ` style="object-position:${f.pos}"` : ""}></picture>
+      <span class="cap">${esc(f.pie)}</span>
+    </button>`;
 
   const rd = C.videos.lista;
   $("#avisoIa").textContent = C.videos.aviso;
@@ -1152,21 +1187,24 @@ function vcardTexto() {
   $("#reels").addEventListener("click", (e) => { const bt = e.target.closest(".reel"); if (bt) abrirVideo(rd[+bt.dataset.i], bt); });
 
   const evV = C.eventos.video, evF = C.eventos.fotos, nEv = evF.length + 1;
+  $("#avisoIaEv").textContent = C.eventos.avisoIa;
   $("#fotos").innerHTML = slideDe(0, nEv, `
     <button type="button" class="foto es-video" data-v="1" aria-label="Ver video: ${esc(evV.titulo)} (${mm(evV.dur)})">
       <img src="${ruta(`/tarjeta/reels/${evV.id}.jpg`)}" alt="" width="360" height="640" loading="lazy" decoding="async" style="object-position:50% 58%">
       <span class="play" aria-hidden="true"><svg class="ic"><use href="#i-tri"/></svg></span>
       <span class="cap">Video · ${mm(evV.dur)} · Evento real</span>
-    </button>`) + evF.map((f, i) => slideDe(i + 1, nEv, `
-    <button type="button" class="foto" data-f="${i}" aria-label="Ampliar foto: ${esc(f.pie)}">
-      <picture><source type="image/webp" srcset="${ruta(`/tarjeta/eventos/${f.id}.webp`)}"><img src="${ruta(`/tarjeta/eventos/${f.id}.jpg`)}" alt="${esc(f.alt)}" width="720" height="900" loading="lazy" decoding="async"></picture>
-      <span class="cap">${esc(f.pie)}</span>
-    </button>`)).join("");
+    </button>`) + evF.map((f, i) => slideDe(i + 1, nEv, botonFoto(f, i, "eventos"))).join("");
   carrusel($("#carEventos"), "eventos");
   $("#fotos").addEventListener("click", (e) => {
     const bt = e.target.closest(".foto"); if (!bt) return;
-    if (bt.dataset.v) abrirVideo(evV, bt); else abrirFoto(evF[+bt.dataset.f], bt);
+    if (bt.dataset.v) abrirVideo(evV, bt); else abrirFoto(evF[+bt.dataset.f], bt, "eventos");
   });
+
+  // Reconocimientos
+  const rcF = C.reconocimientos.fotos;
+  $("#reco").innerHTML = rcF.map((f, i) => slideDe(i, rcF.length, botonFoto(f, i, "reconocimientos"))).join("");
+  carrusel($("#carReco"), "reconocimientos");
+  $("#reco").addEventListener("click", (e) => { const bt = e.target.closest(".foto"); if (bt) abrirFoto(rcF[+bt.dataset.f], bt, "reconocimientos"); });
 
   // Preguntas frecuentes (acordeón nativo: se abre una a la vez donde el navegador lo permite)
   $("#faqList").innerHTML = C.faq.map((q) => `

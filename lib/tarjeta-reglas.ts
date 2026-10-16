@@ -56,6 +56,7 @@ export const SECCIONES_TARJETA: ReadonlyArray<{ id: string; nombre: string }> = 
   { id: "seguros", nombre: "Seguros" },
   { id: "asesoria", nombre: "Asesoría (¿qué quieres proteger?)" },
   { id: "opiniones", nombre: "Opiniones" },
+  { id: "reconocimientos", nombre: "Reconocimientos" },
   { id: "videos", nombre: "Videos" },
   { id: "eventos", nombre: "Eventos" },
   { id: "faq", nombre: "Preguntas frecuentes" },
@@ -98,7 +99,7 @@ export interface ResumenTarjeta {
   fotos: Conteo[];
   preguntas: Conteo[];
   intereses: Conteo[];
-  carruseles: { productos: number; testimonios: number; videos: number; eventos: number };
+  carruseles: { productos: number; testimonios: number; reconocimientos: number; videos: number; eventos: number };
   redes: Conteo[];
   recursos: Conteo[];
 }
@@ -168,6 +169,7 @@ export function resumir(filas: FilaEvento[], dias: number, hoy: string): Omit<Re
     carruseles: {
       productos: dentro.filter((f) => f.evento === "car" && f.detalle === "productos").length,
       testimonios: dentro.filter((f) => f.evento === "car" && f.detalle === "testimonios").length,
+      reconocimientos: dentro.filter((f) => f.evento === "car" && f.detalle === "reconocimientos").length,
       videos: dentro.filter((f) => f.evento === "car" && f.detalle === "videos").length,
       eventos: dentro.filter((f) => f.evento === "car" && f.detalle === "eventos").length,
     },

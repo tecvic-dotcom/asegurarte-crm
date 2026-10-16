@@ -218,13 +218,14 @@ export function TarjetaWeb() {
         <ListaBarras titulo="Historias que abren" ayuda="«Leer la historia completa» de cada cliente." filas={r.historias} vacio="Aún nadie abre una historia completa." />
         <ListaBarras titulo="Videos que abren" ayuda="Cuántas veces tocaron cada video para verlo." filas={r.videos} vacio="Aún nadie abre un video." />
         <ListaBarras titulo="Preguntas que abren" ayuda="Las preguntas frecuentes que más leen." filas={r.preguntas} vacio="Aún nadie abre una pregunta." />
-        <ListaBarras titulo="Fotos que amplían" ayuda="Fotos del evento que tocan para ver en grande." filas={r.fotos} vacio="Aún nadie amplía una foto." />
+        <ListaBarras titulo="Fotos que amplían" ayuda="Fotos del evento y de reconocimientos que tocan para ver en grande." filas={r.fotos} vacio="Aún nadie amplía una foto." />
         <ListaBarras
           titulo="Carruseles"
           ayuda="Cuántas veces deslizaron cada uno."
           filas={[
             { nombre: "Seguros", n: r.carruseles.productos },
             { nombre: "Testimonios", n: r.carruseles.testimonios },
+            { nombre: "Reconocimientos", n: r.carruseles.reconocimientos },
             { nombre: "Videos", n: r.carruseles.videos },
             { nombre: "Eventos", n: r.carruseles.eventos },
           ].filter((x) => x.n > 0)}
