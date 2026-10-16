@@ -452,6 +452,7 @@ export async function crmSubirArchivoVideo(permiso: PermisoSubida, cual: "video"
   const destino = cual === "video" ? n.video : n.poster;
   const { error } = await sb.storage.from(n.bucket).uploadToSignedUrl(destino.path, destino.token, archivo, {
     contentType: cual === "video" ? "video/mp4" : "image/jpeg",
+    cacheControl: "31536000", // el archivo nunca cambia (su nombre lleva un id único): el celular puede guardarlo un año
   });
   if (error) throw new Error(cual === "video" ? "No pude subir el video. Revisa tu internet e intenta de nuevo." : "No pude subir la portada del video.");
 }
