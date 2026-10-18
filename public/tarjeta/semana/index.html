@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#06070f">
+<title>Mi Semana Familiar · Roberto Rodríguez</title>
+<meta name="description" content="Plan semanal gratis para el dinero de tu familia: cuánto puedes gastar, qué abonar y qué te falta proteger. Un regalo de Roberto Rodríguez, asesor de seguros.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mi Semana">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+/* Marca de especialistaenasegurarte.lat: azul-noche, azul royal, vidrio. Sin fuentes externas (funciona sin conexión). */
+:root{
+  --bg:#06070f; --bg-2:#0a0c1c; --bg-3:#101536;
+  --ink:#f2f4ff; --ink-soft:#b8bedd; --ink-mute:#8a90b4;
+  --brand:#2a22f5; --brand-2:#5b7bff;
+  --verde:#34d399; --amarillo:#ffc24b; --rojo:#ff7b7b;
+  --line:rgba(180,192,255,.12); --line-strong:rgba(180,192,255,.24);
+  --glass:rgba(120,140,255,.05); --glass-2:rgba(120,140,255,.10);
+  --wa:#25D366; --wa-ink:#04230F;
+  --display:"Montserrat","Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
+  --body:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{background:var(--bg);-webkit-text-size-adjust:100%}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font:400 16.5px/1.5 var(--body);-webkit-font-smoothing:antialiased;
+  padding:env(safe-area-inset-top,0) 0 calc(78px + env(safe-area-inset-bottom,0))}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:
+  radial-gradient(900px 600px at 10% -12%,rgba(42,34,245,.30),transparent 60%),
+  radial-gradient(800px 600px at 100% 6%,rgba(91,123,255,.16),transparent 60%),var(--bg)}
+button,input,select{font:inherit;color:inherit}
+a{color:var(--brand-2)}
+:focus-visible{outline:2px solid var(--brand-2);outline-offset:3px;border-radius:8px}
+.wrap{max-width:520px;margin:0 auto;padding:16px 16px 28px;display:flex;flex-direction:column;gap:14px}
+.card{background:linear-gradient(160deg,var(--glass-2),var(--glass));border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:0 24px 60px -30px rgba(0,0,0,.8)}
+h1,h2,h3{font-family:var(--display);margin:0;line-height:1.15}
+h1{font-size:30px;font-weight:800;letter-spacing:-.01em}
+h2{font-size:19px;font-weight:700;margin-top:6px}
+h3{font-size:16px;font-weight:700}
+p{margin:0}
+.mute{color:var(--ink-mute)} .soft{color:var(--ink-soft)} .small{font-size:13.5px}
+.k{font-size:12.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
+
+/* encabezado */
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.brand{display:flex;flex-direction:column;line-height:1.15}
+.brand b{font-family:var(--display);font-size:17px;font-weight:800}
+.brand span{font-size:12px;color:var(--ink-mute)}
+.ghost{min-height:44px;padding:0 14px;border-radius:999px;border:1px solid var(--line-strong);background:var(--glass);color:var(--ink-soft);font-weight:600;font-size:14px;cursor:pointer}
+.ghost:hover{border-color:var(--brand-2);color:var(--ink)}
+
+/* botones */
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:52px;padding:0 20px;border-radius:14px;border:0;font-weight:700;font-size:16.5px;cursor:pointer;text-decoration:none;text-align:center}
+.btn.primary{background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#fff;box-shadow:0 10px 28px -10px rgba(42,34,245,.8)}
+.btn.sec{background:var(--glass-2);border:1px solid var(--line-strong);color:var(--ink)}
+.btn.wa{background:var(--wa);color:var(--wa-ink)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+
+/* formularios */
+label.f{display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:14.5px;color:var(--ink-soft)}
+label.f small{font-weight:400;color:var(--ink-mute);font-size:12.5px}
+input[type=text],input[type=number],input[inputmode]{width:100%;min-height:50px;padding:0 14px;border-radius:12px;border:1px solid var(--line-strong);background:rgba(6,7,15,.55);color:var(--ink);font-size:17px}
+input::placeholder{color:#5f6590}
+.money{position:relative}
+.money::before{content:"$";position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--ink-mute);pointer-events:none}
+.money input{padding-left:28px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stack{display:flex;flex-direction:column;gap:14px}
+.seg{display:flex;gap:6px}
+.seg button{flex:1;min-height:48px;border-radius:12px;border:1px solid var(--line-strong);background:var(--glass);color:var(--ink-soft);font-weight:600;cursor:pointer}
+.seg button.on{background:var(--brand);border-color:var(--brand-2);color:#fff}
+.stepper{display:flex;align-items:center;gap:10px}
+.stepper button{width:50px;height:50px;border-radius:12px;border:1px solid var(--line-strong);background:var(--glass-2);font-size:24px;line-height:1;cursor:pointer}
+.stepper output{min-width:44px;text-align:center;font:800 24px var(--display)}
+.dots{display:flex;gap:6px}
+.dots i{flex:1;height:5px;border-radius:5px;background:var(--line-strong)} .dots i.on{background:var(--brand-2)}
+.err{color:var(--rojo);font-size:14px;min-height:20px}
+
+/* semáforo */
+.dot{display:inline-block;width:11px;height:11px;border-radius:50%;flex:none}
+.dot.verde{background:var(--verde)} .dot.amarillo{background:var(--amarillo)} .dot.rojo{background:var(--rojo)}
+.badge{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:999px;font-weight:700;font-size:13.5px;background:var(--glass-2);border:1px solid var(--line-strong)}
+.bar{height:12px;border-radius:12px;background:rgba(180,192,255,.14);overflow:hidden}
+.bar>i{display:block;height:100%;border-radius:12px;background:var(--verde);transition:width .4s}
+.bar>i.amarillo{background:var(--amarillo)} .bar>i.rojo{background:var(--rojo)}
+.big{font:800 46px/1 var(--display);letter-spacing:-.02em}
+.row{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+
+/* panel */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;gap:6px;justify-content:center;padding:8px 12px calc(8px + env(safe-area-inset-bottom,0));
+  background:rgba(6,7,15,.92);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-top:1px solid var(--line)}
+.tabs button{flex:1;max-width:170px;min-height:54px;border-radius:14px;border:1px solid transparent;background:transparent;color:var(--ink-mute);font-weight:700;font-size:13.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.tabs button[aria-current=true]{background:var(--glass-2);border-color:var(--line-strong);color:var(--ink)}
+.tabs svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.acc{display:flex;gap:12px;align-items:flex-start}
+.acc .n{flex:none;width:30px;height:30px;border-radius:50%;background:var(--brand);display:grid;place-items:center;font-weight:800;font-size:14px}
+.gasto{display:grid;grid-template-columns:1fr auto auto;gap:6px 10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.gasto:first-child{border-top:0}
+.gasto select{grid-column:1;min-height:36px;border-radius:8px;border:1px solid var(--line);background:var(--bg-2);color:var(--ink-soft);font-size:13px;max-width:100%}
+.gasto .x{width:40px;height:40px;border-radius:10px;border:0;background:transparent;color:var(--ink-mute);font-size:20px;cursor:pointer}
+.gasto b{font-family:var(--display)}
+.ring{width:96px;height:96px;border-radius:50%;display:grid;place-items:center;flex:none;background:conic-gradient(var(--c) calc(var(--p)*1%),rgba(180,192,255,.14) 0)}
+.ring span{width:76px;height:76px;border-radius:50%;background:var(--bg-2);display:grid;place-items:center;font:800 26px var(--display)}
+.pil{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-top:1px solid var(--line)}
+.pil .dot{margin-top:6px}
+.pil:first-child{border-top:0}
+.stack-bar{display:flex;height:16px;border-radius:10px;overflow:hidden;background:rgba(180,192,255,.14)}
+.stack-bar i{display:block;height:100%}
+.leg{display:grid;grid-template-columns:auto 1fr auto;gap:4px 8px;align-items:center;font-size:14px;margin-top:10px}
+.leg i{width:10px;height:10px;border-radius:3px}
+table{width:100%;border-collapse:collapse;font-size:14.5px}
+th,td{text-align:left;padding:8px 6px;border-top:1px solid var(--line)} th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-mute);border-top:0}
+td.r,th.r{text-align:right}
+.q{display:flex;flex-direction:column;gap:8px}
+.q button{min-height:52px;text-align:left;padding:10px 14px;border-radius:14px;border:1px solid var(--line-strong);background:var(--glass);color:var(--ink);font-weight:600;cursor:pointer}
+.q button[aria-pressed=true]{background:var(--brand);border-color:var(--brand-2)}
+.resp p+p{margin-top:10px}
+.debt{border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:10px;background:rgba(6,7,15,.35)}
+.toast{position:fixed;left:12px;right:12px;bottom:calc(86px + env(safe-area-inset-bottom,0));z-index:40;max-width:496px;margin:0 auto;padding:12px 14px;border-radius:14px;background:#1b2260;border:1px solid var(--brand-2);display:flex;gap:10px;align-items:center;justify-content:space-between;box-shadow:0 14px 40px -10px #000}
+.toast button{background:none;border:0;color:#fff;font-weight:800;text-decoration:underline;min-height:40px;cursor:pointer}
+details summary{cursor:pointer;font-weight:600;color:var(--ink-soft);min-height:44px;display:flex;align-items:center}
+details ul{margin:4px 0 0;padding-left:20px;color:var(--ink-soft);font-size:14.5px} details li{margin:4px 0}
+.legal{font-size:12.5px;color:var(--ink-mute);text-align:center}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<!-- ============ INTRO ============ -->
+<div id="intro" class="wrap" hidden>
+  <div class="top"><div class="brand"><b>Mi Semana Familiar</b><span>Un regalo de Roberto Rodríguez · Asesor de seguros</span></div></div>
+  <section class="card stack" style="margin-top:6px">
+    <span class="k">Gratis · sin registro</span>
+    <h1>¿Qué hacemos con el dinero de la familia esta semana?</h1>
+    <p class="soft">Contesta 4 pantallas y recibe un plan simple: cuánto pueden gastar, qué abonar y qué les falta proteger. Se actualiza cada semana.</p>
+    <button class="btn primary" id="btnEmpezar">Armar mi plan (3 minutos)</button>
+    <button class="btn sec" id="btnEjemplo">Verlo con una familia de ejemplo</button>
+    <p class="small mute">🔒 Lo que escribes se queda en este teléfono: nadie lo ve, ni Roberto. Solo contamos de forma anónima cuántas personas usan la app (sin cookies ni IP). Si tú decides que Roberto te contacte, ahí sí te pedimos tus datos y tu permiso. <a href="https://www.especialistaenasegurarte.lat/privacidad/semana" target="_blank" rel="noopener">Aviso de privacidad</a></p>
+  </section>
+  <section class="card stack">
+    <h3>Lo que vas a recibir</h3>
+    <ul class="soft" style="margin:0;padding-left:20px;display:grid;gap:6px">
+      <li>El tope de gasto de la semana, con lo que llevas y lo que te queda por día.</li>
+      <li>Tus 3 acciones de la semana: fondo, deudas y seguros.</li>
+      <li>Un semáforo de tu flujo, tu fondo de emergencia, tus deudas y tu protección.</li>
+    </ul>
+  </section>
+  <div id="instalar" class="card stack" hidden>
+    <h3>Llévala en tu teléfono</h3>
+    <button class="btn sec" id="btnInstalar" hidden>Instalar la app</button>
+    <p class="small soft" id="tipIos" hidden>En iPhone: toca <b>Compartir</b> y luego <b>Agregar a pantalla de inicio</b>.</p>
+  </div>
+  <p class="legal">Orientación educativa. No es asesoría financiera, fiscal ni cotización de seguros. · <a href="https://www.especialistaenasegurarte.lat/privacidad/semana" target="_blank" rel="noopener">Aviso de privacidad</a></p>
+</div>
+
+<!-- ============ WIZARD ============ -->
+<div id="wizard" class="wrap" hidden>
+  <div class="top"><div class="brand"><b>Tu plan familiar</b><span id="wPaso">Paso 1 de 4</span></div><button class="ghost" id="wCancelar" hidden>Cancelar</button></div>
+  <div class="dots" id="wDots"><i></i><i></i><i></i><i></i></div>
+
+  <section class="card stack" data-paso="1">
+    <h2>Tu familia</h2>
+    <label class="f">¿Cómo se llama tu familia?<input type="text" id="fFamilia" maxlength="30" placeholder="Familia Pérez" autocomplete="off"></label>
+    <div class="f" style="display:flex;flex-direction:column;gap:6px"><span style="font-weight:600;font-size:14.5px;color:var(--ink-soft)">¿Cuántas personas viven en casa?</span>
+      <div class="stepper"><button type="button" data-st="-1" aria-label="Menos">−</button><output id="fPersonas">3</output><button type="button" data-st="1" aria-label="Más">+</button></div></div>
+    <div class="f" style="display:flex;flex-direction:column;gap:6px"><span style="font-weight:600;font-size:14.5px;color:var(--ink-soft)">¿Alguien depende de tu ingreso? (hijos, pareja, papás)</span>
+      <div class="seg" data-name="dep"><button type="button" data-v="si" class="on">Sí</button><button type="button" data-v="no">No</button></div></div>
+    <label class="f">Ingreso mensual de la casa<small>Lo que realmente llega, ya con descuentos. Suma todas las personas que aportan.</small>
+      <span class="money"><input inputmode="numeric" id="fIngreso" placeholder="35,000" autocomplete="off"></span></label>
+  </section>
+
+  <section class="card stack" data-paso="2" hidden>
+    <h2>Lo que pagan cada mes sí o sí</h2>
+    <div class="grid2">
+      <label class="f">Renta o hipoteca<span class="money"><input inputmode="numeric" id="fVivienda" placeholder="0"></span></label>
+      <label class="f">Servicios<small>luz, agua, gas, internet, celular</small><span class="money"><input inputmode="numeric" id="fServicios" placeholder="0"></span></label>
+      <label class="f">Colegiaturas<span class="money"><input inputmode="numeric" id="fEducacion" placeholder="0"></span></label>
+      <label class="f">Otros fijos<small>seguros, suscripciones, pensiones</small><span class="money"><input inputmode="numeric" id="fOtros" placeholder="0"></span></label>
+    </div>
+    <label class="f">Lo básico del día a día<small>Comida, transporte, artículos del hogar… lo que gastan normalmente en un mes.</small><span class="money"><input inputmode="numeric" id="fBasico" placeholder="9,000"></span></label>
+    <label class="f">Ahorro disponible hoy<small>Dinero que podrías usar mañana en una emergencia (cuenta, efectivo). Sin contar inversiones a plazo.</small><span class="money"><input inputmode="numeric" id="fAhorro" placeholder="0"></span></label>
+  </section>
+
+  <section class="card stack" data-paso="3" hidden>
+    <h2>Deudas</h2>
+    <p class="soft small">Tarjetas, créditos de auto, préstamos, tiendas departamentales. Si no tienes, pasa al siguiente paso.</p>
+    <div id="deudas" class="stack"></div>
+    <button type="button" class="btn sec" id="btnDeuda">+ Agregar una deuda</button>
+  </section>
+
+  <section class="card stack" data-paso="4" hidden>
+    <h2>¿Qué protección tienen hoy?</h2>
+    <div class="stack" id="seguros"></div>
+  </section>
+
+  <p class="err" id="wErr" role="alert"></p>
+  <div class="grid2"><button class="btn sec" id="wAtras">Atrás</button><button class="btn primary" id="wSig">Siguiente</button></div>
+</div>
+
+<!-- ============ PANEL ============ -->
+<div id="panel" hidden>
+  <div class="wrap">
+    <div class="top"><div class="brand"><b id="pFamilia">Mi Semana Familiar</b><span id="pSub"></span></div><button class="ghost" id="pEditar">Editar datos</button></div>
+    <main id="vista" class="stack"></main>
+    <div id="pie" class="stack">
+      <div id="instalar2" class="card stack" hidden><button class="btn sec" id="btnInstalar2">Instalar la app en mi teléfono</button></div>
+      <button class="ghost" id="btnCompartir">Pásasela a otra familia</button>
+      <button class="ghost" id="btnBorrar">Borrar mis datos de este teléfono</button>
+      <p class="legal">Orientación educativa. No es asesoría financiera, fiscal ni cotización de seguros. · <a href="https://www.especialistaenasegurarte.lat/privacidad/semana" target="_blank" rel="noopener">Aviso de privacidad</a></p>
+    </div>
+  </div>
+  <nav class="tabs" aria-label="Secciones">
+    <button data-tab="semana" aria-current="true"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>Esta semana</button>
+    <button data-tab="plan"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg>Mi plan</button>
+    <button data-tab="asistente"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.5 7.2L4 20l1-4.5A8 8 0 1 1 21 12z"/></svg>Pregúntame</button>
+  </nav>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="motor.js"></script>
+<script>
+"use strict";
+(function () {
+  const M = window.Motor;
+  const KEY = "msf.v1";
+  const WA = "528182800234";
+  // Para redactar con IA: poner aquí un endpoint que reciba {pregunta, hechos, sistema} y regrese {texto}.
+  // El texto SOLO se muestra si todas sus cifras salen de `hechos` (Motor.validarTexto); si no, se usa la respuesta calculada.
+  const IA_URL = "";
+
+  // ---------- contador anónimo y prospecto (CRM) ----------
+  // Misma libreta anónima que la tarjeta /roberto: sin cookies, sin IP, sin nada que identifique a nadie.
+  const EP_EVENTO = "/api/tarjeta/evento", EP_PROSPECTO = "/api/semana/prospecto";
+  const AVISO_URL = "https://www.especialistaenasegurarte.lat/privacidad/semana";
+  const AVISO_VERSION = "2026-10-18"; // igual que AVISO_SEMANA_VERSION en el CRM (lib/semana-reglas.ts)
+  const qs = new URLSearchParams(location.search);
+  let refHost = ""; try { refHost = document.referrer ? new URL(document.referrer).host : ""; if (refHost === location.host) refHost = ""; } catch (e) {}
+  const ctx = {
+    v: matchMedia("(hover:none) and (pointer:coarse)").matches ? "movil" : "escritorio",
+    f: (qs.get("s") || refHost || "directo").toLowerCase().replace(/[^a-z0-9._-]/g, "").slice(0, 30) || "directo",
+  };
+  // En tu computadora (localhost) no se cuenta nada, para no ensuciar las cifras; ?medir=1 lo fuerza (pruebas).
+  const MEDIR = !/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname) || qs.get("medir") === "1";
+  function track(e, d) {
+    if (!MEDIR) return;
+    try {
+      const body = JSON.stringify({ e, d: String(d || "").slice(0, 60), ...ctx });
+      if (navigator.sendBeacon) navigator.sendBeacon(EP_EVENTO, new Blob([body], { type: "application/json" }));
+      else fetch(EP_EVENTO, { method: "POST", headers: { "content-type": "application/json" }, body, keepalive: true });
+    } catch (er) {}
+  }
+
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const mxn = M.mxn;
+  const COLOR = { verde: "var(--verde)", amarillo: "var(--amarillo)", rojo: "var(--rojo)" };
+
+  // ---------- estado ----------
+  let S = { perfil: null, gastos: [], ejemplo: false };
+  try { const g = JSON.parse(localStorage.getItem(KEY) || "null"); if (g && typeof g === "object") S = { perfil: g.perfil || null, gastos: Array.isArray(g.gastos) ? g.gastos : [], ejemplo: !!g.ejemplo }; } catch (e) {}
+  const guardar = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+  let tab = "semana", pregunta = null, paso = 1, editando = false, ultimoId = null, tToast = 0;
+
+  // ---------- pantallas ----------
+  function ver(id) { ["intro", "wizard", "panel"].forEach((x) => ($("#" + x).hidden = x !== id)); window.scrollTo(0, 0); }
+  function toast(msg, deshacer) {
+    const t = $("#toast");
+    t.innerHTML = "<span>" + esc(msg) + "</span>" + (deshacer ? '<button type="button" id="tDes">Deshacer</button>' : "");
+    t.hidden = false; clearTimeout(tToast); tToast = setTimeout(() => (t.hidden = true), 5000);
+  }
+
+  // ---------- instalación (PWA) ----------
+  let evInstalar = null;
+  const esIos = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+  const instalada = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); evInstalar = e; mostrarInstalar(); });
+  window.addEventListener("appinstalled", () => { track("sf_instalar"); evInstalar = null; mostrarInstalar(); });
+  function mostrarInstalar() {
+    const puede = !instalada && (evInstalar || esIos);
+    $("#instalar").hidden = !puede; $("#btnInstalar").hidden = !evInstalar; $("#tipIos").hidden = !(esIos && !evInstalar);
+    $("#instalar2").hidden = !(!instalada && evInstalar);
+  }
+  async function instalar() { if (!evInstalar) return; evInstalar.prompt(); try { await evInstalar.userChoice; } catch (e) {} evInstalar = null; mostrarInstalar(); }
+
+  // ---------- formulario ----------
+  const SEGUROS = [["vida", "Seguro de vida"], ["gmm", "Gastos médicos mayores"], ["auto", "Seguro de auto"], ["hogar", "Seguro de hogar"]];
+  $("#seguros").innerHTML = SEGUROS.map(([k, n]) =>
+    `<div class="f" style="display:flex;flex-direction:column;gap:6px"><span style="font-weight:600;font-size:14.5px;color:var(--ink-soft)">${n}</span>
+     <div class="seg" data-name="${k}"><button type="button" data-v="si">Sí tengo</button><button type="button" data-v="no">No tengo</button><button type="button" data-v="na">No aplica</button></div></div>`).join("");
+
+  const fmt = (n) => (n ? Math.round(n).toLocaleString("en-US") : "");
+  const leer = (id) => Number(String($("#" + id).value).replace(/[^\d.]/g, "")) || 0;
+  const segVal = (name) => ($(`.seg[data-name="${name}"] .on`) || {}).dataset?.v;
+  const segSet = (name, v) => $$(`.seg[data-name="${name}"] button`).forEach((b) => b.classList.toggle("on", b.dataset.v === v));
+
+  function filaDeuda(d = {}) {
+    const r = document.createElement("div");
+    r.className = "debt";
+    r.innerHTML = `<label class="f">¿Qué deuda es?<input type="text" data-k="nombre" maxlength="30" placeholder="Tarjeta de crédito" value="${esc(d.nombre || "")}"></label>
+      <div class="grid2">
+        <label class="f">Lo que debes<span class="money"><input inputmode="numeric" data-k="saldo" value="${fmt(d.saldo)}" placeholder="20,000"></span></label>
+        <label class="f">Pago mínimo al mes<span class="money"><input inputmode="numeric" data-k="pago" value="${fmt(d.pago)}" placeholder="1,200"></span></label>
+      </div>
+      <label class="f">Tasa anual (%)<small>Aparece en tu estado de cuenta como tasa de interés o CAT. Si no la sabes, déjala vacía.</small><input inputmode="decimal" data-k="tasa" value="${d.tasa || ""}" placeholder="55"></label>
+      <button type="button" class="ghost" data-quitar>Quitar esta deuda</button>`;
+    return r;
+  }
+  function llenarForm(p) {
+    p = p || { personas: 3, dependientes: true, fijos: {}, deudas: [], seguros: {} };
+    $("#fFamilia").value = p.familia || ""; $("#fPersonas").textContent = p.personas || 3;
+    segSet("dep", p.dependientes === false ? "no" : "si");
+    $("#fIngreso").value = fmt(p.ingreso);
+    const f = p.fijos || {};
+    $("#fVivienda").value = fmt(f.vivienda); $("#fServicios").value = fmt(f.servicios); $("#fEducacion").value = fmt(f.educacion); $("#fOtros").value = fmt(f.otros);
+    $("#fBasico").value = fmt(p.basico); $("#fAhorro").value = fmt(p.ahorro);
+    const cont = $("#deudas"); cont.innerHTML = "";
+    (p.deudas || []).forEach((d) => cont.appendChild(filaDeuda(d)));
+    SEGUROS.forEach(([k]) => segSet(k, (p.seguros || {})[k] || ""));
+  }
+  function leerPerfil() {
+    const deudas = $$("#deudas .debt").map((r) => {
+      const g = (k) => r.querySelector(`[data-k="${k}"]`).value;
+      const n = (k) => Number(String(g(k)).replace(/[^\d.]/g, "")) || 0;
+      return { nombre: g("nombre").trim() || "Deuda", saldo: n("saldo"), pago: n("pago"), tasa: n("tasa") };
+    }).filter((d) => d.saldo > 0);
+    const seguros = {}; SEGUROS.forEach(([k]) => (seguros[k] = segVal(k) || "na"));
+    return {
+      familia: $("#fFamilia").value.trim() || "Mi familia", personas: Number($("#fPersonas").textContent) || 3, dependientes: segVal("dep") !== "no",
+      ingreso: leer("fIngreso"), fijos: { vivienda: leer("fVivienda"), servicios: leer("fServicios"), educacion: leer("fEducacion"), otros: leer("fOtros") },
+      basico: leer("fBasico"), ahorro: leer("fAhorro"), deudas, seguros,
+    };
+  }
+  function irPaso(n) {
+    paso = n;
+    $$("#wizard [data-paso]").forEach((s) => (s.hidden = Number(s.dataset.paso) !== n));
+    $$("#wDots i").forEach((d, i) => d.classList.toggle("on", i < n));
+    $("#wPaso").textContent = "Paso " + n + " de 4";
+    $("#wAtras").style.visibility = n === 1 ? "hidden" : "visible";
+    $("#wSig").textContent = n === 4 ? "Ver mi plan" : "Siguiente";
+    $("#wErr").textContent = ""; window.scrollTo(0, 0);
+  }
+  function validarPaso() {
+    if (paso === 1 && leer("fIngreso") <= 0) return "Escribe cuánto dinero entra al mes en tu casa.";
+    if (paso === 2 && leer("fBasico") <= 0) return "Calcula lo básico del día a día (comida, transporte…). Un aproximado sirve.";
+    if (paso === 3) {
+      const malas = $$("#deudas .debt").find((r) => { const s = Number(String(r.querySelector('[data-k="saldo"]').value).replace(/[^\d.]/g, "")) || 0; const p = Number(String(r.querySelector('[data-k="pago"]').value).replace(/[^\d.]/g, "")) || 0; return s > 0 && p <= 0; });
+      if (malas) return "A cada deuda ponle su pago mínimo al mes.";
+    }
+    if (paso === 4 && SEGUROS.some(([k]) => !segVal(k))) return "Contesta los cuatro seguros. Si no lo sabes, elige «No aplica».";
+    return "";
+  }
+  function empezar(perfil, edit) {
+    editando = !!edit; llenarForm(perfil); $("#wCancelar").hidden = !edit; irPaso(1); ver("wizard");
+  }
+
+  // ---------- render del panel ----------
+  const DIAS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+  const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+  const etiquetaFecha = (f, hoy) => { const hoyIso = M.iso(hoy); const ayer = M.iso(new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() - 1)); return f === hoyIso ? "Hoy" : f === ayer ? "Ayer" : DIAS[M.aFecha(f).getDay()]; };
+  const ESTADO = { verde: "Vas bien", amarillo: "Cuidado: vas cerca del límite", rojo: "Te pasaste del límite semanal" };
+
+  function vistaSemana(h, hoy) {
+    const s = h.semana, ini = M.aFecha(M.iso(M.lunesDe(hoy))), fin = new Date(ini.getFullYear(), ini.getMonth(), ini.getDate() + 6);
+    const rango = ini.getDate() + " al " + fin.getDate() + " de " + MESES[fin.getMonth()];
+    const pct = Math.min(100, s.pct);
+    const lista = M.semana(S.perfil, S.gastos, hoy).lista.slice().sort((a, b) => (b.fecha + b.id).localeCompare(a.fecha + a.id));
+    const cat = (g) => Object.entries(M.CATEGORIAS).map(([k, n]) => `<option value="${k}"${k === g.categoria ? " selected" : ""}>${n}</option>`).join("");
+    return `
+    <section class="card stack">
+      <span class="k">Semana del ${rango}</span>
+      ${h.limiteSemana > 0 ? `
+        <div><div class="soft small">Puedes gastar esta semana</div><div class="big">${mxn(s.limite)}</div></div>
+        <div class="bar" role="img" aria-label="Has usado ${Math.round(pct)}% del límite semanal"><i class="${s.color}" style="width:${pct}%"></i></div>
+        <div class="row small"><span>Llevas <b>${mxn(s.gastado)}</b></span><span>${s.restante >= 0 ? "Quedan <b>" + mxn(s.restante) + "</b>" + (s.diasRestantes > 1 ? " · unos " + mxn(s.porDia) + " por día" : " · solo queda hoy") : "Te pasaste por <b>" + mxn(-s.restante) + "</b>"}</span></div>
+        <span class="badge"><i class="dot ${s.color}"></i>${ESTADO[s.color]}</span>`
+      : `<div class="big" style="font-size:30px">Esta semana no hay margen</div><p class="soft">Tus compromisos y deudas se llevan todo el ingreso. Mira «Tus acciones» para ordenar el presupuesto.</p>`}
+    </section>
+    <form id="fGasto" class="card stack" autocomplete="off">
+      <label class="f" for="iGasto">Anota un gasto como si fuera WhatsApp</label>
+      <input type="text" id="iGasto" maxlength="80" placeholder="Ej.: gasté 350 en el súper">
+      <button class="btn primary" type="submit">Registrar gasto</button>
+      <p class="small mute">También entiende «ayer», «antier» y montos como $1,250.</p>
+    </form>
+    <h2>Tus acciones de la semana</h2>
+    ${h.acciones.map((a, i) => `<div class="card acc"><span class="n">${i + 1}</span><div><h3>${esc(a.titulo)}</h3><p class="soft small" style="margin-top:4px">${esc(a.detalle)}</p></div></div>`).join("")}
+    ${lista.length ? `<h2>Gastos de esta semana</h2><section class="card">${lista.map((g) => `
+      <div class="gasto"><div><b>${esc(etiquetaFecha(g.fecha, hoy))}</b> <span class="soft small">· ${esc(g.nota || "")}</span></div><b>${mxn(g.monto)}</b><button class="x" data-del="${esc(g.id)}" aria-label="Borrar este gasto">✕</button>
+      <select data-cat="${esc(g.id)}" aria-label="Categoría">${cat(g)}</select></div>`).join("")}</section>` : ""}`;
+  }
+
+  function vistaPlan(h) {
+    const P = [
+      ["flujo", "Flujo mensual", h.deficit > 0 ? "Gastas " + mxn(h.deficit) + " más de lo que entra." : h.faltaBasico > 0 ? "Te faltan " + mxn(h.faltaBasico) + " para lo básico." : h.pilares.flujo === "amarillo" ? "Queda muy poco margen después de lo básico." : "Después de lo básico queda margen para apartar."],
+      ["fondo", "Fondo de emergencia", "Cubre " + h.fondo.meses.toFixed(1) + " de " + h.fondo.metaMeses + " meses de gastos."],
+      ["deuda", "Deudas", h.deudas.cuantas ? "Pagas " + h.deudas.ratioPct + "% de tu ingreso en deudas." + (h.deudas.masCara && h.deudas.masCara.tasa >= M.REGLAS.tasaAltaAnual ? " Una cobra " + h.deudas.masCara.tasa + "% anual." : "") : "Sin deudas registradas."],
+      ["proteccion", "Protección", h.proteccion.huecos.length ? "Falta: " + h.proteccion.huecos.map((x) => x.titulo.toLowerCase()).join(", ") + "." : "Cubierta."],
+    ];
+    const margen = Math.max(0, h.limiteMes - h.basico);
+    const seg = [["Compromisos fijos", h.fijos, "#5b7bff"], ["Pagos de deuda", h.pagosDeuda, "#ff7b7b"], ["Lo básico", h.basico, "#ffc24b"], ["Apartar", h.apartarMes, "#34d399"], ["Margen libre", margen, "#b8bedd"]];
+    const tot = seg.reduce((a, x) => a + x[1], 0) || 1;
+    const f = h.fondo, pctF = Math.min(100, (f.meses / f.metaMeses) * 100);
+    const d = h.deudas;
+    const fila = (n, x) => x ? `<tr><td>${n}</td><td class="r">${x.termina ? x.meses + " meses" : "No termina"}</td><td class="r">${x.termina ? mxn(x.intereses) : "—"}</td></tr>` : "";
+    return `
+    <section class="card row" style="align-items:center;flex-wrap:nowrap;gap:16px">
+      <div class="ring" style="--p:${h.puntaje};--c:${h.puntaje >= 75 ? COLOR.verde : h.puntaje >= 40 ? COLOR.amarillo : COLOR.rojo}"><span>${h.puntaje}</span></div>
+      <div><h2 style="margin:0">Salud financiera</h2><p class="soft small">Orientativa: promedio de 4 semáforos. Sube cuando cubres fondo, deudas y seguros.</p></div>
+    </section>
+    <section class="card">${P.map(([k, n, t]) => `<div class="pil"><i class="dot ${h.pilares[k]}"></i><div><b>${n}</b><div class="soft small">${esc(t)}</div></div></div>`).join("")}</section>
+    <section class="card stack"><h3>A dónde se va tu ingreso del mes</h3>
+      ${h.deficit > 0 ? `<p class="soft">Tus fijos y deudas (${mxn(h.fijos + h.pagosDeuda)}) superan tu ingreso (${mxn(h.ingreso)}).</p>` : `
+      <div class="stack-bar" role="img" aria-label="Distribución del ingreso mensual">${seg.map((x) => `<i style="width:${(x[1] / tot) * 100}%;background:${x[2]}"></i>`).join("")}</div>
+      <div class="leg">${seg.map((x) => `<i style="background:${x[2]}"></i><span>${x[0]}</span><b>${mxn(x[1])}</b>`).join("")}</div>`}
+    </section>
+    <section class="card stack"><h3>Fondo de emergencia</h3>
+      <div class="bar"><i class="${f.color}" style="width:${pctF}%"></i></div>
+      <p class="soft small">Tienes ${mxn(f.ahorro)}. La meta para tu familia es ${mxn(f.metaMonto)} (${f.metaMeses} meses de gastos).${f.mesesParaMeta ? " Apartando " + mxn(h.apartarMes) + " al mes llegas en " + f.mesesParaMeta + " meses." : ""}</p></section>
+    ${d.cuantas ? `<section class="card stack"><h3>Cómo salir de tus deudas</h3>
+      <table><thead><tr><th>Camino</th><th class="r">Tiempo</th><th class="r">Intereses</th></tr></thead><tbody>
+      ${fila("Solo mínimos", d.soloMinimos)}${fila("Extra a la más cara", d.avalancha)}${d.bola && d.extraVsBola ? fila("Extra a la más chica", d.bola) : ""}</tbody></table>
+      ${d.ahorroIntereses ? `<p class="soft small">Con ${mxn(d.extra)} extra al mes ahorras ${mxn(d.ahorroIntereses)} de intereses.</p>` : ""}</section>` : ""}
+    <section class="card stack"><h3>Protección de tu familia</h3>
+      ${h.proteccion.huecos.length ? h.proteccion.huecos.map((x) => `<div class="pil" style="border:0;padding:4px 0"><i class="dot ${x.prioridad === "alta" ? "rojo" : "amarillo"}"></i><div><b>${esc(x.titulo)}</b><div class="soft small">${esc(x.razon)}</div></div></div>`).join("") : '<p class="soft">Marcaste todo cubierto. Revisa cada año que las sumas sigan alcanzando.</p>'}
+    </section>
+    ${tarjetaContacto(h)}
+    <details class="card"><summary>Cómo calculamos</summary><ul>
+      <li>Apartamos el ${M.REGLAS.ahorroPctIngreso * 100}% de tu ingreso, siempre que después de fijos, deudas y lo básico alcance.</li>
+      <li>El tope semanal es lo que queda del mes (sin lo apartado) entre ${M.REGLAS.semanasPorMes.toFixed(2)} semanas.</li>
+      <li>Fondo de emergencia: ${M.REGLAS.fondoMesesBase} meses de gastos, o ${M.REGLAS.fondoMesesDependientes} si alguien depende de tu ingreso.</li>
+      <li>Orden: primero 1 mes de fondo, luego la deuda de más de ${M.REGLAS.tasaAltaAnual}% anual, después el resto del fondo.</li>
+      <li>Deudas: se paga el mínimo en todas y lo extra a la de mayor tasa (avalancha).</li>
+      <li>Todos los números salen de estas reglas, no de una IA.</li></ul></details>`;
+  }
+
+  // Datos de contacto solo en memoria mientras la app está abierta: no se guardan en el teléfono.
+  const contacto = { abierto: false, nombre: "", whatsapp: "", correo: "", consent: false, enviando: false, estado: null, error: "" };
+  const waUrl = (h, nombre) => "https://wa.me/" + WA + "?text=" + encodeURIComponent(M.mensajeWhatsApp(h, nombre));
+
+  function tarjetaContacto(h) {
+    const c = contacto;
+    let cuerpo;
+    if (c.estado) {
+      cuerpo = `<p class="soft">${c.estado === "ok" ? "✅ Listo: Roberto recibió tu semáforo y tus datos de contacto. Te escribirá pronto." : "No pudimos guardar tus datos en este momento. Aun así puedes escribirle tú por WhatsApp."}</p>
+        <a class="btn wa" data-wa="${c.estado === "ok" ? "datos" : "directo"}" href="${waUrl(h, c.nombre)}" target="_blank" rel="noopener">Abrir WhatsApp con Roberto</a>
+        ${c.estado === "ok" ? '<p class="small mute">Para que te conteste más rápido, manda el mensaje que se abre en WhatsApp.</p>' : ""}`;
+    } else {
+      cuerpo = `
+        <button class="btn primary" id="btnQuiero" ${c.abierto ? "hidden" : ""}>Quiero que Roberto me contacte</button>
+        <form id="fContacto" class="stack" novalidate ${c.abierto ? "" : "hidden"}>
+          <label class="f">Tu nombre<input type="text" id="cNombre" maxlength="60" autocomplete="name" value="${esc(c.nombre)}" placeholder="María Pérez"></label>
+          <label class="f">Tu WhatsApp<small>10 dígitos. Es por donde te escribirá.</small><input type="tel" inputmode="tel" id="cWa" maxlength="18" autocomplete="tel" value="${esc(c.whatsapp)}" placeholder="81 1234 5678"></label>
+          <label class="f">Tu correo (opcional)<input type="text" inputmode="email" id="cCorreo" maxlength="80" autocomplete="email" value="${esc(c.correo)}" placeholder="nombre@correo.com"></label>
+          <input type="text" id="cTrampa" name="sitio" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">
+          <label class="f" style="flex-direction:row;align-items:flex-start;gap:10px;font-weight:400"><input type="checkbox" id="cConsent" ${c.consent ? "checked" : ""} style="width:22px;height:22px;margin-top:2px;flex:none"><span class="small">Autorizo que Roberto Rodríguez guarde mi nombre, mi WhatsApp y mi correo (si lo escribí), y el semáforo de este plan —<b>sin mis montos</b>— para contactarme sobre lo que me falta proteger. Leí el <a href="${AVISO_URL}" target="_blank" rel="noopener">Aviso de privacidad</a> de esta app.</span></label>
+          <p class="err" id="cErr" role="alert">${esc(c.error)}</p>
+          <button class="btn primary" type="submit" ${c.enviando ? "disabled" : ""}>${c.enviando ? "Enviando…" : "Enviar mis datos"}</button>
+        </form>
+        <a class="btn sec" data-wa="directo" href="${waUrl(h, "")}" target="_blank" rel="noopener">Solo abrir WhatsApp (sin dejar mis datos)</a>`;
+    }
+    return `<section class="card stack"><h3>Habla con Roberto</h3>
+      <p class="soft small">Puede revisar contigo lo que te falta proteger. Sin compromiso.</p>${cuerpo}</section>`;
+  }
+
+  async function enviarContacto() {
+    const c = contacto, h = hechosActuales;
+    c.error = "";
+    const wa = c.whatsapp.replace(/\D/g, "").replace(/^(521|52)(?=\d{10}$)/, "");
+    if (c.nombre.trim().replace(/[^\p{L}]/gu, "").length < 2) c.error = "Escribe tu nombre (al menos 2 letras).";
+    else if (wa.length !== 10) c.error = "Tu WhatsApp debe tener 10 dígitos.";
+    else if (c.correo.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(c.correo.trim())) c.error = "Revisa tu correo o déjalo vacío.";
+    else if (!c.consent) c.error = "Marca la casilla de autorización para que Roberto reciba tus datos.";
+    if (c.error) return render();
+    c.enviando = true; render();
+    let estado = "fallo";
+    try {
+      const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 10000);
+      const r = await fetch(EP_PROSPECTO, {
+        method: "POST", headers: { "content-type": "application/json" }, signal: ctl.signal,
+        body: JSON.stringify({ nombre: c.nombre.trim(), whatsapp: wa, correo: c.correo.trim(), consentimiento: true, aviso: AVISO_VERSION, trampa: ($("#cTrampa") || {}).value || "", plan: M.planParaCRM(h), f: ctx.f }),
+      });
+      clearTimeout(to);
+      if (r.status === 422) {
+        const j = await r.json(); c.error = Object.values(j.errores || {})[0] || "Revisa tus datos."; c.enviando = false; return render();
+      }
+      if (r.status === 429) { c.error = "Demasiados intentos. Espera un minuto."; c.enviando = false; return render(); }
+      if (r.ok) estado = "ok";
+    } catch (e) { /* sin conexión: se ofrece el WhatsApp directo */ }
+    c.enviando = false; c.estado = estado; c.consent = false; render();
+  }
+
+  function vistaAsistente(h) {
+    return `<section class="card stack"><h2>Pregúntame lo que importa</h2><p class="soft small">Las respuestas se calculan con tus números.</p>
+      <div class="q">${Object.entries(M.PREGUNTAS).map(([k, t]) => `<button data-q="${k}" aria-pressed="${pregunta === k}">${t}</button>`).join("")}</div></section>
+      <section class="card resp" id="resp" aria-live="polite" ${pregunta ? "" : "hidden"}></section>`;
+  }
+
+  let hechosActuales = null;
+  function render() {
+    if (!S.perfil) return;
+    const hoy = new Date();
+    const h = (hechosActuales = M.armarHechos(S.perfil, S.gastos, hoy));
+    $("#pFamilia").textContent = S.perfil.familia || "Mi familia";
+    $("#pSub").textContent = "Un regalo de Roberto Rodríguez";
+    $("#vista").innerHTML = tab === "semana" ? vistaSemana(h, hoy) : tab === "plan" ? vistaPlan(h) : vistaAsistente(h);
+    $$(".tabs button").forEach((b) => b.setAttribute("aria-current", b.dataset.tab === tab));
+    if (tab === "asistente" && pregunta) responder(pregunta);
+  }
+  async function responder(k) {
+    const caja = $("#resp"); if (!caja) return;
+    const h = hechosActuales, local = M.responder(k, h);
+    const pintar = (t, nota) => (caja.innerHTML = '<h3 style="margin-bottom:8px">' + esc(M.PREGUNTAS[k]) + "</h3>" + t.split("\n\n").map((p) => "<p>" + esc(p) + "</p>").join("") + (nota ? '<p class="small mute" style="margin-top:12px">' + nota + "</p>" : ""));
+    caja.hidden = false; pintar(local, "Calculado con tus números.");
+    if (!IA_URL) return;
+    try {
+      const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 9000);
+      const r = await fetch(IA_URL, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ pregunta: M.PREGUNTAS[k], hechos: h, sistema: M.PROMPT_SISTEMA }), signal: ctl.signal });
+      clearTimeout(to);
+      const { texto } = await r.json();
+      if (pregunta === k && texto && M.validarTexto(texto, h).ok) pintar(texto, "Redactado con IA; las cifras fueron verificadas contra tu plan.");
+    } catch (e) { /* se queda la respuesta calculada */ }
+  }
+
+  // ---------- eventos ----------
+  document.addEventListener("click", (e) => {
+    const t = e.target.closest("button, a");
+    if (!t) return;
+    if (t.id === "btnEmpezar") return empezar(S.perfil, false);
+    if (t.id === "btnEjemplo") { track("sf_plan", "ejemplo"); S.perfil = JSON.parse(JSON.stringify(M.EJEMPLO)); S.gastos = []; S.ejemplo = true; guardar(); tab = "semana"; ver("panel"); return render(); }
+    if (t.id === "btnInstalar" || t.id === "btnInstalar2") return instalar();
+    if (t.id === "btnDeuda") { $("#deudas").appendChild(filaDeuda()); return; }
+    if (t.hasAttribute("data-quitar")) return t.closest(".debt").remove();
+    if (t.dataset.st) { const n = Math.min(12, Math.max(1, Number($("#fPersonas").textContent) + Number(t.dataset.st))); $("#fPersonas").textContent = n; return; }
+    if (t.closest(".seg") && t.dataset.v) { $$("button", t.parentElement).forEach((b) => b.classList.toggle("on", b === t)); return; }
+    if (t.id === "wAtras") return irPaso(Math.max(1, paso - 1));
+    if (t.id === "wCancelar") { ver("panel"); return render(); }
+    if (t.id === "wSig") {
+      const m = validarPaso(); if (m) { $("#wErr").textContent = m; return; }
+      if (paso < 4) return irPaso(paso + 1);
+      if (!S.perfil || S.ejemplo) track("sf_plan", "plan"); // un plan nuevo (no una edición)
+      S.perfil = leerPerfil(); S.ejemplo = false; guardar(); tab = "semana"; ver("panel"); return render();
+    }
+    if (t.id === "pEditar") return empezar(S.perfil, true);
+    if (t.id === "btnBorrar") { if (confirm("¿Borrar tu plan y tus gastos de este teléfono? No se puede deshacer.")) { S = { perfil: null, gastos: [], ejemplo: false }; try { localStorage.removeItem(KEY); } catch (er) {} ver("intro"); } return; }
+    if (t.id === "btnCompartir") {
+      const url = location.href.split("#")[0], texto = "Una app gratis para saber qué hacer con el dinero de la familia cada semana:";
+      if (navigator.share) navigator.share({ title: "Mi Semana Familiar", text: texto, url }).catch(() => {});
+      else if (navigator.clipboard) navigator.clipboard.writeText(url).then(() => toast("Enlace copiado"), () => toast(url));
+      return;
+    }
+    if (t.dataset.tab) { tab = t.dataset.tab; window.scrollTo(0, 0); return render(); }
+    if (t.dataset.q) { pregunta = t.dataset.q; render(); const r = $("#resp"); if (r) r.scrollIntoView({ behavior: "smooth", block: "nearest" }); return; }
+    if (t.dataset.del) { S.gastos = S.gastos.filter((g) => g.id !== t.dataset.del); guardar(); return render(); }
+    if (t.id === "tDes") { S.gastos = S.gastos.filter((g) => g.id !== ultimoId); guardar(); $("#toast").hidden = true; return render(); }
+    if (t.id === "btnQuiero") { contacto.abierto = true; render(); const n = $("#cNombre"); if (n) n.focus(); return; }
+    if (t.dataset.wa) return track("sf_wa", t.dataset.wa); // el enlace sigue su camino: solo se cuenta el toque
+  });
+  document.addEventListener("change", (e) => {
+    const t = e.target;
+    if (t.id === "cConsent") { contacto.consent = t.checked; return; }
+    if (t.dataset.cat) { const g = S.gastos.find((x) => x.id === t.dataset.cat); if (g) { g.categoria = t.value; guardar(); render(); } }
+  });
+  document.addEventListener("submit", (e) => {
+    if (e.target.id === "fContacto") { e.preventDefault(); return void enviarContacto(); }
+    if (e.target.id !== "fGasto") return;
+    e.preventDefault();
+    const g = M.parsearGasto($("#iGasto").value, new Date());
+    if (!g) return toast("No encontré el monto. Prueba: «gasté 350 en el súper».");
+    g.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6); ultimoId = g.id;
+    S.gastos.push(g); guardar(); render();
+    toast("Registré " + mxn(g.monto) + " en " + M.CATEGORIAS[g.categoria].toLowerCase(), true);
+  });
+  document.addEventListener("input", (e) => {
+    const t = e.target;
+    if (t.id === "cNombre") contacto.nombre = t.value; else if (t.id === "cWa") contacto.whatsapp = t.value; else if (t.id === "cCorreo") contacto.correo = t.value;
+  });
+  // dinero con comas al salir del campo; sin formato al entrar
+  document.addEventListener("focusin", (e) => { const i = e.target; if (i.matches?.(".money input")) i.value = String(i.value).replace(/,/g, ""); });
+  document.addEventListener("focusout", (e) => { const i = e.target; if (i.matches?.(".money input")) { const n = Number(String(i.value).replace(/[^\d.]/g, "")); i.value = n ? fmt(n) : ""; } });
+
+  // ---------- arranque ----------
+  mostrarInstalar();
+  track("sf_abrir");
+  if (S.perfil) { ver("panel"); render(); } else ver("intro");
+  if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register("sw.js").catch(() => {});
+  window.__msf = { get estado() { return S; }, render };  // para pruebas
+})();
+</script>
+</body>
+</html>

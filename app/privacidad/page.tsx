@@ -98,6 +98,18 @@ export default async function PrivacidadPage() {
             partes de la tarjeta funcionan y mejorarlas.
           </p>
         </section>
+
+        <section>
+          <h2 className="font-display text-xl text-ink">7. App «Mi Semana Familiar»</h2>
+          <p>
+            La app gratuita «Mi Semana Familiar» (/semana) tiene su propio aviso de privacidad, porque maneja información distinta: lo que
+            escribes se queda en tu teléfono y solo recibimos tus datos si tú pides que te contactemos. Léelo en{" "}
+            <a href="/privacidad/semana" className="text-brand-2 underline">
+              Aviso de privacidad · Mi Semana Familiar
+            </a>
+            .
+          </p>
+        </section>
       </div>
     </main>
   );

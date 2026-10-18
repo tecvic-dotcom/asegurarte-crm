@@ -69,6 +69,11 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  // App gratuita «Mi Semana Familiar»: /semana lleva a su página; sus archivos viven en public/tarjeta/semana/ y salen
+  // bajo /semana/... para que sus rutas relativas, su manifiesto y su service worker queden dentro de /semana/.
+  async redirects() {
+    return [{ source: "/semana", destination: "/semana/index.html", permanent: false }];
+  },
   // Tarjeta digital (archivo estático en public/tarjeta/). /roberto es la dirección para
   // compartir (y la del QR); /tarjeta se conserva para los enlaces que ya se enviaron.
   async rewrites() {
@@ -79,6 +84,7 @@ const nextConfig: NextConfig = {
       { source: "/escudo", destination: "/tarjeta/escudo.html" },
       // Guías de seguros agrupadas por ramo (imágenes en public/tarjeta/guias/)
       { source: "/guias", destination: "/tarjeta/guias.html" },
+      { source: "/semana/:path*", destination: "/tarjeta/semana/:path*" },
     ];
   },
 };

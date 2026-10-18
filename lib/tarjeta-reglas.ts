@@ -26,6 +26,12 @@ export const EVENTOS_TARJETA = [
   "faq", // abrió una pregunta frecuente
   "rec", // tocó una recomendación de «Para ti»
   "car", // deslizó un carrusel
+  // App «Mi Semana Familiar» (/semana). La tabla limita el nombre a 20 caracteres.
+  "sf_abrir", // abrió la app
+  "sf_plan", // terminó de armar su plan (detalle: plan | ejemplo)
+  "sf_instalar", // la instaló en su teléfono
+  "sf_wa", // tocó el botón de WhatsApp (detalle: datos | directo)
+  "sf_dato", // dejó sus datos y se guardó el prospecto (lo manda el SERVIDOR; detalle: nuevo | repetido)
 ] as const;
 export type EventoTarjeta = (typeof EVENTOS_TARJETA)[number];
 
@@ -81,6 +87,21 @@ export interface Conteo {
   n: number;
 }
 
+/** «Mi Semana Familiar»: embudo anónimo. Son veces (la misma persona puede sumar varias), no personas únicas. */
+export interface ResumenSemana {
+  abrieron: number;
+  planes: number;
+  ejemplos: number;
+  instalaron: number;
+  /** Toques al botón de WhatsApp (no es lo mismo que mensajes enviados). */
+  waTotal: number;
+  waConDatos: number;
+  waDirecto: number;
+  prospectos: number;
+  repetidos: number;
+  fuentes: Conteo[];
+}
+
 export interface ResumenTarjeta {
   dias: number;
   desde: string;
@@ -104,6 +125,7 @@ export interface ResumenTarjeta {
   carruseles: { productos: number; testimonios: number; reconocimientos: number; videos: number; eventos: number };
   redes: Conteo[];
   recursos: Conteo[];
+  semana: ResumenSemana;
 }
 
 function contar(filas: FilaEvento[], evento: string, clave: (f: FilaEvento) => string, max = 8): Conteo[] {
@@ -137,6 +159,7 @@ export function resumir(filas: FilaEvento[], dias: number, hoy: string): Omit<Re
     return { dia, n: porDia.get(dia) ?? 0 };
   });
   const total = (e: string) => dentro.filter((f) => f.evento === e).length;
+  const sf = (e: string, d: string) => dentro.filter((f) => f.evento === e && f.detalle === d).length;
   const lugar = (f: FilaEvento) => {
     const clave = f.detalle.split(":")[0];
     return LUGAR_WA[clave] ?? (f.detalle ? f.detalle : "Otro");
@@ -178,6 +201,18 @@ export function resumir(filas: FilaEvento[], dias: number, hoy: string): Omit<Re
     },
     redes: contar(dentro, "red", (f) => f.detalle, 6),
     recursos: contar(dentro, "recurso", (f) => f.detalle, 6),
+    semana: {
+      abrieron: total("sf_abrir"),
+      planes: sf("sf_plan", "plan"),
+      ejemplos: sf("sf_plan", "ejemplo"),
+      instalaron: total("sf_instalar"),
+      waTotal: total("sf_wa"),
+      waConDatos: sf("sf_wa", "datos"),
+      waDirecto: sf("sf_wa", "directo"),
+      prospectos: sf("sf_dato", "nuevo"),
+      repetidos: sf("sf_dato", "repetido"),
+      fuentes: contar(dentro, "sf_abrir", (f) => f.fuente || "directo", 6),
+    },
   };
 }
 

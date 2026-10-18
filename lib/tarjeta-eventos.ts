@@ -54,6 +54,23 @@ function semilla(): FilaEvento[] {
       if (rnd() < 0.04) e("guardar", "hero", 16);
       if (hasta > 4 && rnd() < 0.08) e("red", elige(["Instagram", "Facebook", "TikTok", "YouTube", "LinkedIn"]), 70);
     }
+    // «Mi Semana Familiar»: un embudo creíble para ver cómo luce la tarjeta del panel.
+    const abren = 3 + Math.floor(rnd() * 9);
+    for (let i = 0; i < abren; i++) {
+      const t = Date.now() - d * 86_400_000 - Math.floor(rnd() * 12 * 3_600_000);
+      const base = { dispositivo: rnd() < 0.9 ? "movil" : "escritorio", fuente: elige(["wa", "wa", "ig", "qr", "directo", "tiktok"]) };
+      const e = (evento: string, detalle = "", dt = 0) => filas.push({ creado_en: new Date(t + dt * 1000).toISOString(), evento, detalle, ...base });
+      e("sf_abrir");
+      if (rnd() < 0.3) e("sf_plan", "ejemplo", 20);
+      if (rnd() < 0.45) {
+        e("sf_plan", "plan", 150);
+        if (rnd() < 0.12) e("sf_instalar", "", 200);
+        if (rnd() < 0.3) {
+          if (rnd() < 0.55) { e("sf_wa", "datos", 400); e("sf_dato", rnd() < 0.9 ? "nuevo" : "repetido", 401); }
+          else e("sf_wa", "directo", 400);
+        }
+      }
+    }
   }
   return filas;
 }

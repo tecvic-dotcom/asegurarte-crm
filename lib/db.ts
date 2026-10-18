@@ -18,6 +18,8 @@ import { validarLead, validarLeadManual } from "./validacion";
 import { hashPassword, verifyPassword } from "./auth";
 import { etapaNoPermitida, faltaMigracion, MENSAJE_MIGRACION, MENSAJE_MIGRACION_DOBLE_FACTOR, MENSAJE_MIGRACION_STAND_BY, MigracionPendienteError } from "./migracion";
 import { esRamo } from "./ramos";
+import { AVISO_SEMANA_VERSION, resumenPlan, validarProspectoSemana, type PlanSemana } from "./semana-reglas";
+import { ZONA_HORARIA } from "./fechas";
 import { ubicacionDeCP } from "./codigos-postales";
 import type {
   Lead,
@@ -299,6 +301,93 @@ export async function crearLead(input: NuevoLead, geo?: Partial<Geo>): Promise<C
     autor: "Sistema",
     creado_en: nowISO(),
   });
+  return { ok: true, duplicado: false, id };
+}
+
+/** Prospecto que llega desde la app «Mi Semana Familiar» (/semana): pidió que Roberto lo contacte. */
+export interface NuevoLeadSemana {
+  nombre: unknown;
+  whatsapp: unknown;
+  correo: unknown;
+  consentimiento: unknown;
+  /** Honeypot anti-spam: si trae valor, es un bot. */
+  trampa?: unknown;
+  /** Ya validado con limpiarPlan(): solo semáforo y huecos, nunca montos. */
+  plan: PlanSemana;
+}
+
+export const ORIGEN_SEMANA = "App Mi Semana Familiar";
+
+/**
+ * Guarda al prospecto de la app. Mismas reglas que la página de captura (consentimiento obligatorio en el SERVIDOR,
+ * dedupe por WhatsApp/correo con consultas parametrizadas) con tres diferencias: el correo es opcional, no se guarda
+ * IP ni ubicación, y en la bitácora queda anotado el consentimiento con la versión del aviso. Si la persona ya existía,
+ * no se duplica: se agrega una nota a su historial.
+ */
+export async function crearLeadSemana(input: NuevoLeadSemana): Promise<CrearLeadResultado> {
+  if (typeof input.trampa === "string" && input.trampa.trim().length > 0) return { ok: true, duplicado: false };
+
+  const v = validarProspectoSemana(input);
+  if (!v.ok) return { ok: false, duplicado: false, errores: v.errores };
+
+  const resumen = resumenPlan(input.plan);
+  const cuando = new Date().toLocaleString("es-MX", { timeZone: ZONA_HORARIA, dateStyle: "short", timeStyle: "short" }).replace(/\.$/, "");
+  const textoNuevo = `Llegó por la app «Mi Semana Familiar» y pidió que lo contactes. ${resumen} Autorizó el aviso de privacidad de la app (versión ${AVISO_SEMANA_VERSION}) el ${cuando}.`;
+  const textoRepetido = `Volvió a usar «Mi Semana Familiar» y pidió de nuevo que lo contactes. ${resumen} Autorizó el aviso de privacidad de la app (versión ${AVISO_SEMANA_VERSION}) el ${cuando}.`;
+  const fila = {
+    nombre: v.nombre,
+    correo: v.correo,
+    whatsapp: v.whatsapp,
+    mensaje: resumen.slice(0, 1000),
+    etapa: "nuevo" as EtapaId,
+    valor: 0,
+    origen: ORIGEN_SEMANA,
+    utm_source: "",
+    utm_medium: "",
+    utm_campaign: "",
+    utm_term: "",
+    utm_content: "",
+    pais: null,
+    ciudad: null,
+    region: null,
+    dispositivo: null,
+    notas: "",
+    genero: null as Genero | null,
+    fecha_nacimiento: null as string | null,
+    codigo_postal: null as string | null,
+  };
+
+  if (cloudReady && adminDb) {
+    if (v.correo) {
+      const { data } = await adminDb.from("leads").select("id").eq("correo", v.correo).limit(1);
+      if (data && data.length) {
+        const id = (data[0] as { id: string }).id;
+        await adminDb.from("actividad").insert({ lead_id: id, tipo: "nota", texto: textoRepetido, autor: "Sistema" });
+        return { ok: true, duplicado: true, id };
+      }
+    }
+    const { data: porWa } = await adminDb.from("leads").select("id").eq("whatsapp", v.whatsapp).limit(1);
+    if (porWa && porWa.length) {
+      const id = (porWa[0] as { id: string }).id;
+      await adminDb.from("actividad").insert({ lead_id: id, tipo: "nota", texto: textoRepetido, autor: "Sistema" });
+      return { ok: true, duplicado: true, id };
+    }
+    const { data, error } = await adminDb.from("leads").insert(fila).select("id").limit(1);
+    if (error) throw new Error(error.message);
+    const id = (data?.[0] as { id: string } | undefined)?.id;
+    if (id) await adminDb.from("actividad").insert({ lead_id: id, tipo: "nota", texto: textoNuevo, autor: "Sistema" });
+    return { ok: true, duplicado: false, id };
+  }
+
+  const s = store();
+  const existe = s.leads.find((l) => (v.correo && l.correo === v.correo) || l.whatsapp === v.whatsapp);
+  if (existe) {
+    s.actividad.unshift({ id: uid("ac"), lead_id: existe.id, tipo: "nota", texto: textoRepetido, autor: "Sistema", creado_en: nowISO() });
+    return { ok: true, duplicado: true, id: existe.id };
+  }
+  const id = uid("ld");
+  s.leads.unshift({ id, asignado_a: null, ramo: null, cerrado_en: null, creado_en: nowISO(), actualizado_en: nowISO(), ...fila });
+  s.actividad.unshift({ id: uid("ac"), lead_id: id, tipo: "nota", texto: textoNuevo, autor: "Sistema", creado_en: nowISO() });
   return { ok: true, duplicado: false, id };
 }
 

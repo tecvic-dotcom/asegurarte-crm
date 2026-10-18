@@ -9,6 +9,7 @@ import { AvisoMigracion } from "./panel/AvisoMigracion";
 
 const PERIODOS = [7, 30, 90] as const;
 const nf = (n: number) => n.toLocaleString("es-MX");
+const pct = (a: number, b: number) => (b ? Math.round((a / b) * 100) : 0);
 
 function Tarjeta({ titulo, valor, children }: { titulo: string; valor: string; children?: React.ReactNode }) {
   return (
@@ -170,6 +171,37 @@ export function TarjetaWeb() {
           {r.toques.compartir} veces compartieron tu tarjeta
         </Tarjeta>
       </div>
+
+      <section className="space-y-3">
+        <div className="glass-strong rounded-2xl p-4 sm:p-5">
+          <h3 className="flex items-center gap-2 font-display text-base text-ink">
+            <Icon icon="flat-color-icons:calendar" width={20} aria-hidden /> App «Mi Semana Familiar»
+          </h3>
+          <p className="mt-1 text-xs text-ink-mute">
+            Lo que pasa en <strong className="text-ink">www.especialistaenasegurarte.lat/semana</strong>, también anónimo. Son <em>veces</em>, no personas
+            únicas. «Tocaron WhatsApp» cuenta toques al botón, no mensajes enviados: quien llega a mandarlo aparece en tus prospectos si dejó sus datos.
+            Con <code className="rounded bg-bg-3 px-1 py-0.5 text-ink">?s=ig</code> o <code className="rounded bg-bg-3 px-1 py-0.5 text-ink">?s=wa</code> al
+            final del enlace ves de dónde llegan.
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <Tarjeta titulo="Abrieron la app" valor={nf(r.semana.abrieron)}>
+            {r.semana.instalaron} la instalaron en su teléfono
+          </Tarjeta>
+          <Tarjeta titulo="Armaron su plan" valor={nf(r.semana.planes)}>
+            {pct(r.semana.planes, r.semana.abrieron)}% de las veces que se abre · {r.semana.ejemplos} vieron el ejemplo
+          </Tarjeta>
+          <Tarjeta titulo="Tocaron WhatsApp" valor={nf(r.semana.waTotal)}>
+            {r.semana.waConDatos} dejando datos · {r.semana.waDirecto} directo
+          </Tarjeta>
+          <Tarjeta titulo="Prospectos guardados" valor={nf(r.semana.prospectos)}>
+            {r.semana.repetidos} ya estaban en tu CRM · {pct(r.semana.prospectos, r.semana.planes)}% de los planes
+          </Tarjeta>
+        </div>
+        {r.semana.fuentes.length > 0 && (
+          <ListaBarras titulo="De dónde llegan a la app" ayuda="Según el ?s= del enlace o el sitio que los mandó." filas={r.semana.fuentes} vacio="Sin datos todavía." />
+        )}
+      </section>
 
       <section className="glass rounded-2xl p-4">
         <h3 className="font-display text-base text-ink">Visitas por día</h3>
