@@ -211,7 +211,7 @@ details ul{margin:4px 0 0;padding-left:20px;color:var(--ink-soft);font-size:14.5
     <main id="vista" class="stack"></main>
     <div id="pie" class="stack">
       <div id="instalar2" class="card stack" hidden><button class="btn sec" id="btnInstalar2">Instalar la app en mi teléfono</button></div>
-      <button class="ghost" id="btnCompartir">Pásasela a otra familia</button>
+      <button class="ghost" id="btnCompartir">Recomendar esta app con un amigo</button>
       <button class="ghost" id="btnBorrar">Borrar mis datos de este teléfono</button>
       <p class="legal">Orientación educativa. No es asesoría financiera, fiscal ni cotización de seguros. · <a href="https://www.especialistaenasegurarte.lat/privacidad/semana" target="_blank" rel="noopener">Aviso de privacidad</a></p>
     </div>
@@ -241,6 +241,8 @@ details ul{margin:4px 0 0;padding-left:20px;color:var(--ink-soft);font-size:14.5
   const EP_EVENTO = "/api/tarjeta/evento", EP_PROSPECTO = "/api/semana/prospecto";
   const AVISO_URL = "https://www.especialistaenasegurarte.lat/privacidad/semana";
   const AVISO_VERSION = "2026-10-18"; // igual que AVISO_SEMANA_VERSION en el CRM (lib/semana-reglas.ts)
+  const TARJETA_URL = "https://www.especialistaenasegurarte.lat/roberto?s=amigo";
+  const COMPARTIR_TEXTO = "Una app gratis para saber qué hacer con el dinero de la familia cada semana, de Roberto Rodríguez, asesor de seguros. La encuentras en su tarjeta, en «Recursos»:";
   const qs = new URLSearchParams(location.search);
   let refHost = ""; try { refHost = document.referrer ? new URL(document.referrer).host : ""; if (refHost === location.host) refHost = ""; } catch (e) {}
   const ctx = {
@@ -551,9 +553,11 @@ details ul{margin:4px 0 0;padding-left:20px;color:var(--ink-soft);font-size:14.5
     if (t.id === "pEditar") return empezar(S.perfil, true);
     if (t.id === "btnBorrar") { if (confirm("¿Borrar tu plan y tus gastos de este teléfono? No se puede deshacer.")) { S = { perfil: null, gastos: [], ejemplo: false }; try { localStorage.removeItem(KEY); } catch (er) {} ver("intro"); } return; }
     if (t.id === "btnCompartir") {
-      const url = location.href.split("#")[0], texto = "Una app gratis para saber qué hacer con el dinero de la familia cada semana:";
+      // El enlace lleva a la tarjeta de Roberto (no a la app): ahí conocen a quien la hizo y encuentran la app en «Recursos».
+      // ?s=amigo aparece en el panel «Tarjeta web» como «De dónde llegan».
+      const url = TARJETA_URL, texto = COMPARTIR_TEXTO;
       if (navigator.share) navigator.share({ title: "Mi Semana Familiar", text: texto, url }).catch(() => {});
-      else if (navigator.clipboard) navigator.clipboard.writeText(url).then(() => toast("Enlace copiado"), () => toast(url));
+      else if (navigator.clipboard) navigator.clipboard.writeText(texto + " " + url).then(() => toast("Mensaje copiado, pégalo en WhatsApp"), () => toast(url));
       return;
     }
     if (t.dataset.tab) { tab = t.dataset.tab; window.scrollTo(0, 0); return render(); }
