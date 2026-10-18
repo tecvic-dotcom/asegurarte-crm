@@ -38,6 +38,7 @@
   const tipoDe = (m) => (m && Object.prototype.hasOwnProperty.call(TIPOS, m.tipo) ? m.tipo : "gasto");
   const MESES_LARGOS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
   const DIAS_CORTOS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+  const MESES_CORTOS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 
   const PALABRAS = {
     comida: ["super", "despensa", "comida", "tortilla", "restaurante", "taco", "cafe", "pan", "fruta", "verdura", "carne", "pollo", "leche", "mercado", "walmart", "soriana", "heb", "oxxo", "desayuno", "cena", "lonche"],
@@ -347,7 +348,52 @@
     ];
   }
 
-  // ---------- reporte de una semana (insumo del PDF) ----------
+  // ---------- cierre semanal y racha ----------
+  // Una semana (lunes a domingo) está CUMPLIDA si se anotó algo y no se pasó del tope; EXCEDIDA si se pasó; SIN REGISTRO si no se anotó nada.
+  // La racha cuenta las semanas CERRADAS cumplidas seguidas (la semana en curso todavía no cuenta).
+  const MAX_SEMANAS_HIST = 104;
+  const etiquetaCorta = (lun, dom) => (lun.getMonth() === dom.getMonth() ? lun.getDate() + "–" + dom.getDate() + " " + MESES_CORTOS[dom.getMonth()] : lun.getDate() + " " + MESES_CORTOS[lun.getMonth()] + "–" + dom.getDate() + " " + MESES_CORTOS[dom.getMonth()]);
+  const estadoSemana = (s) => (s.lista.length === 0 ? "sin_registro" : s.gastado > s.limite + 0.5 ? "excedida" : "cumplida");
+
+  function historialSemanas(p, movs, ahora, R = REGLAS) {
+    const fechas = (movs || []).map((m) => m.fecha).filter((f) => typeof f === "string").sort();
+    if (!fechas.length) return [];
+    const primera = iso(lunesDe(aFecha(fechas[0])));
+    const semanas = [];
+    for (let w = sumaDias(lunesDe(ahora), -7); iso(w) >= primera && semanas.length < MAX_SEMANAS_HIST; w = sumaDias(w, -7)) semanas.unshift(w); // de la más vieja a la última cerrada
+    return semanas.map((lun) => {
+      const dom = sumaDias(lun, 6);
+      const s = semana(perfilVivo(p, movs, iso(dom)), movs, dom, R, ahora);
+      return { desde: s.desde, hasta: s.hasta, etiqueta: etiquetaCorta(lun, dom), movimientos: s.lista.length, gastado: redondea(s.gastado), limite: redondea(s.limite), restante: redondea(s.restante), ahorrado: redondea(s.ahorrado), abonado: redondea(s.abonado), ingresosExtra: redondea(s.ingresosExtra), estado: estadoSemana(s) };
+    });
+  }
+
+  function racha(hist) {
+    let corrida = 0, mejor = 0, cumplidas = 0;
+    for (const w of hist) {
+      if (w.estado === "cumplida") { corrida++; cumplidas++; if (corrida > mejor) mejor = corrida; } else corrida = 0;
+    }
+    return { actual: corrida, mejor, cumplidas, semanas: hist.length };
+  }
+
+  // Resumen de la última semana cerrada (la que acaba de terminar), o null si todavía no hay ninguna con historia.
+  function armarCierre(p, movs, ahora, R = REGLAS) {
+    const hist = historialSemanas(p, movs, ahora, R);
+    if (!hist.length) return null;
+    const w = hist[hist.length - 1], r = racha(hist);
+    const h = armarHechos(p, movs, ahora, R, ahora);
+    const titulo = w.estado === "cumplida" ? "¡Semana cumplida!" : w.estado === "excedida" ? "Te pasaste del tope" : "No anotaste movimientos";
+    const texto = w.estado === "cumplida" ? "Gastaste " + mxn(w.gastado) + " de tu tope de " + mxn(w.limite) + " y te sobraron " + mxn(w.restante) + "."
+      : w.estado === "excedida" ? "Gastaste " + mxn(w.gastado) + " y tu tope era " + mxn(w.limite) + ": te pasaste por " + mxn(w.gastado - w.limite) + ". Esta semana empieza de cero."
+      : "En esa semana no hay registros, y sin registro no hay semáforo. Anota esta semana para retomar tu racha.";
+    const rachaTexto = r.actual >= 2 ? "Llevas " + r.actual + " semanas cumplidas seguidas."
+      : r.actual === 1 ? "Llevas 1 semana cumplida."
+      : r.mejor > 0 ? "Tu mejor racha ha sido de " + r.mejor + (r.mejor === 1 ? " semana." : " semanas.") + " Esta semana puedes empezar otra."
+      : "Tu racha empieza con tu primera semana cumplida.";
+    return { estado: w.estado, titulo, texto, rachaTexto, racha: r, semana: w, topeEstaSemana: redondea(h.semana.limite) };
+  }
+
+  // ---------- reportes (insumo del PDF) ----------
   function etiquetaRango(lun, dom) {
     const m = (d) => MESES_LARGOS[d.getMonth()];
     if (lun.getFullYear() !== dom.getFullYear()) return lun.getDate() + " de " + m(lun) + " de " + lun.getFullYear() + " al " + dom.getDate() + " de " + m(dom) + " de " + dom.getFullYear();
@@ -355,15 +401,13 @@
     return lun.getDate() + " al " + dom.getDate() + " de " + m(dom) + " de " + dom.getFullYear();
   }
   const MAX_FILAS_REPORTE = 400;
+  const TEXTOS_SEMANA = { encabezado: "REPORTE SEMANAL", tope: "Tope de la semana", categorias: "En qué se fue el gasto", sinGastos: "Sin gastos registrados esta semana.", topeTitulo: "Cómo vas contra tu tope", movimientos: "Movimientos de la semana", vacio: "Todavía no hay movimientos en esta semana.", total: "Gastos de la semana (cuentan contra tu tope)", accion: "Tu acción para la próxima semana" };
+  const TEXTOS_MES = { encabezado: "REPORTE MENSUAL", tope: "Tope del mes", categorias: "En qué se fue el gasto", sinGastos: "Sin gastos registrados este mes.", topeTitulo: "Cómo vas contra tu tope del mes", movimientos: "Movimientos del mes", vacio: "Todavía no hay movimientos en este mes.", total: "Gastos del mes (cuentan contra tu tope)", accion: "Tu acción para el próximo mes", semanas: "Semana por semana" };
 
-  function armarReporte(p, movs, ref, ahora = ref, R = REGLAS) {
-    const lun = lunesDe(ref), dom = sumaDias(lun, 6), fin = iso(dom);
-    const h = armarHechos(p, movs, dom, R, ahora); // el plan tal como estaba al cerrar esa semana
-    const s = semana(perfilVivo(p, movs, fin), movs, dom, R, ahora);
-    const cats = porCategoriaRango(movs, s.desde, s.hasta);
-    const maxCat = Math.max(1, ...cats.map((c) => c.monto));
-    const enCurso = iso(ahora) <= s.hasta;
-    const ordenados = [...s.lista].sort((a, b) => (a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : num(a.ts) - num(b.ts)));
+  const mensajeTope = (limite, restante, color, enCurso, unidad) => (limite <= 0 ? (unidad === "mes" ? "Ese mes no hubo margen para gastar." : "Esa semana no hubo margen para gastar.") : color === "rojo" ? "Te pasaste por " + mxn(-restante) + " del tope." : color === "amarillo" ? (enCurso ? "Vas bien, pero cerca del límite: cuida los gustos." : "Cerraste muy cerca del límite.") : enCurso ? "Vas bien." : "Cerraste dentro de tu tope.");
+
+  function filasMov(lista) { // los movimientos ya listos para tabla, en orden de fecha
+    const ordenados = [...lista].sort((a, b) => (a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : num(a.ts) - num(b.ts)));
     const detalle = (m) => {
       const t = tipoDe(m);
       const base = String(m.nota || "").trim() || TIPOS[t];
@@ -371,24 +415,112 @@
       if (t === "abono") return (m.deuda ? m.deuda + ": " : "") + base;
       return base;
     };
-    const movimientos = ordenados.slice(0, MAX_FILAS_REPORTE).map((m) => {
-      const t = tipoDe(m), d = aFecha(m.fecha), monto = num(m.monto);
-      return { fecha: m.fecha, dia: DIAS_CORTOS[d.getDay()] + " " + d.getDate(), tipo: t, tipoNombre: TIPOS[t].split(" ")[0], detalle: detalle(m), monto, texto: (t === "gasto" ? "-" : t === "ingreso" ? "+" : "") + mxn(monto) };
-    });
-    const uso = Math.round(s.pct * 100);
-    const mensajeTope = s.limite <= 0 ? "Esa semana no hubo margen para gastar." : s.color === "rojo" ? "Te pasaste por " + mxn(-s.restante) + " del tope." : s.color === "amarillo" ? (enCurso ? "Vas bien, pero cerca del límite: cuida los gustos." : "Cerraste muy cerca del límite.") : (enCurso ? "Vas bien." : "Cerraste dentro de tu tope.");
     return {
+      movimientos: ordenados.slice(0, MAX_FILAS_REPORTE).map((m) => {
+        const t = tipoDe(m), d = aFecha(m.fecha), monto = num(m.monto);
+        return { fecha: m.fecha, dia: DIAS_CORTOS[d.getDay()] + " " + d.getDate(), tipo: t, tipoNombre: TIPOS[t].split(" ")[0], detalle: detalle(m), monto, texto: (t === "gasto" ? "-" : t === "ingreso" ? "+" : "") + mxn(monto) };
+      }),
+      omitidos: Math.max(0, ordenados.length - MAX_FILAS_REPORTE),
+    };
+  }
+  const barrasCategorias = (cats) => { const mx = Math.max(1, ...cats.map((c) => c.monto)); return cats.map((c) => ({ nombre: c.nombre, monto: c.monto, rel: c.monto / mx })); };
+
+  function armarReporte(p, movs, ref, ahora = ref, R = REGLAS) {
+    const lun = lunesDe(ref), dom = sumaDias(lun, 6), fin = iso(dom);
+    const h = armarHechos(p, movs, dom, R, ahora); // el plan tal como estaba al cerrar esa semana
+    const s = semana(perfilVivo(p, movs, fin), movs, dom, R, ahora);
+    const enCurso = iso(ahora) <= s.hasta;
+    const rr = racha(historialSemanas(p, movs, ahora, R).filter((w) => w.hasta <= fin)); // racha al cierre de esa semana
+    const f = filasMov(s.lista);
+    return {
+      tipo: "semanal", textos: TEXTOS_SEMANA,
       familia: String(p.familia || "Mi familia"),
-      periodo: { desde: s.desde, hasta: s.hasta, etiqueta: etiquetaRango(lun, dom), subtitulo: "de lunes " + lun.getDate() + " a domingo " + dom.getDate(), enCurso },
+      periodo: { desde: s.desde, hasta: s.hasta, clave: s.desde, etiqueta: etiquetaRango(lun, dom), subtitulo: "de lunes " + lun.getDate() + " a domingo " + dom.getDate(), enCurso },
+      racha: rr.actual,
       puntaje: h.puntaje,
       pilares: pilaresTexto(h),
       kpis: { tope: redondea(s.limite), gastado: redondea(s.gastado), restante: redondea(s.restante), ingresosExtra: redondea(s.ingresosExtra), ahorrado: redondea(s.ahorrado), abonado: redondea(s.abonado) },
-      uso, color: s.color, mensajeTope,
-      categorias: cats.map((c) => ({ nombre: c.nombre, monto: c.monto, rel: c.monto / maxCat })),
-      movimientos, omitidos: Math.max(0, ordenados.length - MAX_FILAS_REPORTE),
+      uso: Math.round(s.pct * 100), color: s.color, mensajeTope: mensajeTope(s.limite, s.restante, s.color, enCurso, "semana"),
+      categorias: barrasCategorias(porCategoriaRango(movs, s.desde, s.hasta)),
+      movimientos: f.movimientos, omitidos: f.omitidos,
       totalGastos: redondea(s.gastado),
       accion: h.acciones[0] || null,
     };
+  }
+
+  // Reporte de un mes natural (1 al último día). El tope del mes es el presupuesto mensual del plan más los ingresos extra de ese mes.
+  function armarReporteMensual(p, movs, ref, ahora = ref, R = REGLAS) {
+    const y = ref.getFullYear(), mo = ref.getMonth();
+    const primero = new Date(y, mo, 1), ultimo = new Date(y, mo + 1, 0), a = iso(primero), b = iso(ultimo);
+    const enCurso = iso(ahora) <= b;
+    const corte = iso(ahora) < b ? ahora : ultimo; // el plan se toma al cierre del mes (o hoy, si el mes sigue)
+    const h = armarHechos(p, movs, corte, R, ahora);
+    const res = resumen(perfilVivo(p, movs, iso(corte)), R);
+    const delMes = (movs || []).filter((m) => m.fecha >= a && m.fecha <= b);
+    const de = (t) => delMes.filter((m) => tipoDe(m) === t).reduce((x, m) => x + num(m.monto), 0);
+    const gastado = de("gasto"), ingresosExtra = de("ingreso"), ahorrado = de("ahorro"), abonado = de("abono");
+    const tope = res.limiteMes + ingresosExtra, restante = tope - gastado;
+    const pct = tope > 0 ? gastado / tope : gastado > 0 ? 9.99 : 0;
+    const color = pct < 0.75 ? "verde" : pct <= 1 ? "amarillo" : "rojo";
+    const semanas = [];
+    for (let w = lunesDe(primero); iso(w) <= b; w = sumaDias(w, 7)) {
+      const dom = sumaDias(w, 6), cerrada = iso(dom) < iso(ahora);
+      const s = semana(perfilVivo(p, movs, cerrada ? iso(dom) : iso(ahora)), movs, dom, R, ahora);
+      semanas.push({ etiqueta: etiquetaCorta(w, dom), gastado: redondea(s.gastado), tope: redondea(s.limite), estado: cerrada ? estadoSemana(s) : "en_curso" });
+    }
+    const f = filasMov(delMes);
+    return {
+      tipo: "mensual", textos: TEXTOS_MES,
+      familia: String(p.familia || "Mi familia"),
+      periodo: { desde: a, hasta: b, clave: a.slice(0, 7), etiqueta: MESES_LARGOS[mo] + " de " + y, subtitulo: "del 1 al " + ultimo.getDate() + " de " + MESES_LARGOS[mo], enCurso },
+      puntaje: h.puntaje,
+      pilares: pilaresTexto(h),
+      kpis: { tope: redondea(tope), gastado: redondea(gastado), restante: redondea(restante), ingresosExtra: redondea(ingresosExtra), ahorrado: redondea(ahorrado), abonado: redondea(abonado) },
+      uso: Math.round(pct * 100), color, mensajeTope: mensajeTope(tope, restante, color, enCurso, "mes"),
+      categorias: barrasCategorias(porCategoriaRango(movs, a, b)),
+      semanas, semanasCumplidas: semanas.filter((x) => x.estado === "cumplida").length, semanasCerradas: semanas.filter((x) => x.estado !== "en_curso").length,
+      movimientos: f.movimientos, omitidos: f.omitidos,
+      totalGastos: redondea(gastado),
+      accion: h.acciones[0] || null,
+    };
+  }
+
+  // ---------- recordatorio semanal para el calendario (.ics) ----------
+  // Un evento que se repite cada semana a la hora elegida (hora local, sin zona: se acomoda al teléfono). Se arma aquí y se guarda en su calendario.
+  const icsTexto = (t) => String(t).replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+  function plegarICS(linea) { // RFC 5545: máximo 75 octetos por línea; las que siguen empiezan con un espacio
+    const te = new TextEncoder();
+    let out = "", bytes = 0;
+    for (const ch of linea) {
+      const b = te.encode(ch).length;
+      if (bytes + b > 75) { out += "\r\n "; bytes = 1; }
+      out += ch; bytes += b;
+    }
+    return out;
+  }
+  function recordatorioICS(o = {}) {
+    const ahora = o.ahora || new Date();
+    const dia = Math.min(6, Math.max(0, Math.round(Number(o.dia)) || 0));
+    const m = /^(\d{1,2}):(\d{2})$/.exec(String(o.hora || ""));
+    const hh = m ? Math.min(23, Number(m[1])) : 19, mm = m ? Math.min(59, Number(m[2])) : 0;
+    let d = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), hh, mm);
+    while (d.getDay() !== dia || d <= ahora) d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, hh, mm);
+    const local = (x) => x.getFullYear() + z2(x.getMonth() + 1) + z2(x.getDate()) + "T" + z2(x.getHours()) + z2(x.getMinutes()) + "00";
+    const por = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"][dia];
+    const url = "https://www.especialistaenasegurarte.lat/semana";
+    const lineas = [
+      "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Dinero Bajo Control//Recordatorio semanal//ES", "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
+      "BEGIN:VEVENT",
+      "UID:recordatorio-" + por + "-" + z2(hh) + z2(mm) + "@especialistaenasegurarte.lat", // mismo día y hora = mismo evento: no se duplica si lo agregan otra vez
+      "DTSTAMP:" + ahora.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, ""),
+      "DTSTART:" + local(d), "DURATION:PT15M", "RRULE:FREQ=WEEKLY;BYDAY=" + por,
+      "SUMMARY:" + icsTexto("Anota mi semana · Dinero Bajo Control"),
+      "DESCRIPTION:" + icsTexto("Abre la guía y anota tus gastos, ingresos extra, lo que apartaste y tus abonos a deudas. Así tu plan y tu racha se mantienen al día.\n" + url),
+      "URL:" + url,
+      "BEGIN:VALARM", "TRIGGER:PT0M", "ACTION:DISPLAY", "DESCRIPTION:" + icsTexto("Anota tu semana en Dinero Bajo Control"), "END:VALARM",
+      "END:VEVENT", "END:VCALENDAR",
+    ];
+    return lineas.map(plegarICS).join("\r\n") + "\r\n";
   }
 
   // ---------- exportar: movimientos en CSV (Excel) y respaldo completo ----------
@@ -580,5 +712,5 @@
     seguros: { vida: "no", gmm: "no", auto: "si", hogar: "na" },
   };
 
-  return { TIPOS, tipoDe, perfilVivo, parsearMovimiento, porCategoriaRango, pilaresTexto, armarReporte, movimientosCSV, exportarRespaldo, importarRespaldo, limpiarPerfil, limpiarMovimiento, REGLAS, CATEGORIAS, PREGUNTAS, PROMPT_SISTEMA, EJEMPLO, resumen, fondo, deudaInfo, simularDeudas, proteccion, semana, porCategoria, parsearGasto, armarHechos, responder, validarTexto, mensajeWhatsApp, planParaCRM, mxn, iso, aFecha, lunesDe };
+  return { TIPOS, tipoDe, perfilVivo, parsearMovimiento, porCategoriaRango, pilaresTexto, historialSemanas, racha, armarCierre, armarReporte, armarReporteMensual, recordatorioICS, movimientosCSV, exportarRespaldo, importarRespaldo, limpiarPerfil, limpiarMovimiento, REGLAS, CATEGORIAS, PREGUNTAS, PROMPT_SISTEMA, EJEMPLO, resumen, fondo, deudaInfo, simularDeudas, proteccion, semana, porCategoria, parsearGasto, armarHechos, responder, validarTexto, mensajeWhatsApp, planParaCRM, mxn, iso, aFecha, lunesDe };
 });

@@ -56,7 +56,7 @@ export default async function PrivacidadSemanaPage() {
             verlo. Puedes borrarlo en cualquier momento con el botón «Borrar mis datos de este teléfono» o limpiando los datos del navegador (antes puedes descargar un respaldo).
           </p>
           <p className="mt-2">
-            Los reportes en PDF, los archivos de Excel y los respaldos que descargues se arman en tu teléfono y se guardan donde tú elijas;
+            Los reportes en PDF (de la semana y del mes), los archivos de Excel, los respaldos y el recordatorio de calendario que descargues se arman en tu teléfono y se guardan donde tú elijas;
             tampoco pasan por nuestros servidores. Si compartes un reporte (por ejemplo, por WhatsApp), tú decides con quién: desde ese
             momento ya no depende de nosotros.
           </p>

@@ -66,7 +66,7 @@ p{margin:0}
 /* formularios */
 label.f{display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:14.5px;color:var(--ink-soft)}
 label.f small{font-weight:400;color:var(--ink-mute);font-size:12.5px}
-input[type=text],input[type=number],input[type=date],input[inputmode]{width:100%;min-height:50px;padding:0 14px;border-radius:12px;border:1px solid var(--line-strong);background:rgba(6,7,15,.55);color:var(--ink);font-size:17px}
+input[type=text],input[type=number],input[type=date],input[type=time],input[inputmode]{width:100%;min-height:50px;padding:0 14px;border-radius:12px;border:1px solid var(--line-strong);background:rgba(6,7,15,.55);color:var(--ink);font-size:17px}
 input::placeholder{color:#5f6590}
 .money{position:relative}
 .money::before{content:"$";position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--ink-mute);pointer-events:none}
@@ -143,6 +143,16 @@ details ul{margin:4px 0 0;padding-left:20px;color:var(--ink-soft);font-size:14.5
 .tipo{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;border-radius:999px;padding:1px 8px;border:1px solid var(--line-strong);vertical-align:1px}
 .t-gasto{color:#ff9d9d}.t-ingreso{color:var(--verde)}.t-ahorro{color:var(--brand-2)}.t-abono{color:var(--amarillo)}
 select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border:1px solid var(--line-strong);background:rgba(6,7,15,.55);color:var(--ink);font-size:16px}
+/* racha y cierre semanal */
+.racha-dots{display:flex;gap:8px;flex-wrap:wrap}
+.racha-dots button{width:36px;height:36px;border-radius:50%;border:2px solid var(--line-strong);background:var(--glass);color:var(--ink-mute);font-weight:800;font-size:15px;cursor:pointer;display:grid;place-items:center;padding:0}
+.racha-dots button.cumplida{background:var(--verde);border-color:var(--verde);color:#04230F}
+.racha-dots button.excedida{background:var(--rojo);border-color:var(--rojo);color:#2b0505}
+.racha-dots button.sin_registro{border-style:dashed}
+.racha-dots button.en_curso{border-color:var(--brand-2);color:var(--brand-2)}
+.racha-dots button.sel{outline:2px solid var(--ink);outline-offset:2px}
+.cierre.cumplida{border-color:rgba(52,211,153,.55)}
+.cierre.excedida{border-color:rgba(255,123,123,.55)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -165,7 +175,7 @@ select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border
       <li>El tope de gasto de la semana, con lo que llevas y lo que te queda por día.</li>
       <li>Tus 3 acciones de la semana: fondo, deudas y seguros.</li>
       <li>Un semáforo de tu flujo, tu fondo de emergencia, tus deudas y tu protección.</li>
-      <li>Un cuaderno para anotar lo que pasa cada semana y un reporte en PDF para guardarlo o compartirlo.</li>
+      <li>Un cuaderno para anotar lo que pasa cada semana, tu racha de semanas cumplidas y reportes en PDF (de la semana y del mes) para guardarlos o compartirlos.</li>
     </ul>
   </section>
   <div id="instalar" class="card stack" hidden>
@@ -262,7 +272,7 @@ select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border
   // Misma libreta anónima que la tarjeta /roberto: sin cookies, sin IP, sin nada que identifique a nadie.
   const EP_EVENTO = "/api/tarjeta/evento", EP_PROSPECTO = "/api/semana/prospecto";
   const AVISO_URL = "https://www.especialistaenasegurarte.lat/privacidad/semana";
-  const AVISO_VERSION = "2026-10-18.2"; // igual que AVISO_SEMANA_VERSION en el CRM (lib/semana-reglas.ts)
+  const AVISO_VERSION = "2026-10-18.3"; // igual que AVISO_SEMANA_VERSION en el CRM (lib/semana-reglas.ts)
   const TARJETA_URL = "https://www.especialistaenasegurarte.lat/roberto?s=amigo";
   const COMPARTIR_TEXTO = "Dinero Bajo Control: una guía gratuita para cuidar el dinero de tu hogar, de Roberto Rodríguez - Especialista en Asegurarte. La encuentras en su tarjeta, en «Recursos»:";
   const qs = new URLSearchParams(location.search);
@@ -396,6 +406,7 @@ select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border
   const ESTADO = { verde: "Vas bien", amarillo: "Cuidado: vas cerca del límite", rojo: "Te pasaste del límite semanal" };
 
   const dm = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+  const MESES_L = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
   const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
   const CHIP = { gasto: "Gasto", ingreso: "Ingreso", ahorro: "Ahorro", abono: "Abono" };
   const LABEL = { gasto: "Anota un gasto como si fuera WhatsApp", ingreso: "Anota un ingreso extra (comisión, venta, apoyo)", ahorro: "Anota lo que apartaste para tu fondo", abono: "¿Cuánto abonaste?" };
@@ -422,6 +433,29 @@ select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border
     const sinDeudas = tipoMov === "abono" && !vivas.length;
     const dia = (f) => (actual ? cap(etiquetaFecha(f, hoy)) : cap(DIAS[M.aFecha(f).getDay()]).slice(0, 3) + " " + M.aFecha(f).getDate());
 
+    // racha de semanas cumplidas y cierre de la semana pasada
+    const hist = M.historialSemanas(S.perfil, S.gastos, hoy), rr = M.racha(hist);
+    const cierre = actual ? M.armarCierre(S.perfil, S.gastos, hoy) : null;
+    let cierreOculto = false; try { cierreOculto = !!cierre && localStorage.getItem("msf.cierre") === cierre.semana.desde; } catch (e) {}
+    const lunHoy = M.lunesDe(hoy), offDe = (desde) => Math.round((M.aFecha(desde) - lunHoy) / 604800000);
+    const SIMBOLO = { cumplida: "✓", excedida: "✕", sin_registro: "–" }, NOMBRE_ESTADO = { cumplida: "cumplida", excedida: "te pasaste", sin_registro: "sin registro" };
+    const puntos = hist.slice(-8).map((w) => { const o = offDe(w.desde); return `<button type="button" class="${w.estado}${o === semOff ? " sel" : ""}" data-ir="${o}" aria-label="Semana ${w.etiqueta}: ${NOMBRE_ESTADO[w.estado]}" title="${w.etiqueta}">${SIMBOLO[w.estado]}</button>`; }).join("")
+      + `<button type="button" class="en_curso${semOff === 0 ? " sel" : ""}" data-ir="0" aria-label="Esta semana (en curso)" title="Esta semana">•</button>`;
+    const rachaHtml = `<section class="card stack"><div class="row" style="align-items:center"><h3>Tu racha</h3><span class="badge">🔥 ${rr.actual} ${rr.actual === 1 ? "semana" : "semanas"}</span></div>
+      ${hist.length ? `<div class="racha-dots">${puntos}</div><p class="small mute">✓ cumplida · ✕ te pasaste · – sin registro · • esta semana. Toca una para verla.${rr.mejor > rr.actual ? " Tu mejor racha: " + rr.mejor + "." : ""}</p>` : `<p class="soft small">Tu racha empieza cuando cierres tu primera semana (el próximo lunes). Cuenta si anotaste movimientos y no te pasaste del tope.</p>`}</section>`;
+    const cierreHtml = cierre && !cierreOculto ? `
+    <section class="card stack cierre ${cierre.estado}"><span class="k">Cierre de la semana pasada · ${esc(cierre.semana.etiqueta)}</span>
+      <h3>${cierre.estado === "cumplida" ? "✅ " : ""}${esc(cierre.titulo)}</h3>
+      <p class="soft">${esc(cierre.texto)}</p>
+      <p class="small">🔥 ${esc(cierre.rachaTexto)}</p>
+      ${cierre.semana.ingresosExtra + cierre.semana.ahorrado + cierre.semana.abonado > 0 ? `<div class="mini3"><div><small>Ingresos extra</small><b>${mxn(cierre.semana.ingresosExtra)}</b></div><div><small>Apartaste</small><b>${mxn(cierre.semana.ahorrado)}</b></div><div><small>Abonaste</small><b>${mxn(cierre.semana.abonado)}</b></div></div>` : ""}
+      <p class="small mute">Esta semana tu tope es <b>${mxn(cierre.topeEstaSemana)}</b>.</p>
+      <div class="grid2"><button type="button" class="btn sec" data-sem="-1">Ver esa semana</button>${cierre.estado !== "sin_registro" ? '<button type="button" class="btn sec" data-pdf="descargar" data-alcance="prev">Su PDF</button>' : ""}</div>
+      <button type="button" class="ghost" id="btnOcultarCierre">Ocultar este resumen</button></section>` : "";
+    const compartir = puedeCompartirArchivos();
+    const filaPdf = (alcance, etiqueta) => `<div class="k" style="margin-top:4px">${etiqueta}</div><div class="grid2"${compartir ? "" : ' style="grid-template-columns:1fr"'}><button type="button" class="btn primary" data-pdf="descargar" data-alcance="${alcance}">Descargar PDF</button>${compartir ? `<button type="button" class="btn sec" data-pdf="compartir" data-alcance="${alcance}">Compartir PDF</button>` : ""}</div>`;
+    const mesTxt = MESES_L[dm(lun, 3).getMonth()];
+
     const hero = s.limite > 0 ? `
       <div><div class="soft small">${actual ? "Puedes gastar esta semana" : "Tope de esa semana"}</div><div class="big">${mxn(s.limite)}</div></div>
       <div class="bar" role="img" aria-label="Se usó ${Math.round(pct)}% del tope"><i class="${s.color}" style="width:${pct}%"></i></div>
@@ -447,6 +481,7 @@ select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border
     }).join("");
 
     return `
+    ${cierreHtml}
     <section class="card stack">
       <div class="semnav">
         <button type="button" data-sem="-1" aria-label="Semana anterior" ${semOff <= -52 ? "disabled" : ""}>‹</button>
@@ -456,16 +491,24 @@ select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border
       ${hero}
       <div class="mini3"><div><small>Ingresos extra</small><b>${mxn(s.ingresosExtra)}</b></div><div><small>Apartaste</small><b>${mxn(s.ahorrado)}</b></div><div><small>Abonaste</small><b>${mxn(s.abonado)}</b></div></div>
     </section>
+    ${rachaHtml}
     ${form}
     ${actual ? `<h2>Tus acciones de la semana</h2>${h.acciones.map((a, n) => `<div class="card acc"><span class="n">${n + 1}</span><div><h3>${esc(a.titulo)}</h3><p class="soft small" style="margin-top:4px">${esc(a.detalle)}</p></div></div>`).join("")}` : ""}
     <h2>Movimientos de ${actual ? "esta semana" : "esa semana"}</h2>
     <section class="card">${lista.length ? filas : '<p class="soft small">Todavía no hay movimientos en esta semana. Anota el primero arriba.</p>'}</section>
-    <section class="card stack"><h3>Reporte de ${actual ? "esta semana" : "esa semana"}</h3>
-      <p class="soft small">Un PDF con tu semáforo, tu tope, en qué se fue el gasto y todos los movimientos. Se prepara aquí, en tu teléfono.</p>
-      <button class="btn primary" data-pdf="descargar">Descargar PDF</button>
-      ${puedeCompartirArchivos() ? '<button class="btn sec" data-pdf="compartir">Compartir PDF</button>' : ""}
-      <button class="ghost" data-csv="semana">Descargar los movimientos (Excel)</button>
-      <p class="small mute" id="pdfMsg" role="status"></p></section>`;
+    <section class="card stack"><h3>Reportes en PDF</h3>
+      <p class="soft small">Se preparan aquí, en tu teléfono. Llevan tu semáforo, tu tope, en qué se fue el gasto y todos los movimientos.</p>
+      ${filaPdf("semana", "Semana del " + rango)}
+      ${filaPdf("mes", "Mes de " + mesTxt + " · semana por semana")}
+      <button class="ghost" data-csv="semana">Descargar los movimientos de la semana (Excel)</button>
+      <p class="small mute" id="pdfMsg" role="status"></p></section>
+    <details class="card"><summary>Recordatorio semanal en mi calendario</summary>
+      <div class="stack" style="margin-top:8px">
+        <p class="soft small">Agrega a tu calendario un evento que se repite cada semana para que no se te olvide anotar. Se guarda en tu calendario, no en nuestros servidores.</p>
+        <label class="f">¿Qué día?<select id="rDia" class="f-sel"><option value="0">Domingo</option><option value="1">Lunes</option><option value="2">Martes</option><option value="3">Miércoles</option><option value="4">Jueves</option><option value="5">Viernes</option><option value="6">Sábado</option></select></label>
+        <label class="f">¿A qué hora?<input type="time" id="rHora" value="19:00"></label>
+        <button type="button" class="btn primary" id="btnRecordar">Agregar a mi calendario</button>
+      </div></details>`;
   }
 
   function vistaPlan(h) {
@@ -571,10 +614,13 @@ select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border
 
   let hechosActuales = null;
   let pdfPrecargado = false;
-  function precargarPdf() { // deja listos la librería, la Anton y el logo para que el primer PDF salga rápido y funcione sin internet
-    if (pdfPrecargado || !window.Pdf || (navigator.connection && navigator.connection.saveData)) return;
+  // Deja guardados (en el caché del service worker) la librería del PDF, la Anton y el logo, para que el PDF también salga sin internet.
+  // Se espera a que el service worker esté activo: si se pidieran antes, el navegador los usaría pero no se guardarían.
+  function precargarPdf() {
+    if (pdfPrecargado || (navigator.connection && navigator.connection.saveData)) return;
     pdfPrecargado = true;
-    setTimeout(() => window.Pdf.cargar().catch(() => { pdfPrecargado = false; }), 4000);
+    const calentar = () => setTimeout(() => ["vendor/jspdf.umd.min.js", "vendor/Anton-Regular.ttf", "vendor/logo.png"].forEach((u) => fetch(u).then((r) => r.arrayBuffer()).catch(() => {})), 1500);
+    if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.ready.then(calentar, calentar); else calentar();
   }
   function render() {
     if (!S.perfil) return;
@@ -633,22 +679,24 @@ select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border
     let archivo = null;
     btn.disabled = true; btn.textContent = "Preparando…"; if (msg) msg.textContent = "";
     try {
-      const hoy = new Date();
-      const rep = M.armarReporte(S.perfil, S.gastos, dm(hoy, 7 * semOff), hoy);
+      const hoy = new Date(), alcance = btn.dataset.alcance || "semana", suf = alcance === "mes" ? "-mes" : "";
+      const rep = alcance === "mes" ? M.armarReporteMensual(S.perfil, S.gastos, dm(M.lunesDe(dm(hoy, 7 * semOff)), 3), hoy) : M.armarReporte(S.perfil, S.gastos, dm(hoy, 7 * (alcance === "prev" ? -1 : semOff)), hoy);
       rep.ejemplo = !!S.ejemplo;
       archivo = await window.Pdf.generar(rep);
       const { blob, nombre } = archivo;
       if (modo === "compartir") {
-        await navigator.share({ files: [new File([blob], nombre, { type: "application/pdf" })], title: "Mi reporte semanal · Dinero Bajo Control", text: "Mi reporte semanal de Dinero Bajo Control, de Roberto Rodríguez - Especialista en Asegurarte." });
-        track("sf_pdf", "compartir");
+        const que = alcance === "mes" ? "Mi reporte de " + rep.periodo.etiqueta : "Mi reporte semanal";
+        await navigator.share({ files: [new File([blob], nombre, { type: "application/pdf" })], title: que + " · Dinero Bajo Control", text: que + " en Dinero Bajo Control, de Roberto Rodríguez - Especialista en Asegurarte." });
+        track("sf_pdf", "compartir" + suf);
       } else {
-        descargar(blob, nombre); track("sf_pdf", "descarga");
+        descargar(blob, nombre); track("sf_pdf", "descarga" + suf);
         if (msg) msg.textContent = "Listo: busca " + nombre + " en tus descargas.";
+        toast("Listo: busca " + nombre + " en tus descargas.");
       }
     } catch (e) {
       if (e && e.name === "AbortError") { /* la persona canceló el menú de compartir */ }
       else if (e && e.name === "NotAllowedError" && archivo) { // el teléfono ya no dejó abrir «Compartir» (pasó mucho tiempo desde el toque): se guarda en descargas
-        descargar(archivo.blob, archivo.nombre); track("sf_pdf", "descarga");
+        descargar(archivo.blob, archivo.nombre); track("sf_pdf", "descarga" + (btn.dataset.alcance === "mes" ? "-mes" : ""));
         if (msg) msg.textContent = "Tu teléfono no dejó compartir directo; guardé el PDF en tus descargas para que lo envíes desde ahí.";
       }
       else if (msg) msg.textContent = navigator.onLine === false ? "Para preparar tu primer PDF necesitas internet; después funciona sin conexión." : "No pude preparar el PDF. Intenta de nuevo.";
@@ -666,6 +714,11 @@ select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border
   function descargarRespaldo() {
     descargar(new Blob([M.exportarRespaldo(S, new Date().toISOString())], { type: "application/json" }), "Dinero-Bajo-Control_respaldo_" + M.iso(new Date()) + ".json");
     toast("Respaldo descargado. Guárdalo en un lugar seguro.");
+  }
+  function recordar() {
+    const ics = M.recordatorioICS({ dia: Number(($("#rDia") || {}).value), hora: ($("#rHora") || {}).value, ahora: new Date() });
+    descargar(new Blob([ics], { type: "text/calendar;charset=utf-8" }), "Dinero-Bajo-Control_recordatorio.ics");
+    toast("Listo: abre el archivo para agregarlo a tu calendario.");
   }
   async function restaurar(inp) {
     const f = inp.files && inp.files[0]; inp.value = "";
@@ -718,6 +771,9 @@ select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border
     if (t.dataset.csv) return descargarCSV(t.dataset.csv);
     if (t.id === "btnRespaldo") return descargarRespaldo();
     if (t.id === "btnRestaurar") { $("#fRestaurar").click(); return; }
+    if (t.dataset.ir !== undefined) { semOff = Math.max(-52, Math.min(0, Number(t.dataset.ir))); fechaMov = null; render(); window.scrollTo(0, 0); return; }
+    if (t.id === "btnOcultarCierre") { const c = M.armarCierre(S.perfil, S.gastos, new Date()); if (c) { try { localStorage.setItem("msf.cierre", c.semana.desde); } catch (e) {} } return render(); }
+    if (t.id === "btnRecordar") return recordar();
     if (t.dataset.tab) { tab = t.dataset.tab; window.scrollTo(0, 0); return render(); }
     if (t.dataset.q) { pregunta = t.dataset.q; render(); const r = $("#resp"); if (r) r.scrollIntoView({ behavior: "smooth", block: "nearest" }); return; }
     if (t.dataset.del) { S.gastos = S.gastos.filter((g) => g.id !== t.dataset.del); guardar(); return render(); }

@@ -10,7 +10,7 @@ import { validarNombre, validarWhatsappMX } from "./validacion";
 const RE_CORREO_SEGURO = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/;
 
 /** Versión del aviso de privacidad de la guía (app/privacidad/semana). Se anota en cada prospecto como prueba del consentimiento. */
-export const AVISO_SEMANA_VERSION = "2026-10-18.2";
+export const AVISO_SEMANA_VERSION = "2026-10-18.3";
 
 export const SEMAFORO = ["verde", "amarillo", "rojo"] as const;
 export type Semaforo = (typeof SEMAFORO)[number];
