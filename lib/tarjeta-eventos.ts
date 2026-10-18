@@ -65,7 +65,7 @@ function semilla(): FilaEvento[] {
       if (rnd() < 0.45) {
         e("sf_plan", "plan", 150);
         if (rnd() < 0.12) e("sf_instalar", "", 200);
-        if (rnd() < 0.2) e("sf_pdf", (rnd() < 0.7 ? "descarga" : "compartir") + (rnd() < 0.25 ? "-mes" : ""), 300);
+        if (rnd() < 0.2) e("sf_pdf", (rnd() < 0.7 ? "descarga" : "compartir") + (rnd() < 0.25 ? "-mes" : rnd() < 0.1 ? "-anio" : ""), 300);
         if (rnd() < 0.3) {
           if (rnd() < 0.55) { e("sf_wa", "datos", 400); e("sf_dato", rnd() < 0.9 ? "nuevo" : "repetido", 401); }
           else e("sf_wa", "directo", 400);

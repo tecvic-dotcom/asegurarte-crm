@@ -180,12 +180,13 @@
   function perfilVivo(p, movs, hasta) {
     const desde = num(p.editadoEn);
     let ahorro = num(p.ahorro);
+    const idsMetas = new Set(((p && p.metas) || []).map((g) => g.id));
     const abonos = {};
     for (const m of movs || []) {
       if (num(m.ts) <= desde) continue;
       if (hasta && m.fecha > hasta) continue;
       const t = tipoDe(m);
-      if (t === "ahorro") ahorro += num(m.monto);
+      if (t === "ahorro") { if (!(m.meta && idsMetas.has(m.meta))) ahorro += num(m.monto); } // lo apartado para una meta con nombre no es fondo de emergencia
       else if (t === "abono") { const k = String(m.deuda || ""); abonos[k] = (abonos[k] || 0) + num(m.monto); }
     }
     const deudas = (p.deudas || []).map(normDeuda);
@@ -194,6 +195,36 @@
       if (d) d.saldo = Math.max(0, d.saldo - abonos[k]); // lo que sobre de una deuda ya liquidada se ignora
     }
     return { ...p, ahorro, deudas };
+  }
+
+  // ---------- metas de ahorro con nombre ----------
+  // Una meta: { id, nombre, objetivo, fecha ("" = sin fecha), estado: "activa" | "lograda", creada }. Lo que se aparta para ella es un movimiento
+  // de tipo «ahorro» con `meta: id`; el avance sale de esos movimientos (no depende de `editadoEn`) y NO suma al fondo de emergencia.
+  const MAX_METAS = 24;
+  const mapaMetas = (p) => Object.fromEntries(((p && p.metas) || []).map((g) => [g.id, g.nombre]));
+  // `al` (YYYY-MM-DD, opcional): el avance como estaba ese día, solo con las metas que ya existían.
+  function progresoMetas(p, movs, ahora, al) {
+    const aport = {};
+    for (const m of movs || []) {
+      if (tipoDe(m) !== "ahorro" || !m.meta) continue;
+      if (al && m.fecha > al) continue;
+      aport[m.meta] = (aport[m.meta] || 0) + num(m.monto);
+    }
+    const hoyIso = iso(ahora);
+    return ((p && p.metas) || [])
+      .map((g, orden) => ({ g, orden }))
+      .filter(({ g }) => !al || !g.creada || g.creada <= al)
+      .map(({ g, orden }) => {
+        const aportado = aport[g.id] || 0, faltante = Math.max(0, g.objetivo - aportado);
+        let semanasRestantes = null, ritmoSemanal = null, vencida = false;
+        if (g.fecha) {
+          const dias = Math.round((aFecha(g.fecha) - aFecha(hoyIso)) / 86400000);
+          if (dias < 0) vencida = true;
+          else { semanasRestantes = Math.max(1, Math.ceil(dias / 7)); ritmoSemanal = faltante > 0 ? Math.ceil(faltante / semanasRestantes) : 0; }
+        }
+        return { id: g.id, nombre: g.nombre, objetivo: redondea(g.objetivo), fecha: g.fecha || "", estado: g.estado === "lograda" ? "lograda" : "activa", aportado: redondea(aportado), faltante: redondea(faltante), pct: g.objetivo > 0 ? Math.min(100, Math.round((aportado / g.objetivo) * 100)) : 0, completada: aportado >= g.objetivo, vencida, semanasRestantes, ritmoSemanal, orden };
+      })
+      .sort((x, y) => (x.estado === y.estado ? (x.fecha && y.fecha ? (x.fecha < y.fecha ? -1 : x.fecha > y.fecha ? 1 : 0) : x.fecha ? -1 : y.fecha ? 1 : 0) || x.orden - y.orden : x.estado === "activa" ? -1 : 1));
   }
 
   // ---------- semana ----------
@@ -276,7 +307,7 @@
     return 4;
   }
 
-  function acciones(p, res, fon, deu, pro, f) {
+  function acciones(p, res, fon, deu, pro, f, metas) {
     const out = [];
     const sem = redondea(res.apartarSemana);
     if (f === 0) {
@@ -292,7 +323,9 @@
     } else if (deu.masCara) {
       out.push({ tipo: "deuda", titulo: "Abona " + mxn(sem) + " extra a «" + deu.masCara.nombre + "»", detalle: "Tu fondo ya está completo: acelera la deuda que sigue." });
     } else {
-      out.push({ tipo: "meta", titulo: "Aparta " + mxn(sem) + " a tu meta", detalle: "Fondo completo y sin deudas: es momento de invertir en lo que sigue." });
+      const g = (metas || []).find((x) => x.estado === "activa" && !x.completada);
+      if (g) out.push({ tipo: "meta", titulo: "Aparta " + mxn(sem) + " a «" + g.nombre + "»", detalle: "Fondo completo y sin deudas: tu siguiente meta es «" + g.nombre + "». Llevas " + mxn(g.aportado) + " de " + mxn(g.objetivo) + (g.ritmoSemanal ? " y para llegar a tiempo conviene apartar " + mxn(g.ritmoSemanal) + " por semana" : "") + "." });
+      else out.push({ tipo: "meta", titulo: "Aparta " + mxn(sem) + " a tu meta", detalle: "Fondo completo y sin deudas: es momento de invertir en lo que sigue." });
     }
     if (pro.huecos[0]) out.push({ tipo: "proteccion", titulo: "Cubre el hueco: " + pro.huecos[0].titulo, detalle: pro.huecos[0].razon });
     out.push({ tipo: "registro", titulo: "Anota tus movimientos de la semana", detalle: "Gastos, ingresos extra, lo que apartas y tus abonos a deudas. Escríbelos como en WhatsApp y yo los acomodo. Sin registro no hay semáforo." });
@@ -309,6 +342,7 @@
     const sem = semana(p, gastos, hoy, R, ahora);
     const cats = porCategoria(gastos, hoy);
     const f = fase(res, fon, deu);
+    const metas = progresoMetas(p0, gastos, ahora, iso(hoy));
     const flujoColor = res.holgura < 0 ? "rojo" : res.ingreso > 0 && res.holgura / res.ingreso < R.flujoVerde ? "amarillo" : "verde";
     const pilares = { flujo: flujoColor, fondo: fon.color, deuda: deu.color, proteccion: pro.color };
     const puntaje = Math.round(Object.values(pilares).reduce((a, c) => a + PUNTOS[c], 0) / 4);
@@ -333,8 +367,9 @@
       semana: { limite: redondea(sem.limite), gastado: redondea(sem.gastado), restante: redondea(sem.restante), porDia: redondea(sem.porDia), diasRestantes: sem.diasRestantes, color: sem.color, pct: Math.round(sem.pct * 100), ingresosExtra: redondea(sem.ingresosExtra), ahorrado: redondea(sem.ahorrado), abonado: redondea(sem.abonado) },
       categorias: cats,
       proteccion: { color: pro.color, huecos: pro.huecos },
+      metas: metas.map(({ orden, ...x }) => x),
     };
-    h.acciones = acciones(p, res, fon, deu, pro, f);
+    h.acciones = acciones(p, res, fon, deu, pro, f, metas);
     return h;
   }
 
@@ -406,13 +441,14 @@
 
   const mensajeTope = (limite, restante, color, enCurso, unidad) => (limite <= 0 ? (unidad === "mes" ? "Ese mes no hubo margen para gastar." : "Esa semana no hubo margen para gastar.") : color === "rojo" ? "Te pasaste por " + mxn(-restante) + " del tope." : color === "amarillo" ? (enCurso ? "Vas bien, pero cerca del límite: cuida los gustos." : "Cerraste muy cerca del límite.") : enCurso ? "Vas bien." : "Cerraste dentro de tu tope.");
 
-  function filasMov(lista) { // los movimientos ya listos para tabla, en orden de fecha
+  function filasMov(lista, metasPorId = {}) { // los movimientos ya listos para tabla, en orden de fecha
     const ordenados = [...lista].sort((a, b) => (a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : num(a.ts) - num(b.ts)));
     const detalle = (m) => {
       const t = tipoDe(m);
       const base = String(m.nota || "").trim() || TIPOS[t];
       if (t === "gasto") return base + (m.categoria && CATEGORIAS[m.categoria] ? " (" + CATEGORIAS[m.categoria].toLowerCase() + ")" : "");
       if (t === "abono") return (m.deuda ? m.deuda + ": " : "") + base;
+      if (t === "ahorro" && m.meta && metasPorId[m.meta]) return base + " (meta: " + metasPorId[m.meta] + ")";
       return base;
     };
     return {
@@ -431,9 +467,9 @@
     const s = semana(perfilVivo(p, movs, fin), movs, dom, R, ahora);
     const enCurso = iso(ahora) <= s.hasta;
     const rr = racha(historialSemanas(p, movs, ahora, R).filter((w) => w.hasta <= fin)); // racha al cierre de esa semana
-    const f = filasMov(s.lista);
+    const f = filasMov(s.lista, mapaMetas(p));
     return {
-      tipo: "semanal", textos: TEXTOS_SEMANA,
+      tipo: "semanal", textos: TEXTOS_SEMANA, metas: progresoMetas(p, movs, ahora, fin),
       familia: String(p.familia || "Mi familia"),
       periodo: { desde: s.desde, hasta: s.hasta, clave: s.desde, etiqueta: etiquetaRango(lun, dom), subtitulo: "de lunes " + lun.getDate() + " a domingo " + dom.getDate(), enCurso },
       racha: rr.actual,
@@ -468,9 +504,9 @@
       const s = semana(perfilVivo(p, movs, cerrada ? iso(dom) : iso(ahora)), movs, dom, R, ahora);
       semanas.push({ etiqueta: etiquetaCorta(w, dom), gastado: redondea(s.gastado), tope: redondea(s.limite), estado: cerrada ? estadoSemana(s) : "en_curso" });
     }
-    const f = filasMov(delMes);
+    const f = filasMov(delMes, mapaMetas(p));
     return {
-      tipo: "mensual", textos: TEXTOS_MES,
+      tipo: "mensual", textos: TEXTOS_MES, metas: progresoMetas(p, movs, ahora, iso(corte)),
       familia: String(p.familia || "Mi familia"),
       periodo: { desde: a, hasta: b, clave: a.slice(0, 7), etiqueta: MESES_LARGOS[mo] + " de " + y, subtitulo: "del 1 al " + ultimo.getDate() + " de " + MESES_LARGOS[mo], enCurso },
       puntaje: h.puntaje,
@@ -480,6 +516,62 @@
       categorias: barrasCategorias(porCategoriaRango(movs, a, b)),
       semanas, semanasCumplidas: semanas.filter((x) => x.estado === "cumplida").length, semanasCerradas: semanas.filter((x) => x.estado !== "en_curso").length,
       movimientos: f.movimientos, omitidos: f.omitidos,
+      totalGastos: redondea(gastado),
+      accion: h.acciones[0] || null,
+    };
+  }
+
+  // Reporte de un año natural: mes por mes, en qué se fue el gasto, los gastos más grandes y cómo van las metas.
+  const TEXTOS_ANIO = { encabezado: "REPORTE ANUAL", categorias: "En qué se fue el gasto del año", sinGastos: "Sin gastos registrados este año.", topeTitulo: "El año en breve", movimientos: "Los gastos más grandes del año", vacio: "Todavía no hay gastos registrados este año.", total: "Total de gastos del año (suma de todos, no solo estos)", accion: "Tu acción para el próximo año", meses: "Mes por mes" };
+
+  function armarReporteAnual(p, movs, ref, ahora = ref, R = REGLAS) {
+    const y = ref.getFullYear(), a = y + "-01-01", b = y + "-12-31", hoyIso = iso(ahora);
+    const enCurso = hoyIso <= b;
+    const corte = hoyIso < b ? ahora : new Date(y, 11, 31);
+    const h = armarHechos(p, movs, corte, R, ahora);
+    const delAnio = (movs || []).filter((m) => m.fecha >= a && m.fecha <= b);
+    const suma$ = (lista, t) => lista.filter((m) => tipoDe(m) === t).reduce((x, m) => x + num(m.monto), 0);
+    const gastado = suma$(delAnio, "gasto"), ingresosExtra = suma$(delAnio, "ingreso"), ahorrado = suma$(delAnio, "ahorro"), abonado = suma$(delAnio, "abono");
+    const idsMetas = new Set(((p && p.metas) || []).map((g) => g.id));
+    const aMetas = delAnio.filter((m) => tipoDe(m) === "ahorro" && m.meta && idsMetas.has(m.meta)).reduce((x, m) => x + num(m.monto), 0);
+    const primera = (movs || []).map((m) => m.fecha).filter((f) => typeof f === "string").sort()[0] || "9999-12-31";
+    const meses = [];
+    for (let mo = 0; mo < 12; mo++) {
+      const ini = iso(new Date(y, mo, 1)), fin = iso(new Date(y, mo + 1, 0)), del = delAnio.filter((m) => m.fecha >= ini && m.fecha <= fin);
+      const sinDatos = ini > hoyIso || fin < primera; // meses que todavía no llegan o anteriores a su primer movimiento: sin cifras de fondo
+      meses.push({ nombre: MESES_LARGOS[mo], gastado: redondea(suma$(del, "gasto")), ingresosExtra: redondea(suma$(del, "ingreso")), ahorrado: redondea(suma$(del, "ahorro")), abonado: redondea(suma$(del, "abono")), fondo: sinDatos ? null : Math.round(armarHechos(p, movs, aFecha(fin < hoyIso ? fin : hoyIso), R, ahora).fondo.meses * 10) / 10 });
+    }
+    const conGasto = meses.filter((x) => x.gastado > 0);
+    const promedio = conGasto.length ? gastado / conGasto.length : 0;
+    const mayor = conGasto.length ? conGasto.reduce((x, m) => (m.gastado > x.gastado ? m : x)) : null;
+    const menor = conGasto.length > 1 ? conGasto.reduce((x, m) => (m.gastado < x.gastado ? m : x)) : null;
+    const rr = racha(historialSemanas(p, movs, ahora, R).filter((w) => w.desde >= a && w.hasta <= b));
+    const resumenTexto = [];
+    if (conGasto.length) resumenTexto.push("Gastaste en promedio " + mxn(promedio) + " al mes (en los " + conGasto.length + (conGasto.length === 1 ? " mes" : " meses") + " con gastos).");
+    if (mayor && menor && mayor.nombre !== menor.nombre) resumenTexto.push("El mes que más gastaste fue " + mayor.nombre + " (" + mxn(mayor.gastado) + ") y el que menos, " + menor.nombre + " (" + mxn(menor.gastado) + ").");
+    if (ahorrado > 0) resumenTexto.push("Apartaste " + mxn(ahorrado) + (aMetas > 0 ? ": " + mxn(ahorrado - aMetas) + " a tu fondo y " + mxn(aMetas) + " a tus metas." : " para tu fondo."));
+    if (rr.semanas) resumenTexto.push("Semanas cumplidas: " + rr.cumplidas + " de " + rr.semanas + (rr.mejor > 1 ? " (tu mejor racha: " + rr.mejor + " seguidas)." : "."));
+    resumenTexto.push("Tu fondo de emergencia " + (enCurso ? "va en " : "terminó el año en ") + h.fondo.meses.toFixed(1) + " de " + h.fondo.metaMeses + " meses de gastos.");
+    const grandes = delAnio.filter((m) => tipoDe(m) === "gasto").sort((x, z) => num(z.monto) - num(x.monto)).slice(0, 8).map((m) => {
+      const d = aFecha(m.fecha), monto = num(m.monto);
+      return { fecha: m.fecha, dia: d.getDate() + " " + MESES_CORTOS[d.getMonth()], tipo: "gasto", tipoNombre: "Gasto", detalle: (String(m.nota || "").trim() || "Gasto") + (m.categoria && CATEGORIAS[m.categoria] ? " (" + CATEGORIAS[m.categoria].toLowerCase() + ")" : ""), monto, texto: "-" + mxn(monto) };
+    });
+    return {
+      tipo: "anual", textos: TEXTOS_ANIO,
+      familia: String(p.familia || "Mi familia"),
+      periodo: { desde: a, hasta: b, clave: String(y), etiqueta: String(y), subtitulo: enCurso ? "de enero a hoy" : "del 1 de enero al 31 de diciembre", enCurso },
+      puntaje: h.puntaje,
+      pilares: pilaresTexto(h),
+      tarjetas: [
+        { etiqueta: "Gastaste en el año", valor: mxn(gastado) }, { etiqueta: "Ingresos extra", valor: mxn(ingresosExtra) },
+        { etiqueta: "Apartaste (fondo y metas)", valor: mxn(ahorrado), resalta: true },
+        { etiqueta: "Abonaste a deudas", valor: mxn(abonado) }, { etiqueta: "Promedio de gasto al mes", valor: mxn(promedio) }, { etiqueta: "Semanas cumplidas", valor: rr.semanas ? rr.cumplidas + " de " + rr.semanas : "—" },
+      ],
+      resumenTexto,
+      categorias: barrasCategorias(porCategoriaRango(movs, a, b)),
+      tablaMeses: meses, semanasCumplidas: rr.cumplidas, semanasCerradas: rr.semanas,
+      metas: progresoMetas(p, movs, ahora, iso(corte)),
+      movimientos: grandes, omitidos: 0,
       totalGastos: redondea(gastado),
       accion: h.acciones[0] || null,
     };
@@ -524,14 +616,15 @@
   }
 
   // ---------- exportar: movimientos en CSV (Excel) y respaldo completo ----------
-  function movimientosCSV(movs) {
+  function movimientosCSV(movs, metas) {
+    const nombres = Object.fromEntries((metas || []).map((g) => [g.id, g.nombre]));
     // Las celdas que empiezan con = + - @ se neutralizan: Excel las leería como fórmula.
     const q = (v) => { let t = String(v == null ? "" : v).replace(/[\r\n]+/g, " "); if (/^[=+\-@\t]/.test(t)) t = "'" + t; return '"' + t.replace(/"/g, '""') + '"'; };
     const filas = [...(movs || [])].sort((a, b) => (a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : num(a.ts) - num(b.ts)));
-    const out = [["Fecha", "Tipo", "Categoría", "Detalle", "Deuda", "Monto"].map(q).join(",")];
+    const out = [["Fecha", "Tipo", "Categoría", "Detalle", "Deuda", "Meta", "Monto"].map(q).join(",")];
     for (const m of filas) {
       const t = tipoDe(m);
-      out.push([q(m.fecha), q(TIPOS[t]), q(t === "gasto" ? CATEGORIAS[m.categoria] || "Otros" : ""), q(m.nota || ""), q(t === "abono" ? m.deuda || "" : ""), num(m.monto).toFixed(2)].join(","));
+      out.push([q(m.fecha), q(TIPOS[t]), q(t === "gasto" ? CATEGORIAS[m.categoria] || "Otros" : ""), q(m.nota || ""), q(t === "abono" ? m.deuda || "" : ""), q(t === "ahorro" && m.meta ? nombres[m.meta] || "" : ""), num(m.monto).toFixed(2)].join(","));
     }
     return out.join("\r\n");
   }
@@ -547,6 +640,7 @@
     const tipo = tipoDe(m);
     const mov = { id: cadena(m.id, 24).replace(/[^a-zA-Z0-9]/g, ""), tipo, monto, categoria: tipo === "gasto" ? (Object.prototype.hasOwnProperty.call(CATEGORIAS, m.categoria) ? m.categoria : "otros") : tipo, fecha: m.fecha, nota: cadena(m.nota, 80), ts: Math.max(0, Math.round(num(m.ts))) };
     if (tipo === "abono") mov.deuda = cadena(m.deuda, 40);
+    if (tipo === "ahorro" && m.meta) { const id = cadena(m.meta, 24).replace(/[^a-zA-Z0-9]/g, ""); if (id) mov.meta = id; }
     return mov;
   }
 
@@ -563,12 +657,23 @@
       nombres.add(nombre);
       return { nombre, saldo: tope(d && d.saldo), tasa: Math.min(num(d && d.tasa), 300), pago: tope(d && d.pago) };
     }).filter((d) => d.saldo > 0);
+    const idsMeta = new Set();
+    const metas = (Array.isArray(p.metas) ? p.metas : []).slice(0, MAX_METAS).map((g, i) => {
+      if (!g || typeof g !== "object") return null;
+      const nombre = cadena(g.nombre, 30), objetivo = Math.min(num(g.objetivo), 1e8);
+      if (nombre.length < 2 || !objetivo) return null;
+      let id = cadena(g.id, 24).replace(/[^a-zA-Z0-9]/g, "");
+      if (!id || idsMeta.has(id)) id = "m" + i.toString(36) + Math.random().toString(36).slice(2, 6);
+      idsMeta.add(id);
+      return { id, nombre, objetivo, fecha: fechaValida(g.fecha) ? g.fecha : "", estado: g.estado === "lograda" ? "lograda" : "activa", creada: fechaValida(g.creada) ? g.creada : "" };
+    }).filter(Boolean);
     return {
       familia: cadena(p.familia, 30) || "Mi familia", personas: Math.min(12, Math.max(1, Math.round(num(p.personas)) || 3)), dependientes: p.dependientes !== false,
       ingreso, fijos: { vivienda: tope(f.vivienda), servicios: tope(f.servicios), educacion: tope(f.educacion), otros: tope(f.otros) },
       basico: tope(p.basico), ahorro: tope(p.ahorro), deudas,
       seguros: { vida: SI_NO_NA.includes(sg.vida) ? sg.vida : "na", gmm: SI_NO_NA.includes(sg.gmm) ? sg.gmm : "na", auto: SI_NO_NA.includes(sg.auto) ? sg.auto : "na", hogar: SI_NO_NA.includes(sg.hogar) ? sg.hogar : "na" },
       editadoEn: Math.max(0, Math.round(num(p.editadoEn))),
+      metas,
     };
   }
 
@@ -595,6 +700,8 @@
       ids.add(x.id);
       gastos.push(x);
     }
+    const idsOk = new Set(perfil.metas.map((g) => g.id));
+    for (const m of gastos) if (m.meta && !idsOk.has(m.meta)) delete m.meta; // ahorro para una meta que ya no existe: vuelve al fondo
     return { ok: true, estado: { perfil, gastos, ejemplo: false }, descartados };
   }
 
@@ -646,6 +753,8 @@
       else P.push("Tu fondo ya está completo.");
       if (h.proteccion.huecos.length) P.push("Además, sin " + h.proteccion.huecos.map((x) => x.titulo.toLowerCase()).join(" ni ") + " un imprevisto grande se pagaría de ese fondo. Es lo más urgente de cubrir.");
       else P.push("Tu protección con seguros se ve cubierta.");
+      const ma = h.metas.filter((x) => x.estado === "activa");
+      if (ma.length) P.push("Además tienes " + (ma.length === 1 ? "una meta de ahorro" : ma.length + " metas de ahorro") + ": " + ma.slice(0, 3).map((x) => "«" + x.nombre + "» va en " + x.pct + "% (" + mxn(x.aportado) + " de " + mxn(x.objetivo) + ")").join("; ") + ".");
     }
     return P.join("\n\n");
   }
@@ -710,7 +819,8 @@
       { nombre: "Crédito del auto", saldo: 95000, tasa: 16, pago: 3100 },
     ],
     seguros: { vida: "no", gmm: "no", auto: "si", hogar: "na" },
+    metas: [{ id: "ejemploviaje", nombre: "Viaje en familia", objetivo: 15000, fecha: "", estado: "activa", creada: "" }],
   };
 
-  return { TIPOS, tipoDe, perfilVivo, parsearMovimiento, porCategoriaRango, pilaresTexto, historialSemanas, racha, armarCierre, armarReporte, armarReporteMensual, recordatorioICS, movimientosCSV, exportarRespaldo, importarRespaldo, limpiarPerfil, limpiarMovimiento, REGLAS, CATEGORIAS, PREGUNTAS, PROMPT_SISTEMA, EJEMPLO, resumen, fondo, deudaInfo, simularDeudas, proteccion, semana, porCategoria, parsearGasto, armarHechos, responder, validarTexto, mensajeWhatsApp, planParaCRM, mxn, iso, aFecha, lunesDe };
+  return { TIPOS, tipoDe, MAX_METAS, progresoMetas, armarReporteAnual, perfilVivo, parsearMovimiento, porCategoriaRango, pilaresTexto, historialSemanas, racha, armarCierre, armarReporte, armarReporteMensual, recordatorioICS, movimientosCSV, exportarRespaldo, importarRespaldo, limpiarPerfil, limpiarMovimiento, REGLAS, CATEGORIAS, PREGUNTAS, PROMPT_SISTEMA, EJEMPLO, resumen, fondo, deudaInfo, simularDeudas, proteccion, semana, porCategoria, parsearGasto, armarHechos, responder, validarTexto, mensajeWhatsApp, planParaCRM, mxn, iso, aFecha, lunesDe };
 });

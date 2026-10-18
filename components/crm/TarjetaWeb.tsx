@@ -198,7 +198,7 @@ export function TarjetaWeb() {
             {r.semana.repetidos} ya estaban en tu CRM · {pct(r.semana.prospectos, r.semana.planes)}% de los planes
           </Tarjeta>
           <Tarjeta titulo="Reportes en PDF" valor={nf(r.semana.pdfs + r.semana.pdfsCompartidos)}>
-            {r.semana.pdfs} descargados · {r.semana.pdfsCompartidos} compartidos · {r.semana.pdfsMes} del mes (cada uno lleva tu marca)
+            {r.semana.pdfs} descargados · {r.semana.pdfsCompartidos} compartidos · {r.semana.pdfsMes} del mes · {r.semana.pdfsAnio} del año (cada uno lleva tu marca)
           </Tarjeta>
         </div>
         {r.semana.fuentes.length > 0 && (

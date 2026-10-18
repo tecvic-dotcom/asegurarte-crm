@@ -51,12 +51,12 @@ export default async function PrivacidadSemanaPage() {
           <h2 className="font-display text-xl text-ink">2. Lo que escribes en la guía se queda en tu teléfono</h2>
           <p>
             Para armar tu plan la guía te pide el nombre de tu familia, cuántas personas viven en casa, tus ingresos, gastos fijos, deudas,
-            ahorro, los seguros que ya tienes y los movimientos que vayas anotando (gastos, ingresos extra, ahorro apartado y abonos a deudas). <strong>Todo eso se guarda únicamente en tu dispositivo</strong>{" "}
+            ahorro, los seguros que ya tienes y los movimientos que vayas anotando (gastos, ingresos extra, ahorro apartado y abonos a deudas) y las metas de ahorro que nombres. <strong>Todo eso se guarda únicamente en tu dispositivo</strong>{" "}
             (en el almacenamiento del navegador o de la guía instalada). <strong>No llega a nuestros servidores</strong> y nosotros no podemos
             verlo. Puedes borrarlo en cualquier momento con el botón «Borrar mis datos de este teléfono» o limpiando los datos del navegador (antes puedes descargar un respaldo).
           </p>
           <p className="mt-2">
-            Los reportes en PDF (de la semana y del mes), los archivos de Excel, los respaldos y el recordatorio de calendario que descargues se arman en tu teléfono y se guardan donde tú elijas;
+            Los reportes en PDF (de la semana, del mes y del año), los archivos de Excel, los respaldos y el recordatorio de calendario que descargues se arman en tu teléfono y se guardan donde tú elijas;
             tampoco pasan por nuestros servidores. Si compartes un reporte (por ejemplo, por WhatsApp), tú decides con quién: desde ese
             momento ya no depende de nosotros.
           </p>

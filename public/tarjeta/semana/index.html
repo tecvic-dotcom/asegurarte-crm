@@ -96,7 +96,7 @@ input::placeholder{color:#5f6590}
 /* panel */
 .tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;gap:6px;justify-content:center;padding:8px 12px calc(8px + env(safe-area-inset-bottom,0));
   background:rgba(6,7,15,.92);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-top:1px solid var(--line)}
-.tabs button{flex:1;max-width:170px;min-height:54px;border-radius:14px;border:1px solid transparent;background:transparent;color:var(--ink-mute);font-weight:700;font-size:13.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.tabs button{flex:1;max-width:170px;min-height:54px;border-radius:14px;border:1px solid transparent;background:transparent;color:var(--ink-mute);font-weight:700;font-size:12.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
 .tabs button[aria-current=true]{background:var(--glass-2);border-color:var(--line-strong);color:var(--ink)}
 .tabs svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .acc{display:flex;gap:12px;align-items:flex-start}
@@ -175,7 +175,8 @@ select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border
       <li>El tope de gasto de la semana, con lo que llevas y lo que te queda por día.</li>
       <li>Tus 3 acciones de la semana: fondo, deudas y seguros.</li>
       <li>Un semáforo de tu flujo, tu fondo de emergencia, tus deudas y tu protección.</li>
-      <li>Un cuaderno para anotar lo que pasa cada semana, tu racha de semanas cumplidas y reportes en PDF (de la semana y del mes) para guardarlos o compartirlos.</li>
+      <li>Un cuaderno para anotar lo que pasa cada semana, tu racha de semanas cumplidas y reportes en PDF (de la semana, del mes y del año) para guardarlos o compartirlos.</li>
+      <li>Metas de ahorro con nombre (un viaje, la escuela…) y cuánto llevas de cada una.</li>
     </ul>
   </section>
   <div id="instalar" class="card stack" hidden>
@@ -250,6 +251,7 @@ select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border
   <nav class="tabs" aria-label="Secciones">
     <button data-tab="semana" aria-current="true"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>Semana</button>
     <button data-tab="plan"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg>Mi plan</button>
+    <button data-tab="metas"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg>Metas</button>
     <button data-tab="asistente"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.5 7.2L4 20l1-4.5A8 8 0 1 1 21 12z"/></svg>Pregúntame</button>
   </nav>
 </div>
@@ -272,7 +274,7 @@ select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border
   // Misma libreta anónima que la tarjeta /roberto: sin cookies, sin IP, sin nada que identifique a nadie.
   const EP_EVENTO = "/api/tarjeta/evento", EP_PROSPECTO = "/api/semana/prospecto";
   const AVISO_URL = "https://www.especialistaenasegurarte.lat/privacidad/semana";
-  const AVISO_VERSION = "2026-10-18.3"; // igual que AVISO_SEMANA_VERSION en el CRM (lib/semana-reglas.ts)
+  const AVISO_VERSION = "2026-10-18.4"; // igual que AVISO_SEMANA_VERSION en el CRM (lib/semana-reglas.ts)
   const TARJETA_URL = "https://www.especialistaenasegurarte.lat/roberto?s=amigo";
   const COMPARTIR_TEXTO = "Dinero Bajo Control: una guía gratuita para cuidar el dinero de tu hogar, de Roberto Rodríguez - Especialista en Asegurarte. La encuentras en su tarjeta, en «Recursos»:";
   const qs = new URLSearchParams(location.search);
@@ -303,7 +305,8 @@ select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border
   try { const g = JSON.parse(localStorage.getItem(KEY) || "null"); if (g && typeof g === "object") S = { perfil: g.perfil || null, gastos: Array.isArray(g.gastos) ? g.gastos : [], ejemplo: !!g.ejemplo }; } catch (e) {}
   const guardar = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
   let tab = "semana", pregunta = null, paso = 1, editando = false, ultimoId = null, tToast = 0;
-  let semOff = 0, tipoMov = "gasto", fechaMov = null, deudaSel = null;
+  let semOff = 0, tipoMov = "gasto", fechaMov = null, deudaSel = null, destinoSel = "";
+  let metaForm = { abierto: false, error: "", nombre: "", objetivo: "", fecha: "" };
 
   // ---------- pantallas ----------
   function ver(id) { ["intro", "wizard", "panel"].forEach((x) => ($("#" + x).hidden = x !== id)); window.scrollTo(0, 0); }
@@ -373,6 +376,7 @@ select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border
       ingreso: leer("fIngreso"), fijos: { vivienda: leer("fVivienda"), servicios: leer("fServicios"), educacion: leer("fEducacion"), otros: leer("fOtros") },
       basico: leer("fBasico"), ahorro: leer("fAhorro"), deudas, seguros,
       editadoEn: Date.now(), // lo anotado antes de este momento ya está incluido en estas cifras
+      metas: (S.perfil && S.perfil.metas) || [], // las metas no se editan aquí: se conservan
     };
     return M.limpiarPerfil(crudo) || crudo;
   }
@@ -431,6 +435,8 @@ select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border
     const elegida = vivas.some((d) => d.nombre === deudaSel) ? deudaSel : h.deudas.masCara ? h.deudas.masCara.nombre : (vivas[0] && vivas[0].nombre) || "";
     const fechaVal = fechaMov && fechaMov <= hoyIso ? fechaMov : M.iso(dom) < hoyIso ? M.iso(dom) : hoyIso;
     const sinDeudas = tipoMov === "abono" && !vivas.length;
+    const metasAct = (S.perfil.metas || []).filter((g) => g.estado === "activa");
+    const nombresMeta = Object.fromEntries((S.perfil.metas || []).map((g) => [g.id, g.nombre]));
     const dia = (f) => (actual ? cap(etiquetaFecha(f, hoy)) : cap(DIAS[M.aFecha(f).getDay()]).slice(0, 3) + " " + M.aFecha(f).getDate());
 
     // racha de semanas cumplidas y cierre de la semana pasada
@@ -454,7 +460,7 @@ select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border
       <button type="button" class="ghost" id="btnOcultarCierre">Ocultar este resumen</button></section>` : "";
     const compartir = puedeCompartirArchivos();
     const filaPdf = (alcance, etiqueta) => `<div class="k" style="margin-top:4px">${etiqueta}</div><div class="grid2"${compartir ? "" : ' style="grid-template-columns:1fr"'}><button type="button" class="btn primary" data-pdf="descargar" data-alcance="${alcance}">Descargar PDF</button>${compartir ? `<button type="button" class="btn sec" data-pdf="compartir" data-alcance="${alcance}">Compartir PDF</button>` : ""}</div>`;
-    const mesTxt = MESES_L[dm(lun, 3).getMonth()];
+    const mesTxt = MESES_L[dm(lun, 3).getMonth()], anioTxt = dm(lun, 3).getFullYear();
 
     const hero = s.limite > 0 ? `
       <div><div class="soft small">${actual ? "Puedes gastar esta semana" : "Tope de esa semana"}</div><div class="big">${mxn(s.limite)}</div></div>
@@ -467,6 +473,7 @@ select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border
     <form id="fMov" class="card stack" autocomplete="off">
       <div class="tipos" role="group" aria-label="Qué vas a anotar">${Object.keys(CHIP).map((k) => `<button type="button" data-tipo="${k}" aria-pressed="${tipoMov === k}">${CHIP[k]}</button>`).join("")}</div>
       ${tipoMov === "abono" ? (vivas.length ? `<label class="f">¿A cuál deuda?<select id="iDeuda" class="f-sel">${vivas.map((d) => `<option value="${esc(d.nombre)}"${d.nombre === elegida ? " selected" : ""}>${esc(d.nombre)} · debes ${mxn(d.saldo)}</option>`).join("")}</select></label>` : `<p class="soft small">No tienes deudas con saldo. Si tienes una, agrégala en «Editar datos».</p>`) : ""}
+      ${tipoMov === "ahorro" && metasAct.length ? `<label class="f">¿Para qué es?<select id="iMeta" class="f-sel"><option value="">Mi fondo de emergencia</option>${metasAct.map((g) => `<option value="${esc(g.id)}"${g.id === destinoSel ? " selected" : ""}>Meta: ${esc(g.nombre)}</option>`).join("")}</select></label>` : ""}
       <label class="f" for="iMov">${LABEL[tipoMov]}</label>
       <input type="text" id="iMov" maxlength="80" placeholder="${PLACEHOLDER[tipoMov]}" ${sinDeudas ? "disabled" : ""}>
       <label class="f">Fecha<input type="date" id="iFecha" value="${fechaVal}" max="${hoyIso}"></label>
@@ -477,7 +484,7 @@ select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border
     const filas = lista.map((g) => {
       const t = M.tipoDe(g);
       return `<div class="gasto"><div><span class="tipo t-${t}">${CHIP[t]}</span> <b>${esc(dia(g.fecha))}</b> <span class="soft small">· ${esc(g.nota || "")}</span></div><b>${signoMonto(g)}</b><button class="x" data-del="${esc(g.id)}" aria-label="Borrar este movimiento">✕</button>
-      ${t === "gasto" ? `<select data-cat="${esc(g.id)}" aria-label="Categoría">${Object.entries(M.CATEGORIAS).map(([k, n]) => `<option value="${k}"${k === g.categoria ? " selected" : ""}>${n}</option>`).join("")}</select>` : t === "abono" && g.deuda ? `<span class="small mute">a «${esc(g.deuda)}»</span>` : ""}</div>`;
+      ${t === "gasto" ? `<select data-cat="${esc(g.id)}" aria-label="Categoría">${Object.entries(M.CATEGORIAS).map(([k, n]) => `<option value="${k}"${k === g.categoria ? " selected" : ""}>${n}</option>`).join("")}</select>` : t === "abono" && g.deuda ? `<span class="small mute">a «${esc(g.deuda)}»</span>` : t === "ahorro" && g.meta && nombresMeta[g.meta] ? `<span class="small mute">para «${esc(nombresMeta[g.meta])}»</span>` : ""}</div>`;
     }).join("");
 
     return `
@@ -500,6 +507,7 @@ select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border
       <p class="soft small">Se preparan aquí, en tu teléfono. Llevan tu semáforo, tu tope, en qué se fue el gasto y todos los movimientos.</p>
       ${filaPdf("semana", "Semana del " + rango)}
       ${filaPdf("mes", "Mes de " + mesTxt + " · semana por semana")}
+      ${filaPdf("anio", "Año " + anioTxt + " · mes por mes")}
       <button class="ghost" data-csv="semana">Descargar los movimientos de la semana (Excel)</button>
       <p class="small mute" id="pdfMsg" role="status"></p></section>
     <details class="card"><summary>Recordatorio semanal en mi calendario</summary>
@@ -546,6 +554,7 @@ select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border
       <li>Fondo de emergencia: ${M.REGLAS.fondoMesesBase} meses de gastos, o ${M.REGLAS.fondoMesesDependientes} si alguien depende de tu ingreso.</li>
       <li>Orden: primero 1 mes de fondo, luego la deuda de más de ${M.REGLAS.tasaAltaAnual}% anual, después el resto del fondo.</li>
       <li>Deudas: se paga el mínimo en todas y lo extra a la de mayor tasa (avalancha).</li>
+      <li>Metas de ahorro: lo que apartas para una meta con nombre cuenta para esa meta y <b>no</b> para tu fondo de emergencia. Si pones fecha, el ritmo semanal es lo que falta entre las semanas que quedan.</li>
       <li>Lo que anotas mueve tu plan: lo que apartas sube tu fondo y tus abonos bajan el saldo de tus deudas. Un ingreso extra se suma al tope de esa semana. Si editas tus datos, el plan toma esas cifras como punto de partida.</li>
       <li>Todos los números salen de estas reglas, no de una IA.</li></ul></details>`;
   }
@@ -606,6 +615,41 @@ select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border
     c.enviando = false; c.estado = estado; c.consent = false; render();
   }
 
+  function vistaMetas(h, hoy) {
+    const hoyIso = M.iso(hoy), mf = metaForm;
+    const activas = h.metas.filter((g) => g.estado === "activa"), logradas = h.metas.filter((g) => g.estado === "lograda");
+    const fechaTxt = (f) => { const d = M.aFecha(f); return d.getDate() + " " + MESES[d.getMonth()] + " " + d.getFullYear(); };
+    const ritmo = (g) => g.completada ? "🎉 ¡Meta completada! Cuando la uses, márcala como lograda."
+      : g.vencida ? "La fecha (" + fechaTxt(g.fecha) + ") ya pasó. Sigue apartando; si quieres otra fecha, crea la meta de nuevo."
+      : g.fecha ? "Para llegar el " + fechaTxt(g.fecha) + " aparta " + mxn(g.ritmoSemanal) + " por semana (" + g.semanasRestantes + (g.semanasRestantes === 1 ? " semana" : " semanas") + ")."
+      : "Sin fecha: aparta lo que puedas cada semana.";
+    const tarjeta = (g) => `
+    <section class="card stack"><div class="row" style="align-items:baseline"><h3>${esc(g.nombre)}</h3><span class="badge">${g.pct}%</span></div>
+      <div class="bar" role="img" aria-label="${g.pct}% de la meta"><i class="${g.completada ? "verde" : ""}" style="width:${g.pct}%;${g.completada ? "" : "background:var(--brand-2)"}"></i></div>
+      <div class="row small"><span>Llevas <b>${mxn(g.aportado)}</b> de <b>${mxn(g.objetivo)}</b></span><span>${g.completada ? "Completada" : "Faltan <b>" + mxn(g.faltante) + "</b>"}</span></div>
+      <p class="soft small">${esc(ritmo(g))}</p>
+      <form class="stack" data-apartar="${esc(g.id)}" autocomplete="off" novalidate>
+        <div class="grid2" style="align-items:end"><label class="f">Apartar para esta meta<span class="money"><input inputmode="numeric" data-monto placeholder="500"></span></label><button class="btn primary" type="submit">Apartar</button></div>
+      </form>
+      <div class="grid2"><button type="button" class="ghost" data-meta-lograda="${esc(g.id)}">Ya la logré o la usé</button><button type="button" class="ghost" data-meta-borrar="${esc(g.id)}">Eliminar</button></div>
+    </section>`;
+    const lograda = (g) => `<section class="card stack"><div class="row" style="align-items:baseline"><h3>✅ ${esc(g.nombre)}</h3><span class="badge">Lograda</span></div><p class="soft small">Apartaste ${mxn(g.aportado)} de ${mxn(g.objetivo)}.</p><button type="button" class="ghost" data-meta-reactivar="${esc(g.id)}">Reactivar</button></section>`;
+    const formulario = mf.abierto ? `
+      <form id="fMeta" class="stack" novalidate autocomplete="off">
+        <label class="f">¿Cómo se llama tu meta?<input type="text" id="mNombre" maxlength="30" placeholder="Viaje a Cancún" value="${esc(mf.nombre)}"></label>
+        <label class="f">¿Cuánto necesitas juntar?<span class="money"><input inputmode="numeric" id="mObjetivo" placeholder="20,000" value="${esc(mf.objetivo)}"></span></label>
+        <label class="f">¿Para cuándo? (opcional)<input type="date" id="mFecha" min="${hoyIso}" value="${esc(mf.fecha)}"></label>
+        <p class="err" id="mErr" role="alert">${esc(mf.error)}</p>
+        <div class="grid2"><button type="button" class="btn sec" id="btnCancelarMeta">Cancelar</button><button type="submit" class="btn primary">Crear meta</button></div>
+      </form>` : `<button type="button" class="btn primary" id="btnNuevaMeta">+ Nueva meta</button>`;
+    return `
+    <section class="card stack"><h2>Tus metas de ahorro</h2>
+      <p class="soft small">Ponle nombre a lo que quieres lograr (un viaje, la escuela, el enganche) y ve cuánto llevas. Lo que apartes para una meta <b>no</b> cuenta en tu fondo de emergencia.</p>
+      ${formulario}</section>
+    ${activas.length ? activas.map(tarjeta).join("") : mf.abierto ? "" : '<section class="card"><p class="soft small">Todavía no tienes metas. Empieza con una: un viaje, la escuela de los niños, el enganche de un coche…</p></section>'}
+    ${logradas.length ? `<h2>Metas logradas</h2>${logradas.map(lograda).join("")}` : ""}`;
+  }
+
   function vistaAsistente(h) {
     return `<section class="card stack"><h2>Pregúntame lo que importa</h2><p class="soft small">Las respuestas se calculan con tus números.</p>
       <div class="q">${Object.entries(M.PREGUNTAS).map(([k, t]) => `<button data-q="${k}" aria-pressed="${pregunta === k}">${t}</button>`).join("")}</div></section>
@@ -629,7 +673,7 @@ select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border
     const h = (hechosActuales = M.armarHechos(S.perfil, S.gastos, hoy));
     $("#pFamilia").textContent = S.perfil.familia || "Mi familia";
     $("#pSub").textContent = "Un regalo de Roberto Rodríguez";
-    $("#vista").innerHTML = tab === "semana" ? vistaSemana(h, hoy) : tab === "plan" ? vistaPlan(h) : vistaAsistente(h);
+    $("#vista").innerHTML = tab === "semana" ? vistaSemana(h, hoy) : tab === "plan" ? vistaPlan(h) : tab === "metas" ? vistaMetas(h, hoy) : vistaAsistente(h);
     $$(".tabs button").forEach((b) => b.setAttribute("aria-current", b.dataset.tab === tab));
     if (tab === "asistente" && pregunta) responder(pregunta);
   }
@@ -660,11 +704,17 @@ select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border
     if (!g) return toast("No encontré el monto. " + PLACEHOLDER[tipoMov].replace("Ej.:", "Prueba:"));
     g.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6); g.ts = Date.now(); ultimoId = g.id;
     deudaSel = deuda || deudaSel; fechaMov = null;
+    let metaTxt = "";
+    if (tipoMov === "ahorro") { // ¿al fondo de emergencia o a una meta con nombre?
+      const dest = (S.perfil.metas || []).find((x) => x.id === (($("#iMeta") || {}).value || "") && x.estado === "activa");
+      if (dest) { g.meta = dest.id; metaTxt = dest.nombre; destinoSel = dest.id; } else destinoSel = "";
+    }
     S.gastos.push(g); guardar(); render();
     const f = hechosActuales ? hechosActuales.fondo : null;
+    const mp = g.meta && hechosActuales ? hechosActuales.metas.find((x) => x.id === g.meta) : null;
     toast(tipoMov === "gasto" ? "Registré " + mxn(g.monto) + " en " + M.CATEGORIAS[g.categoria].toLowerCase()
       : tipoMov === "ingreso" ? "Ingreso extra de " + mxn(g.monto) + ": se suma al tope de esa semana"
-      : tipoMov === "ahorro" ? "Apartaste " + mxn(g.monto) + (f ? " · tu fondo ya cubre " + f.meses.toFixed(1) + " meses" : "")
+      : tipoMov === "ahorro" ? (metaTxt ? "Apartaste " + mxn(g.monto) + " para «" + metaTxt + "»" + (mp ? (mp.completada ? " · ¡meta completada! 🎉" : " · llevas " + mp.pct + "%") : "") : "Apartaste " + mxn(g.monto) + (f ? " · tu fondo ya cubre " + f.meses.toFixed(1) + " meses" : ""))
       : "Abonaste " + mxn(g.monto) + " a «" + deuda + "»", true);
   }
 
@@ -674,18 +724,19 @@ select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border
     document.body.appendChild(a); a.click();
     setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
   }
+  const sufPdf = (a) => (a === "mes" ? "-mes" : a === "anio" ? "-anio" : "");
   async function hacerPdf(modo, btn) {
     const msg = $("#pdfMsg"), original = btn.textContent;
     let archivo = null;
     btn.disabled = true; btn.textContent = "Preparando…"; if (msg) msg.textContent = "";
     try {
-      const hoy = new Date(), alcance = btn.dataset.alcance || "semana", suf = alcance === "mes" ? "-mes" : "";
-      const rep = alcance === "mes" ? M.armarReporteMensual(S.perfil, S.gastos, dm(M.lunesDe(dm(hoy, 7 * semOff)), 3), hoy) : M.armarReporte(S.perfil, S.gastos, dm(hoy, 7 * (alcance === "prev" ? -1 : semOff)), hoy);
+      const hoy = new Date(), alcance = btn.dataset.alcance || "semana", suf = sufPdf(alcance);
+      const rep = alcance === "mes" ? M.armarReporteMensual(S.perfil, S.gastos, dm(M.lunesDe(dm(hoy, 7 * semOff)), 3), hoy) : alcance === "anio" ? M.armarReporteAnual(S.perfil, S.gastos, dm(M.lunesDe(dm(hoy, 7 * semOff)), 3), hoy) : M.armarReporte(S.perfil, S.gastos, dm(hoy, 7 * (alcance === "prev" ? -1 : semOff)), hoy);
       rep.ejemplo = !!S.ejemplo;
       archivo = await window.Pdf.generar(rep);
       const { blob, nombre } = archivo;
       if (modo === "compartir") {
-        const que = alcance === "mes" ? "Mi reporte de " + rep.periodo.etiqueta : "Mi reporte semanal";
+        const que = alcance === "mes" ? "Mi reporte de " + rep.periodo.etiqueta : alcance === "anio" ? "Mi reporte del año " + rep.periodo.etiqueta : "Mi reporte semanal";
         await navigator.share({ files: [new File([blob], nombre, { type: "application/pdf" })], title: que + " · Dinero Bajo Control", text: que + " en Dinero Bajo Control, de Roberto Rodríguez - Especialista en Asegurarte." });
         track("sf_pdf", "compartir" + suf);
       } else {
@@ -696,7 +747,7 @@ select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border
     } catch (e) {
       if (e && e.name === "AbortError") { /* la persona canceló el menú de compartir */ }
       else if (e && e.name === "NotAllowedError" && archivo) { // el teléfono ya no dejó abrir «Compartir» (pasó mucho tiempo desde el toque): se guarda en descargas
-        descargar(archivo.blob, archivo.nombre); track("sf_pdf", "descarga" + (btn.dataset.alcance === "mes" ? "-mes" : ""));
+        descargar(archivo.blob, archivo.nombre); track("sf_pdf", "descarga" + sufPdf(btn.dataset.alcance));
         if (msg) msg.textContent = "Tu teléfono no dejó compartir directo; guardé el PDF en tus descargas para que lo envíes desde ahí.";
       }
       else if (msg) msg.textContent = navigator.onLine === false ? "Para preparar tu primer PDF necesitas internet; después funciona sin conexión." : "No pude preparar el PDF. Intenta de nuevo.";
@@ -709,7 +760,7 @@ select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border
       movs = S.gastos.filter((m) => m.fecha >= a && m.fecha <= b); nombre = a;
     }
     if (!movs.length) return toast("Todavía no hay movimientos para descargar.");
-    descargar(new Blob(["\ufeff" + M.movimientosCSV(movs)], { type: "text/csv;charset=utf-8" }), "Dinero-Bajo-Control_movimientos_" + nombre + ".csv");
+    descargar(new Blob(["\ufeff" + M.movimientosCSV(movs, S.perfil.metas)], { type: "text/csv;charset=utf-8" }), "Dinero-Bajo-Control_movimientos_" + nombre + ".csv");
   }
   function descargarRespaldo() {
     descargar(new Blob([M.exportarRespaldo(S, new Date().toISOString())], { type: "application/json" }), "Dinero-Bajo-Control_respaldo_" + M.iso(new Date()) + ".json");
@@ -719,6 +770,45 @@ select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border
     const ics = M.recordatorioICS({ dia: Number(($("#rDia") || {}).value), hora: ($("#rHora") || {}).value, ahora: new Date() });
     descargar(new Blob([ics], { type: "text/calendar;charset=utf-8" }), "Dinero-Bajo-Control_recordatorio.ics");
     toast("Listo: abre el archivo para agregarlo a tu calendario.");
+  }
+  function crearMeta() {
+    const v = (id) => ($("#" + id) || {}).value || "";
+    const nombre = v("mNombre").trim().slice(0, 30), objetivoTxt = v("mObjetivo"), objetivo = Number(String(objetivoTxt).replace(/[^\d.]/g, "")) || 0, fecha = v("mFecha"), hoyIso = M.iso(new Date());
+    let error = "";
+    if (nombre.replace(/[^\p{L}\p{N}]/gu, "").length < 2) error = "Ponle un nombre a tu meta (al menos 2 letras).";
+    else if (objetivo <= 0 || objetivo > 1e8) error = "Escribe cuánto necesitas juntar.";
+    else if (fecha && (!DIA_ISO.test(fecha) || fecha < hoyIso)) error = "Elige una fecha de hoy en adelante, o déjala vacía.";
+    else if ((S.perfil.metas || []).length >= M.MAX_METAS) error = "Ya tienes muchas metas: termina o elimina alguna.";
+    if (error) { metaForm = { abierto: true, error, nombre, objetivo: objetivoTxt, fecha }; return render(); }
+    const meta = { id: "m" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), nombre, objetivo, fecha, estado: "activa", creada: hoyIso };
+    S.perfil.metas = [...(S.perfil.metas || []), meta]; guardar();
+    metaForm = { abierto: false, error: "", nombre: "", objetivo: "", fecha: "" }; destinoSel = meta.id; render();
+    toast("Meta creada: «" + nombre + "». Ya puedes apartar para ella.");
+  }
+  function apartarMeta(form) {
+    const id = form.dataset.apartar, g = (S.perfil.metas || []).find((x) => x.id === id), inp = form.querySelector("[data-monto]");
+    const monto = Number(String(inp ? inp.value : "").replace(/[^\d.]/g, "")) || 0;
+    if (!g || monto <= 0 || monto > 1e7) return toast("Escribe cuánto vas a apartar para «" + (g ? g.nombre : "la meta") + "».");
+    const mov = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), tipo: "ahorro", monto, categoria: "ahorro", fecha: M.iso(new Date()), nota: "", meta: id, ts: Date.now() };
+    ultimoId = mov.id; S.gastos.push(mov); guardar(); render();
+    const mp = hechosActuales.metas.find((x) => x.id === id);
+    toast("Apartaste " + mxn(monto) + " para «" + g.nombre + "»" + (mp ? (mp.completada ? " · ¡meta completada! 🎉" : " · llevas " + mp.pct + "%") : ""), true);
+  }
+  function cambiarMeta(id, estado) {
+    const g = (S.perfil.metas || []).find((x) => x.id === id);
+    if (!g) return;
+    g.estado = estado; guardar(); render();
+    toast(estado === "lograda" ? "¡Felicidades! Meta lograda: «" + g.nombre + "»" : "Meta reactivada: «" + g.nombre + "»");
+  }
+  function borrarMeta(id) {
+    const g = (S.perfil.metas || []).find((x) => x.id === id);
+    if (!g) return;
+    const mp = hechosActuales.metas.find((x) => x.id === id), aportado = mp ? mp.aportado : 0;
+    if (!confirm("¿Eliminar la meta «" + g.nombre + "»?" + (aportado > 0 ? " Lo apartado (" + mxn(aportado) + ") pasará a tu fondo de emergencia." : ""))) return;
+    let n = 0;
+    S.gastos.forEach((m) => { if (m.meta === id) { delete m.meta; m.ts = Date.now() + n++; } }); // lo apartado vuelve al fondo y cuenta desde hoy
+    S.perfil.metas = S.perfil.metas.filter((x) => x.id !== id); guardar(); render();
+    toast("Meta eliminada.");
   }
   async function restaurar(inp) {
     const f = inp.files && inp.files[0]; inp.value = "";
@@ -774,6 +864,11 @@ select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border
     if (t.dataset.ir !== undefined) { semOff = Math.max(-52, Math.min(0, Number(t.dataset.ir))); fechaMov = null; render(); window.scrollTo(0, 0); return; }
     if (t.id === "btnOcultarCierre") { const c = M.armarCierre(S.perfil, S.gastos, new Date()); if (c) { try { localStorage.setItem("msf.cierre", c.semana.desde); } catch (e) {} } return render(); }
     if (t.id === "btnRecordar") return recordar();
+    if (t.id === "btnNuevaMeta") { metaForm = { abierto: true, error: "", nombre: "", objetivo: "", fecha: "" }; render(); const n = $("#mNombre"); if (n) n.focus(); return; }
+    if (t.id === "btnCancelarMeta") { metaForm = { abierto: false, error: "", nombre: "", objetivo: "", fecha: "" }; return render(); }
+    if (t.dataset.metaLograda) return cambiarMeta(t.dataset.metaLograda, "lograda");
+    if (t.dataset.metaReactivar) return cambiarMeta(t.dataset.metaReactivar, "activa");
+    if (t.dataset.metaBorrar) return borrarMeta(t.dataset.metaBorrar);
     if (t.dataset.tab) { tab = t.dataset.tab; window.scrollTo(0, 0); return render(); }
     if (t.dataset.q) { pregunta = t.dataset.q; render(); const r = $("#resp"); if (r) r.scrollIntoView({ behavior: "smooth", block: "nearest" }); return; }
     if (t.dataset.del) { S.gastos = S.gastos.filter((g) => g.id !== t.dataset.del); guardar(); return render(); }
@@ -786,11 +881,14 @@ select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border
     if (t.id === "cConsent") { contacto.consent = t.checked; return; }
     if (t.id === "iFecha") { fechaMov = t.value || null; return; }
     if (t.id === "iDeuda") { deudaSel = t.value; return; }
+    if (t.id === "iMeta") { destinoSel = t.value; return; }
     if (t.id === "fRestaurar") return void restaurar(t);
     if (t.dataset.cat) { const g = S.gastos.find((x) => x.id === t.dataset.cat); if (g) { g.categoria = t.value; guardar(); render(); } }
   });
   document.addEventListener("submit", (e) => {
     if (e.target.id === "fContacto") { e.preventDefault(); return void enviarContacto(); }
+    if (e.target.id === "fMeta") { e.preventDefault(); return crearMeta(); }
+    if (e.target.dataset && e.target.dataset.apartar) { e.preventDefault(); return apartarMeta(e.target); }
     if (e.target.id !== "fMov") return;
     e.preventDefault();
     registrar();

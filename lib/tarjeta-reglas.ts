@@ -32,7 +32,7 @@ export const EVENTOS_TARJETA = [
   "sf_instalar", // la instaló en su teléfono
   "sf_wa", // tocó el botón de WhatsApp (detalle: datos | directo)
   "sf_dato", // dejó sus datos y se guardó el prospecto (lo manda el SERVIDOR; detalle: nuevo | repetido)
-  "sf_pdf", // descargó o compartió un reporte en PDF (detalle: descarga | compartir; con «-mes» si es el reporte del mes)
+  "sf_pdf", // descargó o compartió un reporte en PDF (detalle: descarga | compartir; con «-mes» o «-anio» si es el reporte del mes o del año)
 ] as const;
 export type EventoTarjeta = (typeof EVENTOS_TARJETA)[number];
 
@@ -103,8 +103,9 @@ export interface ResumenSemana {
   /** Reportes semanales en PDF descargados / compartidos (se arman en el teléfono: solo se cuenta el toque). */
   pdfs: number;
   pdfsCompartidos: number;
-  /** De los anteriores, cuántos fueron el reporte MENSUAL. */
+  /** De los anteriores, cuántos fueron el reporte MENSUAL y cuántos el ANUAL. */
   pdfsMes: number;
+  pdfsAnio: number;
   fuentes: Conteo[];
 }
 
@@ -217,9 +218,10 @@ export function resumir(filas: FilaEvento[], dias: number, hoy: string): Omit<Re
       waDirecto: sf("sf_wa", "directo"),
       prospectos: sf("sf_dato", "nuevo"),
       repetidos: sf("sf_dato", "repetido"),
-      pdfs: sf("sf_pdf", "descarga") + sf("sf_pdf", "descarga-mes"),
-      pdfsCompartidos: sf("sf_pdf", "compartir") + sf("sf_pdf", "compartir-mes"),
+      pdfs: sf("sf_pdf", "descarga") + sf("sf_pdf", "descarga-mes") + sf("sf_pdf", "descarga-anio"),
+      pdfsCompartidos: sf("sf_pdf", "compartir") + sf("sf_pdf", "compartir-mes") + sf("sf_pdf", "compartir-anio"),
       pdfsMes: sf("sf_pdf", "descarga-mes") + sf("sf_pdf", "compartir-mes"),
+      pdfsAnio: sf("sf_pdf", "descarga-anio") + sf("sf_pdf", "compartir-anio"),
       fuentes: contar(dentro, "sf_abrir", (f) => f.fuente || "directo", 6),
     },
   };

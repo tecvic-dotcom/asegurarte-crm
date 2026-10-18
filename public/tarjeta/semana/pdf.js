@@ -41,17 +41,18 @@
   }
 
   // Solo caracteres que las letras del PDF saben dibujar (lo demás, como un emoji en una nota, se quita).
+  const cap = (t) => String(t).charAt(0).toUpperCase() + String(t).slice(1);
   const limpiar = (t) => String(t == null ? "" : t).replace(/−/g, "-").replace(/[^ -~ -ÿ–—‘’“”•…€]/g, "").replace(/\s+/g, " ").trim();
 
   async function generar(rep) {
     const L = await cargar();
     const T = rep.textos || { encabezado: "REPORTE SEMANAL", tope: "Tope de la semana", categorias: "En qué se fue el gasto", sinGastos: "Sin gastos registrados esta semana.", topeTitulo: "Cómo vas contra tu tope", movimientos: "Movimientos de la semana", vacio: "Todavía no hay movimientos en esta semana.", total: "Gastos de la semana (cuentan contra tu tope)", accion: "Tu acción para la próxima semana" };
-    const mensual = rep.tipo === "mensual";
+    const mensual = rep.tipo === "mensual", anual = rep.tipo === "anual";
     const doc = new L.jsPDF({ unit: "pt", format: [612, 792], compress: true });
     doc.addFileToVFS("Anton-Regular.ttf", L.anton);
     doc.addFont("Anton-Regular.ttf", "Anton", "normal");
     doc.setProperties({
-      title: (mensual ? "Reporte mensual" : "Reporte semanal") + " · " + limpiar(rep.familia) + " · " + rep.periodo.etiqueta,
+      title: (anual ? "Reporte anual" : mensual ? "Reporte mensual" : "Reporte semanal") + " · " + limpiar(rep.familia) + " · " + rep.periodo.etiqueta,
       subject: "Dinero Bajo Control", author: "Dinero Bajo Control · Roberto Rodríguez - Especialista en Asegurarte", creator: "Dinero Bajo Control",
     });
 
@@ -126,7 +127,7 @@
 
     // título
     texto(rep.familia, MARGEN, y + 40, { anton: true, cursiva: true, size: 28, color: COL.ink });
-    const extra = mensual
+    const extra = mensual || anual
       ? (rep.semanasCerradas ? " · Semanas cumplidas: " + rep.semanasCumplidas + " de " + rep.semanasCerradas : "")
       : (rep.racha >= 1 ? " · Racha: " + rep.racha + (rep.racha === 1 ? " semana cumplida" : " semanas cumplidas") : "");
     texto("Dinero Bajo Control · " + rep.periodo.subtitulo + extra, MARGEN, y + 60, { size: 12.5, color: COL.mute });
@@ -154,18 +155,23 @@
 
     // cifras
     y += SH + 10;
-    const k = rep.kpis, KH = 48, KW = (W - 2 * MARGEN - 14) / 3;
-    const pasado = k.restante < 0;
-    const tarjetas = [
-      [T.tope, k.tope], ["Gastaste", k.gastado], [pasado ? "Te pasaste por" : "Te quedó", Math.abs(k.restante)],
-      ["Ingresos extra", k.ingresosExtra], ["Apartaste para tu fondo", k.ahorrado], ["Abonaste a deudas", k.abonado],
-    ];
+    const KH = 48, KW = (W - 2 * MARGEN - 14) / 3;
     const mxn = (n) => "$" + Math.round(n).toLocaleString("en-US");
-    tarjetas.forEach(([et, v], i) => {
-      const x = MARGEN + (i % 3) * (KW + 7), yy = y + Math.floor(i / 3) * (KH + 7), resaltada = i === 2;
-      caja(x, yy, KW, KH, resaltada ? { fill: pasado ? COL.rojo : COL.royal, radio: 10 } : { fill: COL.blanco, stroke: COL.linea, radio: 10 });
-      texto(et, x + 12, yy + 17, { size: 10.5, color: resaltada ? [207, 214, 255] : COL.mute });
-      texto(mxn(v), x + 12, yy + 40, { anton: true, cursiva: true, size: 22, color: resaltada ? COL.blanco : COL.ink });
+    let pasado = false, tarjetas;
+    if (rep.tarjetas) tarjetas = rep.tarjetas.map((t) => ({ et: t.etiqueta, v: t.valor, res: !!t.resalta })); // reporte anual: ya vienen armadas
+    else {
+      const k = rep.kpis;
+      pasado = k.restante < 0;
+      tarjetas = [
+        [T.tope, k.tope], ["Gastaste", k.gastado], [pasado ? "Te pasaste por" : "Te quedó", Math.abs(k.restante)],
+        ["Ingresos extra", k.ingresosExtra], ["Apartaste (fondo y metas)", k.ahorrado], ["Abonaste a deudas", k.abonado],
+      ].map(([et, v], n) => ({ et, v: mxn(v), res: n === 2 }));
+    }
+    tarjetas.forEach((t, n) => {
+      const x = MARGEN + (n % 3) * (KW + 7), yy = y + Math.floor(n / 3) * (KH + 7);
+      caja(x, yy, KW, KH, t.res ? { fill: pasado ? COL.rojo : COL.royal, radio: 10 } : { fill: COL.blanco, stroke: COL.linea, radio: 10 });
+      texto(t.et, x + 12, yy + 17, { size: 10.5, color: t.res ? [207, 214, 255] : COL.mute });
+      texto(t.v, x + 12, yy + 40, { anton: true, cursiva: true, size: 22, color: t.res ? COL.blanco : COL.ink });
     });
     y += 2 * KH + 7 + 12;
 
@@ -182,12 +188,74 @@
       caja(MARGEN, yy + 16, Math.max(8, cw * c.rel), 8, { fill: COL.royal2, radio: 4 });
     });
     const altoCats = 26 + Math.max(1, cats.length) * 28 + 6;
-    caja(tx, y, tw, 118, { fill: COL.blanco, stroke: COL.linea, radio: 10 });
-    texto(T.topeTitulo, tx + 12, y + 26, { anton: true, cursiva: true, size: 15 });
-    caja(tx + 12, y + 40, tw - 24, 14, { fill: COL.pista, radio: 7 });
-    caja(tx + 12, y + 40, Math.max(14, (tw - 24) * Math.min(1, Math.max(0, rep.uso) / 100)), 14, { fill: COLOR_SEMAFORO[rep.color] || COL.royal2, radio: 7 });
-    lineas(rep.uso + "% usado. " + rep.mensajeTope, tw - 24, { size: 11.5 }).slice(0, 4).forEach((l, i) => texto(l, tx + 12, y + 76 + i * 14, { size: 11.5, color: COL.mute }));
-    y += Math.max(altoCats, 118) + 12;
+    let altoDer = 118;
+    if (anual) {
+      const ls = [];
+      rep.resumenTexto.forEach((t) => lineas("• " + t, tw - 24, { size: 11 }).forEach((l, n) => ls.push(n ? "   " + l : l)));
+      altoDer = Math.max(118, 46 + ls.length * 13.5 + 6);
+      caja(tx, y, tw, altoDer, { fill: COL.blanco, stroke: COL.linea, radio: 10 });
+      texto(T.topeTitulo, tx + 12, y + 26, { anton: true, cursiva: true, size: 15 });
+      ls.forEach((l, n) => texto(l, tx + 12, y + 46 + n * 13.5, { size: 11, color: COL.mute }));
+    } else {
+      caja(tx, y, tw, 118, { fill: COL.blanco, stroke: COL.linea, radio: 10 });
+      texto(T.topeTitulo, tx + 12, y + 26, { anton: true, cursiva: true, size: 15 });
+      caja(tx + 12, y + 40, tw - 24, 14, { fill: COL.pista, radio: 7 });
+      caja(tx + 12, y + 40, Math.max(14, (tw - 24) * Math.min(1, Math.max(0, rep.uso) / 100)), 14, { fill: COLOR_SEMAFORO[rep.color] || COL.royal2, radio: 7 });
+      lineas(rep.uso + "% usado. " + rep.mensajeTope, tw - 24, { size: 11.5 }).slice(0, 4).forEach((l, n) => texto(l, tx + 12, y + 76 + n * 14, { size: 11.5, color: COL.mute }));
+    }
+    y += Math.max(altoCats, altoDer) + 12;
+
+    // metas de ahorro con nombre (si las hay)
+    const activas = (rep.metas || []).filter((g) => g.estado === "activa").slice(0, 4);
+    if (activas.length) {
+      const logradas = rep.metas.filter((g) => g.estado === "lograda").length;
+      if (y + 26 + activas.length * 30 + 10 > LIMITE) nuevaHoja();
+      texto("Tus metas de ahorro", MARGEN, y + 14, { anton: true, cursiva: true, size: 15 });
+      if (logradas) texto(logradas + (logradas === 1 ? " meta lograda" : " metas logradas"), W - MARGEN, y + 13, { size: 10.5, color: COL.mute, align: "right" });
+      activas.forEach((g, n) => {
+        const yy = y + 26 + n * 30;
+        texto(recortar(g.nombre, 330, { size: 11.5, peso: "bold" }), MARGEN, yy + 11, { size: 11.5, peso: "bold" });
+        const ritmo = g.completada ? "¡Completada!" : g.vencida ? "La fecha ya pasó" : g.ritmoSemanal ? "Aparta " + mxn(g.ritmoSemanal) + " por semana" : "";
+        texto(mxn(g.aportado) + " de " + mxn(g.objetivo) + " · " + g.pct + "%" + (ritmo ? " · " + ritmo : ""), W - MARGEN, yy + 11, { size: 11, color: COL.mute, align: "right" });
+        caja(MARGEN, yy + 16, W - 2 * MARGEN, 8, { fill: COL.pista, radio: 4 });
+        caja(MARGEN, yy + 16, Math.max(8, ((W - 2 * MARGEN) * g.pct) / 100), 8, { fill: g.completada ? COL.verde : COL.royal2, radio: 4 });
+      });
+      y += 26 + activas.length * 30 + 10;
+    }
+
+    // mes por mes (solo en el reporte anual)
+    if (rep.tablaMeses && rep.tablaMeses.length) {
+      const SM = { mes: MARGEN + 8, gasto: MARGEN + 262, ing: MARGEN + 392, apar: MARGEN + 512, abon: MARGEN + 622, fondo: W - MARGEN - 8 };
+      const celda = (n) => (n > 0 ? mxn(n) : "–");
+      if (y + 22 + 15 + 20 > LIMITE) nuevaHoja();
+      texto(T.meses || "Mes por mes", MARGEN, y + 14, { anton: true, cursiva: true, size: 15 });
+      y += 22;
+      [["MES", SM.mes, "left"], ["GASTASTE", SM.gasto, "right"], ["INGRESOS EXTRA", SM.ing, "right"], ["APARTASTE", SM.apar, "right"], ["ABONASTE", SM.abon, "right"], ["FONDO (MESES)", SM.fondo, "right"]]
+        .forEach(([t, x, al]) => texto(t, x, y + 10, { size: 9, peso: "bold", color: COL.mute, align: al, espacio: 0.7 }));
+      raya(MARGEN, y + 15, W - MARGEN, COL.ink, 2);
+      y += 15;
+      rep.tablaMeses.forEach((m, n) => {
+        if (y + 20 > LIMITE) nuevaHoja();
+        if (n % 2 === 1) caja(MARGEN, y, W - 2 * MARGEN, 20, { fill: COL.suave });
+        const vacio = !m.gastado && !m.ingresosExtra && !m.ahorrado && !m.abonado;
+        texto(cap(m.nombre), SM.mes, y + 14, { size: 11.5, color: vacio ? COL.mute : COL.ink });
+        texto(celda(m.gastado), SM.gasto, y + 14, { size: 11.5, align: "right", color: vacio ? COL.mute : COL.ink });
+        texto(celda(m.ingresosExtra), SM.ing, y + 14, { size: 11.5, align: "right", color: vacio ? COL.mute : COL.ink });
+        texto(celda(m.ahorrado), SM.apar, y + 14, { size: 11.5, align: "right", color: vacio ? COL.mute : COL.ink });
+        texto(celda(m.abonado), SM.abon, y + 14, { size: 11.5, align: "right", color: vacio ? COL.mute : COL.ink });
+        texto(m.fondo == null ? "–" : m.fondo.toFixed(1), SM.fondo, y + 14, { size: 11.5, align: "right", color: m.fondo == null ? COL.mute : COL.ink });
+        raya(MARGEN, y + 20, W - MARGEN, COL.linea, 0.8);
+        y += 20;
+      });
+      const tot = (c) => rep.tablaMeses.reduce((a, m) => a + (m[c] || 0), 0);
+      raya(MARGEN, y + 2, W - MARGEN, COL.ink, 2);
+      texto("Total del año", SM.mes, y + 19, { size: 11.5, peso: "bold" });
+      texto(mxn(tot("gastado")), SM.gasto, y + 19, { size: 11.5, peso: "bold", align: "right" });
+      texto(mxn(tot("ingresosExtra")), SM.ing, y + 19, { size: 11.5, peso: "bold", align: "right" });
+      texto(mxn(tot("ahorrado")), SM.apar, y + 19, { size: 11.5, peso: "bold", align: "right" });
+      texto(mxn(tot("abonado")), SM.abon, y + 19, { size: 11.5, peso: "bold", align: "right" });
+      y += 28;
+    }
 
     // semana por semana (solo en el reporte mensual)
     if (rep.semanas && rep.semanas.length) {
@@ -228,6 +296,7 @@
       y += 15;
     }
     function nuevaHoja() { doc.addPage(); y = encabezado(false) + 14; }
+    if (y + 22 + 15 + RH * 2 + 4 > LIMITE) nuevaHoja(); // que el título no se quede solo al final de una hoja
     texto(T.movimientos, MARGEN, y + 14, { anton: true, cursiva: true, size: 15 });
     y += 22;
     cabezaTabla();
@@ -267,7 +336,7 @@
     const total = doc.getNumberOfPages();
     for (let i = 1; i <= total; i++) { doc.setPage(i); pie(i, total); }
 
-    return { blob: doc.output("blob"), nombre: "Dinero-Bajo-Control_" + (mensual ? "mes" : "semana") + "_" + (rep.periodo.clave || rep.periodo.desde) + ".pdf", paginas: total };
+    return { blob: doc.output("blob"), nombre: "Dinero-Bajo-Control_" + (anual ? "anio" : mensual ? "mes" : "semana") + "_" + (rep.periodo.clave || rep.periodo.desde) + ".pdf", paginas: total };
   }
 
   root.Pdf = { generar, cargar };
