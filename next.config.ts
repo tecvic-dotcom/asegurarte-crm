@@ -69,7 +69,7 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  // App gratuita «Dinero Bajo Control»: /semana lleva a su página; sus archivos viven en public/tarjeta/semana/ y salen
+  // Guía gratuita «Dinero Bajo Control»: /semana lleva a su página; sus archivos viven en public/tarjeta/semana/ y salen
   // bajo /semana/... para que sus rutas relativas, su manifiesto y su service worker queden dentro de /semana/.
   async redirects() {
     return [{ source: "/semana", destination: "/semana/index.html", permanent: false }];

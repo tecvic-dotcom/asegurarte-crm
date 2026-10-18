@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 /**
- * Guarda como prospecto a quien, desde la app «Dinero Bajo Control» (/semana), pidió que Roberto lo contacte.
+ * Guarda como prospecto a quien, desde la guía «Dinero Bajo Control» (/semana), pidió que Roberto lo contacte.
  * Solo acepta datos de contacto, el consentimiento y el plan en semáforo (nunca montos). Validación completa en el
  * servidor, solo desde tu propio sitio, con límite por IP. 422 = errores por campo.
  */

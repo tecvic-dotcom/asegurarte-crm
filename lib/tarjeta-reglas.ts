@@ -26,8 +26,8 @@ export const EVENTOS_TARJETA = [
   "faq", // abrió una pregunta frecuente
   "rec", // tocó una recomendación de «Para ti»
   "car", // deslizó un carrusel
-  // App «Dinero Bajo Control» (/semana). La tabla limita el nombre a 20 caracteres.
-  "sf_abrir", // abrió la app
+  // Guía «Dinero Bajo Control» (/semana). La tabla limita el nombre a 20 caracteres.
+  "sf_abrir", // abrió la guía
   "sf_plan", // terminó de armar su plan (detalle: plan | ejemplo)
   "sf_instalar", // la instaló en su teléfono
   "sf_wa", // tocó el botón de WhatsApp (detalle: datos | directo)

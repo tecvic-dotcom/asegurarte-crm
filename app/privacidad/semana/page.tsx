@@ -9,9 +9,9 @@ export const metadata: Metadata = {
 };
 
 /**
- * Aviso de privacidad PROPIO de la app «Dinero Bajo Control» (/semana). Describe lo que la app realmente hace:
+ * Aviso de privacidad PROPIO de la guía «Dinero Bajo Control» (/semana). Describe lo que la guía realmente hace:
  * las cifras se quedan en el teléfono, hay un contador anónimo y solo si la persona lo pide se guardan su contacto y su semáforo.
- * Si cambias lo que la app recaba, actualiza este texto y AVISO_SEMANA_VERSION (lib/semana-reglas.ts): esa versión
+ * Si cambias lo que la guía recaba, actualiza este texto y AVISO_SEMANA_VERSION (lib/semana-reglas.ts): esa versión
  * queda anotada en cada prospecto como prueba del consentimiento.
  */
 export default async function PrivacidadSemanaPage() {
@@ -24,7 +24,7 @@ export default async function PrivacidadSemanaPage() {
     <main className="mx-auto max-w-3xl px-5 py-16">
       {/* <a> normal: /semana es un archivo estático (rewrite), no una página de Next */}
       <a href="/semana" className="text-sm text-ink-mute underline hover:text-ink-soft">
-        ← Volver a la app
+        ← Volver a la guía
       </a>
       <h1 className="mt-6 font-display text-3xl sm:text-4xl">Aviso de privacidad · Dinero Bajo Control</h1>
       <p className="mt-2 text-sm text-ink-mute">Versión {AVISO_SEMANA_VERSION} (18 de octubre de 2026).</p>
@@ -38,7 +38,7 @@ export default async function PrivacidadSemanaPage() {
               {correo}
             </a>
             , es responsable del tratamiento de los datos personales que se describen aquí, conforme a la Ley Federal de Protección de
-            Datos Personales en Posesión de los Particulares (LFPDPPP). Este aviso aplica solo a la app «Dinero Bajo Control»; el aviso del
+            Datos Personales en Posesión de los Particulares (LFPDPPP). Este aviso aplica solo a la guía «Dinero Bajo Control»; el aviso del
             sitio y de la tarjeta digital está en{" "}
             <a href="/privacidad" className="text-brand-2 underline">
               /privacidad
@@ -48,11 +48,11 @@ export default async function PrivacidadSemanaPage() {
         </section>
 
         <section>
-          <h2 className="font-display text-xl text-ink">2. Lo que escribes en la app se queda en tu teléfono</h2>
+          <h2 className="font-display text-xl text-ink">2. Lo que escribes en la guía se queda en tu teléfono</h2>
           <p>
-            Para armar tu plan la app te pide el nombre de tu familia, cuántas personas viven en casa, tus ingresos, gastos fijos, deudas,
+            Para armar tu plan la guía te pide el nombre de tu familia, cuántas personas viven en casa, tus ingresos, gastos fijos, deudas,
             ahorro, los seguros que ya tienes y los gastos que vayas anotando. <strong>Todo eso se guarda únicamente en tu dispositivo</strong>{" "}
-            (en el almacenamiento del navegador o de la app instalada). <strong>No llega a nuestros servidores</strong> y nosotros no podemos
+            (en el almacenamiento del navegador o de la guía instalada). <strong>No llega a nuestros servidores</strong> y nosotros no podemos
             verlo. Puedes borrarlo en cualquier momento con el botón «Borrar mis datos de este teléfono» o limpiando los datos del navegador.
           </p>
         </section>
@@ -60,11 +60,11 @@ export default async function PrivacidadSemanaPage() {
         <section>
           <h2 className="font-display text-xl text-ink">3. Medición anónima</h2>
           <p>
-            Contamos de forma <strong>anónima</strong> cuántas veces se abre la app, cuántas veces alguien termina de armar su plan, cuántas
+            Contamos de forma <strong>anónima</strong> cuántas veces se abre la guía, cuántas veces alguien termina de armar su plan, cuántas
             veces se instala y cuántas veces se toca el botón de WhatsApp o se deja el contacto, y desde qué tipo de pantalla (celular o
             computadora) y qué enlace se llegó (por ejemplo, Instagram). Esta medición{" "}
             <strong>no usa cookies, no guarda tu dirección IP, tu nombre ni tu teléfono</strong> y no puede relacionarse contigo. Sirve solo
-            para saber si la app es útil y mejorarla.
+            para saber si la guía es útil y mejorarla.
           </p>
         </section>
 
@@ -84,7 +84,7 @@ export default async function PrivacidadSemanaPage() {
           <p className="mt-2">
             <strong>No recibimos tus montos</strong> (ingresos, gastos, deudas ni ahorro), ni el nombre de tu familia, ni tu ubicación. Como
             el semáforo y lo que te falta proteger reflejan tu situación económica, los tratamos como datos patrimoniales y por eso te pedimos
-            tu <strong>consentimiento expreso</strong> con la casilla de la app; sin ella no se envía nada.
+            tu <strong>consentimiento expreso</strong> con la casilla de la guía; sin ella no se envía nada.
           </p>
           <p className="mt-2">
             Para evitar abusos, el servidor usa tu dirección IP unos instantes para limitar envíos repetidos; <strong>no se guarda</strong> con tus
@@ -92,7 +92,7 @@ export default async function PrivacidadSemanaPage() {
           </p>
           <p className="mt-2">
             Si prefieres no dejar tus datos, puedes usar «Solo abrir WhatsApp»: se abre WhatsApp con un mensaje que tú ves y decides si
-            mandas; en ese caso la app no nos envía nada.
+            mandas; en ese caso la guía no nos envía nada.
           </p>
         </section>
 
@@ -147,23 +147,23 @@ export default async function PrivacidadSemanaPage() {
         <section>
           <h2 className="font-display text-xl text-ink">9. Solo para personas adultas</h2>
           <p>
-            La app es para personas mayores de edad. No recabamos datos de menores: solo se pide cuántas personas viven en casa, como un
+            La guía es para personas mayores de edad. No recabamos datos de menores: solo se pide cuántas personas viven en casa, como un
             número.
           </p>
         </section>
 
         <section>
-          <h2 className="font-display text-xl text-ink">10. Lo que la app es y lo que no es</h2>
+          <h2 className="font-display text-xl text-ink">10. Lo que la guía es y lo que no es</h2>
           <p>
             «Dinero Bajo Control» es una herramienta de orientación educativa. No es asesoría financiera, fiscal ni legal, ni una cotización
-            de seguros. Los cálculos se hacen con reglas fijas visibles en la propia app.
+            de seguros. Los cálculos se hacen con reglas fijas visibles en la propia guía.
           </p>
         </section>
 
         <section>
           <h2 className="font-display text-xl text-ink">11. Cambios a este aviso</h2>
           <p>
-            Si cambia lo que la app recaba o cómo lo usa, publicaremos aquí la nueva versión antes de empezar a aplicarla. La versión
+            Si cambia lo que la guía recaba o cómo lo usa, publicaremos aquí la nueva versión antes de empezar a aplicarla. La versión
             vigente aparece al inicio de esta página.
           </p>
         </section>

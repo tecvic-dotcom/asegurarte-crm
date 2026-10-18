@@ -142,7 +142,7 @@ details ul{margin:4px 0 0;padding-left:20px;color:var(--ink-soft);font-size:14.5
     <p class="soft">Contesta 4 pantallas y recibe un plan simple: cuánto pueden gastar, qué abonar y qué les falta proteger. Se actualiza cada semana.</p>
     <button class="btn primary" id="btnEmpezar">Armar mi plan (3 minutos)</button>
     <button class="btn sec" id="btnEjemplo">Verlo con una familia de ejemplo</button>
-    <p class="small mute">🔒 Lo que escribes se queda en este teléfono: nadie lo ve, ni Roberto. Solo contamos de forma anónima cuántas personas usan la app (sin cookies ni IP). Si tú decides que Roberto te contacte, ahí sí te pedimos tus datos y tu permiso. <a href="https://www.especialistaenasegurarte.lat/privacidad/semana" target="_blank" rel="noopener">Aviso de privacidad</a></p>
+    <p class="small mute">🔒 Lo que escribes se queda en este teléfono: nadie lo ve, ni Roberto. Solo contamos de forma anónima cuántas personas usan la guía (sin cookies ni IP). Si tú decides que Roberto te contacte, ahí sí te pedimos tus datos y tu permiso. <a href="https://www.especialistaenasegurarte.lat/privacidad/semana" target="_blank" rel="noopener">Aviso de privacidad</a></p>
   </section>
   <section class="card stack">
     <h3>Lo que vas a recibir</h3>
@@ -154,7 +154,7 @@ details ul{margin:4px 0 0;padding-left:20px;color:var(--ink-soft);font-size:14.5
   </section>
   <div id="instalar" class="card stack" hidden>
     <h3>Llévala en tu teléfono</h3>
-    <button class="btn sec" id="btnInstalar" hidden>Instalar la app</button>
+    <button class="btn sec" id="btnInstalar" hidden>Instalar la guía</button>
     <p class="small soft" id="tipIos" hidden>En iPhone: toca <b>Compartir</b> y luego <b>Agregar a pantalla de inicio</b>.</p>
   </div>
   <p class="legal">Orientación educativa. No es asesoría financiera, fiscal ni cotización de seguros. · <a href="https://www.especialistaenasegurarte.lat/privacidad/semana" target="_blank" rel="noopener">Aviso de privacidad</a></p>
@@ -210,8 +210,8 @@ details ul{margin:4px 0 0;padding-left:20px;color:var(--ink-soft);font-size:14.5
     <div class="top"><div class="brand"><b id="pFamilia">Dinero Bajo Control</b><span id="pSub"></span></div><button class="ghost" id="pEditar">Editar datos</button></div>
     <main id="vista" class="stack"></main>
     <div id="pie" class="stack">
-      <div id="instalar2" class="card stack" hidden><button class="btn sec" id="btnInstalar2">Instalar la app en mi teléfono</button></div>
-      <button class="ghost" id="btnCompartir">Recomendar esta app con un amigo</button>
+      <div id="instalar2" class="card stack" hidden><button class="btn sec" id="btnInstalar2">Instalar la guía en mi teléfono</button></div>
+      <button class="ghost" id="btnCompartir">Recomendar esta guía con un amigo</button>
       <button class="ghost" id="btnBorrar">Borrar mis datos de este teléfono</button>
       <p class="legal">Orientación educativa. No es asesoría financiera, fiscal ni cotización de seguros. · <a href="https://www.especialistaenasegurarte.lat/privacidad/semana" target="_blank" rel="noopener">Aviso de privacidad</a></p>
     </div>
@@ -462,7 +462,7 @@ details ul{margin:4px 0 0;padding-left:20px;color:var(--ink-soft);font-size:14.5
           <label class="f">Tu WhatsApp<small>10 dígitos. Es por donde te escribirá.</small><input type="tel" inputmode="tel" id="cWa" maxlength="18" autocomplete="tel" value="${esc(c.whatsapp)}" placeholder="81 1234 5678"></label>
           <label class="f">Tu correo (opcional)<input type="text" inputmode="email" id="cCorreo" maxlength="80" autocomplete="email" value="${esc(c.correo)}" placeholder="nombre@correo.com"></label>
           <input type="text" id="cTrampa" name="sitio" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">
-          <label class="f" style="flex-direction:row;align-items:flex-start;gap:10px;font-weight:400"><input type="checkbox" id="cConsent" ${c.consent ? "checked" : ""} style="width:22px;height:22px;margin-top:2px;flex:none"><span class="small">Autorizo que Roberto Rodríguez guarde mi nombre, mi WhatsApp y mi correo (si lo escribí), y el semáforo de este plan —<b>sin mis montos</b>— para contactarme sobre lo que me falta proteger. Leí el <a href="${AVISO_URL}" target="_blank" rel="noopener">Aviso de privacidad</a> de esta app.</span></label>
+          <label class="f" style="flex-direction:row;align-items:flex-start;gap:10px;font-weight:400"><input type="checkbox" id="cConsent" ${c.consent ? "checked" : ""} style="width:22px;height:22px;margin-top:2px;flex:none"><span class="small">Autorizo que Roberto Rodríguez guarde mi nombre, mi WhatsApp y mi correo (si lo escribí), y el semáforo de este plan —<b>sin mis montos</b>— para contactarme sobre lo que me falta proteger. Leí el <a href="${AVISO_URL}" target="_blank" rel="noopener">Aviso de privacidad</a> de esta guía.</span></label>
           <p class="err" id="cErr" role="alert">${esc(c.error)}</p>
           <button class="btn primary" type="submit" ${c.enviando ? "disabled" : ""}>${c.enviando ? "Enviando…" : "Enviar mis datos"}</button>
         </form>

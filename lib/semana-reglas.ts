@@ -1,6 +1,6 @@
 /**
- * App «Dinero Bajo Control» (/semana): reglas puras, sin servidor.
- * Las comparten el endpoint que guarda al prospecto y su validación. De la app NUNCA llegan montos de ingresos,
+ * Guía «Dinero Bajo Control» (/semana): reglas puras, sin servidor.
+ * Las comparten el endpoint que guarda al prospecto y su validación. De la guía NUNCA llegan montos de ingresos,
  * gastos ni deudas: solo el semáforo (4 colores + puntaje), lo que falta proteger y los meses de fondo.
  */
 import { normCorreo, normWhatsapp } from "./normalize";
@@ -9,7 +9,7 @@ import { validarNombre, validarWhatsappMX } from "./validacion";
 /** Correo conservador (sin <, >, comillas ni &): luego se imprime dentro del HTML del correo de aviso. */
 const RE_CORREO_SEGURO = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/;
 
-/** Versión del aviso de privacidad de la app (app/privacidad/semana). Se anota en cada prospecto como prueba del consentimiento. */
+/** Versión del aviso de privacidad de la guía (app/privacidad/semana). Se anota en cada prospecto como prueba del consentimiento. */
 export const AVISO_SEMANA_VERSION = "2026-10-18";
 
 export const SEMAFORO = ["verde", "amarillo", "rojo"] as const;
@@ -34,7 +34,7 @@ export interface PlanSemana {
 const esSemaforo = (x: unknown): x is Semaforo => typeof x === "string" && (SEMAFORO as readonly string[]).includes(x);
 const esHueco = (x: unknown): x is Hueco => typeof x === "string" && Object.prototype.hasOwnProperty.call(HUECOS, x);
 
-/** Valida el plan que manda la app. Cualquier cosa fuera de lo esperado → null (no se guarda nada). */
+/** Valida el plan que manda la guía. Cualquier cosa fuera de lo esperado → null (no se guarda nada). */
 export function limpiarPlan(x: unknown): PlanSemana | null {
   if (!x || typeof x !== "object") return null;
   const o = x as Record<string, unknown>;

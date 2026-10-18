@@ -175,7 +175,7 @@ export function TarjetaWeb() {
       <section className="space-y-3">
         <div className="glass-strong rounded-2xl p-4 sm:p-5">
           <h3 className="flex items-center gap-2 font-display text-base text-ink">
-            <Icon icon="flat-color-icons:calendar" width={20} aria-hidden /> App «Dinero Bajo Control»
+            <Icon icon="flat-color-icons:calendar" width={20} aria-hidden /> Guía «Dinero Bajo Control»
           </h3>
           <p className="mt-1 text-xs text-ink-mute">
             Lo que pasa en <strong className="text-ink">www.especialistaenasegurarte.lat/semana</strong>, también anónimo. Son <em>veces</em>, no personas
@@ -185,7 +185,7 @@ export function TarjetaWeb() {
           </p>
         </div>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <Tarjeta titulo="Abrieron la app" valor={nf(r.semana.abrieron)}>
+          <Tarjeta titulo="Abrieron la guía" valor={nf(r.semana.abrieron)}>
             {r.semana.instalaron} la instalaron en su teléfono
           </Tarjeta>
           <Tarjeta titulo="Armaron su plan" valor={nf(r.semana.planes)}>
@@ -199,7 +199,7 @@ export function TarjetaWeb() {
           </Tarjeta>
         </div>
         {r.semana.fuentes.length > 0 && (
-          <ListaBarras titulo="De dónde llegan a la app" ayuda="Según el ?s= del enlace o el sitio que los mandó." filas={r.semana.fuentes} vacio="Sin datos todavía." />
+          <ListaBarras titulo="De dónde llegan a la guía" ayuda="Según el ?s= del enlace o el sitio que los mandó." filas={r.semana.fuentes} vacio="Sin datos todavía." />
         )}
       </section>
 

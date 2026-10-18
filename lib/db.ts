@@ -304,7 +304,7 @@ export async function crearLead(input: NuevoLead, geo?: Partial<Geo>): Promise<C
   return { ok: true, duplicado: false, id };
 }
 
-/** Prospecto que llega desde la app «Dinero Bajo Control» (/semana): pidió que Roberto lo contacte. */
+/** Prospecto que llega desde la guía «Dinero Bajo Control» (/semana): pidió que Roberto lo contacte. */
 export interface NuevoLeadSemana {
   nombre: unknown;
   whatsapp: unknown;
@@ -316,10 +316,10 @@ export interface NuevoLeadSemana {
   plan: PlanSemana;
 }
 
-export const ORIGEN_SEMANA = "App Dinero Bajo Control";
+export const ORIGEN_SEMANA = "Guía Dinero Bajo Control";
 
 /**
- * Guarda al prospecto de la app. Mismas reglas que la página de captura (consentimiento obligatorio en el SERVIDOR,
+ * Guarda al prospecto de la guía. Mismas reglas que la página de captura (consentimiento obligatorio en el SERVIDOR,
  * dedupe por WhatsApp/correo con consultas parametrizadas) con tres diferencias: el correo es opcional, no se guarda
  * IP ni ubicación, y en la bitácora queda anotado el consentimiento con la versión del aviso. Si la persona ya existía,
  * no se duplica: se agrega una nota a su historial.
@@ -332,8 +332,8 @@ export async function crearLeadSemana(input: NuevoLeadSemana): Promise<CrearLead
 
   const resumen = resumenPlan(input.plan);
   const cuando = new Date().toLocaleString("es-MX", { timeZone: ZONA_HORARIA, dateStyle: "short", timeStyle: "short" }).replace(/\.$/, "");
-  const textoNuevo = `Llegó por la app «Dinero Bajo Control» y pidió que lo contactes. ${resumen} Autorizó el aviso de privacidad de la app (versión ${AVISO_SEMANA_VERSION}) el ${cuando}.`;
-  const textoRepetido = `Volvió a usar «Dinero Bajo Control» y pidió de nuevo que lo contactes. ${resumen} Autorizó el aviso de privacidad de la app (versión ${AVISO_SEMANA_VERSION}) el ${cuando}.`;
+  const textoNuevo = `Llegó por la guía «Dinero Bajo Control» y pidió que lo contactes. ${resumen} Autorizó el aviso de privacidad de la guía (versión ${AVISO_SEMANA_VERSION}) el ${cuando}.`;
+  const textoRepetido = `Volvió a usar «Dinero Bajo Control» y pidió de nuevo que lo contactes. ${resumen} Autorizó el aviso de privacidad de la guía (versión ${AVISO_SEMANA_VERSION}) el ${cuando}.`;
   const fila = {
     nombre: v.nombre,
     correo: v.correo,

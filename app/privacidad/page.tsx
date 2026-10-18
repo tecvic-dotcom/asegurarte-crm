@@ -100,9 +100,9 @@ export default async function PrivacidadPage() {
         </section>
 
         <section>
-          <h2 className="font-display text-xl text-ink">7. App «Dinero Bajo Control»</h2>
+          <h2 className="font-display text-xl text-ink">7. Guía «Dinero Bajo Control»</h2>
           <p>
-            La app gratuita «Dinero Bajo Control» (/semana) tiene su propio aviso de privacidad, porque maneja información distinta: lo que
+            La guía gratuita «Dinero Bajo Control» (/semana) tiene su propio aviso de privacidad, porque maneja información distinta: lo que
             escribes se queda en tu teléfono y solo recibimos tus datos si tú pides que te contactemos. Léelo en{" "}
             <a href="/privacidad/semana" className="text-brand-2 underline">
               Aviso de privacidad · Dinero Bajo Control
