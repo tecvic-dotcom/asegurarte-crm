@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#06070f">
-<title>Mi Semana Familiar · Roberto Rodríguez</title>
+<title>Dinero Bajo Control · Roberto Rodríguez</title>
 <meta name="description" content="Plan semanal gratis para el dinero de tu familia: cuánto puedes gastar, qué abonar y qué te falta proteger. Un regalo de Roberto Rodríguez, asesor de seguros.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Mi Semana">
+<meta name="apple-mobile-web-app-title" content="Dinero Bajo Control">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style>
 /* Marca de especialistaenasegurarte.lat: azul-noche, azul royal, vidrio. Sin fuentes externas (funciona sin conexión). */
@@ -135,7 +135,7 @@ details ul{margin:4px 0 0;padding-left:20px;color:var(--ink-soft);font-size:14.5
 
 <!-- ============ INTRO ============ -->
 <div id="intro" class="wrap" hidden>
-  <div class="top"><div class="brand"><b>Mi Semana Familiar</b><span>Un regalo de Roberto Rodríguez · Asesor de seguros</span></div></div>
+  <div class="top"><div class="brand"><b>Dinero Bajo Control</b><span>Un regalo de Roberto Rodríguez · Asesor de seguros</span></div></div>
   <section class="card stack" style="margin-top:6px">
     <span class="k">Gratis · sin registro</span>
     <h1>¿Qué hacemos con el dinero de la familia esta semana?</h1>
@@ -207,7 +207,7 @@ details ul{margin:4px 0 0;padding-left:20px;color:var(--ink-soft);font-size:14.5
 <!-- ============ PANEL ============ -->
 <div id="panel" hidden>
   <div class="wrap">
-    <div class="top"><div class="brand"><b id="pFamilia">Mi Semana Familiar</b><span id="pSub"></span></div><button class="ghost" id="pEditar">Editar datos</button></div>
+    <div class="top"><div class="brand"><b id="pFamilia">Dinero Bajo Control</b><span id="pSub"></span></div><button class="ghost" id="pEditar">Editar datos</button></div>
     <main id="vista" class="stack"></main>
     <div id="pie" class="stack">
       <div id="instalar2" class="card stack" hidden><button class="btn sec" id="btnInstalar2">Instalar la app en mi teléfono</button></div>
@@ -556,7 +556,7 @@ details ul{margin:4px 0 0;padding-left:20px;color:var(--ink-soft);font-size:14.5
       // El enlace lleva a la tarjeta de Roberto (no a la app): ahí conocen a quien la hizo y encuentran la app en «Recursos».
       // ?s=amigo aparece en el panel «Tarjeta web» como «De dónde llegan».
       const url = TARJETA_URL, texto = COMPARTIR_TEXTO;
-      if (navigator.share) navigator.share({ title: "Mi Semana Familiar", text: texto, url }).catch(() => {});
+      if (navigator.share) navigator.share({ title: "Dinero Bajo Control", text: texto, url }).catch(() => {});
       else if (navigator.clipboard) navigator.clipboard.writeText(texto + " " + url).then(() => toast("Mensaje copiado, pégalo en WhatsApp"), () => toast(url));
       return;
     }

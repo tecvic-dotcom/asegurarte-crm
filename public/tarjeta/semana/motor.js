@@ -1,4 +1,4 @@
-/* Mi Semana Familiar — motor de cálculo.
+/* Dinero Bajo Control — motor de cálculo.
    Regla de diseño: TODAS las cifras salen de aquí con reglas fijas. La IA (si se conecta) solo redacta
    sobre el JSON de `armarHechos` y su texto se valida con `validarTexto` (no puede inventar cifras). */
 (function (root, factory) {
@@ -373,7 +373,7 @@
     const e = { verde: "🟢", amarillo: "🟡", rojo: "🔴" };
     const limpio = nombre ? String(nombre).replace(/<[^>]*>/g, " ").replace(/[^\p{L} '.\-]/gu, "").replace(/\s+/g, " ").trim().slice(0, 40) : "";
     const l = [
-      "Hola Roberto, " + (limpio ? "soy " + limpio + ". Usé" : "usé") + " «Mi Semana Familiar» y quiero que me ayudes a revisar mi situación.",
+      "Hola Roberto, " + (limpio ? "soy " + limpio + ". Usé" : "usé") + " «Dinero Bajo Control» y quiero que me ayudes a revisar mi situación.",
       "",
       "Mi semáforo (" + h.puntaje + "/100):",
       e[h.pilares.flujo] + " Flujo mensual",

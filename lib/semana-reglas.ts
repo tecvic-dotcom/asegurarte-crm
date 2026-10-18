@@ -1,5 +1,5 @@
 /**
- * App «Mi Semana Familiar» (/semana): reglas puras, sin servidor.
+ * App «Dinero Bajo Control» (/semana): reglas puras, sin servidor.
  * Las comparten el endpoint que guarda al prospecto y su validación. De la app NUNCA llegan montos de ingresos,
  * gastos ni deudas: solo el semáforo (4 colores + puntaje), lo que falta proteger y los meses de fondo.
  */

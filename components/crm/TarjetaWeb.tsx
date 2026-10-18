@@ -175,7 +175,7 @@ export function TarjetaWeb() {
       <section className="space-y-3">
         <div className="glass-strong rounded-2xl p-4 sm:p-5">
           <h3 className="flex items-center gap-2 font-display text-base text-ink">
-            <Icon icon="flat-color-icons:calendar" width={20} aria-hidden /> App «Mi Semana Familiar»
+            <Icon icon="flat-color-icons:calendar" width={20} aria-hidden /> App «Dinero Bajo Control»
           </h3>
           <p className="mt-1 text-xs text-ink-mute">
             Lo que pasa en <strong className="text-ink">www.especialistaenasegurarte.lat/semana</strong>, también anónimo. Son <em>veces</em>, no personas

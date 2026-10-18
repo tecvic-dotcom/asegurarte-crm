@@ -26,7 +26,7 @@ export const EVENTOS_TARJETA = [
   "faq", // abrió una pregunta frecuente
   "rec", // tocó una recomendación de «Para ti»
   "car", // deslizó un carrusel
-  // App «Mi Semana Familiar» (/semana). La tabla limita el nombre a 20 caracteres.
+  // App «Dinero Bajo Control» (/semana). La tabla limita el nombre a 20 caracteres.
   "sf_abrir", // abrió la app
   "sf_plan", // terminó de armar su plan (detalle: plan | ejemplo)
   "sf_instalar", // la instaló en su teléfono
@@ -87,7 +87,7 @@ export interface Conteo {
   n: number;
 }
 
-/** «Mi Semana Familiar»: embudo anónimo. Son veces (la misma persona puede sumar varias), no personas únicas. */
+/** «Dinero Bajo Control»: embudo anónimo. Son veces (la misma persona puede sumar varias), no personas únicas. */
 export interface ResumenSemana {
   abrieron: number;
   planes: number;

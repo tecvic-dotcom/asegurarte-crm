@@ -4,12 +4,12 @@ import { CONTENIDO } from "@/lib/landing-content";
 import { AVISO_SEMANA_VERSION } from "@/lib/semana-reglas";
 
 export const metadata: Metadata = {
-  title: "Aviso de privacidad · Mi Semana Familiar",
+  title: "Aviso de privacidad · Dinero Bajo Control",
   robots: { index: true, follow: true },
 };
 
 /**
- * Aviso de privacidad PROPIO de la app «Mi Semana Familiar» (/semana). Describe lo que la app realmente hace:
+ * Aviso de privacidad PROPIO de la app «Dinero Bajo Control» (/semana). Describe lo que la app realmente hace:
  * las cifras se quedan en el teléfono, hay un contador anónimo y solo si la persona lo pide se guardan su contacto y su semáforo.
  * Si cambias lo que la app recaba, actualiza este texto y AVISO_SEMANA_VERSION (lib/semana-reglas.ts): esa versión
  * queda anotada en cada prospecto como prueba del consentimiento.
@@ -26,7 +26,7 @@ export default async function PrivacidadSemanaPage() {
       <a href="/semana" className="text-sm text-ink-mute underline hover:text-ink-soft">
         ← Volver a la app
       </a>
-      <h1 className="mt-6 font-display text-3xl sm:text-4xl">Aviso de privacidad · Mi Semana Familiar</h1>
+      <h1 className="mt-6 font-display text-3xl sm:text-4xl">Aviso de privacidad · Dinero Bajo Control</h1>
       <p className="mt-2 text-sm text-ink-mute">Versión {AVISO_SEMANA_VERSION} (18 de octubre de 2026).</p>
 
       <div className="prose-acm mt-8 space-y-5 text-ink-soft">
@@ -38,7 +38,7 @@ export default async function PrivacidadSemanaPage() {
               {correo}
             </a>
             , es responsable del tratamiento de los datos personales que se describen aquí, conforme a la Ley Federal de Protección de
-            Datos Personales en Posesión de los Particulares (LFPDPPP). Este aviso aplica solo a la app «Mi Semana Familiar»; el aviso del
+            Datos Personales en Posesión de los Particulares (LFPDPPP). Este aviso aplica solo a la app «Dinero Bajo Control»; el aviso del
             sitio y de la tarjeta digital está en{" "}
             <a href="/privacidad" className="text-brand-2 underline">
               /privacidad
@@ -155,7 +155,7 @@ export default async function PrivacidadSemanaPage() {
         <section>
           <h2 className="font-display text-xl text-ink">10. Lo que la app es y lo que no es</h2>
           <p>
-            «Mi Semana Familiar» es una herramienta de orientación educativa. No es asesoría financiera, fiscal ni legal, ni una cotización
+            «Dinero Bajo Control» es una herramienta de orientación educativa. No es asesoría financiera, fiscal ni legal, ni una cotización
             de seguros. Los cálculos se hacen con reglas fijas visibles en la propia app.
           </p>
         </section>

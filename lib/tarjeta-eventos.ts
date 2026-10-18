@@ -54,7 +54,7 @@ function semilla(): FilaEvento[] {
       if (rnd() < 0.04) e("guardar", "hero", 16);
       if (hasta > 4 && rnd() < 0.08) e("red", elige(["Instagram", "Facebook", "TikTok", "YouTube", "LinkedIn"]), 70);
     }
-    // «Mi Semana Familiar»: un embudo creíble para ver cómo luce la tarjeta del panel.
+    // «Dinero Bajo Control»: un embudo creíble para ver cómo luce la tarjeta del panel.
     const abren = 3 + Math.floor(rnd() * 9);
     for (let i = 0; i < abren; i++) {
       const t = Date.now() - d * 86_400_000 - Math.floor(rnd() * 12 * 3_600_000);
