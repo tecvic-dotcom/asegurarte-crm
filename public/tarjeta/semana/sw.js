@@ -1,6 +1,6 @@
 /* Dinero Bajo Control — service worker: funciona sin conexión. Sube VERSION cuando cambie algún archivo. */
-const VERSION = "msf-v7";
-const ARCHIVOS = ["index.html", "motor.js", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"];
+const VERSION = "msf-v8";
+const ARCHIVOS = ["index.html", "motor.js", "pdf.js", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(ARCHIVOS)).then(() => self.skipWaiting()));
@@ -14,7 +14,9 @@ self.addEventListener("fetch", (e) => {
   if (req.method !== "GET" || new URL(req.url).origin !== location.origin) return;
   e.respondWith(
     caches.match(req, { ignoreSearch: true }).then((hit) => {
-      const red = fetch(req).then((r) => { if (r && r.ok) caches.open(VERSION).then((c) => c.put(req, r.clone())); return r; }).catch(() => hit);
+      // La copia se saca AL MOMENTO (antes de que la página consuma la respuesta); si se clonara después, el guardado fallaría en silencio.
+      const red = fetch(req).then((r) => { if (r && r.ok) { const copia = r.clone(); caches.open(VERSION).then((c) => c.put(req, copia)).catch(() => {}); } return r; }).catch(() => hit);
+      e.waitUntil(red.catch(() => {}));
       return hit || red;
     })
   );

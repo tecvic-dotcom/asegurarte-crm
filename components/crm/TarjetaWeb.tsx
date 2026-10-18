@@ -184,7 +184,7 @@ export function TarjetaWeb() {
             final del enlace ves de dónde llegan.
           </p>
         </div>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
           <Tarjeta titulo="Abrieron la guía" valor={nf(r.semana.abrieron)}>
             {r.semana.instalaron} la instalaron en su teléfono
           </Tarjeta>
@@ -196,6 +196,9 @@ export function TarjetaWeb() {
           </Tarjeta>
           <Tarjeta titulo="Prospectos guardados" valor={nf(r.semana.prospectos)}>
             {r.semana.repetidos} ya estaban en tu CRM · {pct(r.semana.prospectos, r.semana.planes)}% de los planes
+          </Tarjeta>
+          <Tarjeta titulo="Reportes en PDF" valor={nf(r.semana.pdfs + r.semana.pdfsCompartidos)}>
+            {r.semana.pdfs} descargados · {r.semana.pdfsCompartidos} compartidos (cada uno lleva tu marca)
           </Tarjeta>
         </div>
         {r.semana.fuentes.length > 0 && (

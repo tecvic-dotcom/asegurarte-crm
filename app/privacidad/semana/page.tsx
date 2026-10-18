@@ -51,9 +51,14 @@ export default async function PrivacidadSemanaPage() {
           <h2 className="font-display text-xl text-ink">2. Lo que escribes en la guía se queda en tu teléfono</h2>
           <p>
             Para armar tu plan la guía te pide el nombre de tu familia, cuántas personas viven en casa, tus ingresos, gastos fijos, deudas,
-            ahorro, los seguros que ya tienes y los gastos que vayas anotando. <strong>Todo eso se guarda únicamente en tu dispositivo</strong>{" "}
+            ahorro, los seguros que ya tienes y los movimientos que vayas anotando (gastos, ingresos extra, ahorro apartado y abonos a deudas). <strong>Todo eso se guarda únicamente en tu dispositivo</strong>{" "}
             (en el almacenamiento del navegador o de la guía instalada). <strong>No llega a nuestros servidores</strong> y nosotros no podemos
-            verlo. Puedes borrarlo en cualquier momento con el botón «Borrar mis datos de este teléfono» o limpiando los datos del navegador.
+            verlo. Puedes borrarlo en cualquier momento con el botón «Borrar mis datos de este teléfono» o limpiando los datos del navegador (antes puedes descargar un respaldo).
+          </p>
+          <p className="mt-2">
+            Los reportes en PDF, los archivos de Excel y los respaldos que descargues se arman en tu teléfono y se guardan donde tú elijas;
+            tampoco pasan por nuestros servidores. Si compartes un reporte (por ejemplo, por WhatsApp), tú decides con quién: desde ese
+            momento ya no depende de nosotros.
           </p>
         </section>
 
@@ -61,7 +66,7 @@ export default async function PrivacidadSemanaPage() {
           <h2 className="font-display text-xl text-ink">3. Medición anónima</h2>
           <p>
             Contamos de forma <strong>anónima</strong> cuántas veces se abre la guía, cuántas veces alguien termina de armar su plan, cuántas
-            veces se instala y cuántas veces se toca el botón de WhatsApp o se deja el contacto, y desde qué tipo de pantalla (celular o
+            veces se instala, cuántas veces se descarga o comparte un reporte en PDF (sin saber qué contiene) y cuántas veces se toca el botón de WhatsApp o se deja el contacto, y desde qué tipo de pantalla (celular o
             computadora) y qué enlace se llegó (por ejemplo, Instagram). Esta medición{" "}
             <strong>no usa cookies, no guarda tu dirección IP, tu nombre ni tu teléfono</strong> y no puede relacionarse contigo. Sirve solo
             para saber si la guía es útil y mejorarla.

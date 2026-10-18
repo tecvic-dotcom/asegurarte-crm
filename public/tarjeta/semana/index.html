@@ -66,7 +66,7 @@ p{margin:0}
 /* formularios */
 label.f{display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:14.5px;color:var(--ink-soft)}
 label.f small{font-weight:400;color:var(--ink-mute);font-size:12.5px}
-input[type=text],input[type=number],input[inputmode]{width:100%;min-height:50px;padding:0 14px;border-radius:12px;border:1px solid var(--line-strong);background:rgba(6,7,15,.55);color:var(--ink);font-size:17px}
+input[type=text],input[type=number],input[type=date],input[inputmode]{width:100%;min-height:50px;padding:0 14px;border-radius:12px;border:1px solid var(--line-strong);background:rgba(6,7,15,.55);color:var(--ink);font-size:17px}
 input::placeholder{color:#5f6590}
 .money{position:relative}
 .money::before{content:"$";position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--ink-mute);pointer-events:none}
@@ -128,6 +128,21 @@ td.r,th.r{text-align:right}
 details summary{cursor:pointer;font-weight:600;color:var(--ink-soft);min-height:44px;display:flex;align-items:center}
 details ul{margin:4px 0 0;padding-left:20px;color:var(--ink-soft);font-size:14.5px} details li{margin:4px 0}
 .legal{font-size:12.5px;color:var(--ink-mute);text-align:center}
+/* cuaderno: semanas, tipos de movimiento, listas */
+.semnav{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.semnav button{width:48px;height:48px;border-radius:12px;border:1px solid var(--line-strong);background:var(--glass-2);font-size:26px;line-height:1;cursor:pointer;color:var(--ink)}
+.semnav button[disabled]{opacity:.3;cursor:not-allowed}
+.semnav .c{text-align:center;line-height:1.25}
+.tipos{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.tipos button{min-height:46px;border-radius:12px;border:1px solid var(--line-strong);background:var(--glass);color:var(--ink-soft);font-weight:700;font-size:13.5px;cursor:pointer;padding:0 4px}
+.tipos button[aria-pressed=true]{background:var(--brand);border-color:var(--brand-2);color:#fff}
+.mini3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.mini3>div{background:var(--glass);border:1px solid var(--line);border-radius:12px;padding:8px 10px}
+.mini3 small{display:block;color:var(--ink-mute);font-size:12px}
+.mini3 b{font:800 17px var(--display)}
+.tipo{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;border-radius:999px;padding:1px 8px;border:1px solid var(--line-strong);vertical-align:1px}
+.t-gasto{color:#ff9d9d}.t-ingreso{color:var(--verde)}.t-ahorro{color:var(--brand-2)}.t-abono{color:var(--amarillo)}
+select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border:1px solid var(--line-strong);background:rgba(6,7,15,.55);color:var(--ink);font-size:16px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -139,7 +154,7 @@ details ul{margin:4px 0 0;padding-left:20px;color:var(--ink-soft);font-size:14.5
   <section class="card stack" style="margin-top:6px">
     <span class="k">Gratis · sin registro</span>
     <h1>¿Qué hacemos con el dinero de la familia esta semana?</h1>
-    <p class="soft">Contesta 4 pantallas y recibe un plan simple: cuánto pueden gastar, qué abonar y qué les falta proteger. Se actualiza cada semana.</p>
+    <p class="soft">Contesta 4 pantallas y recibe un plan simple: cuánto pueden gastar, qué abonar y qué les falta proteger. Después anota tus gastos, ingresos, ahorro y abonos: tu plan se actualiza solo.</p>
     <button class="btn primary" id="btnEmpezar">Armar mi plan (3 minutos)</button>
     <button class="btn sec" id="btnEjemplo">Verlo con una familia de ejemplo</button>
     <p class="small mute">🔒 Lo que escribes se queda en este teléfono: nadie lo ve, ni Roberto. Solo contamos de forma anónima cuántas personas usan la guía (sin cookies ni IP). Si tú decides que Roberto te contacte, ahí sí te pedimos tus datos y tu permiso. <a href="https://www.especialistaenasegurarte.lat/privacidad/semana" target="_blank" rel="noopener">Aviso de privacidad</a></p>
@@ -150,6 +165,7 @@ details ul{margin:4px 0 0;padding-left:20px;color:var(--ink-soft);font-size:14.5
       <li>El tope de gasto de la semana, con lo que llevas y lo que te queda por día.</li>
       <li>Tus 3 acciones de la semana: fondo, deudas y seguros.</li>
       <li>Un semáforo de tu flujo, tu fondo de emergencia, tus deudas y tu protección.</li>
+      <li>Un cuaderno para anotar lo que pasa cada semana y un reporte en PDF para guardarlo o compartirlo.</li>
     </ul>
   </section>
   <div id="instalar" class="card stack" hidden>
@@ -210,6 +226,11 @@ details ul{margin:4px 0 0;padding-left:20px;color:var(--ink-soft);font-size:14.5
     <div class="top"><div class="brand"><b id="pFamilia">Dinero Bajo Control</b><span id="pSub"></span></div><button class="ghost" id="pEditar">Editar datos</button></div>
     <main id="vista" class="stack"></main>
     <div id="pie" class="stack">
+      <section class="card stack"><h3>Tus datos</h3><p class="soft small">Viven solo en este teléfono. Haz un respaldo de vez en cuando por si cambias de celular.</p>
+        <button class="ghost" id="btnRespaldo">Descargar mi respaldo</button>
+        <button class="ghost" id="btnRestaurar">Restaurar un respaldo</button>
+        <input type="file" id="fRestaurar" accept="application/json,.json" hidden>
+        <button class="ghost" data-csv="todo">Descargar todos mis movimientos (Excel)</button></section>
       <div id="instalar2" class="card stack" hidden><button class="btn sec" id="btnInstalar2">Instalar la guía en mi teléfono</button></div>
       <button class="ghost" id="btnCompartir">Recomendar esta guía con un amigo</button>
       <button class="ghost" id="btnBorrar">Borrar mis datos de este teléfono</button>
@@ -217,7 +238,7 @@ details ul{margin:4px 0 0;padding-left:20px;color:var(--ink-soft);font-size:14.5
     </div>
   </div>
   <nav class="tabs" aria-label="Secciones">
-    <button data-tab="semana" aria-current="true"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>Esta semana</button>
+    <button data-tab="semana" aria-current="true"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>Semana</button>
     <button data-tab="plan"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg>Mi plan</button>
     <button data-tab="asistente"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.5 7.2L4 20l1-4.5A8 8 0 1 1 21 12z"/></svg>Pregúntame</button>
   </nav>
@@ -226,6 +247,7 @@ details ul{margin:4px 0 0;padding-left:20px;color:var(--ink-soft);font-size:14.5
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
 <script src="motor.js"></script>
+<script src="pdf.js"></script>
 <script>
 "use strict";
 (function () {
@@ -240,7 +262,7 @@ details ul{margin:4px 0 0;padding-left:20px;color:var(--ink-soft);font-size:14.5
   // Misma libreta anónima que la tarjeta /roberto: sin cookies, sin IP, sin nada que identifique a nadie.
   const EP_EVENTO = "/api/tarjeta/evento", EP_PROSPECTO = "/api/semana/prospecto";
   const AVISO_URL = "https://www.especialistaenasegurarte.lat/privacidad/semana";
-  const AVISO_VERSION = "2026-10-18"; // igual que AVISO_SEMANA_VERSION en el CRM (lib/semana-reglas.ts)
+  const AVISO_VERSION = "2026-10-18.2"; // igual que AVISO_SEMANA_VERSION en el CRM (lib/semana-reglas.ts)
   const TARJETA_URL = "https://www.especialistaenasegurarte.lat/roberto?s=amigo";
   const COMPARTIR_TEXTO = "Dinero Bajo Control: una guía gratuita para cuidar el dinero de tu hogar, de Roberto Rodríguez - Especialista en Asegurarte. La encuentras en su tarjeta, en «Recursos»:";
   const qs = new URLSearchParams(location.search);
@@ -271,6 +293,7 @@ details ul{margin:4px 0 0;padding-left:20px;color:var(--ink-soft);font-size:14.5
   try { const g = JSON.parse(localStorage.getItem(KEY) || "null"); if (g && typeof g === "object") S = { perfil: g.perfil || null, gastos: Array.isArray(g.gastos) ? g.gastos : [], ejemplo: !!g.ejemplo }; } catch (e) {}
   const guardar = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
   let tab = "semana", pregunta = null, paso = 1, editando = false, ultimoId = null, tToast = 0;
+  let semOff = 0, tipoMov = "gasto", fechaMov = null, deudaSel = null;
 
   // ---------- pantallas ----------
   function ver(id) { ["intro", "wizard", "panel"].forEach((x) => ($("#" + x).hidden = x !== id)); window.scrollTo(0, 0); }
@@ -335,11 +358,13 @@ details ul{margin:4px 0 0;padding-left:20px;color:var(--ink-soft);font-size:14.5
       return { nombre: g("nombre").trim() || "Deuda", saldo: n("saldo"), pago: n("pago"), tasa: n("tasa") };
     }).filter((d) => d.saldo > 0);
     const seguros = {}; SEGUROS.forEach(([k]) => (seguros[k] = segVal(k) || "na"));
-    return {
+    const crudo = {
       familia: $("#fFamilia").value.trim() || "Mi familia", personas: Number($("#fPersonas").textContent) || 3, dependientes: segVal("dep") !== "no",
       ingreso: leer("fIngreso"), fijos: { vivienda: leer("fVivienda"), servicios: leer("fServicios"), educacion: leer("fEducacion"), otros: leer("fOtros") },
       basico: leer("fBasico"), ahorro: leer("fAhorro"), deudas, seguros,
+      editadoEn: Date.now(), // lo anotado antes de este momento ya está incluido en estas cifras
     };
+    return M.limpiarPerfil(crudo) || crudo;
   }
   function irPaso(n) {
     paso = n;
@@ -370,42 +395,80 @@ details ul{margin:4px 0 0;padding-left:20px;color:var(--ink-soft);font-size:14.5
   const etiquetaFecha = (f, hoy) => { const hoyIso = M.iso(hoy); const ayer = M.iso(new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() - 1)); return f === hoyIso ? "Hoy" : f === ayer ? "Ayer" : DIAS[M.aFecha(f).getDay()]; };
   const ESTADO = { verde: "Vas bien", amarillo: "Cuidado: vas cerca del límite", rojo: "Te pasaste del límite semanal" };
 
+  const dm = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+  const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+  const CHIP = { gasto: "Gasto", ingreso: "Ingreso", ahorro: "Ahorro", abono: "Abono" };
+  const LABEL = { gasto: "Anota un gasto como si fuera WhatsApp", ingreso: "Anota un ingreso extra (comisión, venta, apoyo)", ahorro: "Anota lo que apartaste para tu fondo", abono: "¿Cuánto abonaste?" };
+  const PLACEHOLDER = { gasto: "Ej.: gasté 350 en el súper", ingreso: "Ej.: me pagaron 800 de una comisión", ahorro: "Ej.: aparté 500 para mi fondo", abono: "Ej.: 1,200" };
+  const BOTON = { gasto: "Registrar gasto", ingreso: "Registrar ingreso extra", ahorro: "Registrar ahorro", abono: "Registrar abono" };
+  const CIERRE = { verde: "Cerraste dentro de tu tope", amarillo: "Cerraste muy cerca del límite", rojo: "Te pasaste del tope" };
+  const signoMonto = (m) => { const t = M.tipoDe(m); return (t === "gasto" ? "−" : t === "ingreso" ? "+" : "") + mxn(m.monto); };
+  function puedeCompartirArchivos() {
+    try { return typeof navigator.canShare === "function" && navigator.canShare({ files: [new File(["x"], "a.pdf", { type: "application/pdf" })] }); } catch (e) { return false; }
+  }
+
   function vistaSemana(h, hoy) {
-    const s = h.semana, ini = M.aFecha(M.iso(M.lunesDe(hoy))), fin = new Date(ini.getFullYear(), ini.getMonth(), ini.getDate() + 6);
-    const rango = ini.getDate() + " al " + fin.getDate() + " de " + MESES[fin.getMonth()];
+    const actual = semOff === 0, lun = M.lunesDe(dm(hoy, 7 * semOff)), dom = dm(lun, 6), hoyIso = M.iso(hoy);
+    const hs = actual ? h : M.armarHechos(S.perfil, S.gastos, dom, M.REGLAS, hoy); // el plan tal como estaba al cerrar esa semana
+    const s = hs.semana;
+    const rango = lun.getMonth() === dom.getMonth() ? lun.getDate() + " al " + dom.getDate() + " de " + MESES[dom.getMonth()] : lun.getDate() + " " + MESES[lun.getMonth()] + " al " + dom.getDate() + " " + MESES[dom.getMonth()];
+    const cuando = actual ? "Esta semana" : semOff === -1 ? "La semana pasada" : "Hace " + -semOff + " semanas";
     const pct = Math.min(100, s.pct);
-    const lista = M.semana(S.perfil, S.gastos, hoy).lista.slice().sort((a, b) => (b.fecha + b.id).localeCompare(a.fecha + a.id));
-    const cat = (g) => Object.entries(M.CATEGORIAS).map(([k, n]) => `<option value="${k}"${k === g.categoria ? " selected" : ""}>${n}</option>`).join("");
+    const lista = M.semana(M.perfilVivo(S.perfil, S.gastos, M.iso(dom)), S.gastos, dom, undefined, hoy).lista
+      .slice().sort((a, b) => (b.fecha + String(b.ts || 0).padStart(15, "0")).localeCompare(a.fecha + String(a.ts || 0).padStart(15, "0")));
+    const vivas = M.perfilVivo(S.perfil, S.gastos, hoyIso).deudas.filter((d) => d.saldo > 0);
+    const elegida = vivas.some((d) => d.nombre === deudaSel) ? deudaSel : h.deudas.masCara ? h.deudas.masCara.nombre : (vivas[0] && vivas[0].nombre) || "";
+    const fechaVal = fechaMov && fechaMov <= hoyIso ? fechaMov : M.iso(dom) < hoyIso ? M.iso(dom) : hoyIso;
+    const sinDeudas = tipoMov === "abono" && !vivas.length;
+    const dia = (f) => (actual ? cap(etiquetaFecha(f, hoy)) : cap(DIAS[M.aFecha(f).getDay()]).slice(0, 3) + " " + M.aFecha(f).getDate());
+
+    const hero = s.limite > 0 ? `
+      <div><div class="soft small">${actual ? "Puedes gastar esta semana" : "Tope de esa semana"}</div><div class="big">${mxn(s.limite)}</div></div>
+      <div class="bar" role="img" aria-label="Se usó ${Math.round(pct)}% del tope"><i class="${s.color}" style="width:${pct}%"></i></div>
+      <div class="row small"><span>${actual ? "Llevas" : "Gastaste"} <b>${mxn(s.gastado)}</b></span><span>${s.restante >= 0 ? (actual ? "Quedan <b>" + mxn(s.restante) + "</b>" + (s.diasRestantes > 1 ? " · unos " + mxn(s.porDia) + " por día" : " · solo queda hoy") : "Te sobraron <b>" + mxn(s.restante) + "</b>") : "Te pasaste por <b>" + mxn(-s.restante) + "</b>"}</span></div>
+      <span class="badge"><i class="dot ${s.color}"></i>${actual ? ESTADO[s.color] : CIERRE[s.color]}</span>`
+      : `<div class="big" style="font-size:30px">${actual ? "Esta semana no hay margen" : "Esa semana no hubo margen"}</div><p class="soft">Tus compromisos y deudas se llevan todo el ingreso.${actual ? " Mira «Tus acciones» para ordenar el presupuesto." : ""}</p>`;
+
+    const form = `
+    <form id="fMov" class="card stack" autocomplete="off">
+      <div class="tipos" role="group" aria-label="Qué vas a anotar">${Object.keys(CHIP).map((k) => `<button type="button" data-tipo="${k}" aria-pressed="${tipoMov === k}">${CHIP[k]}</button>`).join("")}</div>
+      ${tipoMov === "abono" ? (vivas.length ? `<label class="f">¿A cuál deuda?<select id="iDeuda" class="f-sel">${vivas.map((d) => `<option value="${esc(d.nombre)}"${d.nombre === elegida ? " selected" : ""}>${esc(d.nombre)} · debes ${mxn(d.saldo)}</option>`).join("")}</select></label>` : `<p class="soft small">No tienes deudas con saldo. Si tienes una, agrégala en «Editar datos».</p>`) : ""}
+      <label class="f" for="iMov">${LABEL[tipoMov]}</label>
+      <input type="text" id="iMov" maxlength="80" placeholder="${PLACEHOLDER[tipoMov]}" ${sinDeudas ? "disabled" : ""}>
+      <label class="f">Fecha<input type="date" id="iFecha" value="${fechaVal}" max="${hoyIso}"></label>
+      <button class="btn primary" type="submit" ${sinDeudas ? "disabled" : ""}>${BOTON[tipoMov]}</button>
+      <p class="small mute">También entiende «ayer», «antier» y montos como $1,250.</p>
+    </form>`;
+
+    const filas = lista.map((g) => {
+      const t = M.tipoDe(g);
+      return `<div class="gasto"><div><span class="tipo t-${t}">${CHIP[t]}</span> <b>${esc(dia(g.fecha))}</b> <span class="soft small">· ${esc(g.nota || "")}</span></div><b>${signoMonto(g)}</b><button class="x" data-del="${esc(g.id)}" aria-label="Borrar este movimiento">✕</button>
+      ${t === "gasto" ? `<select data-cat="${esc(g.id)}" aria-label="Categoría">${Object.entries(M.CATEGORIAS).map(([k, n]) => `<option value="${k}"${k === g.categoria ? " selected" : ""}>${n}</option>`).join("")}</select>` : t === "abono" && g.deuda ? `<span class="small mute">a «${esc(g.deuda)}»</span>` : ""}</div>`;
+    }).join("");
+
     return `
     <section class="card stack">
-      <span class="k">Semana del ${rango}</span>
-      ${h.limiteSemana > 0 ? `
-        <div><div class="soft small">Puedes gastar esta semana</div><div class="big">${mxn(s.limite)}</div></div>
-        <div class="bar" role="img" aria-label="Has usado ${Math.round(pct)}% del límite semanal"><i class="${s.color}" style="width:${pct}%"></i></div>
-        <div class="row small"><span>Llevas <b>${mxn(s.gastado)}</b></span><span>${s.restante >= 0 ? "Quedan <b>" + mxn(s.restante) + "</b>" + (s.diasRestantes > 1 ? " · unos " + mxn(s.porDia) + " por día" : " · solo queda hoy") : "Te pasaste por <b>" + mxn(-s.restante) + "</b>"}</span></div>
-        <span class="badge"><i class="dot ${s.color}"></i>${ESTADO[s.color]}</span>`
-      : `<div class="big" style="font-size:30px">Esta semana no hay margen</div><p class="soft">Tus compromisos y deudas se llevan todo el ingreso. Mira «Tus acciones» para ordenar el presupuesto.</p>`}
+      <div class="semnav">
+        <button type="button" data-sem="-1" aria-label="Semana anterior" ${semOff <= -52 ? "disabled" : ""}>‹</button>
+        <div class="c"><span class="k">Semana del ${rango}</span><div class="small mute">${cuando}</div></div>
+        <button type="button" data-sem="1" aria-label="Semana siguiente" ${actual ? "disabled" : ""}>›</button>
+      </div>
+      ${hero}
+      <div class="mini3"><div><small>Ingresos extra</small><b>${mxn(s.ingresosExtra)}</b></div><div><small>Apartaste</small><b>${mxn(s.ahorrado)}</b></div><div><small>Abonaste</small><b>${mxn(s.abonado)}</b></div></div>
     </section>
-    <form id="fGasto" class="card stack" autocomplete="off">
-      <label class="f" for="iGasto">Anota un gasto como si fuera WhatsApp</label>
-      <input type="text" id="iGasto" maxlength="80" placeholder="Ej.: gasté 350 en el súper">
-      <button class="btn primary" type="submit">Registrar gasto</button>
-      <p class="small mute">También entiende «ayer», «antier» y montos como $1,250.</p>
-    </form>
-    <h2>Tus acciones de la semana</h2>
-    ${h.acciones.map((a, i) => `<div class="card acc"><span class="n">${i + 1}</span><div><h3>${esc(a.titulo)}</h3><p class="soft small" style="margin-top:4px">${esc(a.detalle)}</p></div></div>`).join("")}
-    ${lista.length ? `<h2>Gastos de esta semana</h2><section class="card">${lista.map((g) => `
-      <div class="gasto"><div><b>${esc(etiquetaFecha(g.fecha, hoy))}</b> <span class="soft small">· ${esc(g.nota || "")}</span></div><b>${mxn(g.monto)}</b><button class="x" data-del="${esc(g.id)}" aria-label="Borrar este gasto">✕</button>
-      <select data-cat="${esc(g.id)}" aria-label="Categoría">${cat(g)}</select></div>`).join("")}</section>` : ""}`;
+    ${form}
+    ${actual ? `<h2>Tus acciones de la semana</h2>${h.acciones.map((a, n) => `<div class="card acc"><span class="n">${n + 1}</span><div><h3>${esc(a.titulo)}</h3><p class="soft small" style="margin-top:4px">${esc(a.detalle)}</p></div></div>`).join("")}` : ""}
+    <h2>Movimientos de ${actual ? "esta semana" : "esa semana"}</h2>
+    <section class="card">${lista.length ? filas : '<p class="soft small">Todavía no hay movimientos en esta semana. Anota el primero arriba.</p>'}</section>
+    <section class="card stack"><h3>Reporte de ${actual ? "esta semana" : "esa semana"}</h3>
+      <p class="soft small">Un PDF con tu semáforo, tu tope, en qué se fue el gasto y todos los movimientos. Se prepara aquí, en tu teléfono.</p>
+      <button class="btn primary" data-pdf="descargar">Descargar PDF</button>
+      ${puedeCompartirArchivos() ? '<button class="btn sec" data-pdf="compartir">Compartir PDF</button>' : ""}
+      <button class="ghost" data-csv="semana">Descargar los movimientos (Excel)</button>
+      <p class="small mute" id="pdfMsg" role="status"></p></section>`;
   }
 
   function vistaPlan(h) {
-    const P = [
-      ["flujo", "Flujo mensual", h.deficit > 0 ? "Gastas " + mxn(h.deficit) + " más de lo que entra." : h.faltaBasico > 0 ? "Te faltan " + mxn(h.faltaBasico) + " para lo básico." : h.pilares.flujo === "amarillo" ? "Queda muy poco margen después de lo básico." : "Después de lo básico queda margen para apartar."],
-      ["fondo", "Fondo de emergencia", "Cubre " + h.fondo.meses.toFixed(1) + " de " + h.fondo.metaMeses + " meses de gastos."],
-      ["deuda", "Deudas", h.deudas.cuantas ? "Pagas " + h.deudas.ratioPct + "% de tu ingreso en deudas." + (h.deudas.masCara && h.deudas.masCara.tasa >= M.REGLAS.tasaAltaAnual ? " Una cobra " + h.deudas.masCara.tasa + "% anual." : "") : "Sin deudas registradas."],
-      ["proteccion", "Protección", h.proteccion.huecos.length ? "Falta: " + h.proteccion.huecos.map((x) => x.titulo.toLowerCase()).join(", ") + "." : "Cubierta."],
-    ];
     const margen = Math.max(0, h.limiteMes - h.basico);
     const seg = [["Compromisos fijos", h.fijos, "#5b7bff"], ["Pagos de deuda", h.pagosDeuda, "#ff7b7b"], ["Lo básico", h.basico, "#ffc24b"], ["Apartar", h.apartarMes, "#34d399"], ["Margen libre", margen, "#b8bedd"]];
     const tot = seg.reduce((a, x) => a + x[1], 0) || 1;
@@ -417,7 +480,7 @@ details ul{margin:4px 0 0;padding-left:20px;color:var(--ink-soft);font-size:14.5
       <div class="ring" style="--p:${h.puntaje};--c:${h.puntaje >= 75 ? COLOR.verde : h.puntaje >= 40 ? COLOR.amarillo : COLOR.rojo}"><span>${h.puntaje}</span></div>
       <div><h2 style="margin:0">Salud financiera</h2><p class="soft small">Orientativa: promedio de 4 semáforos. Sube cuando cubres fondo, deudas y seguros.</p></div>
     </section>
-    <section class="card">${P.map(([k, n, t]) => `<div class="pil"><i class="dot ${h.pilares[k]}"></i><div><b>${n}</b><div class="soft small">${esc(t)}</div></div></div>`).join("")}</section>
+    <section class="card">${M.pilaresTexto(h).map((p) => `<div class="pil"><i class="dot ${p.color}"></i><div><b>${p.nombre}</b><div class="soft small">${esc(p.texto)}</div></div></div>`).join("")}</section>
     <section class="card stack"><h3>A dónde se va tu ingreso del mes</h3>
       ${h.deficit > 0 ? `<p class="soft">Tus fijos y deudas (${mxn(h.fijos + h.pagosDeuda)}) superan tu ingreso (${mxn(h.ingreso)}).</p>` : `
       <div class="stack-bar" role="img" aria-label="Distribución del ingreso mensual">${seg.map((x) => `<i style="width:${(x[1] / tot) * 100}%;background:${x[2]}"></i>`).join("")}</div>
@@ -440,6 +503,7 @@ details ul{margin:4px 0 0;padding-left:20px;color:var(--ink-soft);font-size:14.5
       <li>Fondo de emergencia: ${M.REGLAS.fondoMesesBase} meses de gastos, o ${M.REGLAS.fondoMesesDependientes} si alguien depende de tu ingreso.</li>
       <li>Orden: primero 1 mes de fondo, luego la deuda de más de ${M.REGLAS.tasaAltaAnual}% anual, después el resto del fondo.</li>
       <li>Deudas: se paga el mínimo en todas y lo extra a la de mayor tasa (avalancha).</li>
+      <li>Lo que anotas mueve tu plan: lo que apartas sube tu fondo y tus abonos bajan el saldo de tus deudas. Un ingreso extra se suma al tope de esa semana. Si editas tus datos, el plan toma esas cifras como punto de partida.</li>
       <li>Todos los números salen de estas reglas, no de una IA.</li></ul></details>`;
   }
 
@@ -506,8 +570,15 @@ details ul{margin:4px 0 0;padding-left:20px;color:var(--ink-soft);font-size:14.5
   }
 
   let hechosActuales = null;
+  let pdfPrecargado = false;
+  function precargarPdf() { // deja listos la librería, la Anton y el logo para que el primer PDF salga rápido y funcione sin internet
+    if (pdfPrecargado || !window.Pdf || (navigator.connection && navigator.connection.saveData)) return;
+    pdfPrecargado = true;
+    setTimeout(() => window.Pdf.cargar().catch(() => { pdfPrecargado = false; }), 4000);
+  }
   function render() {
     if (!S.perfil) return;
+    precargarPdf();
     const hoy = new Date();
     const h = (hechosActuales = M.armarHechos(S.perfil, S.gastos, hoy));
     $("#pFamilia").textContent = S.perfil.familia || "Mi familia";
@@ -531,12 +602,90 @@ details ul{margin:4px 0 0;padding-left:20px;color:var(--ink-soft);font-size:14.5
     } catch (e) { /* se queda la respuesta calculada */ }
   }
 
+  // ---------- registrar, PDF y respaldo ----------
+  const DIA_ISO = /^\d{4}-\d{2}-\d{2}$/;
+  function registrar() {
+    const hoyIso = M.iso(new Date());
+    let fecha = ($("#iFecha") || {}).value || hoyIso;
+    if (!DIA_ISO.test(fecha) || fecha > hoyIso) fecha = hoyIso;
+    const deuda = tipoMov === "abono" ? ($("#iDeuda") || {}).value || "" : "";
+    if (tipoMov === "abono" && !deuda) return toast("Primero agrega una deuda en «Editar datos».");
+    const g = M.parsearMovimiento(($("#iMov") || {}).value, M.aFecha(fecha), tipoMov, { deuda });
+    if (!g) return toast("No encontré el monto. " + PLACEHOLDER[tipoMov].replace("Ej.:", "Prueba:"));
+    g.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6); g.ts = Date.now(); ultimoId = g.id;
+    deudaSel = deuda || deudaSel; fechaMov = null;
+    S.gastos.push(g); guardar(); render();
+    const f = hechosActuales ? hechosActuales.fondo : null;
+    toast(tipoMov === "gasto" ? "Registré " + mxn(g.monto) + " en " + M.CATEGORIAS[g.categoria].toLowerCase()
+      : tipoMov === "ingreso" ? "Ingreso extra de " + mxn(g.monto) + ": se suma al tope de esa semana"
+      : tipoMov === "ahorro" ? "Apartaste " + mxn(g.monto) + (f ? " · tu fondo ya cubre " + f.meses.toFixed(1) + " meses" : "")
+      : "Abonaste " + mxn(g.monto) + " a «" + deuda + "»", true);
+  }
+
+  function descargar(blob, nombre) {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = nombre; a.hidden = true;
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+  }
+  async function hacerPdf(modo, btn) {
+    const msg = $("#pdfMsg"), original = btn.textContent;
+    let archivo = null;
+    btn.disabled = true; btn.textContent = "Preparando…"; if (msg) msg.textContent = "";
+    try {
+      const hoy = new Date();
+      const rep = M.armarReporte(S.perfil, S.gastos, dm(hoy, 7 * semOff), hoy);
+      rep.ejemplo = !!S.ejemplo;
+      archivo = await window.Pdf.generar(rep);
+      const { blob, nombre } = archivo;
+      if (modo === "compartir") {
+        await navigator.share({ files: [new File([blob], nombre, { type: "application/pdf" })], title: "Mi reporte semanal · Dinero Bajo Control", text: "Mi reporte semanal de Dinero Bajo Control, de Roberto Rodríguez - Especialista en Asegurarte." });
+        track("sf_pdf", "compartir");
+      } else {
+        descargar(blob, nombre); track("sf_pdf", "descarga");
+        if (msg) msg.textContent = "Listo: busca " + nombre + " en tus descargas.";
+      }
+    } catch (e) {
+      if (e && e.name === "AbortError") { /* la persona canceló el menú de compartir */ }
+      else if (e && e.name === "NotAllowedError" && archivo) { // el teléfono ya no dejó abrir «Compartir» (pasó mucho tiempo desde el toque): se guarda en descargas
+        descargar(archivo.blob, archivo.nombre); track("sf_pdf", "descarga");
+        if (msg) msg.textContent = "Tu teléfono no dejó compartir directo; guardé el PDF en tus descargas para que lo envíes desde ahí.";
+      }
+      else if (msg) msg.textContent = navigator.onLine === false ? "Para preparar tu primer PDF necesitas internet; después funciona sin conexión." : "No pude preparar el PDF. Intenta de nuevo.";
+    } finally { btn.disabled = false; btn.textContent = original; }
+  }
+  function descargarCSV(modo) {
+    let movs = S.gastos, nombre = "todos";
+    if (modo === "semana") {
+      const lun = M.lunesDe(dm(new Date(), 7 * semOff)), a = M.iso(lun), b = M.iso(dm(lun, 6));
+      movs = S.gastos.filter((m) => m.fecha >= a && m.fecha <= b); nombre = a;
+    }
+    if (!movs.length) return toast("Todavía no hay movimientos para descargar.");
+    descargar(new Blob(["\ufeff" + M.movimientosCSV(movs)], { type: "text/csv;charset=utf-8" }), "Dinero-Bajo-Control_movimientos_" + nombre + ".csv");
+  }
+  function descargarRespaldo() {
+    descargar(new Blob([M.exportarRespaldo(S, new Date().toISOString())], { type: "application/json" }), "Dinero-Bajo-Control_respaldo_" + M.iso(new Date()) + ".json");
+    toast("Respaldo descargado. Guárdalo en un lugar seguro.");
+  }
+  async function restaurar(inp) {
+    const f = inp.files && inp.files[0]; inp.value = "";
+    if (!f) return;
+    if (f.size > 3e6) return toast("Ese archivo es muy grande para ser un respaldo.");
+    let texto = "";
+    try { texto = await f.text(); } catch (e) { return toast("No pude leer ese archivo."); }
+    const r = M.importarRespaldo(texto);
+    if (!r.ok) return toast(r.error);
+    if (!confirm("Esto reemplaza tu plan y tus movimientos de ahora con los del respaldo (" + r.estado.gastos.length + " movimientos). ¿Continuar?")) return;
+    S = r.estado; guardar(); semOff = 0; tab = "semana"; ver("panel"); render();
+    toast("Respaldo restaurado" + (r.descartados ? " (se omitieron " + r.descartados + " movimientos dañados)" : "") + ".");
+  }
+
   // ---------- eventos ----------
   document.addEventListener("click", (e) => {
     const t = e.target.closest("button, a");
     if (!t) return;
     if (t.id === "btnEmpezar") return empezar(S.perfil, false);
-    if (t.id === "btnEjemplo") { track("sf_plan", "ejemplo"); S.perfil = JSON.parse(JSON.stringify(M.EJEMPLO)); S.gastos = []; S.ejemplo = true; guardar(); tab = "semana"; ver("panel"); return render(); }
+    if (t.id === "btnEjemplo") { track("sf_plan", "ejemplo"); S.perfil = JSON.parse(JSON.stringify(M.EJEMPLO)); S.perfil.editadoEn = Date.now(); S.gastos = []; S.ejemplo = true; guardar(); tab = "semana"; semOff = 0; ver("panel"); return render(); }
     if (t.id === "btnInstalar" || t.id === "btnInstalar2") return instalar();
     if (t.id === "btnDeuda") { $("#deudas").appendChild(filaDeuda()); return; }
     if (t.hasAttribute("data-quitar")) return t.closest(".debt").remove();
@@ -550,8 +699,11 @@ details ul{margin:4px 0 0;padding-left:20px;color:var(--ink-soft);font-size:14.5
       if (!S.perfil || S.ejemplo) track("sf_plan", "plan"); // un plan nuevo (no una edición)
       S.perfil = leerPerfil(); S.ejemplo = false; guardar(); tab = "semana"; ver("panel"); return render();
     }
-    if (t.id === "pEditar") return empezar(S.perfil, true);
-    if (t.id === "btnBorrar") { if (confirm("¿Borrar tu plan y tus gastos de este teléfono? No se puede deshacer.")) { S = { perfil: null, gastos: [], ejemplo: false }; try { localStorage.removeItem(KEY); } catch (er) {} ver("intro"); } return; }
+    if (t.id === "pEditar") { // se edita desde las cifras de HOY: con lo apartado y lo abonado ya incluidos
+      const v = M.perfilVivo(S.perfil, S.gastos, M.iso(new Date()));
+      return empezar({ ...v, deudas: v.deudas.filter((d) => d.saldo > 0) }, true);
+    }
+    if (t.id === "btnBorrar") { if (confirm("¿Borrar tu plan y tus movimientos de este teléfono? No se puede deshacer. Si quieres conservarlos, descarga antes tu respaldo.")) { S = { perfil: null, gastos: [], ejemplo: false }; try { localStorage.removeItem(KEY); } catch (er) {} ver("intro"); } return; }
     if (t.id === "btnCompartir") {
       // El enlace lleva a la tarjeta de Roberto (no a la app): ahí conocen a quien la hizo y encuentran la app en «Recursos».
       // ?s=amigo aparece en el panel «Tarjeta web» como «De dónde llegan».
@@ -560,6 +712,12 @@ details ul{margin:4px 0 0;padding-left:20px;color:var(--ink-soft);font-size:14.5
       else if (navigator.clipboard) navigator.clipboard.writeText(texto + " " + url).then(() => toast("Mensaje copiado, pégalo en WhatsApp"), () => toast(url));
       return;
     }
+    if (t.dataset.tipo) { tipoMov = t.dataset.tipo; render(); const i = $("#iMov"); if (i && !i.disabled) i.focus(); return; }
+    if (t.dataset.sem) { semOff = Math.max(-52, Math.min(0, semOff + Number(t.dataset.sem))); fechaMov = null; render(); return; }
+    if (t.dataset.pdf) return void hacerPdf(t.dataset.pdf, t);
+    if (t.dataset.csv) return descargarCSV(t.dataset.csv);
+    if (t.id === "btnRespaldo") return descargarRespaldo();
+    if (t.id === "btnRestaurar") { $("#fRestaurar").click(); return; }
     if (t.dataset.tab) { tab = t.dataset.tab; window.scrollTo(0, 0); return render(); }
     if (t.dataset.q) { pregunta = t.dataset.q; render(); const r = $("#resp"); if (r) r.scrollIntoView({ behavior: "smooth", block: "nearest" }); return; }
     if (t.dataset.del) { S.gastos = S.gastos.filter((g) => g.id !== t.dataset.del); guardar(); return render(); }
@@ -570,17 +728,16 @@ details ul{margin:4px 0 0;padding-left:20px;color:var(--ink-soft);font-size:14.5
   document.addEventListener("change", (e) => {
     const t = e.target;
     if (t.id === "cConsent") { contacto.consent = t.checked; return; }
+    if (t.id === "iFecha") { fechaMov = t.value || null; return; }
+    if (t.id === "iDeuda") { deudaSel = t.value; return; }
+    if (t.id === "fRestaurar") return void restaurar(t);
     if (t.dataset.cat) { const g = S.gastos.find((x) => x.id === t.dataset.cat); if (g) { g.categoria = t.value; guardar(); render(); } }
   });
   document.addEventListener("submit", (e) => {
     if (e.target.id === "fContacto") { e.preventDefault(); return void enviarContacto(); }
-    if (e.target.id !== "fGasto") return;
+    if (e.target.id !== "fMov") return;
     e.preventDefault();
-    const g = M.parsearGasto($("#iGasto").value, new Date());
-    if (!g) return toast("No encontré el monto. Prueba: «gasté 350 en el súper».");
-    g.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6); ultimoId = g.id;
-    S.gastos.push(g); guardar(); render();
-    toast("Registré " + mxn(g.monto) + " en " + M.CATEGORIAS[g.categoria].toLowerCase(), true);
+    registrar();
   });
   document.addEventListener("input", (e) => {
     const t = e.target;

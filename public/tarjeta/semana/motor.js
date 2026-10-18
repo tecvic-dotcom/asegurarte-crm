@@ -33,6 +33,12 @@
     otros: "Otros",
   };
 
+  // Los 4 tipos de movimiento que la familia puede anotar. Lo anterior a esto eran solo gastos (sin `tipo`).
+  const TIPOS = { gasto: "Gasto", ingreso: "Ingreso extra", ahorro: "Ahorro apartado", abono: "Abono a deuda" };
+  const tipoDe = (m) => (m && Object.prototype.hasOwnProperty.call(TIPOS, m.tipo) ? m.tipo : "gasto");
+  const MESES_LARGOS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+  const DIAS_CORTOS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+
   const PALABRAS = {
     comida: ["super", "despensa", "comida", "tortilla", "restaurante", "taco", "cafe", "pan", "fruta", "verdura", "carne", "pollo", "leche", "mercado", "walmart", "soriana", "heb", "oxxo", "desayuno", "cena", "lonche"],
     transporte: ["gasolina", "uber", "didi", "camion", "metro", "estacionamiento", "caseta", "taxi", "pasaje", "transporte", "refaccion", "llanta"],
@@ -167,31 +173,56 @@
     return { huecos, altas, color: altas > 0 ? "rojo" : huecos.length ? "amarillo" : "verde" };
   }
 
-  // ---------- gastos registrados ----------
-  function semana(p, gastos, hoy, R = REGLAS) {
+  // ---------- plan «vivo»: el plan base + lo que la familia va anotando ----------
+  // Un movimiento solo mueve el plan si se anotó DESPUÉS de la última vez que la familia editó sus datos (`editadoEn`):
+  // al editar, las cifras ya reflejan todo lo anterior y no se cuenta dos veces. `hasta` (YYYY-MM-DD) corta en esa fecha.
+  function perfilVivo(p, movs, hasta) {
+    const desde = num(p.editadoEn);
+    let ahorro = num(p.ahorro);
+    const abonos = {};
+    for (const m of movs || []) {
+      if (num(m.ts) <= desde) continue;
+      if (hasta && m.fecha > hasta) continue;
+      const t = tipoDe(m);
+      if (t === "ahorro") ahorro += num(m.monto);
+      else if (t === "abono") { const k = String(m.deuda || ""); abonos[k] = (abonos[k] || 0) + num(m.monto); }
+    }
+    const deudas = (p.deudas || []).map(normDeuda);
+    for (const k of Object.keys(abonos)) {
+      const d = deudas.find((x) => x.nombre === k && x.saldo > 0);
+      if (d) d.saldo = Math.max(0, d.saldo - abonos[k]); // lo que sobre de una deuda ya liquidada se ignora
+    }
+    return { ...p, ahorro, deudas };
+  }
+
+  // ---------- semana ----------
+  // `hoy` es cualquier fecha dentro de la semana que se quiere ver; `ahora` es el día real (para saber cuántos días faltan).
+  function semana(p, movs, hoy, R = REGLAS, ahora = hoy) {
     const res = resumen(p, R);
     const lun = lunesDe(hoy);
     const a = iso(lun), b = iso(sumaDias(lun, 6));
-    const lista = (gastos || []).filter((g) => g.fecha >= a && g.fecha <= b);
-    const gastado = lista.reduce((s, g) => s + num(g.monto), 0);
-    const limite = res.limiteSemana;
+    const lista = (movs || []).filter((g) => g.fecha >= a && g.fecha <= b);
+    const de = (t) => lista.filter((g) => tipoDe(g) === t).reduce((x, g) => x + num(g.monto), 0);
+    const gastado = de("gasto"), ingresosExtra = de("ingreso"), ahorrado = de("ahorro"), abonado = de("abono");
+    const limite = res.limiteSemana + ingresosExtra; // lo que entra extra se suma al dinero de ESA semana
     const restante = limite - gastado;
-    const diasRestantes = 7 - ((hoy.getDay() + 6) % 7);
+    const hoyIso = iso(ahora);
+    const diasRestantes = hoyIso > b ? 0 : hoyIso < a ? 7 : 7 - ((ahora.getDay() + 6) % 7);
     const pct = limite > 0 ? gastado / limite : gastado > 0 ? 9.99 : 0;
     return {
-      desde: a, hasta: b, gastado, limite, restante, diasRestantes,
-      porDia: restante > 0 ? restante / diasRestantes : 0,
+      desde: a, hasta: b, gastado, ingresosExtra, ahorrado, abonado, limite, limiteBase: res.limiteSemana, restante, diasRestantes,
+      porDia: restante > 0 && diasRestantes > 0 ? restante / diasRestantes : 0,
       pct, color: pct < 0.75 ? "verde" : pct <= 1 ? "amarillo" : "rojo",
       lista,
     };
   }
 
-  function porCategoria(gastos, hoy, dias = 30) {
-    const desde = iso(sumaDias(hoy, -(dias - 1)));
+  // Solo cuentan los gastos (ni ingresos, ni ahorro, ni abonos).
+  function porCategoriaRango(movs, desde, hasta) {
     const tot = {};
     let total = 0;
-    for (const g of gastos || []) {
-      if (g.fecha < desde || g.fecha > iso(hoy)) continue;
+    for (const g of movs || []) {
+      if (tipoDe(g) !== "gasto" || g.fecha < desde || g.fecha > hasta) continue;
       const m = num(g.monto);
       tot[g.categoria] = (tot[g.categoria] || 0) + m;
       total += m;
@@ -200,11 +231,13 @@
       .map(([categoria, monto]) => ({ categoria, nombre: CATEGORIAS[categoria] || categoria, monto: redondea(monto), pct: total ? Math.round((monto / total) * 100) : 0 }))
       .sort((x, y) => y.monto - x.monto);
   }
+  const porCategoria = (movs, hoy, dias = 30) => porCategoriaRango(movs, iso(sumaDias(hoy, -(dias - 1))), iso(hoy));
 
   // ---------- captura estilo WhatsApp ----------
-  function parsearGasto(texto, hoy) {
+  // `tipo`: gasto | ingreso | ahorro | abono. Solo el gasto adivina la categoría por palabras («súper», «gasolina»…).
+  function parsearMovimiento(texto, hoy, tipo = "gasto", extra = {}) {
     const crudo = String(texto || "").trim();
-    if (!crudo) return null;
+    if (!crudo || !Object.prototype.hasOwnProperty.call(TIPOS, tipo)) return null;
     const t = norm(crudo);
     const reMonto = /\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?/;
     const conPeso = t.match(/\$\s*(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)/);
@@ -214,12 +247,23 @@
     let desfase = 0;
     if (/\bante ?ayer\b|\bantier\b/.test(t)) desfase = -2;
     else if (/\bayer\b/.test(t)) desfase = -1;
-    let categoria = "otros";
-    const palabras = t.split(/[^a-zñ]+/).filter(Boolean);
-    outer: for (const [cat, lista] of Object.entries(PALABRAS)) {
-      for (const w of lista) if (palabras.includes(w) || palabras.includes(w + "s")) { categoria = cat; break outer; }
+    let categoria = tipo;
+    if (tipo === "gasto") {
+      categoria = "otros";
+      const palabras = t.split(/[^a-zñ]+/).filter(Boolean);
+      outer: for (const [cat, lista] of Object.entries(PALABRAS)) {
+        for (const w of lista) if (palabras.includes(w) || palabras.includes(w + "s")) { categoria = cat; break outer; }
+      }
     }
-    return { monto, categoria, fecha: iso(sumaDias(hoy, desfase)), nota: crudo.slice(0, 80) };
+    const mov = { tipo, monto, categoria, fecha: iso(sumaDias(hoy, desfase)), nota: /^[\s$0-9,.]+$/.test(crudo) ? "" : crudo.slice(0, 80) }; // si solo escribió el monto («1200») no hay nota
+    if (tipo === "abono") mov.deuda = String(extra.deuda || "").slice(0, 40);
+    return mov;
+  }
+  function parsearGasto(texto, hoy) {
+    const r = parsearMovimiento(texto, hoy, "gasto");
+    if (!r) return null;
+    const { tipo, ...resto } = r;
+    return resto;
   }
 
   // ---------- semáforo, fase y acciones ----------
@@ -250,17 +294,18 @@
       out.push({ tipo: "meta", titulo: "Aparta " + mxn(sem) + " a tu meta", detalle: "Fondo completo y sin deudas: es momento de invertir en lo que sigue." });
     }
     if (pro.huecos[0]) out.push({ tipo: "proteccion", titulo: "Cubre el hueco: " + pro.huecos[0].titulo, detalle: pro.huecos[0].razon });
-    out.push({ tipo: "registro", titulo: "Registra tus gastos de la semana", detalle: "Escríbelos como en WhatsApp, por ejemplo «gasté en el súper», y yo los acomodo. Sin registro no hay semáforo." });
+    out.push({ tipo: "registro", titulo: "Anota tus movimientos de la semana", detalle: "Gastos, ingresos extra, lo que apartas y tus abonos a deudas. Escríbelos como en WhatsApp y yo los acomodo. Sin registro no hay semáforo." });
     return out.slice(0, 3);
   }
 
   // ---------- hechos (único insumo permitido para la IA) ----------
-  function armarHechos(p, gastos, hoy, R = REGLAS) {
+  function armarHechos(p0, gastos, hoy, R = REGLAS, ahora = hoy) {
+    const p = perfilVivo(p0, gastos, iso(hoy)); // el plan con todo lo que se anotó hasta esa fecha
     const res = resumen(p, R);
     const fon = fondo(p, res, R);
     const deu = deudaInfo(p, res, R);
     const pro = proteccion(p);
-    const sem = semana(p, gastos, hoy, R);
+    const sem = semana(p, gastos, hoy, R, ahora);
     const cats = porCategoria(gastos, hoy);
     const f = fase(res, fon, deu);
     const flujoColor = res.holgura < 0 ? "rojo" : res.ingreso > 0 && res.holgura / res.ingreso < R.flujoVerde ? "amarillo" : "verde";
@@ -284,12 +329,141 @@
         ahorroIntereses: deu.ahorroIntereses,
         extraVsBola: deu.avalancha && deu.bola && deu.avalancha.termina && deu.bola.termina ? Math.max(0, deu.bola.intereses - deu.avalancha.intereses) : null,
       },
-      semana: { limite: redondea(sem.limite), gastado: redondea(sem.gastado), restante: redondea(sem.restante), porDia: redondea(sem.porDia), diasRestantes: sem.diasRestantes, color: sem.color, pct: Math.round(sem.pct * 100) },
+      semana: { limite: redondea(sem.limite), gastado: redondea(sem.gastado), restante: redondea(sem.restante), porDia: redondea(sem.porDia), diasRestantes: sem.diasRestantes, color: sem.color, pct: Math.round(sem.pct * 100), ingresosExtra: redondea(sem.ingresosExtra), ahorrado: redondea(sem.ahorrado), abonado: redondea(sem.abonado) },
       categorias: cats,
       proteccion: { color: pro.color, huecos: pro.huecos },
     };
     h.acciones = acciones(p, res, fon, deu, pro, f);
     return h;
+  }
+
+  // ---------- textos de los 4 pilares (los comparten la pantalla «Mi plan» y el PDF) ----------
+  function pilaresTexto(h) {
+    return [
+      { k: "flujo", nombre: "Flujo mensual", color: h.pilares.flujo, texto: h.deficit > 0 ? "Gastas " + mxn(h.deficit) + " más de lo que entra." : h.faltaBasico > 0 ? "Te faltan " + mxn(h.faltaBasico) + " para lo básico." : h.pilares.flujo === "amarillo" ? "Queda muy poco margen después de lo básico." : "Después de lo básico queda margen para apartar." },
+      { k: "fondo", nombre: "Fondo de emergencia", color: h.pilares.fondo, texto: "Cubre " + h.fondo.meses.toFixed(1) + " de " + h.fondo.metaMeses + " meses de gastos." },
+      { k: "deuda", nombre: "Deudas", color: h.pilares.deuda, texto: h.deudas.cuantas ? "Pagas " + h.deudas.ratioPct + "% de tu ingreso en deudas." + (h.deudas.masCara && h.deudas.masCara.tasa >= REGLAS.tasaAltaAnual ? " Una cobra " + h.deudas.masCara.tasa + "% anual." : "") : "Sin deudas registradas." },
+      { k: "proteccion", nombre: "Protección", color: h.pilares.proteccion, texto: h.proteccion.huecos.length ? "Falta: " + h.proteccion.huecos.map((x) => x.titulo.toLowerCase()).join(", ") + "." : "Cubierta." },
+    ];
+  }
+
+  // ---------- reporte de una semana (insumo del PDF) ----------
+  function etiquetaRango(lun, dom) {
+    const m = (d) => MESES_LARGOS[d.getMonth()];
+    if (lun.getFullYear() !== dom.getFullYear()) return lun.getDate() + " de " + m(lun) + " de " + lun.getFullYear() + " al " + dom.getDate() + " de " + m(dom) + " de " + dom.getFullYear();
+    if (lun.getMonth() !== dom.getMonth()) return lun.getDate() + " de " + m(lun) + " al " + dom.getDate() + " de " + m(dom) + " de " + dom.getFullYear();
+    return lun.getDate() + " al " + dom.getDate() + " de " + m(dom) + " de " + dom.getFullYear();
+  }
+  const MAX_FILAS_REPORTE = 400;
+
+  function armarReporte(p, movs, ref, ahora = ref, R = REGLAS) {
+    const lun = lunesDe(ref), dom = sumaDias(lun, 6), fin = iso(dom);
+    const h = armarHechos(p, movs, dom, R, ahora); // el plan tal como estaba al cerrar esa semana
+    const s = semana(perfilVivo(p, movs, fin), movs, dom, R, ahora);
+    const cats = porCategoriaRango(movs, s.desde, s.hasta);
+    const maxCat = Math.max(1, ...cats.map((c) => c.monto));
+    const enCurso = iso(ahora) <= s.hasta;
+    const ordenados = [...s.lista].sort((a, b) => (a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : num(a.ts) - num(b.ts)));
+    const detalle = (m) => {
+      const t = tipoDe(m);
+      const base = String(m.nota || "").trim() || TIPOS[t];
+      if (t === "gasto") return base + (m.categoria && CATEGORIAS[m.categoria] ? " (" + CATEGORIAS[m.categoria].toLowerCase() + ")" : "");
+      if (t === "abono") return (m.deuda ? m.deuda + ": " : "") + base;
+      return base;
+    };
+    const movimientos = ordenados.slice(0, MAX_FILAS_REPORTE).map((m) => {
+      const t = tipoDe(m), d = aFecha(m.fecha), monto = num(m.monto);
+      return { fecha: m.fecha, dia: DIAS_CORTOS[d.getDay()] + " " + d.getDate(), tipo: t, tipoNombre: TIPOS[t].split(" ")[0], detalle: detalle(m), monto, texto: (t === "gasto" ? "-" : t === "ingreso" ? "+" : "") + mxn(monto) };
+    });
+    const uso = Math.round(s.pct * 100);
+    const mensajeTope = s.limite <= 0 ? "Esa semana no hubo margen para gastar." : s.color === "rojo" ? "Te pasaste por " + mxn(-s.restante) + " del tope." : s.color === "amarillo" ? (enCurso ? "Vas bien, pero cerca del límite: cuida los gustos." : "Cerraste muy cerca del límite.") : (enCurso ? "Vas bien." : "Cerraste dentro de tu tope.");
+    return {
+      familia: String(p.familia || "Mi familia"),
+      periodo: { desde: s.desde, hasta: s.hasta, etiqueta: etiquetaRango(lun, dom), subtitulo: "de lunes " + lun.getDate() + " a domingo " + dom.getDate(), enCurso },
+      puntaje: h.puntaje,
+      pilares: pilaresTexto(h),
+      kpis: { tope: redondea(s.limite), gastado: redondea(s.gastado), restante: redondea(s.restante), ingresosExtra: redondea(s.ingresosExtra), ahorrado: redondea(s.ahorrado), abonado: redondea(s.abonado) },
+      uso, color: s.color, mensajeTope,
+      categorias: cats.map((c) => ({ nombre: c.nombre, monto: c.monto, rel: c.monto / maxCat })),
+      movimientos, omitidos: Math.max(0, ordenados.length - MAX_FILAS_REPORTE),
+      totalGastos: redondea(s.gastado),
+      accion: h.acciones[0] || null,
+    };
+  }
+
+  // ---------- exportar: movimientos en CSV (Excel) y respaldo completo ----------
+  function movimientosCSV(movs) {
+    // Las celdas que empiezan con = + - @ se neutralizan: Excel las leería como fórmula.
+    const q = (v) => { let t = String(v == null ? "" : v).replace(/[\r\n]+/g, " "); if (/^[=+\-@\t]/.test(t)) t = "'" + t; return '"' + t.replace(/"/g, '""') + '"'; };
+    const filas = [...(movs || [])].sort((a, b) => (a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : num(a.ts) - num(b.ts)));
+    const out = [["Fecha", "Tipo", "Categoría", "Detalle", "Deuda", "Monto"].map(q).join(",")];
+    for (const m of filas) {
+      const t = tipoDe(m);
+      out.push([q(m.fecha), q(TIPOS[t]), q(t === "gasto" ? CATEGORIAS[m.categoria] || "Otros" : ""), q(m.nota || ""), q(t === "abono" ? m.deuda || "" : ""), num(m.monto).toFixed(2)].join(","));
+    }
+    return out.join("\r\n");
+  }
+
+  const cadena = (v, n) => String(v == null ? "" : v).replace(/[\u0000-\u001f\u007f]/g, " ").trim().slice(0, n);
+  const fechaValida = (f) => typeof f === "string" && /^\d{4}-\d{2}-\d{2}$/.test(f) && iso(aFecha(f)) === f;
+  const SI_NO_NA = ["si", "no", "na"];
+
+  function limpiarMovimiento(m) {
+    if (!m || typeof m !== "object" || !fechaValida(m.fecha)) return null;
+    const monto = num(m.monto);
+    if (!monto || monto > 10000000) return null;
+    const tipo = tipoDe(m);
+    const mov = { id: cadena(m.id, 24).replace(/[^a-zA-Z0-9]/g, ""), tipo, monto, categoria: tipo === "gasto" ? (Object.prototype.hasOwnProperty.call(CATEGORIAS, m.categoria) ? m.categoria : "otros") : tipo, fecha: m.fecha, nota: cadena(m.nota, 80), ts: Math.max(0, Math.round(num(m.ts))) };
+    if (tipo === "abono") mov.deuda = cadena(m.deuda, 40);
+    return mov;
+  }
+
+  function limpiarPerfil(p) {
+    if (!p || typeof p !== "object") return null;
+    const ingreso = num(p.ingreso);
+    if (!ingreso || ingreso > 1e8) return null;
+    const tope = (v) => Math.min(num(v), 1e8);
+    const f = p.fijos || {}, sg = p.seguros || {};
+    const nombres = new Set();
+    const deudas = (Array.isArray(p.deudas) ? p.deudas : []).slice(0, 30).map((d) => {
+      let nombre = cadena(d && d.nombre, 40) || "Deuda", k = 2;
+      while (nombres.has(nombre)) nombre = cadena(nombre, 34) + " (" + k++ + ")";
+      nombres.add(nombre);
+      return { nombre, saldo: tope(d && d.saldo), tasa: Math.min(num(d && d.tasa), 300), pago: tope(d && d.pago) };
+    }).filter((d) => d.saldo > 0);
+    return {
+      familia: cadena(p.familia, 30) || "Mi familia", personas: Math.min(12, Math.max(1, Math.round(num(p.personas)) || 3)), dependientes: p.dependientes !== false,
+      ingreso, fijos: { vivienda: tope(f.vivienda), servicios: tope(f.servicios), educacion: tope(f.educacion), otros: tope(f.otros) },
+      basico: tope(p.basico), ahorro: tope(p.ahorro), deudas,
+      seguros: { vida: SI_NO_NA.includes(sg.vida) ? sg.vida : "na", gmm: SI_NO_NA.includes(sg.gmm) ? sg.gmm : "na", auto: SI_NO_NA.includes(sg.auto) ? sg.auto : "na", hogar: SI_NO_NA.includes(sg.hogar) ? sg.hogar : "na" },
+      editadoEn: Math.max(0, Math.round(num(p.editadoEn))),
+    };
+  }
+
+  const MAX_MOVIMIENTOS = 5000;
+  function exportarRespaldo(estado, exportadoEn) {
+    return JSON.stringify({ app: "dinero-bajo-control", v: 1, exportadoEn: exportadoEn || "", perfil: estado.perfil, gastos: estado.gastos }, null, 1);
+  }
+  // Un respaldo es un archivo que la persona elige: se valida y se limpia TODO antes de usarlo.
+  function importarRespaldo(texto) {
+    const malo = (error) => ({ ok: false, error });
+    if (typeof texto !== "string" || texto.length > 3_000_000) return malo("El archivo es demasiado grande para ser un respaldo.");
+    let d;
+    try { d = JSON.parse(texto); } catch (e) { return malo("Ese archivo no es un respaldo de Dinero Bajo Control."); }
+    if (!d || d.app !== "dinero-bajo-control" || d.v !== 1) return malo("Ese archivo no es un respaldo de Dinero Bajo Control.");
+    const perfil = limpiarPerfil(d.perfil);
+    if (!perfil) return malo("El respaldo no trae un plan válido.");
+    const ids = new Set();
+    const gastos = [];
+    let descartados = 0;
+    for (const m of (Array.isArray(d.gastos) ? d.gastos : []).slice(0, MAX_MOVIMIENTOS)) {
+      const x = limpiarMovimiento(m);
+      if (!x) { descartados++; continue; }
+      if (!x.id || ids.has(x.id)) x.id = "r" + gastos.length.toString(36) + Math.random().toString(36).slice(2, 6);
+      ids.add(x.id);
+      gastos.push(x);
+    }
+    return { ok: true, estado: { perfil, gastos, ejemplo: false }, descartados };
   }
 
   // ---------- respuestas locales (5 preguntas) ----------
@@ -406,5 +580,5 @@
     seguros: { vida: "no", gmm: "no", auto: "si", hogar: "na" },
   };
 
-  return { REGLAS, CATEGORIAS, PREGUNTAS, PROMPT_SISTEMA, EJEMPLO, resumen, fondo, deudaInfo, simularDeudas, proteccion, semana, porCategoria, parsearGasto, armarHechos, responder, validarTexto, mensajeWhatsApp, planParaCRM, mxn, iso, aFecha, lunesDe };
+  return { TIPOS, tipoDe, perfilVivo, parsearMovimiento, porCategoriaRango, pilaresTexto, armarReporte, movimientosCSV, exportarRespaldo, importarRespaldo, limpiarPerfil, limpiarMovimiento, REGLAS, CATEGORIAS, PREGUNTAS, PROMPT_SISTEMA, EJEMPLO, resumen, fondo, deudaInfo, simularDeudas, proteccion, semana, porCategoria, parsearGasto, armarHechos, responder, validarTexto, mensajeWhatsApp, planParaCRM, mxn, iso, aFecha, lunesDe };
 });
