@@ -60,8 +60,8 @@ export interface FilaEvento {
 }
 
 export const SECCIONES_TARJETA: ReadonlyArray<{ id: string; nombre: string }> = [
-  { id: "regalo", nombre: "Regalo (guía Dinero Bajo Control)" },
   { id: "quien", nombre: "Quién soy" },
+  { id: "herramientas", nombre: "Herramientas (guía Dinero Bajo Control y calculadora)" },
   { id: "seguros", nombre: "¿Qué quieres proteger? (chips y seguros)" },
   { id: "asesoria", nombre: "Asesoría (botones «Quiero una asesoría» y «Agendar»)" },
   { id: "opiniones", nombre: "Opiniones" },

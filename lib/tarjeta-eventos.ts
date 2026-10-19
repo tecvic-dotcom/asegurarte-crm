@@ -34,7 +34,7 @@ function semilla(): FilaEvento[] {
       const base = { dispositivo: rnd() < 0.82 ? "movil" : "escritorio", fuente: elige(fuentes) };
       const e = (evento: string, detalle = "", dt = 0) => filas.push({ creado_en: new Date(t + dt * 1000).toISOString(), evento, detalle, ...base });
       e("vista");
-      const llega = ["regalo", "quien", "seguros", "asesoria", "opiniones", "reconocimientos", "videos", "eventos", "faq", "recursos", "contacto"];
+      const llega = ["quien", "herramientas", "seguros", "asesoria", "opiniones", "reconocimientos", "videos", "eventos", "faq", "recursos", "contacto"];
       const hasta = rnd() < 0.18 ? 0 : 1 + Math.floor(rnd() * rnd() * 11);
       llega.slice(0, hasta).forEach((id, k) => e("sec", id, 5 + k * 6));
       if (hasta > 1 && rnd() < 0.45) e("car", "productos", 20);

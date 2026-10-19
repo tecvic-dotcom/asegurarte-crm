@@ -189,20 +189,25 @@ a{color:inherit}
 .tile .ic{width:21px;height:21px;color:var(--brand-2)}
 
 /* ---------- Navegación por secciones ---------- */
-/* Barra segmentada: todos los botones caben en una sola fila desde 320px, sin scroll lateral. */
+/* Barra segmentada: cada botón mide lo que pide su texto y se reparten el ancho; en pantallas muy angostas, si no caben todos, la barra se desliza de lado
+   (el botón de la sección activa se centra solo). */
 .secnav{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;margin-inline:-20px;padding:8px 12px;
   background:rgba(6,7,15,.84);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
-.secnav .in{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:2px;max-width:680px;margin:0 auto;padding:4px;
+.secnav .in{position:relative;display:flex;gap:2px;max-width:680px;margin:0 auto;padding:4px;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;
   border-radius:16px;border:1px solid var(--line-strong);background:var(--glass)}
-.secnav a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:0;min-height:52px;padding:6px 2px;
-  border-radius:12px;color:var(--ink-soft);font:600 clamp(10.5px,3.1vw,13px)/1.1 var(--body);text-align:center;white-space:nowrap;
+.secnav .in::-webkit-scrollbar{display:none}
+.secnav a{flex:1 0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:52px;padding:6px 3px;
+  border-radius:12px;color:var(--ink-soft);font:600 clamp(10px,2.9vw,13px)/1.1 var(--body);text-align:center;white-space:nowrap;
   text-decoration:none;transition:background .15s,color .15s}
 .secnav a .ic{width:19px;height:19px;stroke-width:1.9}
 .secnav a:hover{color:var(--ink);background:var(--glass-2)}
 .secnav a[aria-current="true"]{background:linear-gradient(180deg,var(--brand-2),var(--brand));color:#fff}
 @media (min-width:600px){
   .secnav{padding:10px 20px}
-  .secnav a{flex-direction:row;gap:8px;min-height:46px;font-size:14px}
+}
+/* Ícono al lado del texto solo cuando hay ancho de sobra (una columna de 720 a 999 px, o la columna derecha de pantallas grandes); en laptops angostas (1000–1239) queda ícono arriba */
+@media (min-width:720px) and (max-width:999px),(min-width:1240px){
+  .secnav a{flex-direction:row;gap:8px;min-height:46px;font-size:14px;padding:6px 8px}
   .secnav a .ic{width:18px;height:18px}
 }
 
@@ -421,7 +426,9 @@ dialog.vid[open]{animation:subir .25s ease-out}
 .faq .ans p,.acc .ans p{margin:0 0 12px;color:var(--ink-soft);font-size:16px}
 .faq .ans .btn{margin-top:4px}
 
-#quien > h2:first-child{margin-top:0}
+#quien > h2:first-child,#herramientas > h2:first-child{margin-top:0}
+.tools{display:grid;gap:12px;margin-top:20px}
+.tools .teaser{margin-top:0}
 .acc summary{min-height:68px;justify-content:flex-start;font-size:17px}
 .acc .ico{width:40px;height:40px;border-radius:12px;background:var(--glass-2);border:1px solid var(--line-strong);color:var(--brand-2);display:grid;place-items:center;flex:none}
 .acc .ico .ic{width:20px;height:20px}
@@ -488,7 +495,6 @@ details[open] > summary .mas::after,.regalo.abierto .mas::after{transform:rotate
 
 /* Regalo: guía «Dinero Bajo Control», justo debajo de la portada. Cerrada se ve igual que la franja de la portada;
    con el cursor encima (o al tocarla en el celular) se despliega con el resto de la información. */
-#regalo{padding-top:30px}
 .regalo{position:relative;overflow:hidden;padding:7px;border-radius:27px;border:1px solid var(--brand-2);
   background:linear-gradient(135deg,rgba(91,123,255,.32),rgba(42,34,245,.16));box-shadow:0 10px 28px -14px rgba(42,34,245,.95);transition:box-shadow .3s}
 .regalo.abierto{box-shadow:0 24px 60px -28px rgba(42,34,245,.85)}
@@ -652,6 +658,7 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
     <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
     <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
     <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></symbol>
+    <symbol id="i-tools" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></symbol>
     <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></symbol>
     <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></symbol>
     <symbol id="i-steps" viewBox="0 0 24 24"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></symbol>
@@ -692,6 +699,7 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
       <nav class="secnav" aria-label="Secciones">
         <div class="in">
           <a href="#quien"><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg>Quién soy</a>
+          <a href="#herramientas"><svg class="ic" aria-hidden="true"><use href="#i-tools"/></svg>Herramientas</a>
           <a href="#seguros"><svg class="ic" aria-hidden="true"><use href="#i-medical"/></svg>Seguros</a>
           <a href="#opiniones"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg>Opiniones</a>
           <a href="#faq"><svg class="ic" aria-hidden="true"><use href="#i-help"/></svg>FAQ</a>
@@ -699,37 +707,41 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
         </div>
       </nav>
 
-      <section class="sec" id="regalo" aria-labelledby="h-regalo">
-        <div class="regalo" id="regaloCard">
-          <h2 class="reg-h" id="h-regalo">
-            <button class="reg-top" type="button" id="regTop" aria-expanded="false" aria-controls="regBody">
-              <img src="/tarjeta/semana/icons/icon-192.png" alt="" width="38" height="38" loading="lazy" decoding="async">
-              <span class="t"><small>Regalo para tu familia</small><b>Dinero Bajo Control</b></span>
-              <span class="mas" aria-hidden="true"></span>
-            </button>
-          </h2>
-          <div class="reg-body" id="regBody"><div class="reg-in">
-            <p class="lead">Cada semana te dice qué hacer con el dinero de tu hogar, para que llegues tranquilo al siguiente pago. Sin costo y sin tener que dejar tus datos.</p>
-            <ul class="reg-list">
-              <li><strong>Cuánto puedes gastar esta semana</strong>, claro y sin tablas.</li>
-              <li>Anotas gastos y ahorros en segundos y ves tu <strong>avance, tu racha y tus metas</strong>.</li>
-              <li><strong>Reportes en PDF</strong> para revisarlos en pareja o en familia.</li>
-            </ul>
-            <a class="btn btn-primary btn-caps btn-big block" href="/semana?s=tarjeta" data-ev="recurso" data-d="Dinero Bajo Control (regalo)"><svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg>Quiero mi guía gratis</a>
-            <a class="btn btn-ghost btn-big block" href="/semana?s=tarjeta&amp;instalar=1" data-ev="recurso" data-d="Dinero Bajo Control (instalar)"><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg>Instalarla en mi celular</a>
-            <p class="reg-nota">Se instala en tu celular y funciona sin internet. Lo que anotas se queda en tu teléfono.</p>
-          </div></div>
-        </div>
-      </section>
-
       <section class="sec" id="quien" aria-labelledby="h-quien">
         <h2 id="h-quien" data-c="quienSoy.titulo"></h2>
         <div class="acc" id="acc"></div>
-        <a class="teaser" href="https://www.especialistaenasegurarte.lat/escudo" data-ev="recurso" data-d="Escudo Familiar (inicio)">
-          <span class="ico"><svg class="ic" aria-hidden="true"><use href="#i-calc"/></svg></span>
-          <span class="t"><strong>¿Cuánta suma asegurada necesito?</strong><span>Calcula tu «Escudo Familiar» en 3 pasos · 1 minuto</span></span>
-          <svg class="ic go" aria-hidden="true"><use href="#i-arrow"/></svg>
-        </a>
+      </section>
+
+      <!-- Herramientas: la guía gratis (tarjeta plegable) y la calculadora, juntas debajo de «Conóceme» -->
+      <section class="sec" id="herramientas" aria-labelledby="h-herramientas">
+        <h2 id="h-herramientas">Herramientas</h2>
+        <div class="tools">
+          <div class="regalo" id="regaloCard">
+            <h3 class="reg-h" id="h-regalo">
+              <button class="reg-top" type="button" id="regTop" aria-expanded="false" aria-controls="regBody">
+                <img src="/tarjeta/semana/icons/icon-192.png" alt="" width="38" height="38" loading="lazy" decoding="async">
+                <span class="t"><small>Regalo para tu familia</small><b>Dinero Bajo Control</b></span>
+                <span class="mas" aria-hidden="true"></span>
+              </button>
+            </h3>
+            <div class="reg-body" id="regBody"><div class="reg-in">
+              <p class="lead">Cada semana te dice qué hacer con el dinero de tu hogar, para que llegues tranquilo al siguiente pago. Sin costo y sin tener que dejar tus datos.</p>
+              <ul class="reg-list">
+                <li><strong>Cuánto puedes gastar esta semana</strong>, claro y sin tablas.</li>
+                <li>Anotas gastos y ahorros en segundos y ves tu <strong>avance, tu racha y tus metas</strong>.</li>
+                <li><strong>Reportes en PDF</strong> para revisarlos en pareja o en familia.</li>
+              </ul>
+              <a class="btn btn-primary btn-caps btn-big block" href="/semana?s=tarjeta" data-ev="recurso" data-d="Dinero Bajo Control (regalo)"><svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg>Quiero mi guía gratis</a>
+              <a class="btn btn-ghost btn-big block" href="/semana?s=tarjeta&amp;instalar=1" data-ev="recurso" data-d="Dinero Bajo Control (instalar)"><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg>Instalarla en mi celular</a>
+              <p class="reg-nota">Se instala en tu celular y funciona sin internet. Lo que anotas se queda en tu teléfono.</p>
+            </div></div>
+          </div>
+          <a class="teaser" href="https://www.especialistaenasegurarte.lat/escudo" data-ev="recurso" data-d="Escudo Familiar (inicio)">
+            <span class="ico"><svg class="ic" aria-hidden="true"><use href="#i-calc"/></svg></span>
+            <span class="t"><strong>¿Cuánta suma asegurada necesito?</strong><span>Calcula tu «Escudo Familiar» en 3 pasos · 1 minuto</span></span>
+            <svg class="ic go" aria-hidden="true"><use href="#i-arrow"/></svg>
+          </a>
+        </div>
       </section>
 
       <!-- Una sola sección: los chips «¿Qué quieres proteger?» marcan los seguros que se muestran «Para ti» en el carrusel de abajo, y los dos botones de contacto cierran la sección -->
@@ -1622,6 +1634,9 @@ function vcardTexto() {
     if (id === actual) return;
     actual = id;
     links.forEach((a) => a.setAttribute("aria-current", String(a.hash === "#" + id)));
+    // Si la barra no cabe completa, el botón activo se centra (solo se mueve la barra, no la página)
+    const barra = nav.querySelector(".in"), on = links.find((a) => a.hash === "#" + id);
+    if (on && barra.scrollWidth > barra.clientWidth + 1) barra.scrollTo({ left: on.offsetLeft - (barra.clientWidth - on.offsetWidth) / 2, behavior: reducido ? "auto" : "smooth" });
   };
   const espiar = () => {
     if (bloqueo) return;
