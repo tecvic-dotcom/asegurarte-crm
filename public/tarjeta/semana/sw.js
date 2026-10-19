@@ -1,5 +1,5 @@
 /* Dinero Bajo Control — service worker: funciona sin conexión. Sube VERSION cuando cambie algún archivo. */
-const VERSION = "msf-v10";
+const VERSION = "msf-v11";
 const ARCHIVOS = ["index.html", "motor.js", "pdf.js", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"];
 
 self.addEventListener("install", (e) => {

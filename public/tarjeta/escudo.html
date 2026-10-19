@@ -217,6 +217,15 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 .who strong{display:block;font:800 18px/1.2 var(--display)}
 .who span{display:block;font-size:14px;color:var(--ink-mute)}
 
+/* Regalo: guía «Dinero Bajo Control» al final del resultado */
+.gift{border-radius:24px;padding:20px;display:flex;flex-direction:column;gap:14px;border-color:var(--brand-2);
+  background:linear-gradient(150deg,rgba(91,123,255,.24),rgba(42,34,245,.12) 60%,rgba(6,7,15,.2))}
+.gift .g-top{display:flex;align-items:center;gap:14px}
+.gift img{display:block;width:60px;height:60px;border-radius:15px;flex:none;box-shadow:0 8px 22px -8px rgba(0,0,0,.7),0 0 0 1px var(--line-strong)}
+.gift .tag{display:inline-block;padding:4px 9px;border-radius:999px;background:linear-gradient(180deg,var(--brand-2),var(--brand));color:#fff;font:700 11px/1 var(--display);letter-spacing:.08em;text-transform:uppercase}
+.gift h2{margin:7px 0 0;font:800 18.5px/1.2 var(--display)}
+.gift p{margin:0;font-size:15px;line-height:1.5;color:var(--ink-soft)}
+
 footer{margin-top:8px;padding-top:18px;border-top:1px solid var(--line);font-size:12.5px;line-height:1.65;color:var(--ink-mute)}
 footer p{margin:0 0 8px}
 footer a{color:var(--ink-soft)}
@@ -443,6 +452,15 @@ dialog.agenda[open]{animation:subir .25s ease-out}
       </div>
       <a class="btn btn-wa" id="waButton" href="https://wa.me/528182800234" target="_blank" rel="noopener"><svg class="ic" aria-hidden="true"><use href="#i-wa"/></svg>Cotizar mi seguro por WhatsApp</a>
       <a class="btn btn-ghost" id="agendaBtn" data-agenda href="https://calendar.app.google/dxf4aRZFHkux6MqL8" target="_blank" rel="noopener"><svg class="ic" aria-hidden="true"><use href="#i-cal"/></svg>Agendar una cita</a>
+    </section>
+
+    <section class="gift glass" aria-labelledby="h-gift">
+      <div class="g-top">
+        <img src="/tarjeta/semana/icons/icon-192.png" alt="" width="60" height="60" loading="lazy" decoding="async">
+        <div><span class="tag">Regalo · gratis</span><h2 id="h-gift">Dinero Bajo Control</h2></div>
+      </div>
+      <p>Proteger a tu familia es el primer paso. El segundo: que el dinero alcance cada semana. Esta guía gratuita te dice cuánto gastar y cuánto apartar, y se instala en tu celular.</p>
+      <a class="btn btn-next" href="/semana?s=escudo">Quiero mi guía gratis</a>
     </section>
 
     <div class="again">

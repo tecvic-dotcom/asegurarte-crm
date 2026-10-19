@@ -55,6 +55,12 @@ p{margin:0}
 .brand span{font-size:12px;color:var(--ink-mute)}
 .ghost{min-height:44px;padding:0 14px;border-radius:999px;border:1px solid var(--line-strong);background:var(--glass);color:var(--ink-soft);font-weight:600;font-size:14px;cursor:pointer}
 .ghost:hover{border-color:var(--brand-2);color:var(--ink)}
+.pill-inst{display:inline-flex;align-items:center;gap:7px;flex:none;border-color:var(--brand-2);background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#fff;box-shadow:0 8px 22px -10px rgba(42,34,245,.9)}
+.pill-inst:hover{color:#fff;filter:brightness(1.1)}
+.pill-inst svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.flash{animation:destello 1.9s ease-out}
+@keyframes destello{0%{box-shadow:0 0 0 0 rgba(91,123,255,.95)}60%{box-shadow:0 0 0 16px rgba(91,123,255,0)}100%{box-shadow:0 0 0 0 rgba(91,123,255,0)}}
+@media (prefers-reduced-motion:reduce){.flash{animation:none}}
 
 /* botones */
 .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:52px;padding:0 20px;border-radius:14px;border:0;font-weight:700;font-size:16.5px;cursor:pointer;text-decoration:none;text-align:center}
@@ -160,7 +166,13 @@ select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border
 
 <!-- ============ INTRO ============ -->
 <div id="intro" class="wrap" hidden>
-  <div class="top"><div class="brand"><b>Dinero Bajo Control</b><span>Un regalo de Roberto Rodríguez · Asesor de seguros</span></div></div>
+  <div class="top"><div class="brand"><b>Dinero Bajo Control</b><span>Un regalo de Roberto Rodríguez · Asesor de seguros</span></div>
+    <button class="ghost pill-inst" id="pillInstalar" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg>Instalar app</button></div>
+  <div id="instalar" class="card stack" hidden>
+    <h3>Llévala en tu teléfono</h3>
+    <p class="small soft" data-inst-texto></p>
+    <button class="btn primary" data-inst-btn hidden>Instalar en mi teléfono</button>
+  </div>
   <section class="card stack" style="margin-top:6px">
     <span class="k">Gratis · sin registro</span>
     <h1>¿Qué hacemos con el dinero de la familia esta semana?</h1>
@@ -179,11 +191,6 @@ select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border
       <li>Metas de ahorro con nombre (un viaje, la escuela…) y cuánto llevas de cada una.</li>
     </ul>
   </section>
-  <div id="instalar" class="card stack" hidden>
-    <h3>Llévala en tu teléfono</h3>
-    <button class="btn sec" id="btnInstalar" hidden>Instalar la guía</button>
-    <p class="small soft" id="tipIos" hidden>En iPhone: toca <b>Compartir</b> y luego <b>Agregar a pantalla de inicio</b>.</p>
-  </div>
   <p class="legal">Orientación educativa. No es asesoría financiera, fiscal ni cotización de seguros. · <a href="https://www.especialistaenasegurarte.lat/privacidad/semana" target="_blank" rel="noopener">Aviso de privacidad</a></p>
 </div>
 
@@ -235,6 +242,11 @@ select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border
 <div id="panel" hidden>
   <div class="wrap">
     <div class="top"><div class="brand"><b id="pFamilia">Dinero Bajo Control</b><span id="pSub"></span></div><button class="ghost" id="pEditar">Editar datos</button></div>
+    <section id="bannerInst" class="card stack" hidden>
+      <div class="top"><h3>Ponla en tu pantalla de inicio</h3><button class="ghost" id="bannerX" aria-label="Cerrar este aviso">✕</button></div>
+      <p class="small soft" data-inst-texto></p>
+      <button class="btn primary" data-inst-btn hidden>Instalar en mi teléfono</button>
+    </section>
     <main id="vista" class="stack"></main>
     <div id="pie" class="stack">
       <section class="card stack"><h3>Tus datos</h3><p class="soft small">Viven solo en este teléfono. Haz un respaldo de vez en cuando por si cambias de celular.</p>
@@ -242,7 +254,11 @@ select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border
         <button class="ghost" id="btnRestaurar">Restaurar un respaldo</button>
         <input type="file" id="fRestaurar" accept="application/json,.json" hidden>
         <button class="ghost" data-csv="todo">Descargar todos mis movimientos (Excel)</button></section>
-      <div id="instalar2" class="card stack" hidden><button class="btn sec" id="btnInstalar2">Instalar la guía en mi teléfono</button></div>
+      <div id="instalar2" class="card stack" hidden>
+        <h3>Llévala en tu teléfono</h3>
+        <p class="small soft" data-inst-texto></p>
+        <button class="btn sec" data-inst-btn hidden>Instalar en mi teléfono</button>
+      </div>
       <button class="ghost" id="btnCompartir">Recomendar esta guía con un amigo</button>
       <button class="ghost" id="btnBorrar">Borrar mis datos de este teléfono</button>
       <p class="legal">Orientación educativa. No es asesoría financiera, fiscal ni cotización de seguros. · <a href="https://www.especialistaenasegurarte.lat/privacidad/semana" target="_blank" rel="noopener">Aviso de privacidad</a></p>
@@ -317,15 +333,42 @@ select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border
   }
 
   // ---------- instalación (PWA) ----------
+  // Android/Chrome solo ofrece el botón cuando él quiere (evInstalar); en los demás casos se muestran los pasos a mano, para que nunca quede sin salida.
   let evInstalar = null;
-  const esIos = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
-  const instalada = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  const ua = navigator.userAgent;
+  const esIos = (/iphone|ipad|ipod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)) && !window.MSStream;
+  const esAndroid = /android/i.test(ua);
+  // Navegador de otra app (Facebook, Instagram, TikTok…): ahí el teléfono no deja instalar; hay que abrirla en Chrome o Safari.
+  const enApp = /FBAN|FBAV|FB_IAB|Instagram|TikTok|musical_ly|Snapchat|Line\/|MicroMessenger|; wv\)/i.test(ua) || (esIos && !/Safari/i.test(ua));
+  let instalada = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  let avisoCerrado = false; try { avisoCerrado = localStorage.getItem("msf.noinst") === "1"; } catch (e) {}
   window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); evInstalar = e; mostrarInstalar(); });
-  window.addEventListener("appinstalled", () => { track("sf_instalar"); evInstalar = null; mostrarInstalar(); });
+  window.addEventListener("appinstalled", () => { track("sf_instalar"); evInstalar = null; instalada = true; mostrarInstalar(); });
+  function guiaInstalar() {
+    if (evInstalar) return "Un toque y queda como una app en tu pantalla de inicio. Funciona sin internet.";
+    if (enApp) return esIos
+      ? "Para instalarla, ábrela en <b>Safari</b>: toca el ícono de brújula o los tres puntos y elige <b>Abrir en Safari</b>."
+      : "Para instalarla, ábrela en <b>Chrome</b>: toca los tres puntos <b>⋮</b> y elige <b>Abrir en el navegador</b>.";
+    if (esIos) return "Toca <b>Compartir</b> (el cuadro con la flecha hacia arriba) y luego <b>Agregar a pantalla de inicio</b>. Si no ves esa opción, ábrela en Safari.";
+    if (esAndroid) return "Toca los tres puntos <b>⋮</b> de tu navegador y elige <b>Instalar app</b> o <b>Agregar a pantalla de inicio</b>.";
+    return "";
+  }
+  // Los pasos (tarjeta de arriba) salen si la persona toca «Instalar app» y su navegador no la deja instalar con un toque, o si llega desde el botón de la tarjeta (?instalar=1).
+  const pideInstalar = qs.get("instalar") === "1";
+  let verPasos = pideInstalar;
   function mostrarInstalar() {
-    const puede = !instalada && (evInstalar || esIos);
-    $("#instalar").hidden = !puede; $("#btnInstalar").hidden = !evInstalar; $("#tipIos").hidden = !(esIos && !evInstalar);
-    $("#instalar2").hidden = !(!instalada && evInstalar);
+    const texto = instalada ? "" : guiaInstalar();
+    $$("[data-inst-texto]").forEach((n) => (n.innerHTML = texto));
+    $$("[data-inst-btn]").forEach((b) => (b.hidden = !evInstalar));
+    $("#pillInstalar").hidden = !texto;
+    $("#instalar").hidden = !texto || !verPasos;
+    $("#instalar2").hidden = !texto;
+    $("#bannerInst").hidden = !texto || (avisoCerrado && !pideInstalar);
+  }
+  function tocarInstalar() {
+    if (evInstalar) return instalar();
+    verPasos = !verPasos; mostrarInstalar();
+    if (verPasos) { const c = $("#instalar"); c.classList.remove("flash"); void c.offsetWidth; c.classList.add("flash"); }
   }
   async function instalar() { if (!evInstalar) return; evInstalar.prompt(); try { await evInstalar.userChoice; } catch (e) {} evInstalar = null; mostrarInstalar(); }
 
@@ -829,7 +872,9 @@ select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border
     if (!t) return;
     if (t.id === "btnEmpezar") return empezar(S.perfil, false);
     if (t.id === "btnEjemplo") { track("sf_plan", "ejemplo"); S.perfil = JSON.parse(JSON.stringify(M.EJEMPLO)); S.perfil.editadoEn = Date.now(); S.gastos = []; S.ejemplo = true; guardar(); tab = "semana"; semOff = 0; ver("panel"); return render(); }
-    if (t.id === "btnInstalar" || t.id === "btnInstalar2") return instalar();
+    if (t.hasAttribute("data-inst-btn")) return instalar();
+    if (t.id === "pillInstalar") return tocarInstalar();
+    if (t.id === "bannerX") { avisoCerrado = true; try { localStorage.setItem("msf.noinst", "1"); } catch (er) {} return mostrarInstalar(); }
     if (t.id === "btnDeuda") { $("#deudas").appendChild(filaDeuda()); return; }
     if (t.hasAttribute("data-quitar")) return t.closest(".debt").remove();
     if (t.dataset.st) { const n = Math.min(12, Math.max(1, Number($("#fPersonas").textContent) + Number(t.dataset.st))); $("#fPersonas").textContent = n; return; }
@@ -903,6 +948,7 @@ select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border
 
   // ---------- arranque ----------
   mostrarInstalar();
+  if (pideInstalar && !$("#instalar").hidden) $("#instalar").classList.add("flash");
   track("sf_abrir");
   if (S.perfil) { ver("panel"); render(); } else ver("intro");
   if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register("sw.js").catch(() => {});

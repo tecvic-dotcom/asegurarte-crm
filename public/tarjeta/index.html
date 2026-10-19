@@ -466,6 +466,38 @@ dialog.vid[open]{animation:subir .25s ease-out}
 .teaser .t span{display:block;margin-top:3px;font-size:14px;line-height:1.4;color:var(--ink-soft)}
 .teaser .go{width:20px;height:20px;color:var(--brand-2);flex:none}
 
+/* Franja de la portada: avisa de la guía gratis desde la primera pantalla */
+.strip{display:flex;align-items:center;gap:11px;margin:0 0 16px;padding:7px 14px 7px 7px;border-radius:999px;text-decoration:none;color:var(--ink);
+  background:linear-gradient(135deg,rgba(91,123,255,.32),rgba(42,34,245,.16));border:1px solid var(--brand-2);box-shadow:0 10px 28px -14px rgba(42,34,245,.95);
+  transition:border-color .15s,transform .15s,filter .15s;-webkit-tap-highlight-color:transparent}
+.strip:hover{filter:brightness(1.1)}
+.strip:active{transform:translateY(1px)}
+.strip img{display:block;width:38px;height:38px;border-radius:11px;flex:none;box-shadow:0 0 0 1px var(--line-strong)}
+.strip .t{flex:1;min-width:0}
+.strip small{display:block;font:600 11.5px/1.2 var(--body);letter-spacing:.07em;text-transform:uppercase;color:var(--ink-soft)}
+.strip b{display:block;margin-top:2px;font:800 16px/1.15 var(--display);color:#fff}
+.strip .go{width:19px;height:19px;color:var(--brand-2);flex:none}
+
+/* Regalo: guía «Dinero Bajo Control», justo debajo de la portada */
+#regalo{padding-top:30px}
+.regalo{position:relative;overflow:hidden;padding:22px 20px 20px;border-radius:24px;border:1px solid var(--brand-2);
+  background:linear-gradient(150deg,rgba(91,123,255,.28),rgba(42,34,245,.14) 58%,rgba(6,7,15,.25));box-shadow:0 24px 60px -28px rgba(42,34,245,.85)}
+.regalo::after{content:"";position:absolute;width:240px;height:240px;right:-110px;top:-120px;border-radius:50%;background:radial-gradient(circle,rgba(91,123,255,.42),transparent 70%);pointer-events:none}
+.regalo > *{position:relative;z-index:1}
+.reg-head{display:flex;align-items:center;gap:14px;margin-top:16px}
+.reg-head img{display:block;width:72px;height:72px;border-radius:18px;flex:none;box-shadow:0 10px 26px -10px rgba(0,0,0,.75),0 0 0 1px var(--line-strong)}
+.reg-tag{display:inline-block;padding:5px 10px;border-radius:999px;background:linear-gradient(180deg,var(--brand-2),var(--brand));color:#fff;font:700 11.5px/1 var(--display);letter-spacing:.08em;text-transform:uppercase}
+.reg-head h2{margin:8px 0 0;font-size:clamp(26px,7.4vw,32px)}
+.regalo .lead{margin-top:16px}
+.reg-list{list-style:none;margin:16px 0 0;padding:0;display:grid;gap:11px}
+.reg-list li{position:relative;padding-left:30px;font-size:15.5px;line-height:1.45;color:var(--ink-soft)}
+.reg-list li::before{content:"";position:absolute;left:2px;top:3px;width:18px;height:18px;border-radius:50%;background:var(--brand-2) no-repeat center/11px
+  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7.5'/%3E%3C/svg%3E")}
+.reg-list strong{color:var(--ink);font-weight:600}
+.regalo .btn{margin-top:20px}
+.regalo .btn + .btn{margin-top:10px}
+.reg-nota{margin:12px 0 0;text-align:center;font-size:13px;line-height:1.5;color:var(--ink-mute)}
+
 /* Agenda de citas dentro de la tarjeta (pantalla completa en el celular, ventana en escritorio) */
 dialog.agenda{overflow:hidden}
 .agenda-in{height:100%;display:flex;flex-direction:column;padding:max(8px,env(safe-area-inset-top,0px)) 0 0}
@@ -603,6 +635,7 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
     <symbol id="i-tri" viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z" fill="currentColor" stroke="none"/></symbol>
     <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
     <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></symbol>
   </defs>
 </svg>
 
@@ -610,6 +643,11 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
   <!-- PORTADA -->
   <header class="hero" id="inicio">
     <div class="hero-inner">
+      <a class="strip" href="/semana?s=portada" data-ev="recurso" data-d="Dinero Bajo Control (portada)" aria-label="Regalo gratis para tu familia: guía Dinero Bajo Control">
+        <img src="/tarjeta/semana/icons/icon-192.png" alt="" width="38" height="38" decoding="async">
+        <span class="t"><small>Regalo gratis para tu familia</small><b>Dinero Bajo Control</b></span>
+        <svg class="ic go" aria-hidden="true"><use href="#i-arrow"/></svg>
+      </a>
       <div data-logo></div>
       <figure class="portrait" style="margin-bottom:0"><picture id="fotoPic"><source type="image/avif" srcset="/tarjeta/img/roberto-600.avif 600w, /tarjeta/img/roberto-900.avif 900w, /tarjeta/img/roberto-1200.avif 1200w" sizes="(min-width: 1000px) 440px, 100vw"><source type="image/webp" srcset="/tarjeta/img/roberto-600.webp 600w, /tarjeta/img/roberto-900.webp 900w, /tarjeta/img/roberto-1200.webp 1200w" sizes="(min-width: 1000px) 440px, 100vw"><img id="foto" alt="Fotografía de Roberto Rodríguez" width="1200" height="1245" fetchpriority="high" decoding="async" src="/tarjeta/img/roberto-900.jpg" srcset="/tarjeta/img/roberto-600.jpg 600w, /tarjeta/img/roberto-900.jpg 900w, /tarjeta/img/roberto-1200.jpg 1200w" sizes="(min-width: 1000px) 440px, 100vw"></picture></figure>
       <div class="id">
@@ -641,6 +679,25 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
           <a href="#contacto"><svg class="ic" aria-hidden="true"><use href="#i-phone"/></svg>Contacto</a>
         </div>
       </nav>
+
+      <section class="sec" id="regalo" aria-labelledby="h-regalo">
+        <div class="regalo">
+          <p class="eyebrow">Un regalo para tu familia</p>
+          <div class="reg-head">
+            <img src="/tarjeta/semana/icons/icon-192.png" alt="" width="72" height="72" loading="lazy" decoding="async">
+            <div><span class="reg-tag">Guía gratuita</span><h2 id="h-regalo">Dinero Bajo Control</h2></div>
+          </div>
+          <p class="lead">Cada semana te dice qué hacer con el dinero de tu hogar, para que llegues tranquilo al siguiente pago. Sin costo y sin tener que dejar tus datos.</p>
+          <ul class="reg-list">
+            <li><strong>Cuánto puedes gastar esta semana</strong>, claro y sin tablas.</li>
+            <li>Anotas gastos y ahorros en segundos y ves tu <strong>avance, tu racha y tus metas</strong>.</li>
+            <li><strong>Reportes en PDF</strong> para revisarlos en pareja o en familia.</li>
+          </ul>
+          <a class="btn btn-primary btn-caps btn-big block" href="/semana?s=tarjeta" data-ev="recurso" data-d="Dinero Bajo Control (regalo)"><svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg>Quiero mi guía gratis</a>
+          <a class="btn btn-ghost btn-big block" href="/semana?s=tarjeta&amp;instalar=1" data-ev="recurso" data-d="Dinero Bajo Control (instalar)"><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg>Instalarla en mi celular</a>
+          <p class="reg-nota">Se instala en tu celular y funciona sin internet. Lo que anotas se queda en tu teléfono.</p>
+        </div>
+      </section>
 
       <section class="sec" id="quien" aria-labelledby="h-quien">
         <p class="eyebrow">¿Quién soy?</p>
@@ -1362,7 +1419,7 @@ function vcardTexto() {
 
   // Entrada suave de los bloques al aparecer en pantalla (nada queda oculto si el navegador no puede observar o la persona prefiere sin movimiento)
   if ("IntersectionObserver" in window && !reducido) {
-    const rv = [...document.querySelectorAll(".sec > .eyebrow, .sec > h2, .sec > .lead, .sec > .sub, .stat, .steps, .step, .teaser, .car, .aviso-ia, .faq details, .res a, .cta > *, .card, .share")];
+    const rv = [...document.querySelectorAll(".sec > .eyebrow, .sec > h2, .sec > .lead, .sec > .sub, .stat, .steps, .step, .teaser, .regalo, .car, .aviso-ia, .faq details, .res a, .cta > *, .card, .share")];
     rv.forEach((x) => x.classList.add("rv"));
     const ioR = new IntersectionObserver((ens) => ens.forEach((en) => { if (en.isIntersecting) { en.target.classList.add("in"); ioR.unobserve(en.target); } }), { threshold: 0.12, rootMargin: "0px 0px -6% 0px" });
     rv.forEach((x) => ioR.observe(x));
