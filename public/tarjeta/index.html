@@ -245,7 +245,7 @@ h2{font:800 clamp(27px,7.4vw,34px)/1.12 var(--display);letter-spacing:-.01em;mar
 .product .meta{display:flex;gap:10px;align-items:baseline;font-size:14px;font-weight:600;color:var(--brand-2);line-height:1.4}
 .product .meta::before{content:"";width:12px;height:1px;background:var(--brand-2);flex:none;transform:translateY(-4px)}
 
-.cta{position:relative;overflow:hidden;margin:60px auto 0;max-width:680px;padding:32px 22px 26px;border-radius:26px;scroll-margin-top:68px;
+.cta{position:relative;overflow:hidden;overflow:clip;margin:60px auto 0;max-width:680px;padding:32px 22px 26px;border-radius:26px;scroll-margin-top:68px;
   background:linear-gradient(160deg,rgba(120,140,255,.16),rgba(42,34,245,.10));border:1px solid var(--line-strong);
   -webkit-backdrop-filter:blur(26px) saturate(150%);backdrop-filter:blur(26px) saturate(150%)}
 .cta::before{content:"";position:absolute;inset:0;background:linear-gradient(120deg,rgba(255,255,255,.14),transparent 42%);pointer-events:none}
@@ -1205,7 +1205,11 @@ function vcardTexto() {
         dots = [...dotsEl.children];
       }
     };
-    const ir = (i) => slides[Math.max(0, Math.min(pasos - 1, i))].scrollIntoView({ behavior: reducido ? "auto" : "smooth", inline: "start", block: "nearest" });
+    // Solo se mueve la pista del carrusel (scrollIntoView también desplazaba la caja o la página que lo contiene)
+    const ir = (i) => {
+      const sl = slides[Math.max(0, Math.min(pasos - 1, i))];
+      pista.scrollTo({ left: Math.max(0, sl.offsetLeft - (parseFloat(getComputedStyle(pista).scrollPaddingLeft) || 0)), behavior: reducido ? "auto" : "smooth" });
+    };
     const calcular = () => {
       armar();
       const base = pista.getBoundingClientRect().left + (parseFloat(getComputedStyle(pista).scrollPaddingLeft) || 0);
