@@ -192,7 +192,7 @@ a{color:inherit}
 /* Barra segmentada: todos los botones caben en una sola fila desde 320px, sin scroll lateral. */
 .secnav{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;margin-inline:-20px;padding:8px 12px;
   background:rgba(6,7,15,.84);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
-.secnav .in{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;max-width:680px;margin:0 auto;padding:4px;
+.secnav .in{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:2px;max-width:680px;margin:0 auto;padding:4px;
   border-radius:16px;border:1px solid var(--line-strong);background:var(--glass)}
 .secnav a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:0;min-height:52px;padding:6px 2px;
   border-radius:12px;color:var(--ink-soft);font:600 clamp(10.5px,3.1vw,13px)/1.1 var(--body);text-align:center;white-space:nowrap;
@@ -244,7 +244,6 @@ h2{font:800 clamp(27px,7.4vw,34px)/1.12 var(--display);letter-spacing:-.01em;mar
 .product p{margin:0;color:var(--ink-soft);font-size:16px}
 .product .meta{display:flex;gap:10px;align-items:baseline;font-size:14px;font-weight:600;color:var(--brand-2);line-height:1.4}
 .product .meta::before{content:"";width:12px;height:1px;background:var(--brand-2);flex:none;transform:translateY(-4px)}
-.product .spacer{flex:1}
 
 .cta{position:relative;overflow:hidden;margin:60px auto 0;max-width:680px;padding:32px 22px 26px;border-radius:26px;scroll-margin-top:68px;
   background:linear-gradient(160deg,rgba(120,140,255,.16),rgba(42,34,245,.10));border:1px solid var(--line-strong);
@@ -252,6 +251,11 @@ h2{font:800 clamp(27px,7.4vw,34px)/1.12 var(--display);letter-spacing:-.01em;mar
 .cta::before{content:"";position:absolute;inset:0;background:linear-gradient(120deg,rgba(255,255,255,.14),transparent 42%);pointer-events:none}
 .cta::after{content:"";position:absolute;width:280px;height:280px;right:-120px;top:-130px;border-radius:50%;background:radial-gradient(circle,rgba(91,123,255,.45),transparent 70%);pointer-events:none}
 .cta > *{position:relative;z-index:1}
+/* El carrusel de seguros va dentro de la caja: la pista llega hasta los bordes de la caja (--cpx = relleno lateral de la caja) */
+.cta{--cpx:22px}
+.cta .car{margin-top:22px}
+.cta .car-track{margin-inline:calc(var(--cpx) * -1);padding-inline:var(--cpx);scroll-padding-inline:var(--cpx)}
+.cta-fin{margin-top:4px}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
 .chip{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--line-strong);
   background:var(--glass);color:var(--ink);font:600 15px/1 var(--body);cursor:pointer;transition:background .15s,color .15s,border-color .15s}
@@ -548,11 +552,12 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
 /* ---------- Tamaños mayores ---------- */
 @media (min-width:720px){
   .car-track{margin-inline:0;padding-inline:0;scroll-padding-inline:0}
+  .cta .car-track{margin-inline:-4px;padding-inline:4px;scroll-padding-inline:4px}   /* deja lugar al aro de «Para ti» en los costados */
   .car-slide{flex-basis:calc((100% - 14px) / 2)}
 }
 @media (min-width:600px){
   .res{grid-template-columns:1fr 1fr}
-  .cta{padding:40px 36px 30px}
+  .cta{padding:40px 36px 30px;--cpx:36px}
   .card,.share{padding:30px}
 }
 @media (min-width:1000px){
@@ -687,7 +692,6 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
         <div class="in">
           <a href="#quien"><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg>Quién soy</a>
           <a href="#seguros"><svg class="ic" aria-hidden="true"><use href="#i-medical"/></svg>Seguros</a>
-          <a href="#asesoria"><svg class="ic" aria-hidden="true"><use href="#i-wa"/></svg>Asesoría</a>
           <a href="#opiniones"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg>Opiniones</a>
           <a href="#contacto"><svg class="ic" aria-hidden="true"><use href="#i-phone"/></svg>Contacto</a>
         </div>
@@ -726,24 +730,22 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
         </a>
       </section>
 
-      <section class="sec" id="seguros" aria-labelledby="h-seguros">
-        <p class="eyebrow">Qué protejo</p>
-        <h2 id="h-seguros">Soluciones para proteger lo que más importa</h2>
+      <!-- Una sola sección: los chips «¿Qué quieres proteger?» marcan los seguros que se muestran «Para ti» en el carrusel de abajo, y los dos botones de contacto cierran la sección -->
+      <section class="cta" id="seguros" aria-labelledby="h-seguros">
+        <p class="eyebrow">Asesoría sin costo</p>
+        <h2 id="h-seguros">¿Qué quieres proteger hoy?</h2>
+        <p class="lead">Permíteme ayudarte a encontrar la protección adecuada para ti y tu familia. Marca lo que te interesa (opcional):</p>
+        <div class="chips" id="chips" role="group" aria-label="Qué quieres proteger"></div>
         <div class="car" id="carProductos" role="group" aria-roledescription="carrusel" aria-label="Seguros que ofrezco">
           <div class="car-track" id="products" tabindex="0" aria-label="Seguros que ofrezco: desliza para ver más"></div>
           <div class="car-ctl"></div>
         </div>
-      </section>
-
-      <section class="cta" id="asesoria" aria-labelledby="h-asesoria">
-        <p class="eyebrow">Asesoría sin costo</p>
-        <h2 id="h-asesoria">¿Qué quieres proteger hoy?</h2>
-        <p class="lead">Permíteme ayudarte a encontrar la protección adecuada para ti y tu familia. Marca lo que te interesa (opcional):</p>
-        <div class="chips" id="chips" role="group" aria-label="Qué quieres proteger"></div>
         <div class="match" id="match" hidden aria-live="polite"></div>
-        <a class="btn btn-primary btn-caps btn-big block" id="waAsesoria" target="_blank" rel="noopener" data-ev="wa" data-d="asesoria"><svg class="ic"><use href="#i-wa"/></svg>Quiero una asesoría</a>
-        <p class="note">Se abre WhatsApp con tu mensaje listo para enviar.</p>
-        <a class="btn btn-ghost block alt" id="agendaAsesoria" data-agenda data-ev="agendar" data-d="asesoria" target="_blank" rel="noopener"><svg class="ic"><use href="#i-cal"/></svg>Prefiero agendar una cita</a>
+        <section class="cta-fin" id="asesoria" aria-label="Pedir asesoría">
+          <a class="btn btn-primary btn-caps btn-big block" id="waAsesoria" target="_blank" rel="noopener" data-ev="wa" data-d="asesoria"><svg class="ic"><use href="#i-wa"/></svg>Quiero una asesoría</a>
+          <p class="note" id="notaAsesoria">Se abre WhatsApp con tu mensaje listo para enviar.</p>
+          <a class="btn btn-ghost block alt" id="agendaAsesoria" data-agenda data-ev="agendar" data-d="asesoria" target="_blank" rel="noopener"><svg class="ic"><use href="#i-cal"/></svg>Prefiero agendar una cita</a>
+        </section>
       </section>
 
       <section class="sec" id="opiniones" aria-labelledby="h-opiniones">
@@ -1236,8 +1238,6 @@ function vcardTexto() {
       <h3>${esc(p.titulo)}</h3>
       <p>${esc(p.texto)}</p>
       ${p.detalle ? `<span class="meta">${esc(p.detalle)}</span>` : ""}
-      <span class="spacer"></span>
-      <a class="btn btn-ghost" target="_blank" rel="noopener" data-ev="wa" data-d="producto:${esc(p.titulo)}" href="${wa(p.mensaje || `Hola Roberto, vi tu tarjeta digital y quiero información sobre ${p.titulo}.`)}">${ic("wa")}Quiero información</a>
     </article>`)).join("");
   carrusel($("#carProductos"), "productos");
 
@@ -1249,7 +1249,8 @@ function vcardTexto() {
     if (elegidos.size) m += " Me interesa proteger: " + [...elegidos].map((id) => textoDe(id).toLowerCase()).join(", ") + ".";
     return m;
   };
-  const btnAsesoria = $("#waAsesoria");
+  const btnAsesoria = $("#waAsesoria"), notaAsesoria = $("#notaAsesoria");
+  const NOTA_BASE = notaAsesoria.textContent;
   btnAsesoria.href = wa(msgAsesoria());
   $("#chips").innerHTML = C.intereses.map((t) => `<button type="button" class="chip" aria-pressed="false" data-v="${esc(t.id)}">${ic("check")}${esc(t.texto)}</button>`).join("");
   $("#chips").addEventListener("click", (e) => {
@@ -1259,8 +1260,15 @@ function vcardTexto() {
     on ? elegidos.add(bt.dataset.v) : elegidos.delete(bt.dataset.v);
     btnAsesoria.href = wa(msgAsesoria());
     btnAsesoria.dataset.d = "asesoria:" + [...elegidos].map(textoDe).join("+").slice(0, 45);
+    // El botón avisa que el mensaje lleva lo marcado
+    notaAsesoria.textContent = elegidos.size ? `${NOTA_BASE} Incluye lo que marcaste: ${[...elegidos].map((id) => textoDe(id).toLowerCase()).join(", ")}.` : NOTA_BASE;
     if (on) track("chip", textoDe(bt.dataset.v));
     actualizarParaTi();
+    // Al marcar un interés, el carrusel de seguros salta al primero que le corresponde (solo en horizontal: la página no se mueve)
+    if (on) {
+      const pista = $("#products"), k = C.productos.findIndex((p) => (p.tags || []).includes(bt.dataset.v)), sl = pista.children[k];
+      if (sl) pista.scrollTo({ left: Math.max(0, sl.offsetLeft - (parseFloat(getComputedStyle(pista).scrollPaddingLeft) || 0)), behavior: reducido ? "auto" : "smooth" });
+    }
   });
 
   // Testimonios (carrusel) + historia completa en una ventana
@@ -1424,8 +1432,8 @@ function vcardTexto() {
     const box = $("#match");
     if (!elegidos.size) { box.hidden = true; box.innerHTML = ""; return; }
     const fila = (k, i, ico, titulo, sub) => `<button type="button" class="m-item" data-k="${k}" data-i="${i}">${ico}<span class="t"><strong>${esc(titulo)}</strong><small>${esc(sub)}</small></span>${ic("chev")}</button>`;
-    box.innerHTML = `<p class="match-t">${ic("star")} Para ti, según lo que marcaste</p><div class="match-list">`
-      + mejores(C.productos, 2).map((q) => fila("p", q.i, `<span class="mi">${ic(q.x.icono)}</span>`, q.x.titulo, "Seguro · ver detalle")).join("")
+    // Los seguros ya se ven marcados «Para ti» en el carrusel de arriba: aquí solo videos y preguntas
+    box.innerHTML = `<p class="match-t">${ic("star")} Te puede servir, según lo que marcaste</p><div class="match-list">`
       + mejores(C.videos.lista, 2).map((q) => fila("v", q.i, (posterDe(q.x) ? `<img class="mi" src="${esc(posterDe(q.x))}" alt="" width="36" height="64" loading="lazy">` : `<span class="mi">${ic("play")}</span>`), q.x.titulo, `Video · ${mm(q.x.dur)}`)).join("")
       + mejores(C.faq, 2).map((q) => fila("f", q.i, `<span class="mi">${ic("book")}</span>`, q.x.p, "Pregunta frecuente")).join("")
       + "</div>";
@@ -1434,8 +1442,7 @@ function vcardTexto() {
   $("#match").addEventListener("click", (e) => {
     const bt = e.target.closest(".m-item"); if (!bt) return;
     const i = +bt.dataset.i;
-    if (bt.dataset.k === "p") { track("rec", "producto:" + C.productos[i].titulo); destacar(document.querySelectorAll("#products .car-slide")[i]); }
-    else if (bt.dataset.k === "v") { track("rec", "video:" + C.videos.lista[i].titulo); abrirVideo(C.videos.lista[i], bt); }
+    if (bt.dataset.k === "v") { track("rec", "video:" + C.videos.lista[i].titulo); abrirVideo(C.videos.lista[i], bt); }
     else {
       track("rec", "pregunta:" + C.faq[i].p);
       const d = document.querySelectorAll("#faqList details")[i];

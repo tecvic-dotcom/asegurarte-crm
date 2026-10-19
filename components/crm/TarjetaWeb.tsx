@@ -247,7 +247,7 @@ export function TarjetaWeb() {
           </ul>
         </section>
         <ListaBarras titulo="Dónde tocan WhatsApp" ayuda="Qué botón los lleva a escribirte." filas={r.waPorLugar} vacio="Aún nadie ha tocado WhatsApp en estos días." />
-        <ListaBarras titulo="Productos que más piden" ayuda="Toques en «Quiero información» de cada seguro." filas={r.productos} vacio="Aún no hay toques en los productos." />
+        <ListaBarras titulo="Productos que más piden" ayuda="Toques anteriores en «Quiero información» de cada seguro (ese botón ya no está en las tarjetas; ahora mira «Qué quieren proteger»)." filas={r.productos} vacio="Sin toques de productos (el botón ya no está en las tarjetas)." />
         <ListaBarras titulo="Qué quieren proteger" ayuda="Lo que marcan en «¿Qué quieres proteger hoy?»." filas={r.intereses} vacio="Aún nadie ha marcado una opción." />
         <ListaBarras titulo="De dónde llegan" ayuda="Según el ?s= del enlace o el sitio que los mandó." filas={r.fuentes} vacio="Sin datos todavía." />
         <ListaBarras titulo="Historias que abren" ayuda="«Leer la historia completa» de cada cliente." filas={r.historias} vacio="Aún nadie abre una historia completa." />

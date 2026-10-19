@@ -62,8 +62,8 @@ export interface FilaEvento {
 export const SECCIONES_TARJETA: ReadonlyArray<{ id: string; nombre: string }> = [
   { id: "regalo", nombre: "Regalo (guía Dinero Bajo Control)" },
   { id: "quien", nombre: "Quién soy" },
-  { id: "seguros", nombre: "Seguros" },
-  { id: "asesoria", nombre: "Asesoría (¿qué quieres proteger?)" },
+  { id: "seguros", nombre: "¿Qué quieres proteger? (chips y seguros)" },
+  { id: "asesoria", nombre: "Asesoría (botones «Quiero una asesoría» y «Agendar»)" },
   { id: "opiniones", nombre: "Opiniones" },
   { id: "reconocimientos", nombre: "Reconocimientos" },
   { id: "videos", nombre: "Videos" },
@@ -76,7 +76,7 @@ export const SECCIONES_TARJETA: ReadonlyArray<{ id: string; nombre: string }> = 
 const LUGAR_WA: Record<string, string> = {
   hero: "Portada",
   barra: "Barra fija de abajo",
-  asesoria: "Asesoría (¿qué quieres proteger?)",
+  asesoria: "«Quiero una asesoría» (¿qué quieres proteger?)",
   contacto: "Sección Contacto",
   historia: "Historia completa de un cliente",
   producto: "Botón de un producto",
