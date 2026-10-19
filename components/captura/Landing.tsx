@@ -231,7 +231,7 @@ export function Landing({ negocio, popupActivo, heroTitulo, heroCta }: LandingPr
             <motion.details key={f.pregunta} {...aparecer} className="glass group rounded-2xl p-5">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-display text-base text-ink">
                 {f.pregunta}
-                <Icon icon="flat-color-icons:plus" width={20} className="shrink-0 transition-transform group-open:rotate-45" />
+                <span className="mas" aria-hidden="true" />
               </summary>
               <p className="mt-3 text-sm text-ink-soft">{f.respuesta}</p>
             </motion.details>

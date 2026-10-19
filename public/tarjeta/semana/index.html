@@ -131,7 +131,15 @@ td.r,th.r{text-align:right}
 .debt{border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:10px;background:rgba(6,7,15,.35)}
 .toast{position:fixed;left:12px;right:12px;bottom:calc(86px + env(safe-area-inset-bottom,0));z-index:40;max-width:496px;margin:0 auto;padding:12px 14px;border-radius:14px;background:#1b2260;border:1px solid var(--brand-2);display:flex;gap:10px;align-items:center;justify-content:space-between;box-shadow:0 14px 40px -10px #000}
 .toast button{background:none;border:0;color:#fff;font-weight:800;text-decoration:underline;min-height:40px;cursor:pointer}
-details summary{cursor:pointer;font-weight:600;color:var(--ink-soft);min-height:44px;display:flex;align-items:center}
+details summary{cursor:pointer;font-weight:600;color:var(--ink-soft);min-height:44px;display:flex;align-items:center;justify-content:space-between;gap:12px;list-style:none}
+details summary::-webkit-details-marker{display:none}
+/* «+» que pasa a «−» al abrir: el mismo indicador que usa la tarjeta /roberto */
+.mas{position:relative;flex:none;width:32px;height:32px;border-radius:50%;border:1px solid var(--line-strong);background:var(--glass-2);transition:background .2s,border-color .2s}
+.mas::before,.mas::after{content:"";position:absolute;left:50%;top:50%;width:13px;height:2px;margin:-1px 0 0 -6.5px;border-radius:2px;background:var(--brand-2);transition:transform .25s,background .2s}
+.mas::after{transform:rotate(90deg)}
+details[open] > summary .mas{background:var(--brand);border-color:var(--brand-2)}
+details[open] > summary .mas::before,details[open] > summary .mas::after{background:#fff}
+details[open] > summary .mas::after{transform:rotate(0)}
 details ul{margin:4px 0 0;padding-left:20px;color:var(--ink-soft);font-size:14.5px} details li{margin:4px 0}
 .legal{font-size:12.5px;color:var(--ink-mute);text-align:center}
 /* cuaderno: semanas, tipos de movimiento, listas */
@@ -553,7 +561,7 @@ select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border
       ${filaPdf("anio", "Año " + anioTxt + " · mes por mes")}
       <button class="ghost" data-csv="semana">Descargar los movimientos de la semana (Excel)</button>
       <p class="small mute" id="pdfMsg" role="status"></p></section>
-    <details class="card"><summary>Recordatorio semanal en mi calendario</summary>
+    <details class="card"><summary><span>Recordatorio semanal en mi calendario</span><span class="mas" aria-hidden="true"></span></summary>
       <div class="stack" style="margin-top:8px">
         <p class="soft small">Agrega a tu calendario un evento que se repite cada semana para que no se te olvide anotar. Se guarda en tu calendario, no en nuestros servidores.</p>
         <label class="f">¿Qué día?<select id="rDia" class="f-sel"><option value="0">Domingo</option><option value="1">Lunes</option><option value="2">Martes</option><option value="3">Miércoles</option><option value="4">Jueves</option><option value="5">Viernes</option><option value="6">Sábado</option></select></label>
@@ -591,7 +599,7 @@ select.f-sel{width:100%;min-height:50px;padding:0 12px;border-radius:12px;border
       ${h.proteccion.huecos.length ? h.proteccion.huecos.map((x) => `<div class="pil" style="border:0;padding:4px 0"><i class="dot ${x.prioridad === "alta" ? "rojo" : "amarillo"}"></i><div><b>${esc(x.titulo)}</b><div class="soft small">${esc(x.razon)}</div></div></div>`).join("") : '<p class="soft">Marcaste todo cubierto. Revisa cada año que las sumas sigan alcanzando.</p>'}
     </section>
     ${tarjetaContacto(h)}
-    <details class="card"><summary>Cómo calculamos</summary><ul>
+    <details class="card"><summary><span>Cómo calculamos</span><span class="mas" aria-hidden="true"></span></summary><ul>
       <li>Apartamos el ${M.REGLAS.ahorroPctIngreso * 100}% de tu ingreso, siempre que después de fijos, deudas y lo básico alcance.</li>
       <li>El tope semanal es lo que queda del mes (sin lo apartado) entre ${M.REGLAS.semanasPorMes.toFixed(2)} semanas.</li>
       <li>Fondo de emergencia: ${M.REGLAS.fondoMesesBase} meses de gastos, o ${M.REGLAS.fondoMesesDependientes} si alguien depende de tu ingreso.</li>
