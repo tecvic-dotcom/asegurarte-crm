@@ -15,6 +15,8 @@ import {
   ErrorCRM,
 } from "@/lib/api";
 import { moneda } from "@/lib/crm-data";
+import { hojasCobranza, nombreArchivoCobranza } from "@/lib/cobranza-excel";
+import { crearXlsx, TIPO_XLSX } from "@/lib/xlsx-simple";
 import { infoRamo } from "@/lib/ramos";
 import { fechaCorta, fechaLarga, hoyLocal } from "@/lib/fechas";
 import {
@@ -139,6 +141,25 @@ export function Cobranza({ prefill, onPrefillUsado, abrir = null, onAbrirUsado }
     setAviso(texto);
     window.clearTimeout(relojAviso.current);
     relojAviso.current = window.setTimeout(() => setAviso(null), 4500);
+  }
+
+  /** Baja a tu compu un Excel con cómo va la cobranza (resumen, por cobrar y cartera completa), con lo que ves hoy en pantalla. */
+  function bajarExcel() {
+    if (!polizas) return;
+    try {
+      const nombre = nombreArchivoCobranza(hoy);
+      const url = URL.createObjectURL(new Blob([crearXlsx(hojasCobranza(polizas, hoy))], { type: TIPO_XLSX }));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = nombre;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 5000);
+      avisar(`Excel descargado (${nombre}): trae el resumen, lo que hay por cobrar y tu cartera completa.`);
+    } catch {
+      avisar("No pude armar el Excel. Intenta de nuevo.");
+    }
   }
 
   function reemplazar(p: Poliza) {
@@ -360,6 +381,15 @@ export function Cobranza({ prefill, onPrefillUsado, abrir = null, onAbrirUsado }
               </h3>
               <span className="flex flex-wrap items-center gap-3 text-xs text-ink-mute">
                 Ordenado por urgencia · {fechaLarga(hoy)}
+                <button
+                  type="button"
+                  onClick={bajarExcel}
+                  data-testid="descargar-excel-cobranza"
+                  title="Descarga en Excel cómo va la cobranza: resumen, por cobrar y cartera completa"
+                  className="btn-ghost px-3 py-1.5 text-xs"
+                >
+                  <Icon icon="flat-color-icons:data-sheet" width={16} aria-hidden /> Descargar Excel
+                </button>
                 <button type="button" onClick={() => setEditorAbierto((v) => !v)} aria-expanded={editorAbierto} className="btn-ghost px-3 py-1.5 text-xs">
                   <Icon icon="flat-color-icons:edit-image" width={16} aria-hidden /> Personalizar mensajes
                 </button>
