@@ -205,6 +205,13 @@ a{color:inherit}
 @media (min-width:600px){
   .secnav{padding:10px 20px}
 }
+/* Hay dos copias del menú: la de arriba de la página (celular y tablet, siempre a la vista) y la de la columna derecha (desde 1000 px); solo se ve una */
+.secnav-top{margin-inline:0}
+main .secnav{display:none}
+@media (min-width:1000px){
+  .secnav-top{display:none}
+  main .secnav{display:block}
+}
 /* Ícono al lado del texto solo cuando hay ancho de sobra (una columna de 720 a 999 px, o la columna derecha de pantallas grandes); en laptops angostas (1000–1239) queda ícono arriba */
 @media (min-width:720px) and (max-width:999px),(min-width:1240px){
   .secnav a{flex-direction:row;gap:8px;min-height:46px;font-size:14px;padding:6px 8px}
@@ -485,6 +492,7 @@ details[open] > summary .mas::after,.regalo.abierto .mas::after{transform:rotate
 .strip{display:flex;align-items:center;gap:11px;margin:0 0 16px;padding:7px 14px 7px 7px;border-radius:999px;text-decoration:none;color:var(--ink);
   background:linear-gradient(135deg,rgba(91,123,255,.32),rgba(42,34,245,.16));border:1px solid var(--brand-2);box-shadow:0 10px 28px -14px rgba(42,34,245,.95);
   transition:border-color .15s,transform .15s,filter .15s;-webkit-tap-highlight-color:transparent}
+.hero-ctas .strip{margin:4px 0 0}   /* en la portada va debajo de los botones de contacto */
 .strip:hover{filter:brightness(1.1)}
 .strip:active{transform:translateY(1px)}
 .strip img,.reg-top img{display:block;width:38px;height:38px;border-radius:11px;flex:none;box-shadow:0 0 0 1px var(--line-strong)}
@@ -666,14 +674,21 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
 </svg>
 
 <div class="page">
+  <!-- Menú de secciones para celular y tablet: pegado arriba desde el primer momento. En pantalla grande (≥1000 px) se usa el que está dentro de la columna derecha (<main>); son los mismos enlaces. -->
+  <nav class="secnav secnav-top" aria-label="Secciones">
+    <div class="in">
+      <a href="#quien"><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg>Quién soy</a>
+      <a href="#herramientas"><svg class="ic" aria-hidden="true"><use href="#i-tools"/></svg>Herramientas</a>
+      <a href="#seguros"><svg class="ic" aria-hidden="true"><use href="#i-medical"/></svg>Seguros</a>
+      <a href="#opiniones"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg>Opiniones</a>
+      <a href="#faq"><svg class="ic" aria-hidden="true"><use href="#i-help"/></svg>FAQ</a>
+      <a href="#contacto"><svg class="ic" aria-hidden="true"><use href="#i-phone"/></svg>Contacto</a>
+    </div>
+  </nav>
+
   <!-- PORTADA -->
   <header class="hero" id="inicio">
     <div class="hero-inner">
-      <a class="strip" href="/semana?s=portada" data-ev="recurso" data-d="Dinero Bajo Control (portada)" aria-label="Regalo para tu familia: guía Dinero Bajo Control">
-        <img src="/tarjeta/semana/icons/icon-192.png" alt="" width="38" height="38" decoding="async">
-        <span class="t"><small>Regalo para tu familia</small><b>Dinero Bajo Control</b></span>
-        <svg class="ic go" aria-hidden="true"><use href="#i-arrow"/></svg>
-      </a>
       <div data-logo></div>
       <figure class="portrait" style="margin-bottom:0"><picture id="fotoPic"><source type="image/avif" srcset="/tarjeta/img/roberto-600.avif 600w, /tarjeta/img/roberto-900.avif 900w, /tarjeta/img/roberto-1200.avif 1200w" sizes="(min-width: 1000px) 440px, 100vw"><source type="image/webp" srcset="/tarjeta/img/roberto-600.webp 600w, /tarjeta/img/roberto-900.webp 900w, /tarjeta/img/roberto-1200.webp 1200w" sizes="(min-width: 1000px) 440px, 100vw"><img id="foto" alt="Fotografía de Roberto Rodríguez" width="1200" height="1245" fetchpriority="high" decoding="async" src="/tarjeta/img/roberto-900.jpg" srcset="/tarjeta/img/roberto-600.jpg 600w, /tarjeta/img/roberto-900.jpg 900w, /tarjeta/img/roberto-1200.jpg 1200w" sizes="(min-width: 1000px) 440px, 100vw"></picture></figure>
       <div class="id">
@@ -688,6 +703,11 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
             <a class="tile" id="agendaHero" data-agenda target="_blank" rel="noopener" data-ev="agendar" data-d="hero"><svg class="ic"><use href="#i-cal"/></svg>Agendar cita</a>
             <button class="tile" id="shareHero" type="button" data-ev="compartir" data-d="hero"><svg class="ic"><use href="#i-share"/></svg>Compartir</button>
           </div>
+          <a class="strip" href="/semana?s=portada" data-ev="recurso" data-d="Dinero Bajo Control (portada)" aria-label="Regalo para tu familia: guía Dinero Bajo Control">
+            <img src="/tarjeta/semana/icons/icon-192.png" alt="" width="38" height="38" decoding="async">
+            <span class="t"><small>Regalo para tu familia</small><b>Dinero Bajo Control</b></span>
+            <svg class="ic go" aria-hidden="true"><use href="#i-arrow"/></svg>
+          </a>
           <div class="hero-social" id="heroSocial"><p class="social-label">Sigue mis canales</p><div class="social" id="socialHero"></div></div>
         </div>
       </div>
@@ -1626,21 +1646,23 @@ function vcardTexto() {
 
   // Navegación superior: marca la sección que está arriba, justo debajo de la barra.
   // Al tocar un botón, ese queda marcado y no cambia mientras la página se desliza.
-  const nav = $(".secnav");
-  const links = [...nav.querySelectorAll("a")].filter((a) => !a.hidden);
-  const secs = links.map((a) => document.getElementById(a.hash.slice(1))).filter(Boolean);
+  // Hay dos copias del menú (arriba de la página en celular/tablet y en la columna derecha en pantalla grande): se marcan las dos, pero la que cuenta para medir es la que se ve.
+  const navs = [...document.querySelectorAll(".secnav")];
+  const navVisible = () => navs.find((n) => n.getClientRects().length > 0) || navs[0];
+  const links = navs.flatMap((n) => [...n.querySelectorAll("a")]).filter((a) => !a.hidden);
+  const secs = [...navs[0].querySelectorAll("a")].map((a) => document.getElementById(a.hash.slice(1))).filter(Boolean);
   let actual = "", bloqueo = false, tFin;
   const marcar = (id) => {
     if (id === actual) return;
     actual = id;
     links.forEach((a) => a.setAttribute("aria-current", String(a.hash === "#" + id)));
     // Si la barra no cabe completa, el botón activo se centra (solo se mueve la barra, no la página)
-    const barra = nav.querySelector(".in"), on = links.find((a) => a.hash === "#" + id);
+    const barra = navVisible().querySelector(".in"), on = [...barra.querySelectorAll("a")].find((a) => a.hash === "#" + id);
     if (on && barra.scrollWidth > barra.clientWidth + 1) barra.scrollTo({ left: on.offsetLeft - (barra.clientWidth - on.offsetWidth) / 2, behavior: reducido ? "auto" : "smooth" });
   };
   const espiar = () => {
     if (bloqueo) return;
-    const linea = nav.getBoundingClientRect().bottom + 24;
+    const linea = navVisible().getBoundingClientRect().bottom + 24;
     let cur = null;
     secs.forEach((s) => { if (s.getBoundingClientRect().top <= linea) cur = s; });
     const alFinal = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
