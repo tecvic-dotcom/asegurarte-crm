@@ -388,13 +388,19 @@ dialog.story[open]{animation:subir .28s ease-out}
 .reel img,.foto img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .5s}
 .foto picture{display:block;position:absolute;inset:0}
 .reel:hover img,.foto:hover img{transform:scale(1.04)}
-.reel::after,.foto::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,7,15,0) 45%,rgba(6,7,15,.9) 100%)}
+.foto::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,7,15,0) 45%,rgba(6,7,15,.9) 100%)}
 .play{position:absolute;top:50%;left:50%;z-index:1;translate:-50% -50%;width:56px;height:56px;border-radius:50%;display:grid;place-items:center;
   background:rgba(8,10,28,.55);border:1.5px solid rgba(255,255,255,.75)}
 .play .ic{width:24px;height:24px;margin-left:3px;color:#fff}
-.reel .meta,.foto .cap{position:absolute;left:0;right:0;bottom:0;z-index:1;display:grid;gap:5px;padding:12px}
-.reel .t{font:700 15px/1.25 var(--display)}
-.reel .d,.foto .cap{font:600 12.5px/1.3 var(--body);color:rgba(255,255,255,.85)}
+.foto .cap{position:absolute;left:0;right:0;bottom:0;z-index:1;display:grid;gap:5px;padding:12px;font:600 12.5px/1.3 var(--body);color:rgba(255,255,255,.85)}
+/* Videos: la portada que subes ya trae su título, así que va LIMPIA: botón de reproducir y duración en las esquinas de abajo, y el título debajo de la tarjeta */
+.reel .play{top:auto;left:10px;bottom:10px;translate:none;width:40px;height:40px;background:rgba(8,10,28,.7)}
+.reel .play .ic{width:18px;height:18px;margin-left:2px}
+.reel .dur{position:absolute;right:10px;bottom:10px;z-index:1;padding:3px 9px;border-radius:999px;background:rgba(6,7,15,.72);border:1px solid rgba(255,255,255,.25);font:700 12px/1.4 var(--body);color:#fff}
+.reel-card{display:block;width:100%}
+.reel-cap{display:grid;gap:3px;width:100%;margin:0;padding:10px 2px 0;border:0;background:none;text-align:left;color:var(--ink);cursor:pointer;font:inherit;-webkit-tap-highlight-color:transparent}
+.reel-cap .t{font:700 15px/1.28 var(--display);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.reel-cap .d{font:600 12.5px/1.3 var(--body);color:var(--ink-mute)}
 .foto .cap{font-size:14px;color:#fff}
 .foto{cursor:zoom-in}
 .foto.es-video{cursor:pointer}
@@ -459,7 +465,7 @@ details[open] > summary .mas::after,.regalo.abierto .mas::after{transform:rotate
 .car-slide{position:relative}
 .car-slide.para-ti::after{content:"Para ti";position:absolute;top:10px;right:10px;z-index:2;padding:5px 10px;border-radius:999px;background:linear-gradient(180deg,var(--brand-2),var(--brand));
   color:#fff;font:700 11.5px/1 var(--display);letter-spacing:.06em;text-transform:uppercase;box-shadow:0 6px 16px -6px rgba(42,34,245,.9);pointer-events:none}
-.car-slide.para-ti > .product,.car-slide.para-ti > .reel{box-shadow:0 0 0 2px var(--brand-2)}
+.car-slide.para-ti > .product,.car-slide.para-ti .reel{box-shadow:0 0 0 2px var(--brand-2)}
 .car-slide.flash > *,details.flash{animation:destello 1.9s ease-out}
 @keyframes destello{0%{box-shadow:0 0 0 0 rgba(91,123,255,.95)}60%{box-shadow:0 0 0 16px rgba(91,123,255,0)}100%{box-shadow:0 0 0 0 rgba(91,123,255,0)}}
 .match{margin-top:20px;padding:16px;border-radius:20px;background:rgba(6,7,15,.38);border:1px solid var(--line-strong);animation:subir .3s ease-out}
@@ -1367,7 +1373,9 @@ function vcardTexto() {
   const mm = (seg) => `${Math.floor(seg / 60)}:${String(Math.round(seg % 60)).padStart(2, "0")}`;
   const vEl = $("#vidEl");
   const mp4De = (v) => v.src || ruta(`/tarjeta/reels/${v.id}.mp4`);
-  const posterDe = (v) => (v.src ? v.poster || "" : ruta(`/tarjeta/reels/${v.id}.jpg`));
+  // Portadas que subes desde el CRM para los videos fijos (id → dirección): se prefieren a la que trae la tarjeta. Llegan de /api/tarjeta/videos.
+  let portadasCRM = {};
+  const posterDe = (v) => (v.src ? v.poster || "" : portadasCRM[v.id] || ruta(`/tarjeta/reels/${v.id}.jpg`));
   const abrirVideo = (v, desde) => {
     const mp4 = mp4De(v);
     track("reel", v.titulo);
@@ -1407,24 +1415,35 @@ function vcardTexto() {
     const rd = C.videos.lista;
     $("#carReels").innerHTML = '<div class="car-track" id="reels" tabindex="0" aria-label="Videos: desliza para ver más"></div><div class="car-ctl"></div>';
     $("#reels").innerHTML = rd.map((v, i) => slideDe(i, rd.length, `
+      <div class="reel-card">
       <button type="button" class="reel" data-i="${i}" aria-label="Ver video: ${esc(v.titulo)} (${mm(v.dur)})">
-        ${posterDe(v) ? `<img src="${esc(posterDe(v))}" alt="" width="360" height="640" loading="lazy" decoding="async">` : ""}
+        ${posterDe(v) ? `<img src="${esc(posterDe(v))}" alt="" width="540" height="960" loading="lazy" decoding="async">` : ""}
         <span class="play" aria-hidden="true"><svg class="ic"><use href="#i-tri"/></svg></span>
-        <span class="meta"><span class="t">${esc(v.titulo)}</span><span class="d">${esc(v.tema)} · ${mm(v.dur)}</span></span>
-      </button>`)).join("");
+        <span class="dur" aria-hidden="true">${mm(v.dur)}</span>
+      </button>
+      <button type="button" class="reel-cap" data-i="${i}" tabindex="-1" aria-hidden="true"><span class="t">${esc(v.titulo)}</span>${v.tema ? `<span class="d">${esc(v.tema)}</span>` : ""}</button>
+      </div>`)).join("");
     carrusel($("#carReels"), "videos");
-    $("#reels").addEventListener("click", (e) => { const bt = e.target.closest(".reel"); if (bt) abrirVideo(C.videos.lista[+bt.dataset.i], bt); });
+    $("#reels").addEventListener("click", (e) => { const bt = e.target.closest(".reel, .reel-cap"); if (bt) abrirVideo(C.videos.lista[+bt.dataset.i], bt.closest(".car-slide").querySelector(".reel")); });
   };
   pintarReels();
   // Solo se aceptan archivos del cajón público de Supabase (o de la tarjeta en modo demo): nada más entra a la página
   const urlValida = (u) => typeof u === "string" && (/^https:\/\/[a-z0-9-]+\.supabase\.co\/storage\/v1\/object\/public\/tarjeta-videos\/[\w./-]+$/i.test(u) || /^\/tarjeta\/reels\/[\w-]+\.(mp4|jpg)$/.test(u));
   fetch("/api/tarjeta/videos", { cache: "no-cache" }).then((r) => (r.ok ? r.json() : { videos: [] })).then((j) => {
+    // Portadas subidas desde el CRM para los videos fijos (solo direcciones del cajón público)
+    const ps = j && j.portadas && typeof j.portadas === "object" ? j.portadas : {};
+    const portadas = {};
+    Object.keys(ps).forEach((id) => { if (fijos.some((v) => v.id === id) || (C.eventos.video && C.eventos.video.id === id)) { if (urlValida(ps[id])) portadas[id] = ps[id]; } });
+    const hayPortadas = Object.keys(portadas).length > 0;
     const nuevos = ((j && j.videos) || []).filter((v) => v && typeof v.titulo === "string" && urlValida(v.src) && (!v.poster || urlValida(v.poster)))
-      .map((v) => ({ id: String(v.id), titulo: v.titulo, tema: "Video", dur: Math.max(1, +v.dur || 1), clave: v.clave || "", src: v.src, poster: v.poster || "", ia: v.ia !== false }));
+      .map((v) => ({ id: String(v.id), titulo: v.titulo, tema: "", dur: Math.max(1, +v.dur || 1), clave: v.clave || "", src: v.src, poster: v.poster || "", ia: v.ia !== false }));
     // Si la persona ya movió el carrusel o abrió algo, no se le cambia la pantalla: lo verá en su próxima visita
-    if (!nuevos.length || $("#reels").scrollLeft > 10 || document.querySelector("dialog[open]")) return;
+    if ((!nuevos.length && !hayPortadas) || $("#reels").scrollLeft > 10 || document.querySelector("dialog[open]")) return;
+    portadasCRM = portadas;
     C.videos.lista = [...nuevos, ...fijos];
     pintarReels();
+    const evImg = document.querySelector(".foto.es-video img");   // el video del evento también puede tener portada nueva
+    if (evImg && portadas[C.eventos.video.id]) evImg.src = portadas[C.eventos.video.id];
     if (typeof actualizarParaTi === "function") actualizarParaTi();
   }).catch(() => {});
 

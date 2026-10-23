@@ -51,11 +51,55 @@ export interface PermisoSubida {
   };
 }
 
+/** Los videos FIJOS de la tarjeta: los que viven en public/tarjeta/reels/<id>.mp4 (los que subes desde el CRM NO van aquí: tienen su propio renglón). DEBE coincidir con CONFIG.videos.lista y CONFIG.eventos.video de public/tarjeta/index.html. */
+export const VIDEOS_FIJOS: ReadonlyArray<{ id: string; titulo: string; tema: string }> = [
+  { id: "gastos-medicos", titulo: "Todo estaba bien… hasta que sonó el teléfono", tema: "Gastos médicos" },
+  { id: "maternidad", titulo: "¿Planean tener un bebé? Esto casi nadie lo dice", tema: "Maternidad" },
+  { id: "enfermo", titulo: "¿Se puede contratar un seguro si ya tienes una enfermedad?", tema: "Enfermedad previa" },
+  { id: "ahorro", titulo: "Presumir que mantienes a tu familia no es suficiente", tema: "Ahorro y salud" },
+  { id: "seguro-o-lujo", titulo: "¿Los seguros son un lujo o una herramienta?", tema: "Prioridades" },
+  { id: "amar-familia", titulo: "¿Y si mañana no pudieras trabajar?", tema: "Protección familiar" },
+  { id: "hijos", titulo: "Tus hijos podrían terminar manteniéndote", tema: "Retiro" },
+  { id: "ganar-mas", titulo: "Ganar más NO te salva de la pobreza", tema: "Finanzas personales" },
+  { id: "casados-o-socios", titulo: "¿Casados… o socios financieros?", tema: "Pareja y dinero" },
+  { id: "quien-gana-mas", titulo: "¿Quién gana más… manda más?", tema: "Pareja y dinero" },
+  { id: "inauguracion", titulo: "Inauguración de una nueva clínica en Cumbres", tema: "Evento" },
+];
+
+export const esIdFijo = (id: unknown): id is string => typeof id === "string" && VIDEOS_FIJOS.some((v) => v.id === id);
+
+/** Un video fijo tal como lo ve el CRM, con la portada que se muestra hoy. */
+export interface VideoFijo {
+  id: string;
+  titulo: string;
+  tema: string;
+  /** Dirección de la portada que ve la gente (la subida desde el CRM o la original de la tarjeta). */
+  poster: string;
+  /** true = subiste una portada desde el CRM; false = sale la original que viene con la tarjeta. */
+  personalizada: boolean;
+}
+
+/** Permiso de un solo uso para subir una portada nueva. */
+export interface PermisoPortada {
+  /** Marca de tiempo que forma parte del nombre del archivo (así cada portada tiene su propia dirección y nunca se queda una vieja en la memoria del navegador). */
+  ts: number;
+  demo: boolean;
+  nube?: { url: string; anonKey: string; bucket: string; poster: { path: string; token: string } };
+}
+
 export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 /** Rutas dentro del cajón: siempre las arma el servidor a partir del id (nunca se aceptan del navegador). */
 export const rutaVideo = (id: string) => `v/${id}.mp4`;
 export const rutaPortada = (id: string) => `v/${id}.jpg`;
+
+/** Portada de un video FIJO subida desde el CRM: p/<id>-<ts>.jpg (la más reciente de cada id es la que se ve). */
+export const rutaPortadaFija = (id: string, ts: number) => `p/${id}-${ts}.jpg`;
+export const PORTADA_FIJA = /^([a-z0-9-]+)-(\d{12,15})\.jpg$/;
+/** Portada nueva de un video subido desde el CRM: v/<uuid>-<ts>.jpg (reemplaza a la que tenía). */
+export const rutaPortadaNueva = (id: string, ts: number) => `v/${id}-${ts}.jpg`;
+/** El ts del permiso solo vale unos minutos: así nadie puede pedir rutas viejas ni lejanas. */
+export const tsValido = (ts: unknown): ts is number => typeof ts === "number" && Number.isInteger(ts) && ts > Date.now() - 20 * 60_000 && ts < Date.now() + 60_000;
 
 export function urlPublica(base: string, ruta: string): string {
   return ruta ? `${base.replace(/\/+$/, "")}/storage/v1/object/public/${BUCKET_VIDEOS}/${ruta}` : "";

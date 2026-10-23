@@ -5,7 +5,7 @@
  * directo con Supabase; todo pasa por el servidor con la secret key.
  */
 import type { ResumenTarjeta } from "./tarjeta-reglas";
-import type { CambiosVideo, DatosNuevoVideo, PermisoSubida, VideoTarjeta } from "./tarjeta-videos-reglas";
+import type { CambiosVideo, DatosNuevoVideo, PermisoPortada, PermisoSubida, VideoFijo, VideoTarjeta } from "./tarjeta-videos-reglas";
 import type {
   Lead,
   Actividad,
@@ -433,9 +433,9 @@ export async function crmTarjeta(dias: number): Promise<ResumenTarjeta> {
 
 // ---- Videos de la tarjeta: los que subes desde el CRM y salen solos en /roberto (solo admin) ----
 
-export async function crmVideosTarjeta(): Promise<{ videos: VideoTarjeta[]; cloud: boolean }> {
+export async function crmVideosTarjeta(): Promise<{ videos: VideoTarjeta[]; fijos: VideoFijo[]; cloud: boolean }> {
   const res = await fetch("/api/crm/tarjeta-videos", { cache: "no-store" });
-  return (await jsonOErrorCRM(res)) as { videos: VideoTarjeta[]; cloud: boolean };
+  return (await jsonOErrorCRM(res)) as { videos: VideoTarjeta[]; fijos: VideoFijo[]; cloud: boolean };
 }
 
 /** Pide un id y los permisos de un solo uso para subir el video y su portada directo al cajón de Supabase. */
@@ -469,6 +469,37 @@ export async function crmEditarVideo(id: string, cambios: CambiosVideo): Promise
 
 export async function crmEliminarVideo(id: string): Promise<void> {
   await jsonOErrorCRM(await postJSON("/api/crm/tarjeta-videos", { accion: "eliminar", id }));
+}
+
+// Portadas: de un video que subiste (id UUID) o de un video FIJO de la tarjeta (id como «maternidad»). Se sube directo al cajón, igual que el video.
+
+/** Pide el permiso de un solo uso para subir la portada de ese video. */
+export async function crmPrepararPortada(objetivo: string): Promise<PermisoPortada> {
+  return (await jsonOErrorCRM(await postJSON("/api/crm/tarjeta-videos", { accion: "preparar-portada", objetivo }))) as PermisoPortada;
+}
+
+/** Sube la imagen (ya convertida a JPG vertical) al cajón con el permiso de un solo uso (en modo demo no sube nada). */
+export async function crmSubirPortada(permiso: PermisoPortada, imagen: Blob): Promise<void> {
+  const n = permiso.nube;
+  if (permiso.demo || !n) return;
+  const { createClient } = await import("@supabase/supabase-js");
+  const sb = createClient(n.url, n.anonKey, { auth: { persistSession: false, autoRefreshToken: false } });
+  const { error } = await sb.storage.from(n.bucket).uploadToSignedUrl(n.poster.path, n.poster.token, imagen, {
+    contentType: "image/jpeg",
+    cacheControl: "31536000", // cada portada tiene su propia dirección (lleva la hora en el nombre): puede guardarse un año
+  });
+  if (error) throw new Error("No pude subir la portada. Revisa tu internet e intenta de nuevo.");
+}
+
+/** Avisa que la portada ya está subida: queda como la que se ve en la tarjeta. */
+export async function crmConfirmarPortada(objetivo: string, ts: number): Promise<{ fijo?: VideoFijo; video?: VideoTarjeta }> {
+  return (await jsonOErrorCRM(await postJSON("/api/crm/tarjeta-videos", { accion: "confirmar-portada", objetivo, ts }))) as { fijo?: VideoFijo; video?: VideoTarjeta };
+}
+
+/** Un video fijo vuelve a su portada original (borra la que habías subido). */
+export async function crmQuitarPortada(id: string): Promise<VideoFijo> {
+  const data = await jsonOErrorCRM(await postJSON("/api/crm/tarjeta-videos", { accion: "quitar-portada", id }));
+  return (data as { fijo: VideoFijo }).fijo;
 }
 
 // ---- Pólizas adjuntas: nuevas y renovaciones (solo admin) ----

@@ -11,12 +11,21 @@ import { adminDb, cloudReady } from "./supabase-admin";
 import { faltaMigracion, MENSAJE_MIGRACION_VIDEOS, MigracionPendienteError } from "./migracion";
 import {
   BUCKET_VIDEOS,
+  esIdFijo,
+  PORTADA_FIJA,
   rutaPortada,
+  rutaPortadaFija,
+  rutaPortadaNueva,
   rutaVideo,
+  tsValido,
+  UUID,
   urlPublica,
+  VIDEOS_FIJOS,
   type CambiosVideo,
   type DatosNuevoVideo,
+  type PermisoPortada,
   type PermisoSubida,
+  type VideoFijo,
   type VideoPublico,
   type VideoTarjeta,
 } from "./tarjeta-videos-reglas";
@@ -247,4 +256,164 @@ export async function eliminarVideo(id: string): Promise<boolean> {
   if (i < 0) return false;
   s.splice(i, 1);
   return true;
+}
+
+// ---- Portadas: las de los videos que subes y las de los videos FIJOS de la tarjeta ----
+//
+// Los videos fijos (public/tarjeta/reels/<id>.mp4) traen su portada original en la propia tarjeta (<id>.jpg). Si subes una desde el CRM, queda en el cajón
+// como p/<id>-<ts>.jpg (SIN tabla nueva: no hay SQL que correr) y la tarjeta la prefiere a la original. La más reciente de cada id es la que se ve.
+// Cada portada nueva tiene su propia dirección (lleva el ts en el nombre), así el celular nunca se queda con una vieja en la memoria.
+
+const CARPETA_FIJAS = "p";
+const PORTADA_ORIGINAL = (id: string) => `/tarjeta/reels/${id}.jpg`;
+
+function demoPortadas(): Map<string, number> {
+  const g = globalThis as typeof globalThis & { __tarjetaPortadas?: Map<string, number> };
+  if (!g.__tarjetaPortadas) g.__tarjetaPortadas = new Map();
+  return g.__tarjetaPortadas;
+}
+
+interface PortadaFija {
+  nombre: string;
+  ts: number;
+}
+
+/** Las portadas subidas de cada video fijo: la más reciente por id (la que se ve) y todos sus archivos (para limpiar las viejas). */
+async function leerPortadasFijas(): Promise<{ vigentes: Map<string, PortadaFija>; todas: Map<string, PortadaFija[]> }> {
+  const vigentes = new Map<string, PortadaFija>();
+  const todas = new Map<string, PortadaFija[]>();
+  if (!(cloudReady && adminDb)) return { vigentes, todas };
+  const { data, error } = await adminDb.storage.from(BUCKET_VIDEOS).list(CARPETA_FIJAS, { limit: 500 });
+  if (error) throw new Error(error.message);
+  for (const o of data ?? []) {
+    const m = PORTADA_FIJA.exec(o.name);
+    if (!m || !esIdFijo(m[1])) continue;
+    const item = { nombre: o.name, ts: Number(m[2]) };
+    todas.set(m[1], [...(todas.get(m[1]) ?? []), item]);
+    const act = vigentes.get(m[1]);
+    if (!act || act.ts < item.ts) vigentes.set(m[1], item);
+  }
+  return { vigentes, todas };
+}
+
+const urlFija = (nombre: string) => urlPublica(baseNube(), `${CARPETA_FIJAS}/${nombre}`);
+
+/** Los videos fijos con la portada que se ve hoy (la tuya, si la subiste; si no, la original de la tarjeta). */
+export async function listarFijos(): Promise<VideoFijo[]> {
+  let vigentes = new Map<string, PortadaFija>();
+  try {
+    vigentes = (await leerPortadasFijas()).vigentes;
+  } catch (e) {
+    console.error("[tarjeta-videos] no pude leer las portadas subidas:", e);
+  }
+  const demo = demoPortadas();
+  return VIDEOS_FIJOS.map((v) => {
+    const sube = vigentes.get(v.id);
+    return {
+      id: v.id,
+      titulo: v.titulo,
+      tema: v.tema,
+      poster: sube ? urlFija(sube.nombre) : PORTADA_ORIGINAL(v.id),
+      personalizada: Boolean(sube) || (!(cloudReady && adminDb) && demo.has(v.id)),
+    };
+  });
+}
+
+/** Para la tarjeta pública: id → dirección de la portada que subiste. Nunca lanza (si algo falla, la tarjeta usa sus portadas originales). */
+export async function portadasPublicas(): Promise<Record<string, string>> {
+  try {
+    if (!(cloudReady && adminDb)) return {};
+    const { vigentes } = await leerPortadasFijas();
+    return Object.fromEntries([...vigentes].map(([id, p]) => [id, urlFija(p.nombre)]));
+  } catch (e) {
+    console.error("[tarjeta-videos] portadas:", e);
+    return {};
+  }
+}
+
+/** Valida a qué video va la portada: un video FIJO o uno de los que subiste (id UUID que exista). */
+async function existeObjetivo(objetivo: string): Promise<boolean> {
+  if (esIdFijo(objetivo)) return true;
+  if (!UUID.test(objetivo)) return false;
+  if (cloudReady && adminDb) {
+    const { data, error } = await adminDb.from(TABLA).select("id").eq("id", objetivo).maybeSingle();
+    if (error) throw errorDeBase(error);
+    return Boolean(data);
+  }
+  return demoStore().some((x) => x.id === objetivo);
+}
+
+/** Permiso de un solo uso para subir una portada nueva directo al cajón. `null` si ese video no existe. */
+export async function prepararPortada(objetivo: string): Promise<PermisoPortada | null> {
+  if (!(await existeObjetivo(objetivo))) return null;
+  const ts = Date.now();
+  if (!(cloudReady && adminDb)) return { ts, demo: true };
+  const ruta = esIdFijo(objetivo) ? rutaPortadaFija(objetivo, ts) : rutaPortadaNueva(objetivo, ts);
+  const { data, error } = await adminDb.storage.from(BUCKET_VIDEOS).createSignedUploadUrl(ruta);
+  if (error || !data) {
+    if (/not found|bucket/i.test(error?.message ?? "")) throw new MigracionPendienteError(MENSAJE_MIGRACION_VIDEOS, "0020_tarjeta_videos.sql");
+    throw new Error(error?.message ?? "No pude preparar la subida de la portada.");
+  }
+  return { ts, demo: false, nube: { url: baseNube(), anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "", bucket: BUCKET_VIDEOS, poster: { path: data.path, token: data.token } } };
+}
+
+export type ResultadoPortada = { ok: true; fijo?: VideoFijo; video?: VideoTarjeta } | { ok: false; error: string; estado: number };
+
+/** Confirma una portada ya subida: en un video fijo queda como la vigente (las anteriores se borran); en un video tuyo reemplaza a su portada. */
+export async function confirmarPortada(objetivo: string, ts: unknown): Promise<ResultadoPortada> {
+  if (!tsValido(ts)) return { ok: false, error: "Ese permiso ya venció. Vuelve a elegir la imagen.", estado: 422 };
+  if (!(await existeObjetivo(objetivo))) return { ok: false, error: "Ese video ya no existe.", estado: 404 };
+  const fijo = esIdFijo(objetivo);
+
+  if (!(cloudReady && adminDb)) {
+    // DEMO: no se subió nada de verdad; solo se practica la pantalla.
+    if (fijo) {
+      demoPortadas().set(objetivo, ts);
+      return { ok: true, fijo: (await listarFijos()).find((v) => v.id === objetivo) };
+    }
+    const f = demoStore().find((x) => x.id === objetivo);
+    return f ? { ok: true, video: aVideo(f) } : { ok: false, error: "Ese video ya no existe.", estado: 404 };
+  }
+
+  const ruta = fijo ? rutaPortadaFija(objetivo, ts) : rutaPortadaNueva(objetivo, ts);
+  if (!(await existeArchivo(ruta, "image/"))) return { ok: false, error: "La portada no terminó de subirse. Vuelve a intentarlo.", estado: 422 };
+
+  if (fijo) {
+    // Las portadas anteriores de ese video ya no se ven: se borran para no acumular archivos
+    const { todas } = await leerPortadasFijas();
+    const viejas = (todas.get(objetivo) ?? []).filter((p) => p.ts !== ts).map((p) => `${CARPETA_FIJAS}/${p.nombre}`);
+    if (viejas.length) {
+      const r = await adminDb.storage.from(BUCKET_VIDEOS).remove(viejas);
+      if (r.error) console.error("[tarjeta-videos] no pude borrar portadas viejas:", r.error.message);
+    }
+    return { ok: true, fijo: (await listarFijos()).find((v) => v.id === objetivo) };
+  }
+
+  const antes = await adminDb.from(TABLA).select("poster_path").eq("id", objetivo).maybeSingle();
+  if (antes.error) throw errorDeBase(antes.error);
+  const { data, error } = await adminDb.from(TABLA).update({ poster_path: ruta }).eq("id", objetivo).select("*").maybeSingle();
+  if (error) throw errorDeBase(error);
+  if (!data) return { ok: false, error: "Ese video ya no existe.", estado: 404 };
+  const vieja = antes.data?.poster_path;
+  if (typeof vieja === "string" && vieja && vieja !== ruta && !esDemoRuta(vieja)) {
+    const r = await adminDb.storage.from(BUCKET_VIDEOS).remove([vieja]);
+    if (r.error) console.error("[tarjeta-videos] no pude borrar la portada anterior:", r.error.message);
+  }
+  return { ok: true, video: aVideo(normalizar(data)) };
+}
+
+/** Vuelve a la portada original de un video fijo (borra la que habías subido). */
+export async function quitarPortadaFija(id: string): Promise<VideoFijo | null> {
+  if (!esIdFijo(id)) return null;
+  if (!(cloudReady && adminDb)) {
+    demoPortadas().delete(id);
+  } else {
+    const { todas } = await leerPortadasFijas();
+    const rutas = (todas.get(id) ?? []).map((p) => `${CARPETA_FIJAS}/${p.nombre}`);
+    if (rutas.length) {
+      const r = await adminDb.storage.from(BUCKET_VIDEOS).remove(rutas);
+      if (r.error) throw new Error(r.error.message);
+    }
+  }
+  return (await listarFijos()).find((v) => v.id === id) ?? null;
 }

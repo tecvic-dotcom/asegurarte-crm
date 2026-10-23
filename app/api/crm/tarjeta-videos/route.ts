@@ -1,6 +1,19 @@
 import { exigirAdmin } from "@/lib/sesion-admin";
-import { crearVideo, editarVideo, eliminarVideo, listarVideos, prepararSubida } from "@/lib/tarjeta-videos";
-import { UUID, validarCambios, validarNuevo } from "@/lib/tarjeta-videos-reglas";
+import {
+  confirmarPortada,
+  crearVideo,
+  editarVideo,
+  eliminarVideo,
+  listarFijos,
+  listarVideos,
+  prepararPortada,
+  prepararSubida,
+  quitarPortadaFija,
+} from "@/lib/tarjeta-videos";
+import { esIdFijo, UUID, validarCambios, validarNuevo } from "@/lib/tarjeta-videos-reglas";
+
+/** El id de un video: uno de los fijos de la tarjeta o uno de los que subiste (UUID). */
+const idVideoValido = (id: unknown): id is string => esIdFijo(id) || (typeof id === "string" && UUID.test(id));
 import { isCloud } from "@/lib/db";
 import { MigracionPendienteError } from "@/lib/migracion";
 
@@ -15,18 +28,19 @@ function fallo(e: unknown): Response {
   return Response.json({ error: "No pude leer ni guardar tus videos. Intenta de nuevo." }, { status: 500 });
 }
 
-/** Tus videos de la tarjeta (también los ocultos). Solo admin. */
+/** Tus videos de la tarjeta (también los ocultos) y los videos fijos con su portada actual. Solo admin. */
 export async function GET(req: Request): Promise<Response> {
   const puerta = exigirAdmin(req, "los videos de tu tarjeta");
   if ("respuesta" in puerta) return puerta.respuesta;
   try {
-    return Response.json({ videos: await listarVideos(), cloud: isCloud() });
+    const [videos, fijos] = await Promise.all([listarVideos(), listarFijos()]);
+    return Response.json({ videos, fijos, cloud: isCloud() });
   } catch (e) {
     return fallo(e);
   }
 }
 
-/** preparar (permiso para subir) · crear (registrar el video ya subido) · editar · eliminar. Solo admin. */
+/** preparar (permiso para subir) · crear (registrar el video ya subido) · editar · eliminar · preparar-portada / confirmar-portada / quitar-portada. Solo admin. */
 export async function POST(req: Request): Promise<Response> {
   const puerta = exigirAdmin(req, "los videos de tu tarjeta");
   if ("respuesta" in puerta) return puerta.respuesta;
@@ -62,6 +76,24 @@ export async function POST(req: Request): Promise<Response> {
       const ok = await eliminarVideo(body.id);
       if (!ok) return Response.json({ error: "Ese video ya no existe." }, { status: 404 });
       return Response.json({ ok: true });
+    }
+    if (body.accion === "preparar-portada") {
+      if (!idVideoValido(body.objetivo)) return Response.json({ error: "Falta el video." }, { status: 400 });
+      const permiso = await prepararPortada(body.objetivo);
+      if (!permiso) return Response.json({ error: "Ese video ya no existe." }, { status: 404 });
+      return Response.json(permiso);
+    }
+    if (body.accion === "confirmar-portada") {
+      if (!idVideoValido(body.objetivo)) return Response.json({ error: "Falta el video." }, { status: 400 });
+      const r = await confirmarPortada(body.objetivo, body.ts);
+      if (!r.ok) return Response.json({ error: r.error }, { status: r.estado });
+      return Response.json({ fijo: r.fijo, video: r.video });
+    }
+    if (body.accion === "quitar-portada") {
+      if (!esIdFijo(body.id)) return Response.json({ error: "Falta el video." }, { status: 400 });
+      const fijo = await quitarPortadaFija(body.id);
+      if (!fijo) return Response.json({ error: "Ese video no existe." }, { status: 404 });
+      return Response.json({ fijo });
     }
     return Response.json({ error: "Acción no reconocida" }, { status: 400 });
   } catch (e) {

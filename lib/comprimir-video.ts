@@ -110,3 +110,42 @@ export async function portadaDelVideo(video: Blob, duracion: number): Promise<Bl
     URL.revokeObjectURL(url);
   }
 }
+
+/**
+ * Portada a partir de una imagen que eliges (PNG, JPG o WebP): se recorta al centro en vertical 9:16 y se guarda como JPG de 720×1280.
+ * Lo ideal es subir la portada ya vertical (1080×1920, como las de «Portadas Instagram»): así no se recorta nada.
+ */
+export async function portadaDeImagen(archivo: File): Promise<Blob> {
+  if (!archivo.type.startsWith("image/")) throw new ErrorVideo("Elige una imagen (PNG, JPG o WebP).");
+  if (archivo.size > 25 * 1024 * 1024) throw new ErrorVideo("Esa imagen pesa más de 25 MB. Elige una más ligera.");
+  let img: ImageBitmap;
+  try {
+    img = await createImageBitmap(archivo);
+  } catch {
+    throw new ErrorVideo("No pude leer esa imagen. Prueba con un PNG o JPG.");
+  }
+  try {
+    const ANCHO = 720;
+    const ALTO = 1280;
+    const c = document.createElement("canvas");
+    c.width = ANCHO;
+    c.height = ALTO;
+    const g = c.getContext("2d");
+    if (!g) throw new ErrorVideo("Este navegador no puede preparar la imagen.");
+    // «cover»: llena el cuadro vertical y recorta lo que sobre, centrado
+    const escala = Math.max(ANCHO / img.width, ALTO / img.height);
+    const w = img.width * escala;
+    const h = img.height * escala;
+    g.fillStyle = "#06070f";
+    g.fillRect(0, 0, ANCHO, ALTO);
+    g.imageSmoothingQuality = "high";
+    g.drawImage(img, (ANCHO - w) / 2, (ALTO - h) / 2, w, h);
+    for (const calidad of [0.88, 0.8, 0.7, 0.55]) {
+      const b = await new Promise<Blob | null>((ok) => c.toBlob(ok, "image/jpeg", calidad));
+      if (b && b.size <= MAX_BYTES_PORTADA) return b;
+    }
+    throw new ErrorVideo("La portada salió demasiado pesada. Prueba con otra imagen.");
+  } finally {
+    img.close();
+  }
+}

@@ -3,16 +3,20 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
 import {
+  crmConfirmarPortada,
   crmCrearVideo,
   crmEditarVideo,
   crmEliminarVideo,
+  crmPrepararPortada,
   crmPrepararVideo,
+  crmQuitarPortada,
   crmSubirArchivoVideo,
+  crmSubirPortada,
   crmVideosTarjeta,
   ErrorCRM,
 } from "@/lib/api";
-import { comprimirVideo, ErrorVideo, navegadorComprime, portadaDelVideo } from "@/lib/comprimir-video";
-import { MAX_CLAVE, MAX_SEGUNDOS_VIDEO, MAX_TITULO, mmss, type VideoTarjeta } from "@/lib/tarjeta-videos-reglas";
+import { comprimirVideo, ErrorVideo, navegadorComprime, portadaDeImagen, portadaDelVideo } from "@/lib/comprimir-video";
+import { MAX_CLAVE, MAX_SEGUNDOS_VIDEO, MAX_TITULO, mmss, type VideoFijo, type VideoTarjeta } from "@/lib/tarjeta-videos-reglas";
 import { fechaCorta } from "@/lib/fechas";
 import { AvisoMigracion } from "./panel/AvisoMigracion";
 
@@ -25,16 +29,54 @@ const FRASE: Record<Exclude<Fase, "reposo">, string> = {
   publicando: "Publicando…",
 };
 
+/** Sube una portada nueva (imagen que eliges) a un video: uno que subiste (id UUID) o uno fijo de la tarjeta (id como «maternidad»). */
+async function subirPortadaDe(objetivo: string, imagen: File) {
+  const portada = await portadaDeImagen(imagen); // primero se valida y se convierte: si la imagen no sirve, se avisa antes de pedir permisos
+  const permiso = await crmPrepararPortada(objetivo);
+  await crmSubirPortada(permiso, portada);
+  return crmConfirmarPortada(objetivo, permiso.ts);
+}
+
+const mensajeDe = (e: unknown, defecto: string) => (e instanceof ErrorVideo || e instanceof Error ? e.message : defecto);
+
+/** Botón que abre el selector de imágenes y entrega la elegida (se puede volver a elegir la misma). */
+function BotonImagen({ texto, disabled, onArchivo }: { texto: string; disabled?: boolean; onArchivo: (f: File) => void }) {
+  const entrada = useRef<HTMLInputElement>(null);
+  return (
+    <>
+      <input
+        ref={entrada}
+        type="file"
+        accept="image/*"
+        className="sr-only"
+        tabIndex={-1}
+        aria-hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) onArchivo(f);
+        }}
+      />
+      <button type="button" disabled={disabled} onClick={() => entrada.current?.click()} className="btn-ghost inline-flex items-center gap-1.5 px-3 py-1.5 text-xs">
+        <Icon icon="flat-color-icons:add-image" width={16} aria-hidden /> {texto}
+      </button>
+    </>
+  );
+}
+
 /**
  * Videos de tu tarjeta: sube un video desde el celular o la computadora y sale solo, primero, en el carrusel «Videos» de
  * www.especialistaenasegurarte.lat/roberto. El video se comprime en tu propio aparato antes de subirse (no gasta tus datos de más).
+ * Cada video (los que subes y los fijos de siempre) tiene su botón para subirle su PORTADA.
  */
 export function TarjetaVideos() {
   const [videos, setVideos] = useState<VideoTarjeta[] | null>(null);
+  const [fijos, setFijos] = useState<VideoFijo[] | null>(null);
   const [cloud, setCloud] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   const [archivo, setArchivo] = useState<File | null>(null);
+  const [imagenPortada, setImagenPortada] = useState<File | null>(null);
   const [titulo, setTitulo] = useState("");
   const [clave, setClave] = useState("");
   const [ia, setIa] = useState(true);
@@ -43,12 +85,14 @@ export function TarjetaVideos() {
   const [fallo, setFallo] = useState("");
   const [listo, setListo] = useState("");
   const entrada = useRef<HTMLInputElement>(null);
+  const entradaPortada = useRef<HTMLInputElement>(null);
 
   const cargar = useCallback(
     () =>
       crmVideosTarjeta().then(
         (d) => {
           setVideos(d.videos);
+          setFijos(d.fijos ?? []);
           setCloud(d.cloud);
           setError(null);
         },
@@ -75,14 +119,18 @@ export function TarjetaVideos() {
     setProgreso(0);
     try {
       setFase("preparando");
+      // Si elegiste una portada, se revisa ANTES de comprimir (así no esperas para enterarte de que la imagen no sirve)
+      const propia = imagenPortada ? await portadaDeImagen(imagenPortada) : null;
       const permiso = await crmPrepararVideo(); // si falta la migración, avisa ANTES de comprimir
       setFase("comprimiendo");
       const v = await comprimirVideo(archivo, setProgreso);
-      let portada: Blob | null = null;
-      try {
-        portada = await portadaDelVideo(v.blob, v.duracion);
-      } catch {
-        portada = null; // sin portada el video se publica igual (con el primer cuadro)
+      let portada: Blob | null = propia;
+      if (!portada) {
+        try {
+          portada = await portadaDelVideo(v.blob, v.duracion);
+        } catch {
+          portada = null; // sin portada el video se publica igual (con el primer cuadro)
+        }
       }
       setFase("subiendo");
       await crmSubirArchivoVideo(permiso, "video", v.blob);
@@ -91,13 +139,15 @@ export function TarjetaVideos() {
       const nuevo = await crmCrearVideo({ id: permiso.id, titulo: t, clave, duracion: v.duracion, ia, conPortada: Boolean(portada) });
       setVideos((prev) => [nuevo, ...(prev ?? [])]);
       setArchivo(null);
+      setImagenPortada(null);
       setTitulo("");
       setClave("");
       if (entrada.current) entrada.current.value = "";
+      if (entradaPortada.current) entradaPortada.current.value = "";
       setListo(`«${nuevo.titulo}» ya está en tu tarjeta (puede tardar hasta 1 minuto en verse).`);
     } catch (e) {
       if (e instanceof ErrorCRM && e.migracion) setError(e);
-      else setFallo(e instanceof ErrorVideo || e instanceof Error ? e.message : "No pude subir el video. Intenta de nuevo.");
+      else setFallo(mensajeDe(e, "No pude subir el video. Intenta de nuevo."));
     } finally {
       setFase("reposo");
     }
@@ -135,7 +185,8 @@ export function TarjetaVideos() {
         <p className="mt-1 text-sm text-ink-soft">
           Sube un video y sale solo, <strong className="text-ink">primero</strong> en el carrusel «Videos» de{" "}
           <strong className="text-ink">www.especialistaenasegurarte.lat/roberto</strong>. Se comprime en tu aparato antes de subirse.
-          Tus videos fijos de siempre (Maternidad, Gastos médicos, Ahorro…) se quedan después de los nuevos.
+          Cada video tiene su botón <strong className="text-ink">«Subir portada»</strong>: elige la imagen vertical (las de «Portadas Instagram» sirven) y se ve en la tarjeta en
+          ~1 minuto. Tus videos fijos de siempre se quedan después de los nuevos y también puedes cambiarles la portada.
         </p>
         {!cloud && <p className="mt-1 text-xs font-semibold text-amber">MODO DEMOSTRACIÓN: no se sube nada de verdad.</p>}
       </div>
@@ -166,6 +217,26 @@ export function TarjetaVideos() {
               }}
               className="field-input"
             />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="field-label" htmlFor="vt-portada">
+              Portada (opcional)
+            </label>
+            <input
+              id="vt-portada"
+              ref={entradaPortada}
+              type="file"
+              accept="image/*"
+              disabled={ocupado}
+              onChange={(e) => {
+                setImagenPortada(e.target.files?.[0] ?? null);
+                setFallo("");
+              }}
+              className="field-input"
+            />
+            <p className="mt-1 text-xs text-ink-mute">
+              Una imagen vertical (1080×1920, como tus «Portadas Instagram»). Si no eliges ninguna, se usa un cuadro del video. Después puedes cambiarla con «Cambiar portada».
+            </p>
           </div>
           <div className="sm:col-span-2">
             <label className="field-label" htmlFor="vt-titulo">
@@ -257,7 +328,99 @@ export function TarjetaVideos() {
           </ul>
         )}
       </div>
+
+      <div className="glass rounded-2xl p-4 sm:p-5">
+        <h3 className="font-display text-base text-ink">Videos fijos de la tarjeta {fijos && `(${fijos.length})`}</h3>
+        <p className="mt-1 text-sm text-ink-soft">
+          Los de siempre (Gastos médicos, Maternidad, Ahorro…). Aquí puedes subirle a cada uno su portada; si te arrepientes, «Volver a la original».
+        </p>
+        {!fijos ? (
+          <div className="mt-3 h-20 animate-pulse rounded-xl bg-bg-3/70" aria-label="Cargando los videos fijos" />
+        ) : (
+          <ul className="mt-3 space-y-3">
+            {fijos.map((f) => (
+              <FilaFijo key={f.id} f={f} onCambio={(n) => setFijos((prev) => (prev ?? []).map((x) => (x.id === n.id ? n : x)))} />
+            ))}
+          </ul>
+        )}
+      </div>
     </section>
+  );
+}
+
+/** Una fila de video FIJO: su portada actual y el botón para subirle otra. */
+function FilaFijo({ f, onCambio }: { f: VideoFijo; onCambio: (f: VideoFijo) => void }) {
+  const [trabajando, setTrabajando] = useState(false);
+  const [fallo, setFallo] = useState("");
+  const [listo, setListo] = useState("");
+
+  async function subir(imagen: File) {
+    setTrabajando(true);
+    setFallo("");
+    setListo("");
+    try {
+      const r = await subirPortadaDe(f.id, imagen);
+      if (r.fijo) onCambio(r.fijo);
+      setListo("Portada guardada. Se ve en la tarjeta en ~1 minuto.");
+    } catch (e) {
+      setFallo(mensajeDe(e, "No pude subir la portada. Intenta de nuevo."));
+    } finally {
+      setTrabajando(false);
+    }
+  }
+
+  async function volver() {
+    setTrabajando(true);
+    setFallo("");
+    setListo("");
+    try {
+      onCambio(await crmQuitarPortada(f.id));
+      setListo("Volvió la portada original.");
+    } catch (e) {
+      setFallo(mensajeDe(e, "No pude quitar la portada."));
+    } finally {
+      setTrabajando(false);
+    }
+  }
+
+  return (
+    <li className="rounded-xl border border-line p-3">
+      <div className="flex gap-3">
+        <div className="relative block h-24 w-[54px] shrink-0 overflow-hidden rounded-lg bg-bg-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={f.poster} alt={`Portada de ${f.titulo}`} className="h-full w-full object-cover" loading="lazy" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold text-ink">{f.titulo}</p>
+          <p className="mt-0.5 text-xs text-ink-mute">
+            {f.tema} · {f.personalizada ? "portada que subiste tú" : "portada original"}
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <BotonImagen texto={f.personalizada ? "Cambiar portada" : "Subir portada"} disabled={trabajando} onArchivo={(a) => void subir(a)} />
+            {f.personalizada && (
+              <button type="button" disabled={trabajando} onClick={() => void volver()} className="btn-ghost px-3 py-1.5 text-xs">
+                Volver a la original
+              </button>
+            )}
+          </div>
+          {trabajando && (
+            <p className="mt-2 text-xs font-semibold text-ink" role="status">
+              Subiendo la portada…
+            </p>
+          )}
+          {listo && !trabajando && (
+            <p className="mt-2 text-xs font-semibold text-ink" role="status">
+              ✓ {listo}
+            </p>
+          )}
+          {fallo && (
+            <p className="mt-2 text-sm font-semibold" style={{ color: "var(--err, #ff8f8f)" }} role="alert">
+              {fallo}
+            </p>
+          )}
+        </div>
+      </div>
+    </li>
   );
 }
 
@@ -269,6 +432,7 @@ function FilaVideo({ v, onCambio, onQuitar }: { v: VideoTarjeta; onCambio: (v: V
   const [seguro, setSeguro] = useState(false);
   const [trabajando, setTrabajando] = useState(false);
   const [fallo, setFallo] = useState("");
+  const [listo, setListo] = useState("");
 
   async function guardar(cambios: Parameters<typeof crmEditarVideo>[1]) {
     setTrabajando(true);
@@ -278,6 +442,21 @@ function FilaVideo({ v, onCambio, onQuitar }: { v: VideoTarjeta; onCambio: (v: V
       setEditando(false);
     } catch (e) {
       setFallo((e as Error).message);
+    } finally {
+      setTrabajando(false);
+    }
+  }
+
+  async function cambiarPortada(imagen: File) {
+    setTrabajando(true);
+    setFallo("");
+    setListo("");
+    try {
+      const r = await subirPortadaDe(v.id, imagen);
+      if (r.video) onCambio(r.video);
+      setListo("Portada guardada. Se ve en la tarjeta en ~1 minuto.");
+    } catch (e) {
+      setFallo(mensajeDe(e, "No pude subir la portada. Intenta de nuevo."));
     } finally {
       setTrabajando(false);
     }
@@ -315,6 +494,7 @@ function FilaVideo({ v, onCambio, onQuitar }: { v: VideoTarjeta; onCambio: (v: V
             {!v.visible && " · OCULTO en la tarjeta"}
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
+            <BotonImagen texto={v.poster ? "Cambiar portada" : "Subir portada"} disabled={trabajando} onArchivo={(a) => void cambiarPortada(a)} />
             <button type="button" disabled={trabajando} onClick={() => void guardar({ visible: !v.visible })} className="btn-ghost px-3 py-1.5 text-xs">
               {v.visible ? "Ocultar" : "Mostrar"}
             </button>
@@ -336,6 +516,11 @@ function FilaVideo({ v, onCambio, onQuitar }: { v: VideoTarjeta; onCambio: (v: V
               </button>
             )}
           </div>
+          {listo && !trabajando && (
+            <p className="mt-2 text-xs font-semibold text-ink" role="status">
+              ✓ {listo}
+            </p>
+          )}
         </div>
       </div>
       {editando && (
