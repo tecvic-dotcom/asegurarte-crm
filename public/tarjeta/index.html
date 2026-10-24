@@ -1038,6 +1038,8 @@ const CONFIG = {
   // Videos (archivos en /tarjeta/reels/<id>.mp4 y <id>.jpg). «clave» = la palabra que se dice al final del video: viaja en el mensaje de WhatsApp.
   videos: {
     aviso: "Estos videos se crearon con apoyo de inteligencia artificial.",
+    // Los videos que subes desde el CRM no traen intereses: se deducen de su palabra clave (así «Mi casa» recomienda el de HOGAR)
+    tagsPorClave: { HOGAR: ["casa"], FAMILIA: ["familia"], DINERO: ["retiro"], LISTA: ["salud"] },
     lista: [
       { id: "gastos-medicos", tags: ["salud", "familia"], titulo: "Todo estaba bien… hasta que sonó el teléfono", tema: "Gastos médicos", clave: "GASTOS MÉDICOS", dur: 46 },
       { id: "maternidad", tags: ["familia", "salud"], titulo: "¿Planean tener un bebé? Esto casi nadie lo dice", tema: "Maternidad", clave: "BEBÉ", dur: 39 },
@@ -1436,7 +1438,7 @@ function vcardTexto() {
     Object.keys(ps).forEach((id) => { if (fijos.some((v) => v.id === id) || (C.eventos.video && C.eventos.video.id === id)) { if (urlValida(ps[id])) portadas[id] = ps[id]; } });
     const hayPortadas = Object.keys(portadas).length > 0;
     const nuevos = ((j && j.videos) || []).filter((v) => v && typeof v.titulo === "string" && urlValida(v.src) && (!v.poster || urlValida(v.poster)))
-      .map((v) => ({ id: String(v.id), titulo: v.titulo, tema: "", dur: Math.max(1, +v.dur || 1), clave: v.clave || "", src: v.src, poster: v.poster || "", ia: v.ia !== false }));
+      .map((v) => ({ id: String(v.id), titulo: v.titulo, tema: "", dur: Math.max(1, +v.dur || 1), clave: v.clave || "", tags: C.videos.tagsPorClave[String(v.clave || "").toUpperCase()] || [], src: v.src, poster: v.poster || "", ia: v.ia !== false }));
     // Si la persona ya movió el carrusel o abrió algo, no se le cambia la pantalla: lo verá en su próxima visita
     if ((!nuevos.length && !hayPortadas) || $("#reels").scrollLeft > 10 || document.querySelector("dialog[open]")) return;
     portadasCRM = portadas;
