@@ -25,6 +25,7 @@ import { PolizasAdjuntas } from "./PolizasAdjuntas";
 import { SeguimientoSofi } from "./SeguimientoSofi";
 import { ReportesClara } from "./ReportesClara";
 import { Camila } from "./Camila";
+import { ChubbDana } from "./ChubbDana";
 import { MenuLateral, opcionDe, type Pestana } from "./MenuLateral";
 import { polizaDesdeVenta } from "@/lib/poliza-desde-venta";
 import type { Cotizacion } from "@/lib/cotizaciones-reglas";
@@ -345,6 +346,8 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
           )}
 
           {esAdmin && pestana === "camila" && <Camila onCotizar={cotizarPorId} onVerPoliza={verPolizaEnValeri} onAgregarPoliza={agregarPolizaDeCliente} />}
+
+          {esAdmin && pestana === "dana" && <ChubbDana />}
 
           {esAdmin && pestana === "clara" && <ReportesClara />}
 

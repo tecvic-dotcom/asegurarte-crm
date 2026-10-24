@@ -77,3 +77,6 @@ export const MENSAJE_MIGRACION_TARJETA =
 
 export const MENSAJE_MIGRACION_VIDEOS =
   "Falta un paso para subir videos a tu tarjeta: abre Supabase → SQL Editor → New query, pega el archivo supabase/migrations/0020_tarjeta_videos.sql y dale Run.";
+
+export const MENSAJE_MIGRACION_CHUBB =
+  "Falta un paso para encender a Dana (Chubb Autos): abre Supabase → SQL Editor → New query, pega el archivo supabase/migrations/0021_chubb_autos.sql y dale Run.";

@@ -20,6 +20,7 @@ export type Pestana =
   | "sofi"
   | "valeri"
   | "camila"
+  | "dana"
   | "clara"
   | "admin";
 
@@ -73,6 +74,7 @@ export const GRUPOS_MENU: GrupoMenu[] = [
       { id: "sofi", nombre: "Sofi", pista: "Seguimiento a prospectos", icono: "flat-color-icons:sms", avatar: "sofi" },
       { id: "valeri", nombre: "Valeri", pista: "Cobranza de hoy", icono: "flat-color-icons:debt", avatar: "valeri" },
       { id: "camila", nombre: "Camila", pista: "Venta cruzada a tus clientes", icono: "flat-color-icons:shop", avatar: "camila" },
+      { id: "dana", nombre: "Dana", pista: "Chubb Autos: renovaciones y recibos", icono: "flat-color-icons:automotive", avatar: "dana" },
       { id: "clara", nombre: "Clara", pista: "Reportes y clientes por ramo", icono: "flat-color-icons:document", avatar: "clara" },
     ],
   },

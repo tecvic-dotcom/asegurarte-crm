@@ -57,6 +57,7 @@ import type { DatosFamiliar } from "./cruzada-familia";
 import type { ResultadoSincronizar } from "./clientes-plan";
 import type { Cotizacion, DatosCotizacion, EstadoCotizacion, LecturaCotizacion } from "./cotizaciones-reglas";
 import type { DatosPendiente, Pendiente } from "./pendientes-reglas";
+import type { CargaChubb, PolizaChubb } from "./chubb-reglas";
 
 async function jsonOrThrow(res: Response): Promise<unknown> {
   const data = await res.json().catch(() => ({}));
@@ -326,6 +327,20 @@ export async function crmPreguntarManager(
 export async function crmGuardarManagerConfig(config: ManagerConfig): Promise<ManagerConfig> {
   const data = await jsonOErrorCRM(await postJSON("/api/crm/manager", { accion: "guardar-config", config }));
   return (data as { config: ManagerConfig }).config;
+}
+
+// ---- Chubb Autos: Dana (solo admin) ----
+
+/** El último Excel de Chubb Autos que subiste (null si todavía no subes ninguno). */
+export async function crmChubb(): Promise<CargaChubb | null> {
+  const res = await fetch("/api/crm/chubb", { cache: "no-store" });
+  return ((await jsonOErrorCRM(res)) as { carga: CargaChubb | null }).carga;
+}
+
+/** Guarda un Excel nuevo (ya leído en el navegador) como la carga más reciente de Dana. */
+export async function crmCargarChubb(archivo: string, polizas: PolizaChubb[]): Promise<CargaChubb> {
+  const data = await jsonOErrorCRM(await postJSON("/api/crm/chubb", { accion: "cargar", archivo, polizas }));
+  return (data as { carga: CargaChubb }).carga;
 }
 
 // ---- Cobranza: Valeri (solo admin) ----

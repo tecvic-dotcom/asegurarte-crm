@@ -2,7 +2,7 @@
 
 import { useId } from "react";
 
-export type VarianteAvatar = "roro" | "valeri" | "clara" | "sofi" | "camila";
+export type VarianteAvatar = "roro" | "valeri" | "clara" | "sofi" | "camila" | "dana";
 
 const ESTILO: Record<VarianteAvatar, { claro: string; oscuro: string; ojos: string; nombre: string }> = {
   roro: { claro: "var(--brand-2)", oscuro: "var(--brand)", ojos: "var(--sky)", nombre: "Robert, tu gerente digital" },
@@ -10,6 +10,7 @@ const ESTILO: Record<VarianteAvatar, { claro: string; oscuro: string; ojos: stri
   clara: { claro: "var(--sky)", oscuro: "var(--brand-deep)", ojos: "var(--ink)", nombre: "Clara, tus reportes" },
   sofi: { claro: "var(--green)", oscuro: "var(--brand)", ojos: "var(--ink)", nombre: "Sofi, tu seguimiento a prospectos" },
   camila: { claro: "var(--amber)", oscuro: "var(--violet)", ojos: "var(--ink)", nombre: "Camila, tu venta cruzada" },
+  dana: { claro: "var(--sky)", oscuro: "var(--violet)", ojos: "var(--ink)", nombre: "Dana, tu Chubb Autos" },
 };
 
 interface AvatarEmpleadoProps {
@@ -25,6 +26,7 @@ interface AvatarEmpleadoProps {
  * Robert (gerente) lleva corbata; Valeri (cobranza) lleva audífonos para sus llamadas;
  * Clara (reportes) lleva lentes y su portapapeles con la gráfica; Sofi (seguimiento) lleva coleta y su globo de mensaje;
  * Camila (venta cruzada) lleva dos colitas y su gafete con el «+» de «¿te falta algo más?».
+ * Dana (Chubb Autos) lleva su gorra con el escudito y un carrito al pecho.
  * Solo SVG + animaciones baratas (transform/opacity): fluido en el celular.
  */
 export function AvatarEmpleado({ variante = "roro", tamano = 72, hablando = false, enLinea = true }: AvatarEmpleadoProps) {
@@ -61,7 +63,7 @@ export function AvatarEmpleado({ variante = "roro", tamano = 72, hablando = fals
             <circle cx="50" cy="14" r="6" />
             <path d="M54 14 Q82 6 84 30 Q76 18 56 20 Z" />
           </g>
-        ) : (
+        ) : variante === "dana" ? null : (
           // Chongo de Clara
           <circle cx="50" cy="13" r="8" style={{ fill: e.oscuro }} />
         )}
@@ -96,6 +98,15 @@ export function AvatarEmpleado({ variante = "roro", tamano = 72, hablando = fals
           </g>
         )}
 
+        {variante === "dana" && (
+          // Gorra con el escudito de la aseguradora
+          <g>
+            <path d="M16 31 Q16 6 50 6 Q84 6 84 31 Z" style={{ fill: e.oscuro }} />
+            <rect x="24" y="26" width="64" height="6" rx="3" style={{ fill: e.oscuro }} />
+            <path d="M50 11 L56 13.5 V18 Q56 22 50 24 Q44 22 44 18 V13.5 Z" style={{ fill: e.claro }} />
+          </g>
+        )}
+
         {variante === "roro" ? (
           // Corbata de asesor
           <path d="M44 79 H56 L53 85 L57 95 L50 99 L43 95 L47 85 Z" style={{ fill: "var(--brand-deep)" }} />
@@ -114,6 +125,15 @@ export function AvatarEmpleado({ variante = "roro", tamano = 72, hablando = fals
             <rect x="33" y="79" width="34" height="20" rx="5" style={{ fill: "var(--plata)" }} />
             <rect x="46.5" y="83" width="7" height="12" rx="2" className="roro-foco" style={{ fill: "var(--green)" }} />
             <rect x="41" y="86" width="18" height="6" rx="2" className="roro-foco" style={{ fill: "var(--green)" }} />
+          </g>
+        ) : variante === "dana" ? (
+          // Carrito de Chubb Autos
+          <g>
+            <path d="M31 93 Q31 88.5 36 87.5 L41.5 80.5 Q43 79 45 79 H57 Q59 79 60.5 80.5 L66 87.5 Q71 88.5 71 93 V96 H31 Z" style={{ fill: "var(--plata)" }} />
+            <path d="M44.5 81.5 H56.5 L60 87 H41 Z" style={{ fill: "var(--bg-2)" }} />
+            <circle cx="40" cy="96.5" r="4" style={{ fill: "var(--ink-soft)" }} />
+            <circle cx="62" cy="96.5" r="4" style={{ fill: "var(--ink-soft)" }} />
+            <circle cx="67.5" cy="91.5" r="1.8" className="roro-foco" style={{ fill: "var(--green)" }} />
           </g>
         ) : variante === "sofi" ? (
           // Globo de mensaje con puntos "escribiendo"
