@@ -119,7 +119,10 @@ export function Relleno({ pct, color, alto = 12 }: { pct: number; color: string;
   return <span aria-hidden className="block rounded-full" style={{ width: `${pct}%`, height: 0, borderTop: `${alto}px solid ${color}` }} />;
 }
 
-/** Barra horizontal con su etiqueta: sirve para meses, frecuencias y clientes. */
+/**
+ * Barra horizontal con su etiqueta: sirve para meses, frecuencias y clientes.
+ * Con `onClick` toda la fila es un botón que abre su desglose (`children`) debajo de ella.
+ */
 export function BarraFila({
   etiqueta,
   valor,
@@ -127,6 +130,9 @@ export function BarraFila({
   texto,
   color = "var(--brand-2)",
   anchoEtiqueta = "8.5rem",
+  onClick,
+  abierta = false,
+  children,
 }: {
   etiqueta: string;
   valor: number;
@@ -135,20 +141,49 @@ export function BarraFila({
   color?: string;
   /** Ancho de la columna de la etiqueta (más ancho para nombres de personas). */
   anchoEtiqueta?: string;
+  onClick?: () => void;
+  abierta?: boolean;
+  children?: ReactNode;
 }) {
   const ancho = maximo > 0 ? Math.max(valor > 0 ? 3 : 0, Math.round((valor / maximo) * 100)) : 0;
-  return (
-    <li
-      className="grid grid-cols-[min(var(--ancho-etiqueta),9.5rem)_1fr] items-center gap-x-3 gap-y-0.5 text-sm sm:grid-cols-[var(--ancho-etiqueta)_1fr_auto]"
-      style={{ "--ancho-etiqueta": anchoEtiqueta } as CSSProperties}
-    >
-      <span className="truncate text-ink-soft" title={etiqueta}>
-        {etiqueta}
+  const rejilla = "grid grid-cols-[min(var(--ancho-etiqueta),9.5rem)_1fr] items-center gap-x-3 gap-y-0.5 text-sm sm:grid-cols-[var(--ancho-etiqueta)_1fr_auto]";
+  const estilo = { "--ancho-etiqueta": anchoEtiqueta } as CSSProperties;
+  const contenido = (
+    <>
+      <span className="flex min-w-0 items-center gap-1.5 text-ink-soft">
+        {onClick && (
+          <span aria-hidden className={`shrink-0 text-[10px] text-ink-mute transition-transform ${abierta ? "rotate-90" : ""}`}>
+            ▶
+          </span>
+        )}
+        <span className="truncate" title={etiqueta}>
+          {etiqueta}
+        </span>
       </span>
       <span className="h-3 rounded-full bg-bg-3/80" aria-hidden>
         <Relleno pct={ancho} color={color} />
       </span>
       <span className="col-span-2 text-xs text-ink-mute sm:col-span-1 sm:text-right sm:text-sm">{texto}</span>
+    </>
+  );
+  return (
+    <li>
+      {onClick ? (
+        <button
+          type="button"
+          onClick={onClick}
+          aria-expanded={abierta}
+          className={`${rejilla} -mx-2 w-[calc(100%+1rem)] rounded-xl px-2 py-1.5 text-left transition-colors hover:bg-bg-3/50 ${abierta ? "bg-bg-3/40" : ""}`}
+          style={estilo}
+        >
+          {contenido}
+        </button>
+      ) : (
+        <div className={rejilla} style={estilo}>
+          {contenido}
+        </div>
+      )}
+      {abierta && children}
     </li>
   );
 }

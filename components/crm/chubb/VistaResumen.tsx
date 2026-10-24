@@ -1,12 +1,29 @@
 "use client";
 
+import { useState } from "react";
 import { Icon } from "@iconify/react";
 import { fechaNumerica } from "@/lib/fechas";
-import { FRECUENCIAS, etiquetaMes, etiquetaRenovacion, pesos, pesosCortos, type InfoPoliza, type ResumenChubb } from "@/lib/chubb-reglas";
+import { FRECUENCIAS, etiquetaMes, etiquetaRenovacion, pesos, pesosCortos, type FrecuenciaChubb, type InfoPoliza, type ResumenChubb } from "@/lib/chubb-reglas";
+import { DesgloseFrecuencia } from "./DesgloseFrecuencia";
 import { BarraFila, Indicador, Nota, Relleno, type VistaDana } from "./piezas";
 
 /** El tablero de indicadores: producción, lo pagado, las renovaciones que vienen y los recibos sin pagar. */
-export function VistaResumen({ r, filtradas, hoy, onIr }: { r: ResumenChubb; filtradas: InfoPoliza[]; hoy: string; onIr: (v: VistaDana) => void }) {
+export function VistaResumen({
+  r,
+  filtradas,
+  hoy,
+  onIr,
+  onVerFrecuencia,
+}: {
+  r: ResumenChubb;
+  filtradas: InfoPoliza[];
+  hoy: string;
+  onIr: (v: VistaDana) => void;
+  /** Filtra por esa frecuencia de pago y abre la pestaña Pólizas. */
+  onVerFrecuencia: (f: FrecuenciaChubb) => void;
+}) {
+  // La frecuencia de pago cuyo desglose está abierto (tocar otra vez la cierra).
+  const [abierta, setAbierta] = useState<FrecuenciaChubb | null>(null);
   const ren = r.renovaciones;
   const rc = r.recibos;
   const conAvisos = filtradas.filter((i) => i.avisos.length > 0).length;
@@ -164,10 +181,11 @@ export function VistaResumen({ r, filtradas, hoy, onIr }: { r: ResumenChubb; fil
           </ul>
         </section>
 
-        <section className="glass rounded-2xl p-4 sm:p-5">
+        <section className={`glass rounded-2xl p-4 sm:p-5 ${abierta && r.por_frecuencia.some((f) => f.frecuencia === abierta && f.polizas > 0) ? "lg:col-span-2" : ""}`}>
           <h3 className="flex items-center gap-2 font-semibold text-ink">
             <Icon icon="flat-color-icons:data-sheet" width={20} aria-hidden /> Por frecuencia de pago
           </h3>
+          <p className="mt-0.5 text-xs text-ink-mute">Toca una frecuencia para ver su desglose y sus pólizas.</p>
           <ul className="mt-3 space-y-2.5">
             {r.por_frecuencia.map((f) => (
               <BarraFila
@@ -176,13 +194,22 @@ export function VistaResumen({ r, filtradas, hoy, onIr }: { r: ResumenChubb; fil
                 valor={f.neta}
                 maximo={maxFrec}
                 color="var(--violet)"
+                onClick={f.polizas > 0 ? () => setAbierta(abierta === f.frecuencia ? null : f.frecuencia) : undefined}
+                abierta={abierta === f.frecuencia && f.polizas > 0}
                 texto={
                   <>
                     <strong className="text-ink">{f.polizas}</strong> {f.polizas === 1 ? "póliza" : "pólizas"} · {pesosCortos(f.neta)}
                     {f.con_pendientes > 0 && <> · {f.con_pendientes} con recibos pendientes</>}
                   </>
                 }
-              />
+              >
+                <DesgloseFrecuencia
+                  frecuencia={f.frecuencia}
+                  infos={filtradas.filter((i) => i.p.frecuencia === f.frecuencia)}
+                  totalPolizas={filtradas.length}
+                  onVerPolizas={() => onVerFrecuencia(f.frecuencia)}
+                />
+              </BarraFila>
             ))}
           </ul>
         </section>

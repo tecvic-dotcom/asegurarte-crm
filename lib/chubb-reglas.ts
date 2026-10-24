@@ -722,11 +722,12 @@ export function resumenChubb(infos: InfoPoliza[]): ResumenChubb {
     for (const rc of i.recibos) {
       const imp = rc.importe ?? 0;
       r.recibos.pendientes++;
-      r.recibos.importe_pendiente = redondear(r.recibos.importe_pendiente + imp);
+      // Se suma sin redondear y se redondea una sola vez al final (si no, se acumulan centavos de diferencia).
+      r.recibos.importe_pendiente += imp;
       if (rc.calculado) r.recibos.calculados++;
       const suma = (g: { n: number; importe: number }) => {
         g.n++;
-        g.importe = redondear(g.importe + imp);
+        g.importe += imp;
       };
       if (rc.estado === "vencido") suma(r.recibos.vencidos);
       if (rc.estado === "hoy") suma(r.recibos.hoy);
@@ -742,6 +743,9 @@ export function resumenChubb(infos: InfoPoliza[]): ResumenChubb {
     for (const a of i.avisos) avisos.set(a.codigo, (avisos.get(a.codigo) ?? 0) + 1);
   }
 
+  const rec = r.recibos;
+  rec.importe_pendiente = redondear(rec.importe_pendiente);
+  for (const g of [rec.vencidos, rec.hoy, rec.d7, rec.d30]) g.importe = redondear(g.importe);
   r.pct_pagado = porcentaje(r.neta_pagada, r.prima_neta);
   r.neta_promedio = conNeta ? redondear(r.prima_neta / conNeta) : 0;
   r.por_mes_emision = [...emision.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([clave, v]) => ({ clave, ...v }));

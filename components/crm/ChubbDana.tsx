@@ -279,7 +279,19 @@ export function ChubbDana() {
                   Al {fechaLarga(hoy)} · {filtradas.length} pólizas{nota ? ` · ${nota}` : ""}
                 </p>
               </header>
-              {vista === "resumen" && <VistaResumen r={resumen} filtradas={filtradas} hoy={hoy} onIr={setVista} />}
+              {vista === "resumen" && (
+                <VistaResumen
+                  r={resumen}
+                  filtradas={filtradas}
+                  hoy={hoy}
+                  onIr={setVista}
+                  onVerFrecuencia={(f) => {
+                    setFiltros((x) => ({ ...x, frecuencia: f }));
+                    setVista("polizas");
+                    window.scrollTo({ top: 0 });
+                  }}
+                />
+              )}
               {vista === "renovaciones" && <VistaRenovaciones infos={filtradas} />}
               {vista === "recibos" && <VistaRecibos infos={filtradas} />}
               {vista === "polizas" && <VistaPolizas infos={filtradas} />}
