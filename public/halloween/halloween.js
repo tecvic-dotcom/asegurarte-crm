@@ -63,11 +63,15 @@
     "@keyframes hw-rise{0%{opacity:0;transform:translate3d(0,0,0)}12%{opacity:.95}100%{opacity:0;transform:translate3d(var(--dx),-58vh,0)}}",
 
     /* Transformación en vampiro (solo la portada de /roberto): un ciclo de 12 s donde TODO va con la misma duración
-       y arranca en el mismo instante: foto de Roberto → zoom + destello + parpadeo → vampiro → de vuelta. La luna se pone roja. */
-    "html.hw-on .portrait.hw-vamp-on #fotoPic{transform-origin:50% 37%;animation:hw-rob 12s linear infinite}",
-    "html.hw-on .portrait img.hw-vamp{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;object-position:50% 50%;opacity:0;pointer-events:none;transform-origin:50% 32%;" +
-      "-webkit-mask-image:linear-gradient(180deg,transparent 0,#000 7%,#000 64%,transparent 98%),linear-gradient(90deg,transparent 0,#000 13%,#000 87%,transparent 100%);-webkit-mask-composite:source-in;" +
-      "mask-image:linear-gradient(180deg,transparent 0,#000 7%,#000 64%,transparent 98%),linear-gradient(90deg,transparent 0,#000 13%,#000 87%,transparent 100%);mask-composite:intersect;animation:hw-vamp 12s linear infinite}",
+       y arranca en el mismo instante: foto de Roberto → temblor + destello + parpadeo → vampiro → de vuelta. La luna se pone roja.
+       SIN zoom: la foto del vampiro se coloca (colocar()) para que sus ojos caigan sobre los de Roberto y su cara mida lo mismo. */
+    "html.hw-on .portrait.hw-vamp-on #fotoPic{animation:hw-rob 12s linear infinite}",
+    ".hw-vw{position:absolute;left:0;top:0;width:100%;height:100%;opacity:0;pointer-events:none;animation:hw-vamp 12s linear infinite}",
+    /* La foto del vampiro se achica al tamaño de la cara de Roberto y solo se muestra su cabeza (óvalo con orillas suaves, que llegan a 0 justo en los
+       bordes de la foto): el traje de Roberto se queda debajo, oscurecido, y la cabeza cambia. */
+    "html.hw-on .portrait .hw-vw img.hw-vamp{position:absolute;display:block;max-width:none;object-fit:fill;margin:0;" +
+      "-webkit-mask-image:radial-gradient(ellipse 50% 47% at 52% 44%,#000 72%,transparent 100%),linear-gradient(180deg,transparent 0,#000 6%);-webkit-mask-composite:source-in;" +
+      "mask-image:radial-gradient(ellipse 50% 47% at 52% 44%,#000 72%,transparent 100%),linear-gradient(180deg,transparent 0,#000 6%);mask-composite:intersect}",
     /* El tinte rojo y el destello llevan el mismo difuminado de bordes que la foto: sin él se nota el borde inferior de la portada. */
     ".hw-blood,.hw-flash{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;opacity:0;" +
       "-webkit-mask-image:linear-gradient(180deg,transparent 0,#000 7%,#000 60%,transparent 97%),linear-gradient(90deg,transparent 0,#000 13%,#000 87%,transparent 100%);-webkit-mask-composite:source-in;" +
@@ -78,11 +82,13 @@
     ".hw-vb svg{display:block;width:100%;height:auto;overflow:visible;filter:drop-shadow(0 0 5px rgba(255,60,90,.7))}",
     "#hw .hw-moon::after{content:'';position:absolute;left:0;top:0;width:100%;height:100%;border-radius:50%;opacity:0;background:radial-gradient(circle at 36% 32%,#ffb9a6 0%,#e0503f 42%,#8d1224 100%);box-shadow:0 0 70px 24px rgba(255,50,50,.34),0 0 190px 80px rgba(200,0,30,.22)}",
     "#hw.vamp .hw-moon::after{animation:hw-redmoon 12s linear infinite}",
-    "@keyframes hw-rob{0%,40%{opacity:1;transform:none;filter:none}41.5%{transform:translate(-2px,1px)}42.5%{transform:translate(2px,-1px);filter:saturate(.8) contrast(1.08)}43.5%{transform:translate(-2px,0) scale(1.01)}" +
-      "44.5%{transform:scale(1.04);filter:saturate(.5) contrast(1.25) brightness(1.05)}46.8%{transform:scale(1.3);filter:saturate(0) contrast(1.5) brightness(1.6)}47%{transform:none;filter:none}49.9%{opacity:1}50%{opacity:0}83.4%{opacity:0}83.5%{opacity:1;transform:none;filter:none}100%{opacity:1;transform:none;filter:none}}",
-    "@keyframes hw-vamp{0%,46.9%{opacity:0;transform:scale(1.2);filter:none}47%{opacity:1;transform:scale(1.18);filter:brightness(2) contrast(1.3) saturate(.3)}47.9%{opacity:.25;transform:scale(1.15)}48.7%{opacity:1;transform:scale(1.1);filter:brightness(1.4)}" +
-      "49.4%{opacity:.45;transform:scale(1.08)}50%{opacity:1;transform:scale(1.06);filter:brightness(1.15) contrast(1.1)}53%{transform:scale(1.02);filter:none}80%{opacity:1;transform:scale(1.045);filter:none}" +
-      "81.5%{transform:translate(-2px,1px) scale(1.05)}82.5%{transform:translate(2px,-1px) scale(1.06);filter:contrast(1.15)}83.5%{opacity:1;transform:scale(1.28);filter:brightness(1.7) saturate(.2)}84%{opacity:.4;transform:scale(1.3)}84.7%{opacity:.9}85.4%{opacity:0}100%{opacity:0}}",
+    /* La foto de Roberto no desaparece: tiembla, se oscurece mientras dura el vampiro (queda su traje) y vuelve a su luz normal. */
+    "@keyframes hw-rob{0%,40%{transform:none;filter:none}41.5%{transform:translate(-2px,1px)}42.5%{transform:translate(2px,-1px);filter:saturate(.8) contrast(1.08)}43.5%{transform:translate(-2px,0)}" +
+      "44.5%{transform:translate(1px,1px);filter:saturate(.5) contrast(1.25) brightness(1.05)}46.8%{transform:none;filter:saturate(0) contrast(1.5) brightness(1.6)}47%{transform:none;filter:none}" +
+      "50%{filter:brightness(.8) saturate(.8)}54%{filter:brightness(.5) saturate(.55)}83%{filter:brightness(.5) saturate(.55)}83.5%{transform:none;filter:none}100%{transform:none;filter:none}}",
+    "@keyframes hw-vamp{0%,46.9%{opacity:0;transform:none;filter:none}47%{opacity:1;filter:brightness(2) contrast(1.3) saturate(.3)}47.9%{opacity:.25}48.7%{opacity:1;filter:brightness(1.4)}" +
+      "49.4%{opacity:.45}50%{opacity:1;filter:brightness(1.15) contrast(1.1)}53%{filter:none}80%{opacity:1;transform:none;filter:none}" +
+      "81.5%{transform:translate(-2px,1px)}82.5%{transform:translate(2px,-1px);filter:contrast(1.15)}83.5%{opacity:1;transform:none;filter:brightness(1.7) saturate(.2)}84%{opacity:.4}84.7%{opacity:.9}85.4%{opacity:0}100%{opacity:0}}",
     "@keyframes hw-flashv{0%,45%{opacity:0}46.6%{opacity:.35}47%{opacity:.85}47.7%{opacity:.1}48.5%{opacity:.4}49.6%{opacity:0}83%{opacity:0}83.5%{opacity:.5}84%{opacity:.85}84.9%{opacity:.1}86%{opacity:0}100%{opacity:0}}",
     "@keyframes hw-bloodv{0%,39%{opacity:0}44%{opacity:.7}47%{opacity:1}53%{opacity:.6}66%{opacity:.4}80%{opacity:.6}84%{opacity:.9}89%{opacity:0}100%{opacity:0}}",
     "@keyframes hw-burst{0%,46%{opacity:0;transform:translate(-50%,-50%) scale(.2)}47%{opacity:1}58%{opacity:0;transform:translate(calc(-50% + var(--bx)),calc(-50% + var(--by))) scale(1.15)}" +
@@ -210,7 +216,7 @@
   if (document.body) montar(); else document.addEventListener("DOMContentLoaded", montar);
 
   /* ---------- Transformación en vampiro: solo donde exista la portada de /roberto (#fotoPic) ---------- */
-  var vampPiezas = [], vampFig = null, vampTimer = 0;
+  var vampPiezas = [], vampFig = null, vampTimer = 0, vampRO = null, vampColocar = null;
 
   function vampiro() {
     var pic = document.getElementById("fotoPic");
@@ -225,9 +231,36 @@
     foto.setAttribute("aria-hidden", "true");
     foto.draggable = false;
 
+    /* Dónde caen los ojos en cada foto (medidos a mano): Roberto en fracciones de su foto (1200×1245), el vampiro en píxeles de la suya (514×1112).
+       La foto de Roberto llena el cuadro con object-fit:cover y object-position:50% 6%; con esa misma cuenta se calcula en qué punto del cuadro
+       quedan sus ojos y cuánto miden, y la foto del vampiro se escala y se mueve para que sus ojos caigan exactamente ahí. */
+    var ROB = { ex: 0.503, ey: 0.305, d: 0.135 };
+    var VAM = { w: 514, h: 1112, ex: 273, ey: 405, d: 192 };
+    var ESCALA = 1.12;   // la cara de Roberto es más ancha que la del vampiro para la misma distancia entre ojos
+
+    var vw = document.createElement("div");
+    vw.className = "hw-vw";
+    vw.appendChild(foto);
+
+    function colocar() {
+      var im = pic.querySelector("img");
+      var W = fig.clientWidth, H = fig.clientHeight;
+      if (!im || !W || !H) return;
+      var nw = im.naturalWidth || 1200, nh = im.naturalHeight || 1245;
+      var s = Math.max(W / nw, H / nh);
+      var ox = (W - nw * s) * 0.5, oy = (H - nh * s) * 0.06;
+      var X = ox + ROB.ex * nw * s, Y = oy + ROB.ey * nh * s, D = ROB.d * nw * s;
+      var sv = D * ESCALA / VAM.d;
+      foto.style.width = r1(VAM.w * sv) + "px";
+      foto.style.height = r1(VAM.h * sv) + "px";
+      foto.style.left = r1(X - VAM.ex * sv) + "px";
+      foto.style.top = r1(Y - VAM.ey * sv) + "px";
+    }
+
     function listo() {
       if (!window.__hw || !fig.isConnected) return;
-      var piezas = [foto];
+      colocar();
+      var piezas = [vw];
       var sangre = document.createElement("div"); sangre.className = "hw-blood"; piezas.push(sangre);
       var destello = document.createElement("div"); destello.className = "hw-flash"; piezas.push(destello);
       /* Murciélagos que salen volando en cada transformación (desde la boca hacia afuera). */
@@ -244,6 +277,9 @@
       fig.classList.add("hw-vamp-on");
       capa.classList.add("vamp");
       vampPiezas = piezas; vampFig = fig;
+      /* Si cambia el tamaño del cuadro (girar el celular, cambiar la ventana), los ojos se vuelven a alinear. */
+      if (window.ResizeObserver) { vampRO = new ResizeObserver(colocar); vampRO.observe(fig); }
+      else { vampColocar = colocar; window.addEventListener("resize", colocar); }
     }
     foto.onload = function () { if (foto.decode) foto.decode().then(listo, listo); else listo(); };
     foto.src = "/halloween/vampiro.webp";
@@ -257,6 +293,8 @@
     off: function () {
       clearTimeout(vampTimer);
       window.removeEventListener("load", programarVampiro);
+      if (vampRO) { vampRO.disconnect(); vampRO = null; }
+      if (vampColocar) window.removeEventListener("resize", vampColocar);
       for (var q = 0; q < vampPiezas.length; q++) if (vampPiezas[q].parentNode) vampPiezas[q].parentNode.removeChild(vampPiezas[q]);
       if (vampFig) vampFig.classList.remove("hw-vamp-on");
       document.documentElement.classList.remove("hw-on");
