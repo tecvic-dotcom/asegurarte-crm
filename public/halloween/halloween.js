@@ -52,7 +52,7 @@
     "#hw .hw-bat{left:0;top:0;will-change:transform;animation-timing-function:linear;animation-iteration-count:infinite}",
     "#hw .hw-bat svg{position:static;display:block;width:100%;height:auto;overflow:visible;filter:drop-shadow(0 0 7px rgba(190,95,255,.55));animation:hw-bob var(--bb) ease-in-out infinite alternate}",
     "#hw .hw-bat svg *{position:static}",
-    "#hw .hw-w{transform-box:view-box;transform-origin:104px 50px;animation:hw-flap var(--fl) ease-in-out infinite alternate}",
+    ".hw-w{transform-box:view-box;transform-origin:104px 50px;animation:hw-flap var(--fl) ease-in-out infinite alternate}",
 
     "@keyframes hw-flap{from{transform:rotate(-30deg) scaleY(1)}to{transform:rotate(26deg) scaleY(.55)}}",
     "@keyframes hw-bob{from{transform:translateY(-6px) rotate(-5deg)}to{transform:translateY(8px) rotate(5deg)}}",
@@ -61,6 +61,33 @@
     "@keyframes hw-glow{from{box-shadow:0 0 60px 20px rgba(205,230,110,.22),0 0 170px 70px rgba(165,205,60,.12)}to{box-shadow:0 0 80px 30px rgba(205,230,110,.32),0 0 210px 90px rgba(165,205,60,.19)}}",
     "@keyframes hw-drift{from{transform:translate3d(-7vw,0,0)}to{transform:translate3d(9vw,2vh,0)}}",
     "@keyframes hw-rise{0%{opacity:0;transform:translate3d(0,0,0)}12%{opacity:.95}100%{opacity:0;transform:translate3d(var(--dx),-58vh,0)}}",
+
+    /* Transformación en vampiro (solo la portada de /roberto): un ciclo de 12 s donde TODO va con la misma duración
+       y arranca en el mismo instante: foto de Roberto → zoom + destello + parpadeo → vampiro → de vuelta. La luna se pone roja. */
+    "html.hw-on .portrait.hw-vamp-on #fotoPic{transform-origin:50% 37%;animation:hw-rob 12s linear infinite}",
+    "html.hw-on .portrait img.hw-vamp{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;object-position:50% 50%;opacity:0;pointer-events:none;transform-origin:50% 32%;" +
+      "-webkit-mask-image:linear-gradient(180deg,transparent 0,#000 7%,#000 64%,transparent 98%),linear-gradient(90deg,transparent 0,#000 13%,#000 87%,transparent 100%);-webkit-mask-composite:source-in;" +
+      "mask-image:linear-gradient(180deg,transparent 0,#000 7%,#000 64%,transparent 98%),linear-gradient(90deg,transparent 0,#000 13%,#000 87%,transparent 100%);mask-composite:intersect;animation:hw-vamp 12s linear infinite}",
+    /* El tinte rojo y el destello llevan el mismo difuminado de bordes que la foto: sin él se nota el borde inferior de la portada. */
+    ".hw-blood,.hw-flash{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;opacity:0;" +
+      "-webkit-mask-image:linear-gradient(180deg,transparent 0,#000 7%,#000 60%,transparent 97%),linear-gradient(90deg,transparent 0,#000 13%,#000 87%,transparent 100%);-webkit-mask-composite:source-in;" +
+      "mask-image:linear-gradient(180deg,transparent 0,#000 7%,#000 60%,transparent 97%),linear-gradient(90deg,transparent 0,#000 13%,#000 87%,transparent 100%);mask-composite:intersect}",
+    ".hw-blood{background:radial-gradient(ellipse 75% 70% at 50% 42%,transparent 38%,rgba(150,0,35,.6) 100%);animation:hw-bloodv 12s linear infinite}",
+    ".hw-flash{background:radial-gradient(circle at 50% 38%,rgba(255,255,255,.95),rgba(255,70,80,.75) 28%,rgba(120,0,40,0) 68%);mix-blend-mode:screen;animation:hw-flashv 12s linear infinite}",
+    ".hw-vb{position:absolute;left:50%;top:55%;margin:0;opacity:0;pointer-events:none;animation:hw-burst 12s linear infinite}",
+    ".hw-vb svg{display:block;width:100%;height:auto;overflow:visible;filter:drop-shadow(0 0 5px rgba(255,60,90,.7))}",
+    "#hw .hw-moon::after{content:'';position:absolute;left:0;top:0;width:100%;height:100%;border-radius:50%;opacity:0;background:radial-gradient(circle at 36% 32%,#ffb9a6 0%,#e0503f 42%,#8d1224 100%);box-shadow:0 0 70px 24px rgba(255,50,50,.34),0 0 190px 80px rgba(200,0,30,.22)}",
+    "#hw.vamp .hw-moon::after{animation:hw-redmoon 12s linear infinite}",
+    "@keyframes hw-rob{0%,40%{opacity:1;transform:none;filter:none}41.5%{transform:translate(-2px,1px)}42.5%{transform:translate(2px,-1px);filter:saturate(.8) contrast(1.08)}43.5%{transform:translate(-2px,0) scale(1.01)}" +
+      "44.5%{transform:scale(1.04);filter:saturate(.5) contrast(1.25) brightness(1.05)}46.8%{transform:scale(1.3);filter:saturate(0) contrast(1.5) brightness(1.6)}47%{transform:none;filter:none}49.9%{opacity:1}50%{opacity:0}83.4%{opacity:0}83.5%{opacity:1;transform:none;filter:none}100%{opacity:1;transform:none;filter:none}}",
+    "@keyframes hw-vamp{0%,46.9%{opacity:0;transform:scale(1.2);filter:none}47%{opacity:1;transform:scale(1.18);filter:brightness(2) contrast(1.3) saturate(.3)}47.9%{opacity:.25;transform:scale(1.15)}48.7%{opacity:1;transform:scale(1.1);filter:brightness(1.4)}" +
+      "49.4%{opacity:.45;transform:scale(1.08)}50%{opacity:1;transform:scale(1.06);filter:brightness(1.15) contrast(1.1)}53%{transform:scale(1.02);filter:none}80%{opacity:1;transform:scale(1.045);filter:none}" +
+      "81.5%{transform:translate(-2px,1px) scale(1.05)}82.5%{transform:translate(2px,-1px) scale(1.06);filter:contrast(1.15)}83.5%{opacity:1;transform:scale(1.28);filter:brightness(1.7) saturate(.2)}84%{opacity:.4;transform:scale(1.3)}84.7%{opacity:.9}85.4%{opacity:0}100%{opacity:0}}",
+    "@keyframes hw-flashv{0%,45%{opacity:0}46.6%{opacity:.35}47%{opacity:.85}47.7%{opacity:.1}48.5%{opacity:.4}49.6%{opacity:0}83%{opacity:0}83.5%{opacity:.5}84%{opacity:.85}84.9%{opacity:.1}86%{opacity:0}100%{opacity:0}}",
+    "@keyframes hw-bloodv{0%,39%{opacity:0}44%{opacity:.7}47%{opacity:1}53%{opacity:.6}66%{opacity:.4}80%{opacity:.6}84%{opacity:.9}89%{opacity:0}100%{opacity:0}}",
+    "@keyframes hw-burst{0%,46%{opacity:0;transform:translate(-50%,-50%) scale(.2)}47%{opacity:1}58%{opacity:0;transform:translate(calc(-50% + var(--bx)),calc(-50% + var(--by))) scale(1.15)}" +
+      "59%,82.5%{opacity:0;transform:translate(-50%,-50%) scale(.2)}83.5%{opacity:1}94%{opacity:0;transform:translate(calc(-50% + var(--bx)),calc(-50% + var(--by))) scale(1.15)}100%{opacity:0}}",
+    "@keyframes hw-redmoon{0%,45%{opacity:0}52%{opacity:1}80%{opacity:1}88%{opacity:0}100%{opacity:0}}",
 
     "@media (max-width:700px){#hw .hw-moon{left:34%;top:9vh;width:62vw}}",
     "@media (prefers-reduced-motion:reduce){#hw *{animation:none!important}#hw .hw-bat{transform:translate3d(var(--sx),var(--sy),0)}#hw .hw-e{display:none}}",
@@ -182,9 +209,56 @@
   }
   if (document.body) montar(); else document.addEventListener("DOMContentLoaded", montar);
 
+  /* ---------- Transformación en vampiro: solo donde exista la portada de /roberto (#fotoPic) ---------- */
+  var vampPiezas = [], vampFig = null, vampTimer = 0;
+
+  function vampiro() {
+    var pic = document.getElementById("fotoPic");
+    var fig = pic && pic.parentNode;
+    if (!fig || !window.__hw || !capa.parentNode) return;
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion:reduce)").matches) return;   // sin movimiento: se queda la foto de Roberto
+    if (navigator.connection && navigator.connection.saveData) return;                               // ahorro de datos: no baja la imagen extra
+
+    var foto = new Image();
+    foto.className = "hw-vamp";
+    foto.alt = "";
+    foto.setAttribute("aria-hidden", "true");
+    foto.draggable = false;
+
+    function listo() {
+      if (!window.__hw || !fig.isConnected) return;
+      var piezas = [foto];
+      var sangre = document.createElement("div"); sangre.className = "hw-blood"; piezas.push(sangre);
+      var destello = document.createElement("div"); destello.className = "hw-flash"; piezas.push(destello);
+      /* Murciélagos que salen volando en cada transformación (desde la boca hacia afuera). */
+      var salidas = [[-150, -120], [140, -110], [-90, -170], [100, -170], [-190, -40], [185, -30]];
+      for (var j = 0; j < salidas.length; j++) {
+        var b = document.createElement("div");
+        b.className = "hw-vb";
+        b.style.cssText = "width:" + (34 + (j % 3) * 12) + "px;--bx:" + salidas[j][0] + "px;--by:" + salidas[j][1] + "px;--fl:" + r1(0.18 + (j % 3) * 0.04) + "s;animation-delay:" + r1(j * 0.04) + "s";
+        b.innerHTML = murcielago;
+        piezas.push(b);
+      }
+      /* Todo entra en el mismo instante para que los ciclos de 12 s queden sincronizados (incluida la luna roja). */
+      for (var k = 0; k < piezas.length; k++) fig.appendChild(piezas[k]);
+      fig.classList.add("hw-vamp-on");
+      capa.classList.add("vamp");
+      vampPiezas = piezas; vampFig = fig;
+    }
+    foto.onload = function () { if (foto.decode) foto.decode().then(listo, listo); else listo(); };
+    foto.src = "/halloween/vampiro.webp";
+  }
+
+  function programarVampiro() { vampTimer = setTimeout(vampiro, 600); }
+  if (document.readyState === "complete") programarVampiro(); else window.addEventListener("load", programarVampiro);
+
   window.__hw = {
     /* Para páginas que cambian de pantalla sin recargar (Next): deja todo como estaba. */
     off: function () {
+      clearTimeout(vampTimer);
+      window.removeEventListener("load", programarVampiro);
+      for (var q = 0; q < vampPiezas.length; q++) if (vampPiezas[q].parentNode) vampPiezas[q].parentNode.removeChild(vampPiezas[q]);
+      if (vampFig) vampFig.classList.remove("hw-vamp-on");
       document.documentElement.classList.remove("hw-on");
       if (estilo.parentNode) estilo.parentNode.removeChild(estilo);
       if (capa.parentNode) capa.parentNode.removeChild(capa);
