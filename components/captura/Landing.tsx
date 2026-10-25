@@ -9,6 +9,7 @@ import { FormularioCaptura } from "./FormularioCaptura";
 import { PopupActividad } from "./PopupActividad";
 import { AgendaCita } from "./AgendaCita";
 import { Logo } from "@/components/ui/Logo";
+import { Halloween } from "./Halloween";
 
 interface LandingProps {
   negocio: string;
@@ -33,6 +34,7 @@ export function Landing({ negocio, popupActivo, heroTitulo, heroCta }: LandingPr
 
   return (
     <main className="relative mx-auto max-w-6xl px-5 pb-24 pt-6 sm:pt-16">
+      <Halloween />
       {/* Regreso a la página principal (la tarjeta de Roberto). <a> normal: /roberto es un
           archivo estático (rewrite), no una página de Next. */}
       <a href="/roberto" className="chip lift mb-3">
