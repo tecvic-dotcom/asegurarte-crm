@@ -61,7 +61,7 @@ export async function POST(req: Request): Promise<Response> {
       if (!r.ok) return Response.json({ error: r.error }, { status: 422 });
       const res = await crearVideo(r.datos);
       if (!res.ok) return Response.json({ error: res.error }, { status: 422 });
-      return Response.json({ video: res.video });
+      return Response.json({ video: res.video, sinIntereses: res.sinIntereses === true });
     }
     if (body.accion === "editar") {
       if (typeof body.id !== "string" || !UUID.test(body.id)) return Response.json({ error: "Falta el id." }, { status: 400 });

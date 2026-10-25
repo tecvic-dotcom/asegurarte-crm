@@ -16,7 +16,7 @@ import {
   ErrorCRM,
 } from "@/lib/api";
 import { comprimirVideo, ErrorVideo, navegadorComprime, portadaDeImagen, portadaDelVideo } from "@/lib/comprimir-video";
-import { MAX_CLAVE, MAX_SEGUNDOS_VIDEO, MAX_TITULO, mmss, type VideoFijo, type VideoTarjeta } from "@/lib/tarjeta-videos-reglas";
+import { INTERESES_TARJETA, MAX_CLAVE, MAX_SEGUNDOS_VIDEO, MAX_TITULO, mmss, type VideoFijo, type VideoTarjeta } from "@/lib/tarjeta-videos-reglas";
 import { fechaCorta } from "@/lib/fechas";
 import { AvisoMigracion } from "./panel/AvisoMigracion";
 
@@ -64,6 +64,40 @@ function BotonImagen({ texto, disabled, onArchivo }: { texto: string; disabled?:
   );
 }
 
+const mismosIntereses = (a: string[], b: string[]) => a.length === b.length && a.every((x) => b.includes(x));
+
+/** Los chips de la tarjeta («Mi familia», «Mi auto»…): marcas a quién le sirve el video y le sale en «Te puede servir». */
+function SelectorIntereses({ valor, onCambio, disabled, nombre }: { valor: string[]; onCambio: (cambiar: (antes: string[]) => string[]) => void; disabled?: boolean; nombre: string }) {
+  return (
+    <div className="sm:col-span-2">
+      <p className="field-label" id={`${nombre}-t`}>
+        ¿A quién le sirve este video? (chips de la tarjeta)
+      </p>
+      <div className="flex flex-wrap gap-1.5" role="group" aria-labelledby={`${nombre}-t`}>
+        {INTERESES_TARJETA.map((i) => {
+          const activo = valor.includes(i.id);
+          return (
+            <button
+              key={i.id}
+              type="button"
+              disabled={disabled}
+              aria-pressed={activo}
+              onClick={() => onCambio((antes) => (antes.includes(i.id) ? antes.filter((x) => x !== i.id) : [...antes, i.id]))}
+              className={`rounded-xl border px-3 py-1.5 text-sm ${activo ? "border-brand-2 bg-brand/20 text-ink" : "border-line text-ink-soft hover:border-brand-2"}`}
+            >
+              {activo ? "✓ " : ""}
+              {i.texto}
+            </button>
+          );
+        })}
+      </div>
+      <p className="mt-1 text-xs text-ink-mute">
+        Si alguien marca «Mi auto» en tu tarjeta, este video sale como recomendado. Si no marcas ninguno, la tarjeta intenta deducirlo de la palabra clave (AUTO, HOGAR, FAMILIA, RETIRO…); si es una palabra distinta, el video no saldrá en las recomendaciones.
+      </p>
+    </div>
+  );
+}
+
 /**
  * Videos de tu tarjeta: sube un video desde el celular o la computadora y sale solo, primero, en el carrusel «Videos» de
  * www.especialistaenasegurarte.lat/roberto. El video se comprime en tu propio aparato antes de subirse (no gasta tus datos de más).
@@ -79,6 +113,7 @@ export function TarjetaVideos() {
   const [imagenPortada, setImagenPortada] = useState<File | null>(null);
   const [titulo, setTitulo] = useState("");
   const [clave, setClave] = useState("");
+  const [intereses, setIntereses] = useState<string[]>([]);
   const [ia, setIa] = useState(true);
   const [fase, setFase] = useState<Fase>("reposo");
   const [progreso, setProgreso] = useState(0);
@@ -136,15 +171,19 @@ export function TarjetaVideos() {
       await crmSubirArchivoVideo(permiso, "video", v.blob);
       if (portada) await crmSubirArchivoVideo(permiso, "poster", portada);
       setFase("publicando");
-      const nuevo = await crmCrearVideo({ id: permiso.id, titulo: t, clave, duracion: v.duracion, ia, conPortada: Boolean(portada) });
+      const { video: nuevo, sinIntereses } = await crmCrearVideo({ id: permiso.id, titulo: t, clave, duracion: v.duracion, ia, intereses, conPortada: Boolean(portada) });
       setVideos((prev) => [nuevo, ...(prev ?? [])]);
       setArchivo(null);
       setImagenPortada(null);
       setTitulo("");
       setClave("");
+      setIntereses([]);
       if (entrada.current) entrada.current.value = "";
       if (entradaPortada.current) entradaPortada.current.value = "";
       setListo(`«${nuevo.titulo}» ya está en tu tarjeta (puede tardar hasta 1 minuto en verse).`);
+      if (sinIntereses) {
+        setFallo("El video quedó publicado, pero los chips que marcaste no se guardaron: falta un paso en Supabase (SQL Editor → pega supabase/migrations/0022_tarjeta_videos_intereses.sql → Run). Luego márcalos con «Editar». Mientras tanto la tarjeta usa la palabra clave.");
+      }
     } catch (e) {
       if (e instanceof ErrorCRM && e.migracion) setError(e);
       else setFallo(mensajeDe(e, "No pude subir el video. Intenta de nuevo."));
@@ -274,6 +313,7 @@ export function TarjetaVideos() {
               <span className="block text-xs text-ink-mute">Muestra el aviso junto al video. Desmárcalo solo si es 100 % real.</span>
             </span>
           </label>
+          <SelectorIntereses nombre="vt-int" valor={intereses} onCambio={setIntereses} disabled={ocupado} />
         </div>
 
         {ocupado && (
@@ -429,6 +469,7 @@ function FilaVideo({ v, onCambio, onQuitar }: { v: VideoTarjeta; onCambio: (v: V
   const [titulo, setTitulo] = useState(v.titulo);
   const [clave, setClave] = useState(v.clave);
   const [ia, setIa] = useState(v.ia);
+  const [intereses, setIntereses] = useState<string[]>(v.intereses ?? []);
   const [seguro, setSeguro] = useState(false);
   const [trabajando, setTrabajando] = useState(false);
   const [fallo, setFallo] = useState("");
@@ -493,6 +534,9 @@ function FilaVideo({ v, onCambio, onQuitar }: { v: VideoTarjeta; onCambio: (v: V
             {v.ia && " · con IA"}
             {!v.visible && " · OCULTO en la tarjeta"}
           </p>
+          {v.intereses?.length > 0 && (
+            <p className="mt-0.5 text-xs text-ink-mute">Recomendado en: {v.intereses.map((id) => INTERESES_TARJETA.find((i) => i.id === id)?.texto ?? id).join(", ")}</p>
+          )}
           <div className="mt-2 flex flex-wrap gap-2">
             <BotonImagen texto={v.poster ? "Cambiar portada" : "Subir portada"} disabled={trabajando} onArchivo={(a) => void cambiarPortada(a)} />
             <button type="button" disabled={trabajando} onClick={() => void guardar({ visible: !v.visible })} className="btn-ghost px-3 py-1.5 text-xs">
@@ -540,8 +584,9 @@ function FilaVideo({ v, onCambio, onQuitar }: { v: VideoTarjeta; onCambio: (v: V
           <label className="flex items-center gap-2 text-sm text-ink-soft">
             <input type="checkbox" checked={ia} onChange={(e) => setIa(e.target.checked)} className="h-4 w-4 accent-[var(--brand-2)]" /> Creado con apoyo de IA
           </label>
+          <SelectorIntereses nombre={`i-${v.id}`} valor={intereses} onCambio={setIntereses} disabled={trabajando} />
           <div className="sm:col-span-2">
-            <button type="button" disabled={trabajando || !titulo.trim()} onClick={() => void guardar({ titulo, clave, ia })} className="btn-primary px-4 py-2 text-sm">
+            <button type="button" disabled={trabajando || !titulo.trim()} onClick={() => void guardar({ titulo, clave, ia, ...(mismosIntereses(intereses, v.intereses ?? []) ? {} : { intereses }) })} className="btn-primary px-4 py-2 text-sm">
               Guardar cambios
             </button>
           </div>

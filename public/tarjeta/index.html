@@ -1038,8 +1038,8 @@ const CONFIG = {
   // Videos (archivos en /tarjeta/reels/<id>.mp4 y <id>.jpg). «clave» = la palabra que se dice al final del video: viaja en el mensaje de WhatsApp.
   videos: {
     aviso: "Estos videos se crearon con apoyo de inteligencia artificial.",
-    // Los videos que subes desde el CRM no traen intereses: se deducen de su palabra clave (así «Mi casa» recomienda el de HOGAR).
-    // Las claves van en mayúsculas y sin acentos (al buscar se quitan); si subes un video con una clave que no está aquí, no saldrá en «Para ti».
+    // Los videos que subes desde el CRM traen los chips que marcaste («¿A quién le sirve este video?»). Esta tabla es solo el RESPALDO para los que no tienen
+    // ninguno marcado: se deducen de su palabra clave (así «Mi casa» recomienda el de HOGAR). Claves en mayúsculas y sin acentos (al buscar se quitan).
     tagsPorClave: {
       HOGAR: ["casa"], CASA: ["casa"],
       AUTO: ["auto"], AUTOS: ["auto"],
@@ -1438,6 +1438,12 @@ function vcardTexto() {
   pintarReels();
   // Solo se aceptan archivos del cajón público de Supabase (o de la tarjeta en modo demo): nada más entra a la página
   const urlValida = (u) => typeof u === "string" && (/^https:\/\/[a-z0-9-]+\.supabase\.co\/storage\/v1\/object\/public\/tarjeta-videos\/[\w./-]+$/i.test(u) || /^\/tarjeta\/reels\/[\w-]+\.(mp4|jpg)$/.test(u));
+  // Los chips que marcaste al subir el video (CRM → «¿A quién le sirve este video?»); si no marcaste ninguno, se deducen de su palabra clave
+  const interesesDe = (v) => {
+    const ids = C.intereses.map((i) => i.id);
+    const marcados = (Array.isArray(v.intereses) ? v.intereses : []).filter((t) => ids.includes(t));
+    return marcados.length ? marcados : C.videos.tagsPorClave[String(v.clave || "").normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toUpperCase()] || [];
+  };
   fetch("/api/tarjeta/videos", { cache: "no-cache" }).then((r) => (r.ok ? r.json() : { videos: [] })).then((j) => {
     // Portadas subidas desde el CRM para los videos fijos (solo direcciones del cajón público)
     const ps = j && j.portadas && typeof j.portadas === "object" ? j.portadas : {};
@@ -1445,7 +1451,7 @@ function vcardTexto() {
     Object.keys(ps).forEach((id) => { if (fijos.some((v) => v.id === id) || (C.eventos.video && C.eventos.video.id === id)) { if (urlValida(ps[id])) portadas[id] = ps[id]; } });
     const hayPortadas = Object.keys(portadas).length > 0;
     const nuevos = ((j && j.videos) || []).filter((v) => v && typeof v.titulo === "string" && urlValida(v.src) && (!v.poster || urlValida(v.poster)))
-      .map((v) => ({ id: String(v.id), titulo: v.titulo, tema: "", dur: Math.max(1, +v.dur || 1), clave: v.clave || "", tags: C.videos.tagsPorClave[String(v.clave || "").normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toUpperCase()] || [], src: v.src, poster: v.poster || "", ia: v.ia !== false }));
+      .map((v) => ({ id: String(v.id), titulo: v.titulo, tema: "", dur: Math.max(1, +v.dur || 1), clave: v.clave || "", tags: interesesDe(v), src: v.src, poster: v.poster || "", ia: v.ia !== false }));
     // Si la persona ya movió el carrusel o abrió algo, no se le cambia la pantalla: lo verá en su próxima visita
     if ((!nuevos.length && !hayPortadas) || $("#reels").scrollLeft > 10 || document.querySelector("dialog[open]")) return;
     portadasCRM = portadas;

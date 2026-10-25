@@ -12,6 +12,25 @@ export const MAX_SEGUNDOS_VIDEO = 180;
 export const MAX_TITULO = 90;
 export const MAX_CLAVE = 30;
 
+/**
+ * Los intereses de la tarjeta («Para ti»): cada video se muestra a quien marque ese chip. DEBE coincidir con CONFIG.intereses de public/tarjeta/index.html
+ * (mismos ids y mismo texto).
+ */
+export const INTERESES_TARJETA: ReadonlyArray<{ id: string; texto: string }> = [
+  { id: "salud", texto: "Mi salud" },
+  { id: "familia", texto: "Mi familia" },
+  { id: "retiro", texto: "Mi retiro" },
+  { id: "casa", texto: "Mi casa" },
+  { id: "auto", texto: "Mi auto" },
+  { id: "impuestos", texto: "Mis impuestos" },
+];
+
+/** Solo ids conocidos, sin repetir y en el orden de los chips de la tarjeta. */
+export function limpiarIntereses(v: unknown): string[] {
+  const pedidos = new Set(Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
+  return INTERESES_TARJETA.filter((i) => pedidos.has(i.id)).map((i) => i.id);
+}
+
 /** Un video tal como lo ve el CRM. */
 export interface VideoTarjeta {
   id: string;
@@ -20,6 +39,8 @@ export interface VideoTarjeta {
   duracion: number;
   ia: boolean;
   visible: boolean;
+  /** Chips de la tarjeta («Mi familia», «Mi auto»…) a los que responde este video. Vacío = la tarjeta lo deduce de la palabra clave. */
+  intereses: string[];
   creado_en: string;
   /** Direcciones públicas ya armadas (el video y su portada). */
   src: string;
@@ -33,6 +54,7 @@ export interface VideoPublico {
   clave: string;
   dur: number;
   ia: boolean;
+  intereses: string[];
   src: string;
   poster: string;
 }
@@ -116,7 +138,7 @@ export function limpiarClave(v: unknown): string {
   return limpiarTexto(v, MAX_CLAVE).toLocaleUpperCase("es-MX");
 }
 
-export type CambiosVideo = Partial<Pick<VideoTarjeta, "titulo" | "clave" | "ia" | "visible">>;
+export type CambiosVideo = Partial<Pick<VideoTarjeta, "titulo" | "clave" | "ia" | "visible" | "intereses">>;
 
 export type ResultadoValidacion<T> = { ok: true; datos: T } | { ok: false; error: string };
 
@@ -126,6 +148,7 @@ export interface DatosNuevoVideo {
   clave: string;
   duracion: number;
   ia: boolean;
+  intereses: string[];
   /** El video comprimido pesa menos que el límite y su portada ya se subió. */
   conPortada: boolean;
 }
@@ -139,7 +162,7 @@ export function validarNuevo(b: unknown): ResultadoValidacion<DatosNuevoVideo> {
   if (!Number.isFinite(duracion) || duracion < 1 || duracion > MAX_SEGUNDOS_VIDEO + 10) {
     return { ok: false, error: `El video debe durar entre 1 segundo y ${MAX_SEGUNDOS_VIDEO / 60} minutos.` };
   }
-  return { ok: true, datos: { id: o.id, titulo, clave: limpiarClave(o.clave), duracion, ia: o.ia !== false, conPortada: o.conPortada !== false } };
+  return { ok: true, datos: { id: o.id, titulo, clave: limpiarClave(o.clave), duracion, ia: o.ia !== false, intereses: limpiarIntereses(o.intereses), conPortada: o.conPortada !== false } };
 }
 
 export function validarCambios(b: unknown): ResultadoValidacion<CambiosVideo> {
@@ -153,6 +176,7 @@ export function validarCambios(b: unknown): ResultadoValidacion<CambiosVideo> {
   if ("clave" in o) c.clave = limpiarClave(o.clave);
   if ("ia" in o) c.ia = o.ia === true;
   if ("visible" in o) c.visible = o.visible === true;
+  if ("intereses" in o) c.intereses = limpiarIntereses(o.intereses);
   if (!Object.keys(c).length) return { ok: false, error: "No hay nada que cambiar." };
   return { ok: true, datos: c };
 }

@@ -472,9 +472,10 @@ export async function crmSubirArchivoVideo(permiso: PermisoSubida, cual: "video"
   if (error) throw new Error(cual === "video" ? "No pude subir el video. Revisa tu internet e intenta de nuevo." : "No pude subir la portada del video.");
 }
 
-export async function crmCrearVideo(datos: DatosNuevoVideo): Promise<VideoTarjeta> {
-  const data = await jsonOErrorCRM(await postJSON("/api/crm/tarjeta-videos", { accion: "crear", ...datos }));
-  return (data as { video: VideoTarjeta }).video;
+/** sinIntereses = el video se publicó, pero los chips elegidos no se guardaron porque falta correr la migración 0022. */
+export async function crmCrearVideo(datos: DatosNuevoVideo): Promise<{ video: VideoTarjeta; sinIntereses: boolean }> {
+  const data = (await jsonOErrorCRM(await postJSON("/api/crm/tarjeta-videos", { accion: "crear", ...datos }))) as { video: VideoTarjeta; sinIntereses?: boolean };
+  return { video: data.video, sinIntereses: data.sinIntereses === true };
 }
 
 export async function crmEditarVideo(id: string, cambios: CambiosVideo): Promise<VideoTarjeta> {

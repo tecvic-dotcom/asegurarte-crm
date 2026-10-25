@@ -78,5 +78,13 @@ export const MENSAJE_MIGRACION_TARJETA =
 export const MENSAJE_MIGRACION_VIDEOS =
   "Falta un paso para subir videos a tu tarjeta: abre Supabase → SQL Editor → New query, pega el archivo supabase/migrations/0020_tarjeta_videos.sql y dale Run.";
 
+export const MENSAJE_MIGRACION_VIDEOS_INTERESES =
+  "Falta un paso para guardar a qué chips de la tarjeta responde cada video («Mi familia», «Mi auto»…): abre Supabase → SQL Editor → New query, pega el archivo supabase/migrations/0022_tarjeta_videos_intereses.sql y dale Run.";
+
+/** La base no tiene aún la columna «intereses» de tarjeta_videos (falta correr la migración 0022). */
+export function faltaColumnaIntereses(error: { code?: string; message?: string } | null | undefined): boolean {
+  return faltaMigracion(error) && /intereses/i.test(error?.message ?? "");
+}
+
 export const MENSAJE_MIGRACION_CHUBB =
   "Falta un paso para encender a Dana (Chubb Autos): abre Supabase → SQL Editor → New query, pega el archivo supabase/migrations/0021_chubb_autos.sql y dale Run.";

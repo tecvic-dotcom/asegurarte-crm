@@ -8,10 +8,11 @@ import "server-only";
  */
 import { randomUUID } from "node:crypto";
 import { adminDb, cloudReady } from "./supabase-admin";
-import { faltaMigracion, MENSAJE_MIGRACION_VIDEOS, MigracionPendienteError } from "./migracion";
+import { faltaColumnaIntereses, faltaMigracion, MENSAJE_MIGRACION_VIDEOS, MENSAJE_MIGRACION_VIDEOS_INTERESES, MigracionPendienteError } from "./migracion";
 import {
   BUCKET_VIDEOS,
   esIdFijo,
+  limpiarIntereses,
   PORTADA_FIJA,
   rutaPortada,
   rutaPortadaFija,
@@ -43,6 +44,7 @@ interface Fila {
   duracion: number;
   ia: boolean;
   visible: boolean;
+  intereses: string[];
 }
 
 const baseNube = () => process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
@@ -67,6 +69,7 @@ function demoStore(): Fila[] {
         duracion: 47,
         ia: true,
         visible: true,
+        intereses: ["familia"],
       },
     ];
   }
@@ -86,13 +89,14 @@ function aVideo(f: Fila): VideoTarjeta {
     duracion: f.duracion,
     ia: f.ia,
     visible: f.visible,
+    intereses: f.intereses,
     creado_en: f.creado_en,
     src: nube ? urlPublica(baseNube(), f.video_path) : f.video_path,
     poster: nube ? urlPublica(baseNube(), f.poster_path) : f.poster_path,
   };
 }
 
-const aPublico = (v: VideoTarjeta): VideoPublico => ({ id: v.id, titulo: v.titulo, clave: v.clave, dur: v.duracion, ia: v.ia, src: v.src, poster: v.poster });
+const aPublico = (v: VideoTarjeta): VideoPublico => ({ id: v.id, titulo: v.titulo, clave: v.clave, dur: v.duracion, ia: v.ia, intereses: v.intereses, src: v.src, poster: v.poster });
 
 function normalizar(r: Record<string, unknown>): Fila {
   return {
@@ -105,6 +109,7 @@ function normalizar(r: Record<string, unknown>): Fila {
     duracion: Number(r.duracion) || 0,
     ia: r.ia !== false,
     visible: r.visible !== false,
+    intereses: limpiarIntereses(r.intereses), // antes de correr la migración 0022 la columna no existe: queda vacío
   };
 }
 
@@ -178,7 +183,8 @@ async function existeArchivo(ruta: string, tipo: string): Promise<boolean> {
   }
 }
 
-export type ResultadoCrear = { ok: true; video: VideoTarjeta } | { ok: false; error: string };
+/** sinIntereses = el video se publicó, pero la base aún no tiene la columna «intereses» (falta correr la migración 0022): los chips elegidos no se guardaron. */
+export type ResultadoCrear = { ok: true; video: VideoTarjeta; sinIntereses?: boolean } | { ok: false; error: string };
 
 /** Registra el video ya subido y lo deja visible, primero en el carrusel de la tarjeta. */
 export async function crearVideo(d: DatosNuevoVideo): Promise<ResultadoCrear> {
@@ -193,6 +199,7 @@ export async function crearVideo(d: DatosNuevoVideo): Promise<ResultadoCrear> {
       duracion: d.duracion,
       ia: d.ia,
       visible: true,
+      intereses: d.intereses,
     };
     const s = demoStore();
     if (!s.some((x) => x.id === d.id)) s.push(fila);
@@ -200,7 +207,7 @@ export async function crearVideo(d: DatosNuevoVideo): Promise<ResultadoCrear> {
   }
   if (!(await existeArchivo(rutaVideo(d.id), "video/"))) return { ok: false, error: "El video no terminó de subirse. Vuelve a intentarlo." };
   const conPortada = d.conPortada && (await existeArchivo(rutaPortada(d.id), "image/"));
-  const fila = {
+  const fila: Record<string, unknown> = {
     id: d.id,
     titulo: d.titulo,
     clave: d.clave,
@@ -210,7 +217,13 @@ export async function crearVideo(d: DatosNuevoVideo): Promise<ResultadoCrear> {
     ia: d.ia,
     visible: true,
   };
-  const { data, error } = await adminDb.from(TABLA).insert(fila).select("*").single();
+  // Los intereses solo viajan si se marcó alguno; si la base aún no tiene la columna (falta la migración 0022), el video se publica igual y se avisa.
+  let sinIntereses = false;
+  let { data, error } = await adminDb.from(TABLA).insert(d.intereses.length ? { ...fila, intereses: d.intereses } : fila).select("*").single();
+  if (error && d.intereses.length && faltaColumnaIntereses(error)) {
+    sinIntereses = true;
+    ({ data, error } = await adminDb.from(TABLA).insert(fila).select("*").single());
+  }
   if (error) {
     if (error.code === "23505") {
       // El mismo video registrado dos veces (doble toque): se devuelve el que ya existe.
@@ -219,7 +232,7 @@ export async function crearVideo(d: DatosNuevoVideo): Promise<ResultadoCrear> {
     }
     throw errorDeBase(error);
   }
-  return { ok: true, video: aVideo(normalizar(data)) };
+  return { ok: true, video: aVideo(normalizar(data)), ...(sinIntereses ? { sinIntereses } : {}) };
 }
 
 // ---- Cambios ----
@@ -227,7 +240,10 @@ export async function crearVideo(d: DatosNuevoVideo): Promise<ResultadoCrear> {
 export async function editarVideo(id: string, c: CambiosVideo): Promise<VideoTarjeta | null> {
   if (cloudReady && adminDb) {
     const { data, error } = await adminDb.from(TABLA).update(c).eq("id", id).select("*").maybeSingle();
-    if (error) throw errorDeBase(error);
+    if (error) {
+      if (faltaColumnaIntereses(error)) throw new MigracionPendienteError(MENSAJE_MIGRACION_VIDEOS_INTERESES, "0022_tarjeta_videos_intereses.sql");
+      throw errorDeBase(error);
+    }
     return data ? aVideo(normalizar(data)) : null;
   }
   const f = demoStore().find((x) => x.id === id);
