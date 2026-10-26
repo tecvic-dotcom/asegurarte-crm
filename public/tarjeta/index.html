@@ -261,7 +261,9 @@ h2{font:800 clamp(27px,7.4vw,34px)/1.12 var(--display);letter-spacing:-.01em;mar
 .car-btn:disabled{opacity:.35;cursor:default}
 .car-btn .ic{width:20px;height:20px;stroke-width:2.2}
 .car-prev .ic{transform:rotate(180deg)}
-.car-dots{display:flex;align-items:center;gap:4px}
+.car-ctl{max-width:100%}
+.car-dots{display:flex;align-items:center;justify-content:center;gap:4px;min-width:0;max-width:100%}
+.car-num{display:block;min-width:76px;padding:0 6px;text-align:center;font:700 14px/44px var(--body);letter-spacing:.04em;color:var(--ink-soft);font-variant-numeric:tabular-nums}
 .car-dot{position:relative;width:24px;height:44px;padding:0;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .car-dot::after{content:"";position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:99px;background:var(--line-strong);
   transition:width .2s,margin .2s,background .2s}
@@ -1281,16 +1283,22 @@ function vcardTexto() {
     if (n < 2) { ctl.hidden = true; return; }
     ctl.innerHTML = `<button type="button" class="car-btn car-prev" aria-label="Anterior">${ic("chev")}</button><div class="car-dots"></div><button type="button" class="car-btn car-next" aria-label="Siguiente">${ic("chev")}</button>`;
     const prev = ctl.querySelector(".car-prev"), next = ctl.querySelector(".car-next"), dotsEl = ctl.querySelector(".car-dots");
-    let dots = [], pasos = n, idx = 0, tocado = false, raf2 = 0;
-    // Un punto por posición posible: con 2 tarjetas a la vista (escritorio) hay una posición menos que tarjetas
+    let dots = [], num = null, modo = "", pasos = n, idx = 0, tocado = false, raf2 = 0;
+    // Un punto por posición posible: con 2 tarjetas a la vista (escritorio) hay una posición menos que tarjetas.
+    // Si los puntos no caben entre las flechas (muchos videos), se muestra un contador «3 / 15»: antes los puntos sacaban la flecha de la pantalla y toda la página se ensanchaba y se recorría hacia la derecha.
     const armar = () => {
       const gap = parseFloat(getComputedStyle(pista).columnGap) || 0;
       const visibles = Math.max(1, Math.round((pista.clientWidth + gap) / (slides[0].offsetWidth + gap)));
       const nuevo = Math.max(1, n - visibles + 1);
-      if (nuevo !== pasos || !dots.length) {
-        pasos = nuevo;
-        dotsEl.innerHTML = Array.from({ length: pasos }, (_, i) => `<button type="button" class="car-dot" aria-label="Ir a ${i + 1} de ${pasos}" data-i="${i}"></button>`).join("");
-        dots = [...dotsEl.children];
+      const caben = ctl.clientWidth ? Math.max(3, Math.floor((ctl.clientWidth - 112 + 4) / 28)) : 7;   // 2 flechas de 44 px + 2 separaciones de 12 px; cada punto mide 24 px más 4 de separación (el último sin ella)
+      const m = nuevo > caben ? "num" : "puntos";
+      if (nuevo !== pasos || m !== modo || (m === "puntos" && !dots.length)) {
+        pasos = nuevo; modo = m;
+        if (m === "num") { dotsEl.innerHTML = '<span class="car-num"></span>'; num = dotsEl.firstChild; dots = []; }
+        else {
+          dotsEl.innerHTML = Array.from({ length: pasos }, (_, i) => `<button type="button" class="car-dot" aria-label="Ir a ${i + 1} de ${pasos}" data-i="${i}"></button>`).join("");
+          dots = [...dotsEl.children]; num = null;
+        }
       }
     };
     // Solo se mueve la pista del carrusel (scrollIntoView también desplazaba la caja o la página que lo contiene)
@@ -1307,6 +1315,7 @@ function vcardTexto() {
       if (pista.scrollLeft <= 1) mejor = 0;
       idx = Math.min(mejor, pasos - 1);
       dots.forEach((d, i) => d.setAttribute("aria-current", String(i === idx)));
+      if (num) num.textContent = `${idx + 1} / ${pasos}`;
       prev.disabled = idx === 0; next.disabled = idx >= pasos - 1;
     };
     const primera = () => { if (!tocado) { tocado = true; track("car", nombre); } };
