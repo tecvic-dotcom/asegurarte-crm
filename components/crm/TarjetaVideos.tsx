@@ -40,7 +40,7 @@ async function subirPortadaDe(objetivo: string, imagen: File) {
 const mensajeDe = (e: unknown, defecto: string) => (e instanceof ErrorVideo || e instanceof Error ? e.message : defecto);
 
 /** Botón que abre el selector de imágenes y entrega la elegida (se puede volver a elegir la misma). */
-function BotonImagen({ texto, disabled, onArchivo }: { texto: string; disabled?: boolean; onArchivo: (f: File) => void }) {
+export function BotonImagen({ texto, disabled, onArchivo }: { texto: string; disabled?: boolean; onArchivo: (f: File) => void }) {
   const entrada = useRef<HTMLInputElement>(null);
   return (
     <>

@@ -6,6 +6,7 @@
  */
 import type { ResumenTarjeta } from "./tarjeta-reglas";
 import type { CambiosVideo, DatosNuevoVideo, PermisoPortada, PermisoSubida, VideoFijo, VideoTarjeta } from "./tarjeta-videos-reglas";
+import type { CambiosPromo, DatosNuevaPromo, PermisoPromo, PromoTarjeta } from "./tarjeta-promos-reglas";
 import type {
   Lead,
   Actividad,
@@ -516,6 +517,56 @@ export async function crmConfirmarPortada(objetivo: string, ts: number): Promise
 export async function crmQuitarPortada(id: string): Promise<VideoFijo> {
   const data = await jsonOErrorCRM(await postJSON("/api/crm/tarjeta-videos", { accion: "quitar-portada", id }));
   return (data as { fijo: VideoFijo }).fijo;
+}
+
+// ---- Promociones de la tarjeta: las campañas del mes que salen solas en /roberto (solo admin) ----
+
+export async function crmPromosTarjeta(): Promise<{ promos: PromoTarjeta[]; cloud: boolean }> {
+  const res = await fetch("/api/crm/tarjeta-promos", { cache: "no-store" });
+  return (await jsonOErrorCRM(res)) as { promos: PromoTarjeta[]; cloud: boolean };
+}
+
+/** Pide un id y los permisos de un solo uso para subir la portada y/o el video directo al cajón de Supabase. */
+export async function crmPrepararPromo(conPortada: boolean, conVideo: boolean): Promise<PermisoPromo> {
+  return (await jsonOErrorCRM(await postJSON("/api/crm/tarjeta-promos", { accion: "preparar", conPortada, conVideo }))) as PermisoPromo;
+}
+
+/** Sube la portada (JPG ya preparado) o el video (MP4 ya comprimido) con el permiso de un solo uso (en modo demo no sube nada). */
+export async function crmSubirArchivoPromo(permiso: PermisoPromo, cual: "video" | "poster", archivo: Blob): Promise<void> {
+  const n = permiso.nube;
+  const destino = n && (cual === "video" ? n.video : n.poster);
+  if (permiso.demo || !n || !destino) return;
+  const { createClient } = await import("@supabase/supabase-js");
+  const sb = createClient(n.url, n.anonKey, { auth: { persistSession: false, autoRefreshToken: false } });
+  const { error } = await sb.storage.from(n.bucket).uploadToSignedUrl(destino.path, destino.token, archivo, {
+    contentType: cual === "video" ? "video/mp4" : "image/jpeg",
+    cacheControl: "31536000", // el archivo nunca cambia (su nombre lleva un id único): el celular puede guardarlo un año
+  });
+  if (error) throw new Error(cual === "video" ? "No pude subir el video. Revisa tu internet e intenta de nuevo." : "No pude subir la portada. Revisa tu internet e intenta de nuevo.");
+}
+
+export async function crmCrearPromo(datos: DatosNuevaPromo): Promise<PromoTarjeta> {
+  const data = await jsonOErrorCRM(await postJSON("/api/crm/tarjeta-promos", { accion: "crear", ...datos }));
+  return (data as { promo: PromoTarjeta }).promo;
+}
+
+export async function crmEditarPromo(id: string, cambios: CambiosPromo): Promise<PromoTarjeta> {
+  const data = await jsonOErrorCRM(await postJSON("/api/crm/tarjeta-promos", { accion: "editar", id, cambios }));
+  return (data as { promo: PromoTarjeta }).promo;
+}
+
+export async function crmEliminarPromo(id: string): Promise<void> {
+  await jsonOErrorCRM(await postJSON("/api/crm/tarjeta-promos", { accion: "eliminar", id }));
+}
+
+/** Cambiar la portada de una promoción ya publicada: permiso, subida (con `crmSubirPortada`, que es la misma de los videos) y confirmación. */
+export async function crmPrepararPortadaPromo(id: string): Promise<PermisoPortada> {
+  return (await jsonOErrorCRM(await postJSON("/api/crm/tarjeta-promos", { accion: "preparar-portada", id }))) as PermisoPortada;
+}
+
+export async function crmConfirmarPortadaPromo(id: string, ts: number): Promise<PromoTarjeta> {
+  const data = await jsonOErrorCRM(await postJSON("/api/crm/tarjeta-promos", { accion: "confirmar-portada", id, ts }));
+  return (data as { promo: PromoTarjeta }).promo;
 }
 
 // ---- Pólizas adjuntas: nuevas y renovaciones (solo admin) ----

@@ -173,8 +173,8 @@ export async function prepararSubida(): Promise<PermisoSubida> {
   };
 }
 
-/** Comprueba que el archivo ya está en el cajón (así no se registra un video que no llegó a subirse). */
-async function existeArchivo(ruta: string, tipo: string): Promise<boolean> {
+/** Comprueba que el archivo ya está en el cajón (así no se registra un video que no llegó a subirse). También lo usan las promociones de la tarjeta. */
+export async function existeArchivo(ruta: string, tipo: string): Promise<boolean> {
   try {
     const r = await fetch(urlPublica(baseNube(), ruta), { method: "HEAD", cache: "no-store" });
     return r.ok && (r.headers.get("content-type") ?? "").startsWith(tipo) && Number(r.headers.get("content-length") ?? 0) > 0;

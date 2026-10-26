@@ -252,6 +252,8 @@ export function TarjetaWeb() {
         <ListaBarras titulo="De dónde llegan" ayuda="Según el ?s= del enlace o el sitio que los mandó." filas={r.fuentes} vacio="Sin datos todavía." />
         <ListaBarras titulo="Historias que abren" ayuda="«Leer la historia completa» de cada cliente." filas={r.historias} vacio="Aún nadie abre una historia completa." />
         <ListaBarras titulo="Videos que abren" ayuda="Cuántas veces tocaron cada video para verlo." filas={r.videos} vacio="Aún nadie abre un video." />
+        <ListaBarras titulo="Promociones: toques a WhatsApp" ayuda="Cuántas veces tocaron el botón de WhatsApp de cada campaña (la sección «Promociones» solo se ve mientras hay una vigente)." filas={r.promosWa} vacio="Aún nadie toca el WhatsApp de una promoción." />
+        <ListaBarras titulo="Promociones: videos que abren" ayuda="Cuántas veces tocaron el video de cada campaña para verlo." filas={r.promosVideo} vacio="Aún nadie abre el video de una promoción." />
         <ListaBarras titulo="Preguntas que abren" ayuda="Las preguntas frecuentes que más leen." filas={r.preguntas} vacio="Aún nadie abre una pregunta." />
         <ListaBarras titulo="Recomendaciones «Para ti» que tocan" ayuda="Lo que eligen de la lista que aparece al marcar «¿Qué quieres proteger hoy?»." filas={r.recomendaciones} vacio="Aún nadie toca una recomendación." />
         <ListaBarras titulo="Fotos que amplían" ayuda="Fotos del evento y de reconocimientos que tocan para ver en grande." filas={r.fotos} vacio="Aún nadie amplía una foto." />

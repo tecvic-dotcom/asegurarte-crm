@@ -20,6 +20,7 @@ import { Cobranza } from "./Cobranza";
 import { Crecimiento } from "./Crecimiento";
 import { TarjetaWeb } from "./TarjetaWeb";
 import { TarjetaVideos } from "./TarjetaVideos";
+import { TarjetaPromos } from "./TarjetaPromos";
 import { PanelAdmin } from "./PanelAdmin";
 import { PolizasAdjuntas } from "./PolizasAdjuntas";
 import { SeguimientoSofi } from "./SeguimientoSofi";
@@ -331,6 +332,7 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
           {esAdmin && pestana === "crecimiento" && <Crecimiento />}
           {esAdmin && pestana === "tarjeta" && <TarjetaWeb />}
           {esAdmin && pestana === "videos-tarjeta" && <TarjetaVideos />}
+          {esAdmin && pestana === "promos-tarjeta" && <TarjetaPromos />}
           {esAdmin && pestana === "polizas" && <PolizasAdjuntas />}
           {esAdmin && pestana === "admin" && <PanelAdmin onCambio={recargar} />}
           {esAdmin && pestana === "roro" && <ManagerIA sesion={sesion} onSofi={() => elegir("sofi")} onValeri={() => elegir("valeri")} onClara={() => elegir("clara")} />}

@@ -213,10 +213,25 @@ main .secnav{display:none}
   main .secnav{display:block}
 }
 /* Ícono al lado del texto solo cuando hay ancho de sobra (una columna de 720 a 999 px, o la columna derecha de pantallas grandes); en laptops angostas (1000–1239) queda ícono arriba */
+/* (con «Promociones» son 7 botones y ya no caben con el ícono al lado: ahí el ícono se queda arriba, clase .siete que pone el script) */
 @media (min-width:720px) and (max-width:999px),(min-width:1240px){
-  .secnav a{flex-direction:row;gap:8px;min-height:46px;font-size:14px;padding:6px 8px}
-  .secnav a .ic{width:18px;height:18px}
+  .secnav:not(.siete) a{flex-direction:row;gap:8px;min-height:46px;font-size:14px;padding:6px 8px}
+  .secnav:not(.siete) a .ic{width:18px;height:18px}
 }
+/* Celular: la barra muestra SOLO los íconos (así nunca se desliza de lado); al tocar uno, su nombre sale en una nube que se quita sola */
+.secnav a{-webkit-touch-callout:none}
+.secnav .nube{position:absolute;top:calc(100% + 9px);left:0;z-index:2;padding:7px 13px;border-radius:12px;background:#f2f4ff;color:#0b0d24;
+  font:700 13.5px/1.2 var(--body);white-space:nowrap;pointer-events:none;opacity:0;transform:translate(-50%,-4px) scale(.96);transition:opacity .16s,transform .16s;
+  box-shadow:0 12px 28px -8px rgba(0,0,0,.7)}
+.secnav .nube::before{content:"";position:absolute;top:-5px;left:var(--cola,50%);width:10px;height:10px;margin-left:-5px;border-radius:2px;background:#f2f4ff;transform:rotate(45deg)}
+.secnav .nube.on{opacity:1;transform:translate(-50%,0) scale(1)}
+@media (max-width:719px){
+  .secnav .in{gap:0}
+  .secnav a{flex:1 1 0;min-width:0;padding:6px 0;-webkit-user-select:none;user-select:none}
+  .secnav a .ic{width:23px;height:23px}
+  .secnav .lbl{position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+}
+@media (prefers-reduced-motion:reduce){ .secnav .nube{transition:none} }
 
 /* ---------- Secciones ---------- */
 main{padding-inline:20px;padding-bottom:52px}
@@ -405,6 +420,32 @@ dialog.story[open]{animation:subir .28s ease-out}
 .foto{cursor:zoom-in}
 .foto.es-video{cursor:pointer}
 .aviso-ia{margin:12px 0 0;font-size:13.5px;color:var(--ink-mute);max-width:60ch}
+
+/* ---------- Promociones: la campaña vigente (portada, texto gancho, vigencia, WhatsApp y letra chica) ---------- */
+.secnav a[hidden]{display:none}
+#promociones > h2:first-child{margin-top:0}
+.promos{display:grid;gap:14px;margin-top:20px}
+.promo{display:grid;grid-template-columns:minmax(0,36%) minmax(0,1fr);gap:6px 16px;align-items:start;padding:14px;border-radius:var(--r);border-color:var(--line-strong)}
+.promo.sin-foto{grid-template-columns:minmax(0,1fr)}
+.promo .reel{border-radius:16px}
+.promo .reel.est{cursor:default}
+.promo .reel.est:hover img{transform:none}
+.promo-body{display:flex;flex-direction:column;align-items:flex-start;gap:10px;min-width:0;padding:2px 0}
+.promo-tag{display:inline-flex;align-items:center;gap:7px;margin:0;font:700 11.5px/1.25 var(--display);letter-spacing:.1em;text-transform:uppercase;color:var(--brand-2)}
+.promo-tag::before{content:"";flex:none;width:7px;height:7px;border-radius:50%;background:var(--brand-2);box-shadow:0 0 10px var(--brand-2)}
+.promo-gancho{margin:0;font:800 clamp(20px,5.6vw,25px)/1.16 var(--display);letter-spacing:-.01em;color:var(--ink);text-wrap:balance}
+.promo-detalle{margin:0;color:var(--ink-soft);font-size:15.5px;line-height:1.5}
+.promo-vig{display:inline-flex;align-items:center;gap:7px;padding:6px 11px;border-radius:999px;border:1px solid var(--line-strong);background:var(--glass);font:600 12.5px/1.25 var(--body);color:var(--ink-soft)}
+.promo-vig .ic{width:15px;height:15px;color:var(--brand-2)}
+.promo-vig.pronto{border-color:rgba(255,190,90,.6);color:#ffd9a0}
+.promo-vig.pronto .ic{color:#ffb347}
+.promo .btn{width:100%;min-height:50px;padding:0 14px;font-size:15px}
+.promo-legal{grid-column:1 / -1;margin:6px 0 0;padding-top:10px;border-top:1px solid var(--line);font-size:12.5px;line-height:1.45;color:var(--ink-mute)}
+@media (min-width:560px){
+  .promo{grid-template-columns:200px minmax(0,1fr);gap:8px 24px;padding:18px}
+  .promo .btn{width:auto;min-width:240px}
+  .promo-gancho{font-size:28px}
+}
 
 /* Video y foto ampliada: pantalla completa en el celular, ventana centrada en escritorio */
 dialog.vid{position:fixed;inset:0;margin:0;width:100%;max-width:none;height:100%;max-height:none;padding:0;overflow:auto;border:0;background:#05060d;color:var(--ink)}
@@ -676,6 +717,7 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
     <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></symbol>
     <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></symbol>
     <symbol id="i-steps" viewBox="0 0 24 24"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></symbol>
+    <symbol id="i-promo" viewBox="0 0 24 24"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".6" fill="currentColor"/></symbol>
   </defs>
 </svg>
 
@@ -683,12 +725,13 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
   <!-- Menú de secciones para celular y tablet: pegado arriba desde el primer momento. En pantalla grande (≥1000 px) se usa el que está dentro de la columna derecha (<main>); son los mismos enlaces. -->
   <nav class="secnav secnav-top" aria-label="Secciones">
     <div class="in">
-      <a href="#quien"><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg>Quién soy</a>
-      <a href="#herramientas"><svg class="ic" aria-hidden="true"><use href="#i-tools"/></svg>Herramientas</a>
-      <a href="#seguros"><svg class="ic" aria-hidden="true"><use href="#i-medical"/></svg>Seguros</a>
-      <a href="#opiniones"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg>Opiniones</a>
-      <a href="#faq"><svg class="ic" aria-hidden="true"><use href="#i-help"/></svg>FAQ</a>
-      <a href="#contacto"><svg class="ic" aria-hidden="true"><use href="#i-phone"/></svg>Contacto</a>
+      <a href="#quien"><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg><span class="lbl">Quién soy</span></a>
+      <a href="#promociones" data-promo-nav hidden><svg class="ic" aria-hidden="true"><use href="#i-promo"/></svg><span class="lbl">Promociones</span></a>
+      <a href="#herramientas"><svg class="ic" aria-hidden="true"><use href="#i-tools"/></svg><span class="lbl">Herramientas</span></a>
+      <a href="#seguros"><svg class="ic" aria-hidden="true"><use href="#i-medical"/></svg><span class="lbl">Seguros</span></a>
+      <a href="#opiniones"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg><span class="lbl">Opiniones</span></a>
+      <a href="#faq"><svg class="ic" aria-hidden="true"><use href="#i-help"/></svg><span class="lbl">FAQ</span></a>
+      <a href="#contacto"><svg class="ic" aria-hidden="true"><use href="#i-phone"/></svg><span class="lbl">Contacto</span></a>
     </div>
   </nav>
 
@@ -724,18 +767,25 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
     <main>
       <nav class="secnav" aria-label="Secciones">
         <div class="in">
-          <a href="#quien"><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg>Quién soy</a>
-          <a href="#herramientas"><svg class="ic" aria-hidden="true"><use href="#i-tools"/></svg>Herramientas</a>
-          <a href="#seguros"><svg class="ic" aria-hidden="true"><use href="#i-medical"/></svg>Seguros</a>
-          <a href="#opiniones"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg>Opiniones</a>
-          <a href="#faq"><svg class="ic" aria-hidden="true"><use href="#i-help"/></svg>FAQ</a>
-          <a href="#contacto"><svg class="ic" aria-hidden="true"><use href="#i-phone"/></svg>Contacto</a>
+          <a href="#quien"><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg><span class="lbl">Quién soy</span></a>
+          <a href="#promociones" data-promo-nav hidden><svg class="ic" aria-hidden="true"><use href="#i-promo"/></svg><span class="lbl">Promociones</span></a>
+          <a href="#herramientas"><svg class="ic" aria-hidden="true"><use href="#i-tools"/></svg><span class="lbl">Herramientas</span></a>
+          <a href="#seguros"><svg class="ic" aria-hidden="true"><use href="#i-medical"/></svg><span class="lbl">Seguros</span></a>
+          <a href="#opiniones"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg><span class="lbl">Opiniones</span></a>
+          <a href="#faq"><svg class="ic" aria-hidden="true"><use href="#i-help"/></svg><span class="lbl">FAQ</span></a>
+          <a href="#contacto"><svg class="ic" aria-hidden="true"><use href="#i-phone"/></svg><span class="lbl">Contacto</span></a>
         </div>
       </nav>
 
       <section class="sec" id="quien" aria-labelledby="h-quien">
         <h2 id="h-quien" data-c="quienSoy.titulo"></h2>
         <div class="acc" id="acc"></div>
+      </section>
+
+      <!-- Promociones: las campañas vigentes que publicas desde el CRM (pestaña «Promociones de la tarjeta»). Sin ninguna vigente, la sección y su botón del menú no se ven. -->
+      <section class="sec" id="promociones" aria-labelledby="h-promociones" hidden>
+        <h2 id="h-promociones">Promociones</h2>
+        <div class="promos" id="promos"></div>
       </section>
 
       <!-- Herramientas: la guía gratis (tarjeta plegable) y la calculadora, juntas debajo de «Conóceme» -->
@@ -1387,13 +1437,13 @@ function vcardTexto() {
   const posterDe = (v) => (v.src ? v.poster || "" : portadasCRM[v.id] || ruta(`/tarjeta/reels/${v.id}.jpg`));
   const abrirVideo = (v, desde) => {
     const mp4 = mp4De(v);
-    track("reel", v.titulo);
+    track(v.promo ? "promo" : "reel", v.titulo);
     if (!hayDialog) { window.open(mp4, "_blank", "noopener"); return; }
-    $("#vidTitulo").textContent = v.titulo;
-    $("#vidWaTxt").textContent = v.clave ? `Escríbeme «${v.clave}»` : "Contáctame por WhatsApp";
-    const vi = `vi tu video «${v.titulo}» en tu tarjeta digital y quiero información.`;
+    $("#vidTitulo").textContent = v.promo ? v.gancho : v.titulo;
+    $("#vidWaTxt").textContent = v.clave ? `Escríbeme «${v.clave}»` : v.promo ? "Quiero esta promoción" : "Contáctame por WhatsApp";
+    const vi = `vi tu ${v.promo ? "promoción" : "video"} «${v.titulo}» en tu tarjeta digital y quiero información.`;
     $("#vidWa").href = wa(v.clave ? `${v.clave}. Hola Roberto, ${vi}` : `Hola Roberto, ${vi}`);
-    $("#vidWa").dataset.d = "video:" + v.titulo;
+    $("#vidWa").dataset.d = (v.promo ? "promo:" : "video:") + v.titulo;
     $("#vidIa").textContent = v.ia === false ? "" : v.real ? C.eventos.avisoIa : C.videos.aviso;
     vEl.poster = posterDe(v);
     vEl.src = mp4;
@@ -1460,6 +1510,55 @@ function vcardTexto() {
     const evImg = document.querySelector(".foto.es-video img");   // el video del evento también puede tener portada nueva
     if (evImg && portadas[C.eventos.video.id]) evImg.src = portadas[C.eventos.video.id];
     if (typeof actualizarParaTi === "function") actualizarParaTi();
+  }).catch(() => {});
+
+  // Promociones: las campañas VIGENTES que publicas desde el CRM («Promociones de la tarjeta»); se quitan solas al llegar a su fecha de fin.
+  // Sin ninguna vigente (o si algo falla), la sección y su botón del menú siguen ocultos. Solo se aceptan archivos del cajón público.
+  const fechaTxt = (iso) => new Date(iso + "T12:00:00").toLocaleDateString("es-MX", { day: "numeric", month: "long" });
+  const pintarPromos = (lista) => {
+    const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+    $("#promos").innerHTML = lista.map((p, i) => {
+      const vid = Boolean(p.src), img = p.poster || "";
+      const media = vid
+        ? `<button type="button" class="reel" data-i="${i}" aria-label="Ver el video de la promoción: ${esc(p.titulo)} (${mm(p.dur)})">
+            ${img ? `<img src="${esc(img)}" alt="" width="540" height="960" loading="lazy" decoding="async">` : ""}
+            <span class="play" aria-hidden="true"><svg class="ic"><use href="#i-tri"/></svg></span>
+            <span class="dur" aria-hidden="true">${mm(p.dur)}</span>
+          </button>`
+        : img ? `<div class="reel est"><img src="${esc(img)}" alt="${esc(p.gancho)}" width="540" height="960" loading="lazy" decoding="async"></div>` : "";
+      let vig = "";
+      if (p.fin) {
+        const d = Math.round((new Date(p.fin + "T00:00:00") - hoy) / 864e5);
+        vig = `<span class="promo-vig${d <= 2 ? " pronto" : ""}">${ic("cal")}${d <= 0 ? "¡Último día!" : (d <= 2 ? "¡Últimos días! " : "") + "Hasta el " + fechaTxt(p.fin)}</span>`;
+      }
+      const vi = `vi tu promoción «${p.titulo}» en tu tarjeta digital y quiero información.`;
+      return `
+      <article class="promo glass${media ? "" : " sin-foto"}" aria-label="${esc(p.titulo)}">
+        ${media}
+        <div class="promo-body">
+          <p class="promo-tag">${esc(p.titulo)}</p>
+          <h3 class="promo-gancho">${esc(p.gancho)}</h3>
+          ${p.detalle ? `<p class="promo-detalle">${esc(p.detalle)}</p>` : ""}
+          ${vig}
+          <a class="btn btn-wa" target="_blank" rel="noopener" href="${esc(wa(p.clave ? `${p.clave}. Hola Roberto, ${vi}` : `Hola Roberto, ${vi}`))}" data-ev="wa" data-d="promo:${esc(p.titulo)}">${ic("wa")}${p.clave ? `Escríbeme «${esc(p.clave)}»` : "Quiero esta promoción"}</a>
+        </div>
+        ${p.condiciones ? `<p class="promo-legal">${esc(p.condiciones)}</p>` : ""}
+      </article>`;
+    }).join("");
+    $("#promos").onclick = (e) => {
+      const bt = e.target.closest(".reel[data-i]"); if (!bt) return;
+      const p = lista[+bt.dataset.i];
+      abrirVideo({ id: p.id, titulo: p.titulo, gancho: p.gancho, clave: p.clave, src: p.src, poster: p.poster, dur: p.dur, ia: p.ia !== false, promo: true }, bt);
+    };
+    $("#promociones").hidden = false;
+    document.querySelectorAll("[data-promo-nav]").forEach((a) => { a.hidden = false; });
+    document.querySelectorAll(".secnav").forEach((n) => n.classList.add("siete"));
+  };
+  fetch("/api/tarjeta/promos", { cache: "no-cache" }).then((r) => (r.ok ? r.json() : { promos: [] })).then((j) => {
+    const lista = ((j && j.promos) || []).filter((p) => p && typeof p.titulo === "string" && typeof p.gancho === "string"
+      && (!p.poster || urlValida(p.poster)) && (!p.src || urlValida(p.src)) && (!p.fin || /^\d{4}-\d{2}-\d{2}$/.test(p.fin))).slice(0, 6)
+      .map((p) => ({ ...p, dur: Math.max(1, +p.dur || 1) }));
+    if (lista.length) pintarPromos(lista);
   }).catch(() => {});
 
   const evV = C.eventos.video, evF = C.eventos.fotos, nEv = evF.length + 1;
@@ -1683,8 +1782,9 @@ function vcardTexto() {
   // Hay dos copias del menú (arriba de la página en celular/tablet y en la columna derecha en pantalla grande): se marcan las dos, pero la que cuenta para medir es la que se ve.
   const navs = [...document.querySelectorAll(".secnav")];
   const navVisible = () => navs.find((n) => n.getClientRects().length > 0) || navs[0];
-  const links = navs.flatMap((n) => [...n.querySelectorAll("a")]).filter((a) => !a.hidden);
-  const secs = [...navs[0].querySelectorAll("a")].map((a) => document.getElementById(a.hash.slice(1))).filter(Boolean);
+  // «Promociones» solo existe mientras hay una campaña vigente (su botón y su sección salen cuando llegan los datos): por eso las secciones se piden en cada vuelta y solo cuentan las que se ven
+  const links = navs.flatMap((n) => [...n.querySelectorAll("a")]);
+  const secs = () => [...navs[0].querySelectorAll("a")].map((a) => document.getElementById(a.hash.slice(1))).filter((s) => s && s.getClientRects().length);
   let actual = "", bloqueo = false, tFin;
   const marcar = (id) => {
     if (id === actual) return;
@@ -1694,13 +1794,36 @@ function vcardTexto() {
     const barra = navVisible().querySelector(".in"), on = [...barra.querySelectorAll("a")].find((a) => a.hash === "#" + id);
     if (on && barra.scrollWidth > barra.clientWidth + 1) barra.scrollTo({ left: on.offsetLeft - (barra.clientWidth - on.offsetWidth) / 2, behavior: reducido ? "auto" : "smooth" });
   };
+  // Celular (barra de solo íconos): al tocar un botón su nombre sale en una nube bajo la barra, ~1.5 s, y se va a la sección como siempre
+  const soloIconos = matchMedia("(max-width:719px)");
+  navs.forEach((nav) => {
+    const nube = document.createElement("span");
+    nube.className = "nube"; nube.setAttribute("aria-hidden", "true");
+    nav.appendChild(nube);
+    let tNube = 0;
+    const mostrar = (e) => {
+      const a = e.target.closest("a"); if (!a || !soloIconos.matches) return;
+      clearTimeout(tNube);
+      nube.textContent = a.textContent.trim();
+      const nr = nav.getBoundingClientRect(), ar = a.getBoundingClientRect(), w = nube.offsetWidth;
+      const cx = ar.left - nr.left + ar.width / 2;                                    // centro del ícono tocado
+      const centro = Math.min(Math.max(cx, w / 2 + 8), nr.width - w / 2 - 8);          // la nube no se sale de la pantalla...
+      nube.style.left = centro + "px";
+      nube.style.setProperty("--cola", (w / 2 + cx - centro) + "px");                  // ...y su colita sigue apuntando al ícono
+      nube.classList.add("on");
+      tNube = setTimeout(() => nube.classList.remove("on"), 1500);
+    };
+    nav.addEventListener("pointerdown", mostrar);
+    nav.addEventListener("click", mostrar);
+  });
   const espiar = () => {
     if (bloqueo) return;
     const linea = navVisible().getBoundingClientRect().bottom + 24;
     let cur = null;
-    secs.forEach((s) => { if (s.getBoundingClientRect().top <= linea) cur = s; });
+    const visibles = secs();
+    visibles.forEach((s) => { if (s.getBoundingClientRect().top <= linea) cur = s; });
     const alFinal = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
-    if (alFinal) cur = secs[secs.length - 1];
+    if (alFinal) cur = visibles[visibles.length - 1];
     if (cur) marcar(cur.id);
     else { actual = ""; links.forEach((a) => a.setAttribute("aria-current", "false")); }
   };

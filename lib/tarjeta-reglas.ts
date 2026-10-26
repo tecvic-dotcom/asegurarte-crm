@@ -25,6 +25,7 @@ export const EVENTOS_TARJETA = [
   "foto", // amplió una foto del evento
   "faq", // abrió una pregunta frecuente
   "rec", // tocó una recomendación de «Para ti»
+  "promo", // abrió el video de una promoción (detalle: nombre de la campaña)
   "car", // deslizó un carrusel
   // Guía «Dinero Bajo Control» (/semana). La tabla limita el nombre a 20 caracteres.
   "sf_abrir", // abrió la guía
@@ -61,6 +62,7 @@ export interface FilaEvento {
 
 export const SECCIONES_TARJETA: ReadonlyArray<{ id: string; nombre: string }> = [
   { id: "quien", nombre: "Quién soy" },
+  { id: "promociones", nombre: "Promociones (solo se ve mientras hay una campaña vigente)" },
   { id: "herramientas", nombre: "Herramientas (guía Dinero Bajo Control y calculadora)" },
   { id: "seguros", nombre: "¿Qué quieres proteger? (chips y seguros)" },
   { id: "asesoria", nombre: "Asesoría (botones «Quiero una asesoría» y «Agendar»)" },
@@ -80,6 +82,7 @@ const LUGAR_WA: Record<string, string> = {
   contacto: "Sección Contacto",
   historia: "Historia completa de un cliente",
   producto: "Botón de un producto",
+  promo: "Botón de una promoción",
   video: "Dentro de un video",
   faq: "Preguntas frecuentes",
 };
@@ -126,6 +129,9 @@ export interface ResumenTarjeta {
   productos: Conteo[];
   historias: Conteo[];
   videos: Conteo[];
+  /** Por campaña: toques al botón de WhatsApp de la promoción y veces que abrieron su video. */
+  promosWa: Conteo[];
+  promosVideo: Conteo[];
   fotos: Conteo[];
   preguntas: Conteo[];
   recomendaciones: Conteo[];
@@ -196,6 +202,8 @@ export function resumir(filas: FilaEvento[], dias: number, hoy: string): Omit<Re
     productos: contar(dentro, "wa", (f) => (f.detalle.startsWith("producto:") ? f.detalle.slice(9) : ""), 8),
     historias: contar(dentro, "historia", (f) => f.detalle, 5),
     videos: contar(dentro, "reel", (f) => f.detalle, 10),
+    promosWa: contar(dentro, "wa", (f) => (f.detalle.startsWith("promo:") ? f.detalle.slice(6) : ""), 8),
+    promosVideo: contar(dentro, "promo", (f) => f.detalle, 8),
     fotos: contar(dentro, "foto", (f) => f.detalle, 6),
     preguntas: contar(dentro, "faq", (f) => f.detalle, 6),
     recomendaciones: contar(dentro, "rec", (f) => f.detalle, 8),
