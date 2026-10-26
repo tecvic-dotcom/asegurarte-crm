@@ -1807,7 +1807,9 @@ function vcardTexto() {
   });
   const espiar = () => {
     if (bloqueo) return;
-    const linea = navVisible().getBoundingClientRect().bottom + 24;
+    // La sección marcada es la que domina la pantalla: la última cuyo borde de arriba ya pasó el 40 % de la altura (nunca más arriba que justo debajo de la barra).
+    // Antes la línea estaba pegada a la barra: al tocar un ícono y subir apenas unos píxeles, la marca saltaba al ícono anterior aunque la sección tocada seguía casi toda en pantalla.
+    const linea = Math.max(navVisible().getBoundingClientRect().bottom + 24, window.innerHeight * 0.4);
     let cur = null;
     const visibles = secs();
     visibles.forEach((s) => { if (s.getBoundingClientRect().top <= linea) cur = s; });
