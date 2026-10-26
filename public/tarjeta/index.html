@@ -432,8 +432,10 @@ dialog.story[open]{animation:subir .28s ease-out}
 .promo{display:grid;grid-template-columns:minmax(0,36%) minmax(0,1fr);gap:6px 16px;align-items:start;padding:14px;border-radius:var(--r);border-color:var(--line-strong)}
 .promo.sin-foto{grid-template-columns:minmax(0,1fr)}
 .promo .reel{border-radius:16px}
-.promo .reel.est{cursor:default}
-.promo .reel.est:hover img{transform:none}
+.promo .reel[data-img]{cursor:zoom-in}
+.promo .zoom{position:absolute;right:8px;bottom:8px;z-index:1;display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:rgba(8,10,28,.72);border:1px solid rgba(255,255,255,.35);color:#fff}
+.promo .zoom .ic{width:17px;height:17px;stroke-width:2}
+#picWa[hidden]{display:none}
 .promo-body{display:flex;flex-direction:column;align-items:flex-start;gap:10px;min-width:0;padding:2px 0}
 .promo-tag{display:inline-flex;align-items:center;gap:7px;margin:0;font:700 11.5px/1.25 var(--display);letter-spacing:.1em;text-transform:uppercase;color:var(--brand-2)}
 .promo-tag::before{content:"";flex:none;width:7px;height:7px;border-radius:50%;background:var(--brand-2);box-shadow:0 0 10px var(--brand-2)}
@@ -713,6 +715,7 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
     <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></symbol>
     <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></symbol>
     <symbol id="i-steps" viewBox="0 0 24 24"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></symbol>
+    <symbol id="i-zoom" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="M11 8v6"/><path d="M8 11h6"/></symbol>
     <symbol id="i-promo" viewBox="0 0 24 24"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".6" fill="currentColor"/></symbol>
   </defs>
 </svg>
@@ -962,7 +965,9 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
   <button type="button" class="vid-x" data-cerrar aria-label="Cerrar foto"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button>
   <div class="vid-in">
     <picture><source type="image/webp" id="picSrc"><img class="big" id="picImg" alt=""></picture>
-    <div class="vid-cta"><h3 id="picCap"></h3></div>
+    <div class="vid-cta"><h3 id="picCap"></h3>
+      <a class="btn btn-wa btn-big block" id="picWa" target="_blank" rel="noopener" data-ev="wa" hidden><svg class="ic"><use href="#i-wa"/></svg><span id="picWaTxt"></span></a>
+    </div>
   </div>
 </dialog>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -1456,7 +1461,21 @@ function vcardTexto() {
     // misma imagen WebP que ya cargó el carrusel (aparece al instante); el JPG solo es el respaldo
     const im = $("#picImg"); $("#picSrc").srcset = ruta(`/tarjeta/${dir}/${f.id}.webp`); im.src = ruta(`/tarjeta/${dir}/${f.id}.jpg`); im.alt = f.alt;
     $("#picCap").textContent = f.pie;
+    $("#picWa").hidden = true;
     abrir(pdlg, desde, { foto: f.id });
+  };
+  // Portada de una promoción en tamaño normal (la imagen completa, sin recorte), con su botón de WhatsApp debajo
+  const abrirPortada = (p, desde) => {
+    track("foto", "Promo: " + p.titulo);
+    if (!hayDialog) { window.open(p.poster, "_blank", "noopener"); return; }
+    const im = $("#picImg"); $("#picSrc").removeAttribute("srcset"); im.src = p.poster; im.alt = p.gancho;
+    $("#picCap").textContent = p.gancho;
+    const vi = `vi tu promoción «${p.titulo}» en tu tarjeta digital y quiero información.`;
+    const bt = $("#picWa"); bt.hidden = false;
+    bt.href = wa(p.clave ? `${p.clave}. Hola Roberto, ${vi}` : `Hola Roberto, ${vi}`);
+    bt.dataset.d = "promo:" + p.titulo;
+    $("#picWaTxt").textContent = p.clave ? `Escríbeme «${p.clave}»` : "Quiero esta promoción";
+    abrir(pdlg, desde, { promoImg: p.id });
   };
   // Tarjeta de foto (carrusel) con su recorte 4:5 (`pos` elige qué parte se ve)
   const botonFoto = (f, i, dir) => `
@@ -1517,13 +1536,19 @@ function vcardTexto() {
     const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
     $("#promos").innerHTML = lista.map((p, i) => {
       const vid = Boolean(p.src), img = p.poster || "";
-      const media = vid
-        ? `<button type="button" class="reel" data-i="${i}" aria-label="Ver el video de la promoción: ${esc(p.titulo)} (${mm(p.dur)})">
-            ${img ? `<img src="${esc(img)}" alt="" width="540" height="960" loading="lazy" decoding="async">` : ""}
+      // La portada se abre en tamaño normal (imagen completa); el video, si lo hay, tiene su propio botón. Sin portada pero con video, la tarjeta del video hace de portada.
+      const media = img
+        ? `<button type="button" class="reel" data-img="${i}" aria-label="Ver la imagen de la promoción en tamaño normal: ${esc(p.titulo)}">
+            <img src="${esc(img)}" alt="" width="540" height="960" loading="lazy" decoding="async">
+            <span class="zoom" aria-hidden="true">${ic("zoom")}</span>
+          </button>`
+        : vid
+        ? `<button type="button" class="reel" data-v="${i}" aria-label="Ver el video de la promoción: ${esc(p.titulo)} (${mm(p.dur)})">
             <span class="play" aria-hidden="true"><svg class="ic"><use href="#i-tri"/></svg></span>
             <span class="dur" aria-hidden="true">${mm(p.dur)}</span>
           </button>`
-        : img ? `<div class="reel est"><img src="${esc(img)}" alt="${esc(p.gancho)}" width="540" height="960" loading="lazy" decoding="async"></div>` : "";
+        : "";
+      const btnVideo = vid && img ? `<button type="button" class="btn btn-ghost" data-v="${i}">${ic("tri")}Ver el video · ${mm(p.dur)}</button>` : "";
       let vig = "";
       if (p.fin) {
         const d = Math.round((new Date(p.fin + "T00:00:00") - hoy) / 864e5);
@@ -1539,13 +1564,16 @@ function vcardTexto() {
           ${p.detalle ? `<p class="promo-detalle">${esc(p.detalle)}</p>` : ""}
           ${vig}
           <a class="btn btn-wa" target="_blank" rel="noopener" href="${esc(wa(p.clave ? `${p.clave}. Hola Roberto, ${vi}` : `Hola Roberto, ${vi}`))}" data-ev="wa" data-d="promo:${esc(p.titulo)}">${ic("wa")}${p.clave ? `Escríbeme «${esc(p.clave)}»` : "Quiero esta promoción"}</a>
+          ${btnVideo}
         </div>
         ${p.condiciones ? `<p class="promo-legal">${esc(p.condiciones)}</p>` : ""}
       </article>`;
     }).join("");
     $("#promos").onclick = (e) => {
-      const bt = e.target.closest(".reel[data-i]"); if (!bt) return;
-      const p = lista[+bt.dataset.i];
+      const im = e.target.closest("[data-img]");
+      if (im) { abrirPortada(lista[+im.dataset.img], im); return; }
+      const bt = e.target.closest("[data-v]"); if (!bt) return;
+      const p = lista[+bt.dataset.v];
       abrirVideo({ id: p.id, titulo: p.titulo, gancho: p.gancho, clave: p.clave, src: p.src, poster: p.poster, dur: p.dur, ia: p.ia !== false, promo: true }, bt);
     };
     $("#promociones").hidden = false;
