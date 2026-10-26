@@ -200,7 +200,9 @@ a{color:inherit}
   border-radius:12px;color:var(--ink-soft);font:600 clamp(10px,2.9vw,13px)/1.1 var(--body);text-align:center;white-space:nowrap;
   text-decoration:none;transition:background .15s,color .15s}
 .secnav a .ic{width:19px;height:19px;stroke-width:1.9}
-.secnav a:hover{color:var(--ink);background:var(--glass-2)}
+/* El efecto de «cursor encima» solo con ratón: en el celular el dedo deja el :hover pegado en el último ícono tocado y se vería marcado junto al activo */
+@media (hover:hover){ .secnav a:hover{color:var(--ink);background:var(--glass-2)} }
+.secnav a{-webkit-tap-highlight-color:transparent}
 .secnav a[aria-current="true"]{background:linear-gradient(180deg,var(--brand-2),var(--brand));color:#fff}
 @media (min-width:600px){
   .secnav{padding:10px 20px}
