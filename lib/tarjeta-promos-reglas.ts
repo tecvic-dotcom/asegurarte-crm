@@ -18,6 +18,19 @@ export const rutaPromoVideo = (id: string) => `promo/${id}.mp4`;
 export const rutaPromoPortada = (id: string) => `promo/${id}.jpg`;
 /** Portada cambiada después de publicar: lleva la hora en el nombre, así el celular nunca se queda con una vieja en la memoria. */
 export const rutaPromoPortadaNueva = (id: string, ts: number) => `promo/${id}-${ts}.jpg`;
+/** Video agregado o cambiado después de publicar (mismo motivo: su nombre lleva la hora). */
+export const rutaPromoVideoNuevo = (id: string, ts: number) => `promo/${id}-${ts}.mp4`;
+
+/** Un video de promoción dura entre 1 segundo y MAX_SEGUNDOS_VIDEO (con un margen de 10 s por el redondeo de la compresión). */
+export const duracionValida = (n: unknown): n is number => typeof n === "number" && Number.isFinite(n) && Math.round(n) >= 1 && Math.round(n) <= MAX_SEGUNDOS_VIDEO + 10;
+
+/** Permiso de un solo uso para subir un video nuevo a una promoción que ya existe. */
+export interface PermisoVideoPromo {
+  /** Marca de tiempo que forma parte del nombre del archivo. */
+  ts: number;
+  demo: boolean;
+  nube?: { url: string; anonKey: string; bucket: string; video: { path: string; token: string } };
+}
 
 /**
  * vigente = se ve hoy en la tarjeta · programada = empieza otro día · vencida = ya pasó su fecha de fin · oculta = la apagaste a mano.

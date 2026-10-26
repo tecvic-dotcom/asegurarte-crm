@@ -6,7 +6,7 @@
  */
 import type { ResumenTarjeta } from "./tarjeta-reglas";
 import type { CambiosVideo, DatosNuevoVideo, PermisoPortada, PermisoSubida, VideoFijo, VideoTarjeta } from "./tarjeta-videos-reglas";
-import type { CambiosPromo, DatosNuevaPromo, PermisoPromo, PromoTarjeta } from "./tarjeta-promos-reglas";
+import type { CambiosPromo, DatosNuevaPromo, PermisoPromo, PermisoVideoPromo, PromoTarjeta } from "./tarjeta-promos-reglas";
 import type {
   Lead,
   Actividad,
@@ -566,6 +566,33 @@ export async function crmPrepararPortadaPromo(id: string): Promise<PermisoPortad
 
 export async function crmConfirmarPortadaPromo(id: string, ts: number): Promise<PromoTarjeta> {
   const data = await jsonOErrorCRM(await postJSON("/api/crm/tarjeta-promos", { accion: "confirmar-portada", id, ts }));
+  return (data as { promo: PromoTarjeta }).promo;
+}
+
+/** Agregar o cambiar el video de una promoción ya publicada: permiso, subida y confirmación (después de comprimir el video en el navegador). */
+export async function crmPrepararVideoPromo(id: string): Promise<PermisoVideoPromo> {
+  return (await jsonOErrorCRM(await postJSON("/api/crm/tarjeta-promos", { accion: "preparar-video", id }))) as PermisoVideoPromo;
+}
+
+export async function crmSubirVideoPromo(permiso: PermisoVideoPromo, video: Blob): Promise<void> {
+  const n = permiso.nube;
+  if (permiso.demo || !n) return;
+  const { createClient } = await import("@supabase/supabase-js");
+  const sb = createClient(n.url, n.anonKey, { auth: { persistSession: false, autoRefreshToken: false } });
+  const { error } = await sb.storage.from(n.bucket).uploadToSignedUrl(n.video.path, n.video.token, video, {
+    contentType: "video/mp4",
+    cacheControl: "31536000", // el nombre lleva la hora: el archivo nunca cambia
+  });
+  if (error) throw new Error("No pude subir el video. Revisa tu internet e intenta de nuevo.");
+}
+
+export async function crmConfirmarVideoPromo(id: string, ts: number, duracion: number): Promise<PromoTarjeta> {
+  const data = await jsonOErrorCRM(await postJSON("/api/crm/tarjeta-promos", { accion: "confirmar-video", id, ts, duracion }));
+  return (data as { promo: PromoTarjeta }).promo;
+}
+
+export async function crmQuitarVideoPromo(id: string): Promise<PromoTarjeta> {
+  const data = await jsonOErrorCRM(await postJSON("/api/crm/tarjeta-promos", { accion: "quitar-video", id }));
   return (data as { promo: PromoTarjeta }).promo;
 }
 

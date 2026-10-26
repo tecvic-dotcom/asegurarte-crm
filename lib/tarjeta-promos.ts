@@ -14,14 +14,17 @@ import { faltaMigracion, MENSAJE_MIGRACION_PROMOS, MigracionPendienteError } fro
 import { existeArchivo } from "./tarjeta-videos";
 import { BUCKET_VIDEOS, tsValido, urlPublica, type PermisoPortada } from "./tarjeta-videos-reglas";
 import {
+  duracionValida,
   estadoDe,
   MAX_PROMOS_PUBLICAS,
   rutaPromoPortada,
   rutaPromoPortadaNueva,
   rutaPromoVideo,
+  rutaPromoVideoNuevo,
   type CambiosPromo,
   type DatosNuevaPromo,
   type PermisoPromo,
+  type PermisoVideoPromo,
   type PromoPublica,
   type PromoTarjeta,
 } from "./tarjeta-promos-reglas";
@@ -364,4 +367,72 @@ export async function confirmarPortadaPromo(id: string, ts: unknown): Promise<Re
     if (r.error) console.error("[tarjeta-promos] no pude borrar la portada anterior:", r.error.message);
   }
   return { ok: true, promo: aPromo(normalizar(data)) };
+}
+
+// ---- Agregar, cambiar o quitar el video de una promoción ya publicada ----
+
+/** Permiso de un solo uso para subir un video nuevo (el nombre lleva la hora: nunca se mezcla con uno anterior). `null` si esa promoción no existe. */
+export async function prepararVideoPromo(id: string): Promise<PermisoVideoPromo | null> {
+  if (!(await existePromo(id))) return null;
+  const ts = Date.now();
+  if (!(cloudReady && adminDb)) return { ts, demo: true };
+  const { data, error } = await adminDb.storage.from(BUCKET_VIDEOS).createSignedUploadUrl(rutaPromoVideoNuevo(id, ts));
+  if (error || !data) {
+    if (/not found|bucket/i.test(error?.message ?? "")) throw new MigracionPendienteError(MENSAJE_MIGRACION_PROMOS, "0023_tarjeta_promos.sql");
+    throw new Error(error?.message ?? "No pude preparar la subida del video.");
+  }
+  return { ts, demo: false, nube: { url: baseNube(), anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "", bucket: BUCKET_VIDEOS, video: { path: data.path, token: data.token } } };
+}
+
+/** Confirma el video ya subido: la promoción pasa a usarlo (el anterior, si había, se borra del cajón). */
+export async function confirmarVideoPromo(id: string, ts: unknown, duracion: unknown): Promise<ResultadoPortadaPromo> {
+  if (!tsValido(ts)) return { ok: false, error: "Ese permiso ya venció. Vuelve a elegir el video.", estado: 422 };
+  if (!duracionValida(duracion)) return { ok: false, error: "El video debe durar entre 1 segundo y 3 minutos.", estado: 422 };
+  if (!(await existePromo(id))) return { ok: false, error: "Esa promoción ya no existe.", estado: 404 };
+  const seg = Math.round(duracion);
+
+  if (!(cloudReady && adminDb)) {
+    // DEMO: no se subió nada de verdad; solo se practica la pantalla.
+    const f = demoStore().find((x) => x.id === id);
+    if (!f) return { ok: false, error: "Esa promoción ya no existe.", estado: 404 };
+    f.video_path = "/tarjeta/reels/gastos-medicos.mp4";
+    f.duracion = seg;
+    return { ok: true, promo: aPromo(f) };
+  }
+
+  const ruta = rutaPromoVideoNuevo(id, ts);
+  if (!(await existeArchivo(ruta, "video/"))) return { ok: false, error: "El video no terminó de subirse. Vuelve a intentarlo.", estado: 422 };
+  const antes = await adminDb.from(TABLA).select("video_path").eq("id", id).maybeSingle();
+  if (antes.error) throw errorDeBase(antes.error);
+  const { data, error } = await adminDb.from(TABLA).update({ video_path: ruta, duracion: seg }).eq("id", id).select("*").maybeSingle();
+  if (error) throw errorDeBase(error);
+  if (!data) return { ok: false, error: "Esa promoción ya no existe.", estado: 404 };
+  const viejo = antes.data?.video_path;
+  if (typeof viejo === "string" && viejo && viejo !== ruta && !esDemoRuta(viejo)) {
+    const r = await adminDb.storage.from(BUCKET_VIDEOS).remove([viejo]);
+    if (r.error) console.error("[tarjeta-promos] no pude borrar el video anterior:", r.error.message);
+  }
+  return { ok: true, promo: aPromo(normalizar(data)) };
+}
+
+/** La promoción se queda sin video (su portada se abre en grande, como en las que nunca tuvieron video). */
+export async function quitarVideoPromo(id: string): Promise<PromoTarjeta | null> {
+  if (!(cloudReady && adminDb)) {
+    const f = demoStore().find((x) => x.id === id);
+    if (!f) return null;
+    f.video_path = "";
+    f.duracion = 0;
+    return aPromo(f);
+  }
+  const antes = await adminDb.from(TABLA).select("video_path").eq("id", id).maybeSingle();
+  if (antes.error) throw errorDeBase(antes.error);
+  if (!antes.data) return null;
+  const { data, error } = await adminDb.from(TABLA).update({ video_path: "", duracion: 0 }).eq("id", id).select("*").maybeSingle();
+  if (error) throw errorDeBase(error);
+  const viejo = antes.data.video_path;
+  if (typeof viejo === "string" && viejo && !esDemoRuta(viejo)) {
+    const r = await adminDb.storage.from(BUCKET_VIDEOS).remove([viejo]);
+    if (r.error) console.error("[tarjeta-promos] no pude borrar el video:", r.error.message);
+  }
+  return data ? aPromo(normalizar(data)) : null;
 }

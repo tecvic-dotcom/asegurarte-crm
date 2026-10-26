@@ -4,14 +4,18 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
 import {
   crmConfirmarPortadaPromo,
+  crmConfirmarVideoPromo,
   crmCrearPromo,
   crmEditarPromo,
   crmEliminarPromo,
   crmPrepararPortadaPromo,
   crmPrepararPromo,
+  crmPrepararVideoPromo,
   crmPromosTarjeta,
+  crmQuitarVideoPromo,
   crmSubirArchivoPromo,
   crmSubirPortada,
+  crmSubirVideoPromo,
   ErrorCRM,
 } from "@/lib/api";
 import { comprimirVideo, ErrorVideo, navegadorComprime, portadaDeImagen, portadaDelVideo } from "@/lib/comprimir-video";
@@ -38,6 +42,31 @@ const FRASE: Record<Exclude<Fase, "reposo">, string> = {
   subiendo: "Subiendo a tu tarjeta…",
   publicando: "Publicando…",
 };
+
+/** Botón que abre el selector de videos y entrega el elegido (se puede volver a elegir el mismo). */
+function BotonVideo({ texto, disabled, onArchivo }: { texto: string; disabled?: boolean; onArchivo: (f: File) => void }) {
+  const entrada = useRef<HTMLInputElement>(null);
+  return (
+    <>
+      <input
+        ref={entrada}
+        type="file"
+        accept="video/*"
+        className="sr-only"
+        tabIndex={-1}
+        aria-hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) onArchivo(f);
+        }}
+      />
+      <button type="button" disabled={disabled} onClick={() => entrada.current?.click()} className="btn-ghost inline-flex items-center gap-1.5 px-3 py-1.5 text-xs">
+        <Icon icon="flat-color-icons:film-reel" width={16} aria-hidden /> {texto}
+      </button>
+    </>
+  );
+}
 
 const mensajeDe = (e: unknown, defecto: string) => (e instanceof ErrorVideo || e instanceof Error ? e.message : defecto);
 
@@ -381,7 +410,7 @@ export function TarjetaPromos() {
               }}
               className="field-input"
             />
-            <p className="mt-1 text-xs text-ink-mute">Si lo subes, la portada se vuelve el botón de reproducir y el video se ve dentro de la tarjeta, sin salir. Se comprime en tu aparato antes de subirse.</p>
+            <p className="mt-1 text-xs text-ink-mute">Si lo subes, <strong className="text-ink">al tocar la portada en la tarjeta se abre el video</strong> (sin salir de la página). Sin video, al tocarla se abre la imagen completa. Se comprime en tu aparato antes de subirse. Después puedes agregarlo, cambiarlo o quitarlo desde la lista de abajo.</p>
           </div>
           {archivoVideo && (
             <label className="flex items-start gap-2.5 text-sm text-ink-soft sm:col-span-2">
@@ -465,9 +494,69 @@ function FilaPromo({ p, onCambio, onQuitar }: { p: PromoTarjeta; onCambio: (p: P
   const [sinFin, setSinFin] = useState(!p.fin);
   const [ia, setIa] = useState(p.ia);
   const [seguro, setSeguro] = useState(false);
+  const [quitando, setQuitando] = useState(false);
   const [trabajando, setTrabajando] = useState(false);
+  const [fase, setFase] = useState<Exclude<Fase, "reposo" | "preparando" | "publicando"> | "guardando" | "reposo">("reposo");
+  const [progreso, setProgreso] = useState(0);
   const [fallo, setFallo] = useState("");
   const [listo, setListo] = useState("");
+
+  /** Agrega o cambia el video: se comprime aquí, se sube directo a Supabase y la portada de la tarjeta pasa a abrir el video. */
+  async function subirVideo(archivo: File) {
+    setTrabajando(true);
+    setFallo("");
+    setListo("");
+    setProgreso(0);
+    try {
+      setFase("comprimiendo");
+      const v = await comprimirVideo(archivo, setProgreso);
+      // Si la promoción aún no tiene portada, se saca un cuadro del video para que la tarjeta no quede en blanco
+      let cuadro: Blob | null = null;
+      if (!p.poster) {
+        try {
+          cuadro = await portadaDelVideo(v.blob, v.duracion);
+        } catch {
+          cuadro = null;
+        }
+      }
+      setFase("subiendo");
+      const permiso = await crmPrepararVideoPromo(p.id);
+      await crmSubirVideoPromo(permiso, v.blob);
+      setFase("guardando");
+      let nueva = await crmConfirmarVideoPromo(p.id, permiso.ts, v.duracion);
+      if (cuadro) {
+        try {
+          const pp = await crmPrepararPortadaPromo(p.id);
+          await crmSubirPortada(pp, cuadro);
+          nueva = await crmConfirmarPortadaPromo(p.id, pp.ts);
+        } catch {
+          /* sin portada la promoción sirve igual: se puede subir una después */
+        }
+      }
+      onCambio(nueva);
+      setListo("Video guardado: al tocar la portada en la tarjeta se abre el video (puede tardar hasta 1 minuto en verse).");
+    } catch (e) {
+      setFallo(mensajeDe(e, "No pude subir el video. Intenta de nuevo."));
+    } finally {
+      setTrabajando(false);
+      setFase("reposo");
+    }
+  }
+
+  async function quitarVideo() {
+    setTrabajando(true);
+    setFallo("");
+    setListo("");
+    try {
+      onCambio(await crmQuitarVideoPromo(p.id));
+      setQuitando(false);
+      setListo("Video quitado: al tocar la portada en la tarjeta se abre la imagen completa.");
+    } catch (e) {
+      setFallo(mensajeDe(e, "No pude quitar el video. Intenta de nuevo."));
+    } finally {
+      setTrabajando(false);
+    }
+  }
 
   async function guardar(cambios: Parameters<typeof crmEditarPromo>[1]) {
     setTrabajando(true);
@@ -541,6 +630,22 @@ function FilaPromo({ p, onCambio, onQuitar }: { p: PromoTarjeta; onCambio: (p: P
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
             <BotonImagen texto={p.poster ? "Cambiar portada" : "Subir portada"} disabled={trabajando} onArchivo={(a) => void cambiarPortada(a)} />
+            {navegadorComprime() && <BotonVideo texto={p.src ? "Cambiar video" : "Subir video"} disabled={trabajando} onArchivo={(a) => void subirVideo(a)} />}
+            {p.src &&
+              (quitando ? (
+                <>
+                  <button type="button" disabled={trabajando} onClick={() => void quitarVideo()} className="btn-primary px-3 py-1.5 text-xs">
+                    Sí, quitar video
+                  </button>
+                  <button type="button" disabled={trabajando} onClick={() => setQuitando(false)} className="btn-ghost px-3 py-1.5 text-xs">
+                    No
+                  </button>
+                </>
+              ) : (
+                <button type="button" disabled={trabajando} onClick={() => setQuitando(true)} className="btn-ghost px-3 py-1.5 text-xs">
+                  Quitar video
+                </button>
+              ))}
             <button type="button" disabled={trabajando} onClick={() => void guardar({ visible: !p.visible })} className="btn-ghost px-3 py-1.5 text-xs">
               {p.visible ? "Ocultar" : "Mostrar"}
             </button>
@@ -564,7 +669,8 @@ function FilaPromo({ p, onCambio, onQuitar }: { p: PromoTarjeta; onCambio: (p: P
           </div>
           {trabajando && (
             <p className="mt-2 text-xs font-semibold text-ink" role="status">
-              Guardando…
+              {fase === "comprimiendo" ? `Comprimiendo tu video… ${Math.round(progreso * 100)} %` : fase === "subiendo" ? "Subiendo el video…" : "Guardando…"}
+              {fase !== "reposo" && <span className="mt-1 block text-ink-mute">No cierres esta pestaña hasta que termine.</span>}
             </p>
           )}
           {listo && !trabajando && (

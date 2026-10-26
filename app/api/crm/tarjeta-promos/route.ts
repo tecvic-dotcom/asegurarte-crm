@@ -1,5 +1,16 @@
 import { exigirAdmin } from "@/lib/sesion-admin";
-import { confirmarPortadaPromo, crearPromo, editarPromo, eliminarPromo, listarPromos, prepararPortadaPromo, prepararPromo } from "@/lib/tarjeta-promos";
+import {
+  confirmarPortadaPromo,
+  confirmarVideoPromo,
+  crearPromo,
+  editarPromo,
+  eliminarPromo,
+  listarPromos,
+  prepararPortadaPromo,
+  prepararPromo,
+  prepararVideoPromo,
+  quitarVideoPromo,
+} from "@/lib/tarjeta-promos";
 import { validarCambiosPromo, validarNuevaPromo } from "@/lib/tarjeta-promos-reglas";
 import { UUID } from "@/lib/tarjeta-videos-reglas";
 import { isCloud } from "@/lib/db";
@@ -79,6 +90,24 @@ export async function POST(req: Request): Promise<Response> {
       const r = await confirmarPortadaPromo(body.id, body.ts);
       if (!r.ok) return Response.json({ error: r.error }, { status: r.estado });
       return Response.json({ promo: r.promo });
+    }
+    if (body.accion === "preparar-video") {
+      if (!idValido(body.id)) return Response.json({ error: "Falta la promoción." }, { status: 400 });
+      const permiso = await prepararVideoPromo(body.id);
+      if (!permiso) return Response.json({ error: "Esa promoción ya no existe." }, { status: 404 });
+      return Response.json(permiso);
+    }
+    if (body.accion === "confirmar-video") {
+      if (!idValido(body.id)) return Response.json({ error: "Falta la promoción." }, { status: 400 });
+      const r = await confirmarVideoPromo(body.id, body.ts, body.duracion);
+      if (!r.ok) return Response.json({ error: r.error }, { status: r.estado });
+      return Response.json({ promo: r.promo });
+    }
+    if (body.accion === "quitar-video") {
+      if (!idValido(body.id)) return Response.json({ error: "Falta la promoción." }, { status: 400 });
+      const promo = await quitarVideoPromo(body.id);
+      if (!promo) return Response.json({ error: "Esa promoción ya no existe." }, { status: 404 });
+      return Response.json({ promo });
     }
     return Response.json({ error: "Acción no reconocida" }, { status: 400 });
   } catch (e) {

@@ -1536,19 +1536,19 @@ function vcardTexto() {
     const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
     $("#promos").innerHTML = lista.map((p, i) => {
       const vid = Boolean(p.src), img = p.poster || "";
-      // La portada se abre en tamaño normal (imagen completa); el video, si lo hay, tiene su propio botón. Sin portada pero con video, la tarjeta del video hace de portada.
-      const media = img
+      // Con video, tocar la portada abre el video (con la portada de póster); sin video, abre la imagen completa en tamaño normal.
+      const media = vid
+        ? `<button type="button" class="reel" data-v="${i}" aria-label="Ver el video de la promoción: ${esc(p.titulo)} (${mm(p.dur)})">
+            ${img ? `<img src="${esc(img)}" alt="" width="540" height="960" loading="lazy" decoding="async">` : ""}
+            <span class="play" aria-hidden="true"><svg class="ic"><use href="#i-tri"/></svg></span>
+            <span class="dur" aria-hidden="true">${mm(p.dur)}</span>
+          </button>`
+        : img
         ? `<button type="button" class="reel" data-img="${i}" aria-label="Ver la imagen de la promoción en tamaño normal: ${esc(p.titulo)}">
             <img src="${esc(img)}" alt="" width="540" height="960" loading="lazy" decoding="async">
             <span class="zoom" aria-hidden="true">${ic("zoom")}</span>
           </button>`
-        : vid
-        ? `<button type="button" class="reel" data-v="${i}" aria-label="Ver el video de la promoción: ${esc(p.titulo)} (${mm(p.dur)})">
-            <span class="play" aria-hidden="true"><svg class="ic"><use href="#i-tri"/></svg></span>
-            <span class="dur" aria-hidden="true">${mm(p.dur)}</span>
-          </button>`
         : "";
-      const btnVideo = vid && img ? `<button type="button" class="btn btn-ghost" data-v="${i}">${ic("tri")}Ver el video · ${mm(p.dur)}</button>` : "";
       let vig = "";
       if (p.fin) {
         const d = Math.round((new Date(p.fin + "T00:00:00") - hoy) / 864e5);
@@ -1564,7 +1564,6 @@ function vcardTexto() {
           ${p.detalle ? `<p class="promo-detalle">${esc(p.detalle)}</p>` : ""}
           ${vig}
           <a class="btn btn-wa" target="_blank" rel="noopener" href="${esc(wa(p.clave ? `${p.clave}. Hola Roberto, ${vi}` : `Hola Roberto, ${vi}`))}" data-ev="wa" data-d="promo:${esc(p.titulo)}">${ic("wa")}${p.clave ? `Escríbeme «${esc(p.clave)}»` : "Quiero esta promoción"}</a>
-          ${btnVideo}
         </div>
         ${p.condiciones ? `<p class="promo-legal">${esc(p.condiciones)}</p>` : ""}
       </article>`;
