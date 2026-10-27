@@ -361,6 +361,8 @@ export function LeadPanel({ id, onClose, onCambio, onAgregarCobranza, onVerPoliz
             <input
               type="number"
               min={0}
+              step="any"
+              inputMode="decimal"
               value={valor}
               onChange={(ev) => setValor(ev.target.value)}
               className="field-input"

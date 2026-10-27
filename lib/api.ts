@@ -201,15 +201,19 @@ export async function crmActualizar(
 }
 
 /** Captura un prospecto a mano. Si ya existía (mismo WhatsApp o correo) devuelve duplicado:true y su id. */
-export async function crmCrearLead(lead: NuevoLeadManual): Promise<{ id: string | undefined; duplicado: boolean }> {
+/** `forzar`: guardar aunque comparta WhatsApp o correo con alguien de nombre parecido («es otra persona»). */
+export async function crmCrearLead(
+  lead: NuevoLeadManual,
+  opciones: { forzar?: boolean } = {},
+): Promise<{ id: string | undefined; duplicado: boolean; nombre: string | undefined }> {
   const data = (await jsonOrThrow(
     await fetch("/api/crm/leads", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ accion: "crear", lead }),
+      body: JSON.stringify({ accion: "crear", lead, forzar: opciones.forzar === true }),
     }),
-  )) as { id?: string; duplicado: boolean };
-  return { id: data.id, duplicado: data.duplicado };
+  )) as { id?: string; duplicado: boolean; nombre?: string };
+  return { id: data.id, duplicado: data.duplicado, nombre: data.nombre };
 }
 
 export async function crmAgregarActividad(id: string, tipo: TipoActividad, texto: string): Promise<void> {

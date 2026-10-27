@@ -65,6 +65,19 @@ export function mismoNombre(a: string, b: string): boolean {
   return ta.length < tb.length ? estaCortado(a) && parejas(ta, tb, true) : estaCortado(b) && parejas(tb, ta, true);
 }
 
+/**
+ * ¿Podría ser la misma persona? Más tolerante que `mismoNombre`: basta con que TODAS las palabras del nombre más corto estén en el
+ * más largo («Rodrigo Juarez» ↔ «Rodrigo Juarez Hernandez»). Sirve para avisar de un posible duplicado cuando dos prospectos comparten
+ * WhatsApp o correo; si no coinciden en ninguna palabra son personas distintas (pareja, hijos, el número de la familia o de la oficina).
+ */
+export function podriaSerLaMismaPersona(a: string, b: string): boolean {
+  const ta = tokensDeNombre(a);
+  const tb = tokensDeNombre(b);
+  if (!ta.length || !tb.length) return sinAcentos(a).trim().toLowerCase() === sinAcentos(b).trim().toLowerCase();
+  const [corto, largo] = ta.length <= tb.length ? [ta, tb] : [tb, ta];
+  return parejas(corto, largo, false);
+}
+
 /** Junta en grupos a los que son la misma persona. Mantiene el orden de aparición. */
 export function agruparPorNombre<T>(items: T[], nombreDe: (t: T) => string): T[][] {
   const grupos: { nombres: string[]; items: T[] }[] = [];

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Icon } from "@iconify/react";
 import { crmPolizas } from "@/lib/api";
 import { textoDeCobro } from "@/lib/clientes-reglas";
-import { moneda } from "@/lib/crm-data";
+import { moneda, monedaConCentavos } from "@/lib/crm-data";
 import { infoRamo, RAMOS } from "@/lib/ramos";
 import { whatsappDe } from "@/lib/seguimiento-reglas";
 import type { Lead, Poliza, Ramo } from "@/lib/types";
@@ -208,7 +208,7 @@ export function ClientesGanados({ leads, esAdmin, soloSinRamo = false, onAbrir, 
                 <div className="mt-3 flex items-end justify-between gap-2">
                   <div>
                     <p className="text-[11px] uppercase tracking-wide text-ink-mute">Prima total</p>
-                    <p className="text-lg font-bold text-ink">{c.valor > 0 ? moneda(c.valor) : "Sin capturar"}</p>
+                    <p className="text-lg font-bold text-ink">{c.valor > 0 ? monedaConCentavos(c.valor) : "Sin capturar"}</p>
                   </div>
                   {sabeDePolizas && (
                     <button

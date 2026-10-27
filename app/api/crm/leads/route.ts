@@ -42,6 +42,8 @@ export async function POST(req: Request): Promise<Response> {
     texto?: string;
     tipo?: string;
     lead?: Partial<NuevoLeadManual>;
+    /** «Es otra persona»: guardar aunque comparta WhatsApp o correo con alguien de nombre parecido. */
+    forzar?: boolean;
     patch?: {
       nombre?: string;
       notas?: string;
@@ -79,11 +81,12 @@ export async function POST(req: Request): Promise<Response> {
         s.nombre,
         // Un vendedor captura ya asignado a él; así lo ve en su cartera.
         s.rol === "vendedor" ? s.id : null,
+        { forzar: body.forzar === true },
       );
       if (!r.ok) {
         return Response.json({ errores: r.errores, error: Object.values(r.errores ?? {})[0] ?? "Revisa los datos." }, { status: 422 });
       }
-      return Response.json({ ok: true, duplicado: r.duplicado, id: r.id });
+      return Response.json({ ok: true, duplicado: r.duplicado, id: r.id, nombre: r.nombre });
     }
     if (body.accion === "mover" && body.id && body.etapa) {
       const lead = await actualizarLead(body.id, { etapa: body.etapa as EtapaId }, autor, soloMio);

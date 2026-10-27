@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
-import { moneda } from "@/lib/crm-data";
+import { moneda, monedaConCentavos } from "@/lib/crm-data";
 import { diasEntre, fechaLocal, hoyLocal } from "@/lib/fechas";
 import { infoRamo, RAMOS } from "@/lib/ramos";
 import { whatsappDe } from "@/lib/seguimiento-reglas";
@@ -182,7 +182,7 @@ export function ProspectosPerdidos({ leads, onAbrir, onCotizar, onReactivar }: P
 
                 <div className="mt-3">
                   <p className="text-[11px] uppercase tracking-wide text-ink-mute">Prima total</p>
-                  <p className="text-lg font-bold text-ink">{l.valor > 0 ? moneda(l.valor) : "Sin capturar"}</p>
+                  <p className="text-lg font-bold text-ink">{l.valor > 0 ? monedaConCentavos(l.valor) : "Sin capturar"}</p>
                 </div>
 
                 <div className="mt-3 grid grid-cols-2 gap-2">

@@ -1,7 +1,7 @@
 "use client";
 
 import { Icon } from "@iconify/react";
-import { etapa as etapaPorId, moneda } from "@/lib/crm-data";
+import { etapa as etapaPorId, monedaConCentavos } from "@/lib/crm-data";
 import { infoRamo } from "@/lib/ramos";
 import type { Lead } from "@/lib/types";
 
@@ -79,7 +79,7 @@ export function TablaLeads({ leads, onAbrir }: TablaLeadsProps) {
                   {l.origen}
                   {l.utm_source && <span className="block text-xs text-ink-mute">via {l.utm_source}</span>}
                 </td>
-                <td className="px-4 py-3 text-right text-ink">{l.valor > 0 ? moneda(l.valor) : "—"}</td>
+                <td className="px-4 py-3 text-right text-ink">{l.valor > 0 ? monedaConCentavos(l.valor) : "—"}</td>
                 <td className="px-4 py-3 text-ink-mute">{fecha(l.creado_en)}</td>
                 <td className="px-4 py-3 text-right">
                   <Icon icon="flat-color-icons:expand" width={18} className="opacity-60" />

@@ -36,6 +36,16 @@ export function moneda(n: number): string {
   });
 }
 
+/** La prima de un prospecto: con centavos si los tiene ($12,371.50), sin ellos si es redonda ($12,371). */
+export function monedaConCentavos(n: number): string {
+  return n.toLocaleString("es-MX", {
+    style: "currency",
+    currency: "MXN",
+    minimumFractionDigits: Number.isInteger(n) ? 0 : 2,
+    maximumFractionDigits: 2,
+  });
+}
+
 /** Etiqueta legible para el tipo de actividad del timeline. */
 export const ICONO_ACTIVIDAD: Record<string, string> = {
   nota: "flat-color-icons:edit-image",

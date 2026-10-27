@@ -14,7 +14,7 @@ import {
 } from "@dnd-kit/core";
 import { AnimatePresence, motion } from "framer-motion";
 import { Icon } from "@iconify/react";
-import { ETAPAS, ETAPAS_ACTIVAS, moneda } from "@/lib/crm-data";
+import { ETAPAS, ETAPAS_ACTIVAS, moneda, monedaConCentavos } from "@/lib/crm-data";
 import { formatoWhatsapp } from "@/lib/clientes-reglas";
 import { infoRamo } from "@/lib/ramos";
 import type { Lead, EtapaId } from "@/lib/types";
@@ -208,7 +208,7 @@ function CardVisual({
       <div className="flex items-start justify-between gap-2">
         <div {...handleProps} className="min-w-0 flex-1 cursor-grab touch-none active:cursor-grabbing">
           <p className="truncate text-sm font-semibold text-ink">{lead.nombre}</p>
-          {lead.valor > 0 && <p className="text-xs text-ink-soft">{moneda(lead.valor)}</p>}
+          {lead.valor > 0 && <p className="text-xs text-ink-soft">{monedaConCentavos(lead.valor)}</p>}
         </div>
         {onAbrir && (
           <button

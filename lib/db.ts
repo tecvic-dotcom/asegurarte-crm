@@ -16,7 +16,17 @@ import { adminDb, cloudReady } from "./supabase-admin";
 import { normCorreo, normWhatsapp, normCodigoPostal } from "./normalize";
 import { validarLead, validarLeadManual } from "./validacion";
 import { hashPassword, verifyPassword } from "./auth";
-import { etapaNoPermitida, faltaMigracion, MENSAJE_MIGRACION, MENSAJE_MIGRACION_DOBLE_FACTOR, MENSAJE_MIGRACION_STAND_BY, MigracionPendienteError } from "./migracion";
+import {
+  contactoRepetidoEnBase,
+  etapaNoPermitida,
+  faltaMigracion,
+  MENSAJE_MIGRACION,
+  MENSAJE_MIGRACION_CONTACTO_COMPARTIDO,
+  MENSAJE_MIGRACION_DOBLE_FACTOR,
+  MENSAJE_MIGRACION_STAND_BY,
+  MigracionPendienteError,
+} from "./migracion";
+import { podriaSerLaMismaPersona } from "./clientes-agrupar";
 import { esRamo } from "./ramos";
 import { AVISO_SEMANA_VERSION, resumenPlan, validarProspectoSemana, type PlanSemana } from "./semana-reglas";
 import { ZONA_HORARIA } from "./fechas";
@@ -65,6 +75,10 @@ interface Store {
 
 function nowISO(): string {
   return new Date().toISOString();
+}
+/** La prima de un prospecto va en pesos con centavos (la columna es numeric); nunca negativa. */
+function aCentavos(n: number): number {
+  return Math.max(0, Math.round((Number(n) || 0) * 100) / 100);
 }
 function isoHoursAgo(h: number): string {
   return new Date(Date.now() - h * 3_600_000).toISOString();
@@ -207,6 +221,8 @@ export interface CrearLeadResultado {
   ok: boolean;
   duplicado: boolean;
   id?: string;
+  /** Con `duplicado`: el nombre del prospecto que ya existe (en captura manual), para mostrarlo. */
+  nombre?: string;
   errores?: Record<string, string>;
 }
 
@@ -397,8 +413,16 @@ const ETAPAS_VALIDAS: EtapaId[] = ["nuevo", "cita", "propuesta", "stand_by", "ga
  * Prospecto capturado a mano desde el CRM (sin formulario público, sin consentimiento en pantalla:
  * quien captura es tu equipo, ya con la persona). Entra con la etapa que elijas.
  * Un vendedor lo captura ya asignado a él, para verlo en su cartera.
+ *
+ * Compartir WhatsApp o correo es normal (pareja, hijos, el número de la oficina): solo es un posible duplicado si ADEMÁS el nombre
+ * se parece. Con `forzar` se guarda igual (Roberto confirmó que es otra persona).
  */
-export async function crearLeadManual(input: NuevoLeadManual, autor: string, asignadoA: string | null): Promise<CrearLeadResultado> {
+export async function crearLeadManual(
+  input: NuevoLeadManual,
+  autor: string,
+  asignadoA: string | null,
+  opciones: { forzar?: boolean } = {},
+): Promise<CrearLeadResultado> {
   const v = validarLeadManual(input);
   if (!v.ok) return { ok: false, duplicado: false, errores: v.errores };
   if (!ETAPAS_VALIDAS.includes(input.etapa)) return { ok: false, duplicado: false, errores: { etapa: "Elige una etapa." } };
@@ -413,7 +437,7 @@ export async function crearLeadManual(input: NuevoLeadManual, autor: string, asi
     whatsapp,
     mensaje: "",
     etapa: input.etapa,
-    valor: Math.max(0, Math.round(Number(input.valor) || 0)),
+    valor: aCentavos(input.valor),
     origen: (input.origen || "Manual").trim().slice(0, 60) || "Manual",
     utm_source: "",
     utm_medium: "",
@@ -432,18 +456,31 @@ export async function crearLeadManual(input: NuevoLeadManual, autor: string, asi
     ramo: input.ramo,
     cerrado_en: input.etapa === "ganado" ? ahora : null,
   };
-  const textoActividad = `Capturado a mano por ${autor} (${fila.origen}) en la etapa "${fila.etapa}".`;
 
+  // Quién ya usa ese WhatsApp o correo (consultas parametrizadas, igual que la captura pública).
+  const usan: { id: string; nombre: string }[] = [];
   if (cloudReady && adminDb) {
-    // Mismas consultas parametrizadas que la captura pública.
     if (correo) {
-      const { data } = await adminDb.from("leads").select("id").eq("correo", correo).limit(1);
-      if (data && data.length) return { ok: true, duplicado: true, id: (data[0] as { id: string }).id };
+      const { data } = await adminDb.from("leads").select("id,nombre").eq("correo", correo).limit(20);
+      usan.push(...((data ?? []) as { id: string; nombre: string }[]));
     }
     if (whatsapp) {
-      const { data } = await adminDb.from("leads").select("id").eq("whatsapp", whatsapp).limit(1);
-      if (data && data.length) return { ok: true, duplicado: true, id: (data[0] as { id: string }).id };
+      const { data } = await adminDb.from("leads").select("id,nombre").eq("whatsapp", whatsapp).limit(20);
+      usan.push(...((data ?? []) as { id: string; nombre: string }[]));
     }
+  } else {
+    for (const l of store().leads) {
+      if ((correo && l.correo === correo) || (whatsapp && l.whatsapp === whatsapp)) usan.push({ id: l.id, nombre: l.nombre });
+    }
+  }
+  const comparten = usan.filter((u, i) => usan.findIndex((x) => x.id === u.id) === i);
+  const mismo = comparten.find((u) => podriaSerLaMismaPersona(u.nombre, input.nombre));
+  if (mismo && !opciones.forzar) return { ok: true, duplicado: true, id: mismo.id, nombre: mismo.nombre };
+
+  const aviso = comparten.length ? ` Comparte WhatsApp o correo con ${comparten.slice(0, 3).map((u) => `«${u.nombre}»`).join(", ")}.` : "";
+  const textoActividad = `Capturado a mano por ${autor} (${fila.origen}) en la etapa "${fila.etapa}".${aviso}`;
+
+  if (cloudReady && adminDb) {
     let { data, error } = await adminDb.from("leads").insert(fila).select("id").limit(1);
     if (error && faltaMigracion(error)) {
       // Sin la migración 0003 no existen ramo ni cerrado_en: el prospecto entra igual, sin ramo.
@@ -454,6 +491,7 @@ export async function crearLeadManual(input: NuevoLeadManual, autor: string, asi
       ({ data, error } = await adminDb.from("leads").insert(sinCamposNuevos).select("id").limit(1));
     }
     if (etapaNoPermitida(error, input.etapa)) throw new MigracionPendienteError(MENSAJE_MIGRACION_STAND_BY, "0018_stand_by.sql");
+    if (contactoRepetidoEnBase(error)) throw new MigracionPendienteError(MENSAJE_MIGRACION_CONTACTO_COMPARTIDO, "0024_contacto_compartido.sql");
     if (error) throw new Error(error.message);
     const id = (data?.[0] as { id: string } | undefined)?.id;
     if (id) await adminDb.from("actividad").insert({ lead_id: id, tipo: "nota", texto: textoActividad, autor });
@@ -461,8 +499,6 @@ export async function crearLeadManual(input: NuevoLeadManual, autor: string, asi
   }
 
   const s = store();
-  const existe = s.leads.find((l) => (correo && l.correo === correo) || (whatsapp && l.whatsapp === whatsapp));
-  if (existe) return { ok: true, duplicado: true, id: existe.id };
   const id = uid("ld");
   s.leads.unshift({ id, creado_en: ahora, actualizado_en: ahora, ...fila });
   s.actividad.unshift({ id: uid("ac"), lead_id: id, tipo: "nota", texto: textoActividad, autor, creado_en: ahora });
@@ -535,7 +571,7 @@ export async function actualizarLead(
   const limpio: Record<string, unknown> = { actualizado_en: nowISO() };
   if (patch.nombre !== undefined) limpio.nombre = patch.nombre.trim().slice(0, 160);
   if (patch.notas !== undefined) limpio.notas = patch.notas.slice(0, 4000);
-  if (patch.valor !== undefined) limpio.valor = Math.max(0, Math.round(patch.valor));
+  if (patch.valor !== undefined) limpio.valor = aCentavos(patch.valor);
   if (patch.asignado_a !== undefined) limpio.asignado_a = patch.asignado_a;
   if (patch.etapa !== undefined) limpio.etapa = patch.etapa;
   if (patch.genero !== undefined) limpio.genero = patch.genero;

@@ -39,18 +39,22 @@ function FormularioProspecto({ onGuardado, onCancelar, onAbrir }: { onGuardado: 
   const [f, setF] = useState<NuevoLeadManual>(VACIO);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [duplicado, setDuplicado] = useState<string | null>(null);
-  const set = (p: Partial<NuevoLeadManual>) => setF((x) => ({ ...x, ...p }));
+  const [duplicado, setDuplicado] = useState<{ id: string; nombre: string } | null>(null);
+  // Si cambia el nombre o el contacto, el aviso de «ya existe» deja de valer.
+  const set = (p: Partial<NuevoLeadManual>) => {
+    setF((x) => ({ ...x, ...p }));
+    setDuplicado(null);
+  };
 
-  async function guardar(e: React.FormEvent) {
-    e.preventDefault();
+  /** `forzar`: Roberto confirmó que NO es la persona que ya existe y quiere guardarla igual. */
+  async function enviar(forzar: boolean) {
     setGuardando(true);
     setError(null);
     setDuplicado(null);
     try {
-      const r = await crmCrearLead(f);
+      const r = await crmCrearLead(f, { forzar });
       if (r.duplicado && r.id) {
-        setDuplicado(r.id);
+        setDuplicado({ id: r.id, nombre: r.nombre || "ese prospecto" });
       } else {
         onGuardado();
       }
@@ -59,6 +63,11 @@ function FormularioProspecto({ onGuardado, onCancelar, onAbrir }: { onGuardado: 
     } finally {
       setGuardando(false);
     }
+  }
+
+  function guardar(e: React.FormEvent) {
+    e.preventDefault();
+    void enviar(false);
   }
 
   return (
@@ -100,7 +109,7 @@ function FormularioProspecto({ onGuardado, onCancelar, onAbrir }: { onGuardado: 
         </label>
         <label className="block text-xs text-ink-mute">
           Prima total (MXN)
-          <input className="field-input mt-1" type="number" min={0} inputMode="numeric" value={f.valor || ""} onChange={(e) => set({ valor: Number(e.target.value) || 0 })} placeholder="0" />
+          <input className="field-input mt-1" type="number" min={0} step="any" inputMode="decimal" value={f.valor || ""} onChange={(e) => set({ valor: Number(e.target.value) || 0 })} placeholder="0.00" />
         </label>
         <label className="block text-xs text-ink-mute">
           ¿De dónde viene?
@@ -124,12 +133,19 @@ function FormularioProspecto({ onGuardado, onCancelar, onAbrir }: { onGuardado: 
         </p>
       )}
       {duplicado && (
-        <p className="text-sm text-ink-soft" role="status">
-          Ya tienes un prospecto con ese WhatsApp o correo.{" "}
-          <button type="button" onClick={() => onAbrir(duplicado)} className="font-semibold text-ink underline">
-            Abrir su expediente
-          </button>
-        </p>
+        <div className="text-sm text-ink-soft" role="status">
+          <p>
+            Ya tienes a <strong className="text-ink">{duplicado.nombre}</strong> con ese WhatsApp o correo. ¿Es la misma persona?
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button type="button" onClick={() => onAbrir(duplicado.id)} className="btn-ghost px-3 py-2 text-sm">
+              Sí, abrir su expediente
+            </button>
+            <button type="button" onClick={() => void enviar(true)} disabled={guardando} className="btn-ghost px-3 py-2 text-sm">
+              No, es otra persona: guardar
+            </button>
+          </div>
+        </div>
       )}
       <div className="flex flex-wrap gap-2">
         <button type="submit" disabled={guardando} className="btn-primary px-4 py-2.5 text-sm">
@@ -247,6 +263,7 @@ export function Contactos({ leads, onAbrir, onCambio }: ContactosProps) {
                   <input
                     type="number"
                     min={0}
+                    step="any"
                     defaultValue={l.valor}
                     onBlur={(e) => Number(e.target.value) !== l.valor && guardarCampo(l.id, { valor: Number(e.target.value) || 0 })}
                     disabled={editando === l.id}

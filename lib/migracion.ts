@@ -69,6 +69,14 @@ export function etapaNoPermitida(error: { code?: string } | null | undefined, et
   return etapa === "stand_by" && error?.code === "23514";
 }
 
+export const MENSAJE_MIGRACION_CONTACTO_COMPARTIDO =
+  "Falta un paso para guardar a dos personas que comparten WhatsApp o correo (pareja, familia, el número de la oficina): abre Supabase → SQL Editor → New query, pega el archivo supabase/migrations/0024_contacto_compartido.sql y dale Run.";
+
+/** La base rechazó el prospecto porque aún exige WhatsApp y correo únicos (falta correr la migración 0024). */
+export function contactoRepetidoEnBase(error: { code?: string } | null | undefined): boolean {
+  return error?.code === "23505";
+}
+
 export const MENSAJE_MIGRACION_CRUZADA_2 =
   "Falta un paso para activar las familias, los momentos de confianza y las ventas cruzadas en tu meta: abre Supabase → SQL Editor → New query, pega el archivo supabase/migrations/0017_venta_cruzada_2.sql y dale Run.";
 
