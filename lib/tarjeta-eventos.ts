@@ -129,9 +129,9 @@ export async function resumenesParaManager(): Promise<{ d30: ResumenTarjeta; d7:
   return { d30: { ...resumir(filas, 30, hoy), cloud: cloudReady }, d7: { ...resumir(filas, 7, hoy), cloud: cloudReady } };
 }
 
-/** Resumen de los últimos 7, 30 o 90 días. */
+/** Resumen de los últimos 7, 30 o 90 días, con el periodo anterior de igual largo para compararlo. */
 export async function resumenTarjeta(dias: number): Promise<ResumenTarjeta> {
   const d = [7, 30, 90].includes(dias) ? dias : 30;
-  const filas = await leerDesde(new Date(Date.now() - (d + 1) * 86_400_000).toISOString());
+  const filas = await leerDesde(new Date(Date.now() - (2 * d + 1) * 86_400_000).toISOString());
   return { ...resumir(filas, d, hoyLocal()), cloud: cloudReady };
 }

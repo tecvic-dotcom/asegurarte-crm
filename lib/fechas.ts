@@ -23,6 +23,13 @@ export function hoyLocal(): string {
   return fechaLocal(new Date());
 }
 
+const FORMATO_HORA = new Intl.DateTimeFormat("en-GB", { timeZone: ZONA_HORARIA, hour: "2-digit", hourCycle: "h23" });
+
+/** Hora local (0–23, hora de Monterrey) de un instante. */
+export function horaLocal(instante: Date | string): number {
+  return Number(FORMATO_HORA.format(typeof instante === "string" ? new Date(instante) : instante));
+}
+
 function aUTC(f: string): number {
   const [y, m, d] = f.split("-").map(Number);
   return Date.UTC(y, m - 1, d);
@@ -30,6 +37,11 @@ function aUTC(f: string): number {
 
 function deUTC(ms: number): string {
   return new Date(ms).toISOString().slice(0, 10);
+}
+
+/** Día de la semana de una fecha AAAA-MM-DD: 0 = lunes … 6 = domingo. */
+export function diaSemana(f: string): number {
+  return (new Date(aUTC(f)).getUTCDay() + 6) % 7;
 }
 
 /** true si el texto es una fecha real en formato AAAA-MM-DD (no acepta 2026-02-31). */

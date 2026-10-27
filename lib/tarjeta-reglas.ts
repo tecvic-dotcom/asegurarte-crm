@@ -3,7 +3,11 @@
  * Las comparten el endpoint que recibe los toques, el resumen y el panel «Tarjeta web».
  * Nada de lo que se guarda identifica a una persona: solo qué se tocó, en qué tipo de pantalla y de dónde llegó.
  */
-import { fechaLocal, sumarDias } from "./fechas";
+import { diaSemana, fechaLocal, horaLocal, sumarDias } from "./fechas";
+import type { Lead } from "./types";
+
+/** El origen con el que Roberto marca, en el expediente, al prospecto que le escribió desde la tarjeta. */
+export const ORIGEN_TARJETA = "Tarjeta web";
 
 /** Eventos que la tarjeta puede mandar (lo demás se ignora). */
 export const EVENTOS_TARJETA = [
@@ -113,11 +117,51 @@ export interface ResumenSemana {
   fuentes: Conteo[];
 }
 
+/** El periodo de igual largo justo antes del que se mira: da el «+15.7 % vs. 25 sep» del panel. */
+export interface PeriodoAnterior {
+  desde: string;
+  hasta: string;
+  visitas: number;
+  /** WhatsApp + llamada + cita. */
+  contactos: number;
+  guardaron: number;
+  /** false si la medición empezó después de que arrancara ese periodo: compararlo engañaría. */
+  comparable: boolean;
+}
+
+/** Algo que se abre en la tarjeta: cuántas veces lo abrieron y cuántas tocaron su botón de WhatsApp. */
+export interface ItemContenido {
+  tipo: "video" | "promocion" | "historia" | "pregunta" | "foto";
+  nombre: string;
+  aperturas: number;
+  wa: number;
+}
+
+/** Lo que sale del CRM (no de la medición): prospectos que Roberto marcó con origen «Tarjeta web». */
+export interface ResumenCrm {
+  prospectos: number;
+  prospectosAnterior: number;
+  /** Ganados de todo el tiempo con ese origen. */
+  ganados: number;
+}
+
 export interface ResumenTarjeta {
   dias: number;
   desde: string;
   hasta: string;
   cloud: boolean;
+  anterior: PeriodoAnterior;
+  /** Primer día con visitas en lo que se leyó (null si no hay). */
+  datosDesde: string | null;
+  /** Instante (ISO) de la última visita que se leyó. */
+  ultimaVisita: string | null;
+  contactosPorDia: Array<{ dia: string; n: number }>;
+  /** Visitas por hora del día (hora de Monterrey): 24 valores. */
+  horas: number[];
+  /** Visitas por día de la semana: 7 valores, de lunes a domingo. */
+  diasSemana: number[];
+  contenido: ItemContenido[];
+  crm?: ResumenCrm;
   /** Veces que se cargó la página (no son personas únicas). */
   visitas: number;
   visitasPorDia: Array<{ dia: string; n: number }>;
@@ -155,14 +199,155 @@ function contar(filas: FilaEvento[], evento: string, clave: (f: FilaEvento) => s
     .slice(0, max);
 }
 
+// Cómo se llama cada origen en el panel: las etiquetas del enlace (?s=) y los sitios que mandan visitas.
+const NOMBRE_FUENTE: Record<string, string> = {
+  directo: "Directo (sin etiqueta)",
+  ig: "Instagram",
+  "l.instagram.com": "Instagram",
+  "instagram.com": "Instagram",
+  wa: "WhatsApp",
+  grupos: "Grupos de WhatsApp",
+  tiktok: "TikTok",
+  fb: "Facebook",
+  "l.facebook.com": "Facebook",
+  "m.facebook.com": "Facebook",
+  "facebook.com": "Facebook",
+  linkedin: "LinkedIn",
+  "lnkd.in": "LinkedIn",
+  yt: "YouTube",
+  "youtube.com": "YouTube",
+  "m.youtube.com": "YouTube",
+  correo: "Firma del correo",
+  anuncio: "Anuncios de pago",
+  qr: "Código QR de la tarjeta",
+  amigo: "Guía compartida por un amigo",
+  "google.com": "Google",
+  "especialistaenasegurarte.lat": "Mi sitio web",
+};
+
+/** Origen en palabras: «ig» y «l.instagram.com» son «Instagram» y se suman; lo que no se conoce queda como llegó. */
+export function fuentesLegibles(filas: Conteo[]): Conteo[] {
+  const m = new Map<string, number>();
+  for (const f of filas) {
+    const nombre = NOMBRE_FUENTE[f.nombre] ?? f.nombre;
+    m.set(nombre, (m.get(nombre) ?? 0) + f.n);
+  }
+  return [...m.entries()].map(([nombre, n]) => ({ nombre, n })).sort((a, b) => b.n - a.n || a.nombre.localeCompare(b.nombre, "es"));
+}
+
+/**
+ * Videos, historias, preguntas, fotos y promociones con cuántas veces los abrieron y cuántos toques de WhatsApp llevan.
+ * El botón de WhatsApp guarda «tipo:nombre» recortado a 60 letras (con su prefijo), así que el mismo contenido llega con el
+ * nombre un poco más corto que el de su apertura: se juntan por las primeras 50 letras y se muestra el nombre más largo.
+ */
+function contenidoDe(filas: FilaEvento[]): ItemContenido[] {
+  const mapa = new Map<string, ItemContenido>();
+  const item = (tipo: ItemContenido["tipo"], nombre: string) => {
+    const k = `${tipo}|${nombre.slice(0, 50).toLowerCase()}`;
+    let x = mapa.get(k);
+    if (!x) mapa.set(k, (x = { tipo, nombre, aperturas: 0, wa: 0 }));
+    else if (nombre.length > x.nombre.length) x.nombre = nombre;
+    return x;
+  };
+  for (const f of filas) {
+    if (!f.detalle) continue;
+    switch (f.evento) {
+      case "reel":
+        item("video", f.detalle).aperturas += 1;
+        break;
+      case "promo":
+        item("promocion", f.detalle).aperturas += 1;
+        break;
+      case "historia":
+        item("historia", f.detalle).aperturas += 1;
+        break;
+      case "faq":
+        item("pregunta", f.detalle).aperturas += 1;
+        break;
+      case "foto":
+        // La imagen de una promoción se amplía con el nombre «Promo: …».
+        if (f.detalle.startsWith("Promo: ")) item("promocion", f.detalle.slice(7)).aperturas += 1;
+        else item("foto", f.detalle).aperturas += 1;
+        break;
+      case "wa": {
+        const corte = f.detalle.indexOf(":");
+        if (corte < 0) break;
+        const clase = f.detalle.slice(0, corte);
+        const nombre = f.detalle.slice(corte + 1).trim();
+        if (!nombre) break;
+        if (clase === "video") item("video", nombre).wa += 1;
+        else if (clase === "promo") item("promocion", nombre).wa += 1;
+        else if (clase === "faq") item("pregunta", nombre).wa += 1;
+        break;
+      }
+    }
+  }
+  return [...mapa.values()]
+    .sort((a, b) => b.aperturas + b.wa - (a.aperturas + a.wa) || a.nombre.localeCompare(b.nombre, "es"))
+    .slice(0, 80);
+}
+
+/** Prospectos que Roberto marcó con origen «Tarjeta web»: nuevos en el periodo, en el anterior y ganados de siempre. */
+export function prospectosDeLaTarjeta(
+  leads: ReadonlyArray<Pick<Lead, "origen" | "etapa" | "creado_en">>,
+  r: Pick<ResumenTarjeta, "desde" | "hasta" | "anterior">,
+): ResumenCrm {
+  const suyos = leads.filter((l) => (l.origen ?? "").trim().toLowerCase() === ORIGEN_TARJETA.toLowerCase());
+  const entre = (l: Pick<Lead, "creado_en">, d: string, h: string) => {
+    const f = fechaLocal(l.creado_en);
+    return f >= d && f <= h;
+  };
+  return {
+    prospectos: suyos.filter((l) => entre(l, r.desde, r.hasta)).length,
+    prospectosAnterior: suyos.filter((l) => entre(l, r.anterior.desde, r.anterior.hasta)).length,
+    ganados: suyos.filter((l) => l.etapa === "ganado").length,
+  };
+}
+
 /** Arma el resumen de los últimos `dias` días (incluye hoy) con las filas que se le den. */
-export function resumir(filas: FilaEvento[], dias: number, hoy: string): Omit<ResumenTarjeta, "cloud"> {
+export function resumir(filas: FilaEvento[], dias: number, hoy: string): Omit<ResumenTarjeta, "cloud" | "crm"> {
   const desde = sumarDias(hoy, -(dias - 1));
-  const dentro = filas.filter((f) => {
+  const antesHasta = sumarDias(desde, -1);
+  const antesDesde = sumarDias(desde, -dias);
+  const dentro: FilaEvento[] = [];
+  const antes: FilaEvento[] = [];
+  let datosDesde: string | null = null;
+  let ultimaVisita: string | null = null;
+  for (const f of filas) {
     const d = fechaLocal(f.creado_en);
-    return d >= desde && d <= hoy;
-  });
+    if (d >= desde && d <= hoy) dentro.push(f);
+    else if (d >= antesDesde && d <= antesHasta) antes.push(f);
+    if (f.evento === "vista") {
+      if (datosDesde === null || d < datosDesde) datosDesde = d;
+      if (ultimaVisita === null || f.creado_en > ultimaVisita) ultimaVisita = f.creado_en;
+    }
+  }
+  const esContacto = (f: FilaEvento) => f.evento === "wa" || f.evento === "llamar" || f.evento === "agendar";
   const vistas = dentro.filter((f) => f.evento === "vista");
+  const horas = Array.from({ length: 24 }, () => 0);
+  const diasSemana = Array.from({ length: 7 }, () => 0);
+  for (const f of vistas) {
+    horas[horaLocal(f.creado_en)] += 1;
+    diasSemana[diaSemana(fechaLocal(f.creado_en))] += 1;
+  }
+  const porDiaContactos = new Map<string, number>();
+  for (const f of dentro) {
+    if (!esContacto(f)) continue;
+    const d = fechaLocal(f.creado_en);
+    porDiaContactos.set(d, (porDiaContactos.get(d) ?? 0) + 1);
+  }
+  const contactosPorDia = Array.from({ length: dias }, (_, i) => {
+    const dia = sumarDias(desde, i);
+    return { dia, n: porDiaContactos.get(dia) ?? 0 };
+  });
+  const anterior: PeriodoAnterior = {
+    desde: antesDesde,
+    hasta: antesHasta,
+    visitas: antes.filter((f) => f.evento === "vista").length,
+    contactos: antes.filter(esContacto).length,
+    guardaron: antes.filter((f) => f.evento === "guardar").length,
+    comparable: datosDesde !== null && datosDesde <= antesDesde,
+  };
   const porDia = new Map<string, number>();
   for (const f of vistas) {
     const d = fechaLocal(f.creado_en);
@@ -182,6 +367,13 @@ export function resumir(filas: FilaEvento[], dias: number, hoy: string): Omit<Re
     dias,
     desde,
     hasta: hoy,
+    anterior,
+    datosDesde,
+    ultimaVisita,
+    contactosPorDia,
+    horas,
+    diasSemana,
+    contenido: contenidoDe(dentro),
     visitas: vistas.length,
     visitasPorDia,
     dispositivos: {
@@ -262,12 +454,12 @@ export function tarjetaParaManager(r30: ResumenTarjeta, r7: ResumenTarjeta): Rec
   });
   const s = r30.semana;
   return {
-    nota: "Medición anónima de la tarjeta web (/roberto). 'Visitas' = veces que se cargó la página (no personas únicas). 'Toques' = botones tocados: NO son mensajes enviados ni prospectos, y no se pueden ligar a un prospecto concreto. 'directo' en fuentes = sin etiqueta de origen (?s=ig|wa|tiktok|qr).",
+    nota: "Medición anónima de la tarjeta web (/roberto). 'Visitas' = veces que se cargó la página (no personas únicas). 'Toques' = botones tocados: NO son mensajes enviados ni prospectos, y no se pueden ligar a un prospecto concreto. 'Directo (sin etiqueta)' en fuentes = sin etiqueta de origen en el enlace (?s=ig|wa|tiktok|qr).",
     datos_desde: r30.visitasPorDia.find((d) => d.n > 0)?.dia ?? r30.desde,
     ultimos_30_dias: {
       ...periodo(r30),
       desde_celular_pct: Math.round((r30.dispositivos.movil / r30.visitas) * 100),
-      fuentes: top(r30.fuentes, 5),
+      fuentes: top(fuentesLegibles(r30.fuentes), 5),
       llegaron_a_la_seccion: Object.fromEntries(r30.secciones.filter((x) => x.n > 0).map((x) => [x.id, x.n])),
       whatsapp_por_lugar: top(r30.waPorLugar, 5),
       productos_que_piden: top(r30.productos, 4),
