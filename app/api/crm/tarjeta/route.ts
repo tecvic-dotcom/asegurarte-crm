@@ -1,7 +1,7 @@
 import { exigirAdmin } from "@/lib/sesion-admin";
 import { listLeads } from "@/lib/db";
 import { resumenTarjeta } from "@/lib/tarjeta-eventos";
-import { claveContenido, prospectosDeLaTarjeta } from "@/lib/tarjeta-reglas";
+import { claveVideo, prospectosDeLaTarjeta } from "@/lib/tarjeta-reglas";
 import { listarFijos, listarVideos } from "@/lib/tarjeta-videos";
 import { MigracionPendienteError } from "@/lib/migracion";
 
@@ -13,7 +13,7 @@ async function miniaturasDeVideos(): Promise<Record<string, string>> {
   const [fijos, subidos] = await Promise.all([listarFijos().catch(() => []), listarVideos().catch(() => [])]);
   const m: Record<string, string> = {};
   // Los fijos van primero: si un video subido repite el título de uno fijo, gana su portada.
-  for (const v of [...fijos, ...subidos]) if (v.poster) m[claveContenido(v.titulo)] = v.poster;
+  for (const v of [...fijos, ...subidos]) if (v.poster) m[claveVideo(v.titulo)] = v.poster;
   return m;
 }
 

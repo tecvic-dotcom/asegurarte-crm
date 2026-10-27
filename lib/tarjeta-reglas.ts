@@ -161,7 +161,7 @@ export interface ResumenTarjeta {
   /** Visitas por día de la semana: 7 valores, de lunes a domingo. */
   diasSemana: number[];
   contenido: ItemContenido[];
-  /** Portada de cada video: `claveContenido(título)` → dirección de la imagen. La arma la ruta del CRM (no la medición); sin ella la lista usa el ícono. */
+  /** Portada de cada video: `claveVideo(título)` → dirección de la imagen. La arma la ruta del CRM (no la medición); sin ella la lista usa el ícono. */
   miniaturas?: Record<string, string>;
   crm?: ResumenCrm;
   /** Veces que se cargó la página (no son personas únicas). */
@@ -239,6 +239,12 @@ export function fuentesLegibles(filas: Conteo[]): Conteo[] {
 
 /** Llave para juntar un contenido con su apertura y con su toque de WhatsApp (que llega más corto): primeras 50 letras, sin mayúsculas ni espacios de más. */
 export const claveContenido = (nombre: string): string => nombre.replace(/\s+/g, " ").trim().slice(0, 50).toLowerCase();
+
+/**
+ * Llave para ligar un video con su portada. La medición guarda el título SIN signos (sin ¿ ? ¡ ! … % ni emojis, y recortado a 60 letras), así que
+ * «¿Quién paga esto?» llega como «Quién paga esto»: se comparan solo letras y números, sin espacios, las primeras 36.
+ */
+export const claveVideo = (titulo: string): string => titulo.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "").slice(0, 36);
 
 /**
  * Videos, historias, preguntas, fotos y promociones con cuántas veces los abrieron y cuántos toques de WhatsApp llevan.

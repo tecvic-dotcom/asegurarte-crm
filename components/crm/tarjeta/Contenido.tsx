@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Icon } from "@iconify/react";
-import { claveContenido, type ItemContenido, type ResumenTarjeta } from "@/lib/tarjeta-reglas";
+import { claveVideo, type ItemContenido, type ResumenTarjeta } from "@/lib/tarjeta-reglas";
 import { ListaBarras, nf } from "./comunes";
 
 type Tipo = ItemContenido["tipo"];
@@ -93,7 +93,7 @@ export function Contenido({ r }: { r: ResumenTarjeta }) {
             {visibles.map((c) => (
               <li key={`${c.tipo}|${c.nombre}`} className="flex items-center gap-3 p-3">
                 <span className="grid w-12 shrink-0 place-items-center" aria-hidden>
-                  <Miniatura tipo={c.tipo} portada={r.miniaturas?.[claveContenido(c.nombre)]} />
+                  <Miniatura tipo={c.tipo} portada={r.miniaturas?.[claveVideo(c.nombre)]} />
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="line-clamp-2 text-sm font-semibold text-ink">{c.nombre}</p>
