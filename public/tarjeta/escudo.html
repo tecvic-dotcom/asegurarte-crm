@@ -489,6 +489,7 @@ dialog.agenda[open]{animation:subir .25s ease-out}
   const GASTOS_FINALES = 60000;
   const EDAD_MIN = 18, EDAD_MAX = 64; // 64 = edad límite para contratar un seguro de vida
   const WHATSAPP = "528182800234";
+  const ORIGEN = "Te escribo desde tu tarjeta digital."; // le avisa a Roberto de dónde llega el prospecto
   const $ = (id) => document.getElementById(id);
   const fmt = new Intl.NumberFormat("es-MX", { maximumFractionDigits: 0 });
   const money = (n) => "$" + fmt.format(Math.max(0, Math.round(n)));
@@ -725,7 +726,7 @@ dialog.agenda[open]{animation:subir .25s ease-out}
       (c.total > 0
         ? "Mi cobertura sugerida fue " + money(c.total) + (c.plazo ? " a " + anios(c.plazo) : "") + ". Quiero que me ayudes a cotizar mi seguro de vida."
         : "Con mis ahorros y seguros actuales el cálculo salió en $0, pero quiero que me ayudes a revisar mi protección y cotizar un seguro de vida.");
-    $("waButton").href = "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(msg);
+    $("waButton").href = "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(msg + " " + ORIGEN);
   }
 
   // Si recargan estando en #paso3 o #paso4 no hay respuestas guardadas: se empieza limpio en el paso 1.

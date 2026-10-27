@@ -184,7 +184,7 @@ dialog::backdrop{background:rgba(6,7,15,.9)}
       <div><strong>Roberto Rodríguez</strong><span>Asesor de Seguros · Cédula CNSF V394637</span></div>
     </div>
     <p>¿Tienes dudas sobre tu caso? Te explico qué aplica para ti, sin compromiso.</p>
-    <a class="btn btn-wa" href="https://wa.me/528182800234?text=Hola%20Roberto%2C%20vi%20tus%20gu%C3%ADas%20de%20seguros%20y%20tengo%20una%20duda." target="_blank" rel="noopener"><svg class="ic" aria-hidden="true"><use href="#i-wa"/></svg>Escríbeme por WhatsApp</a>
+    <a class="btn btn-wa" href="https://wa.me/528182800234?text=Hola%20Roberto%2C%20vi%20tus%20gu%C3%ADas%20de%20seguros%20y%20tengo%20una%20duda.%20Te%20escribo%20desde%20tu%20tarjeta%20digital." target="_blank" rel="noopener"><svg class="ic" aria-hidden="true"><use href="#i-wa"/></svg>Escríbeme por WhatsApp</a>
     <a class="btn btn-ghost" href="https://calendar.app.google/dxf4aRZFHkux6MqL8" target="_blank" rel="noopener"><svg class="ic" aria-hidden="true"><use href="#i-cal"/></svg>Agendar una cita</a>
   </section>
 
@@ -231,6 +231,7 @@ const GUIAS = [
   { id: "auto-cambio-llanta", ramo: "autos",  titulo: "Cómo cambiar una llanta", texto: "Paso a paso para resolverlo seguro en el camino.", w: 572, h: 1024 }
 ];
 const WHATSAPP = "528182800234";
+const ORIGEN = "Te escribo desde tu tarjeta digital."; // le avisa a Roberto de dónde llega el prospecto
 const BASE = "/tarjeta/guias/";
 const URL_PAGINA = "https://www.especialistaenasegurarte.lat/guias";
 
@@ -270,7 +271,7 @@ const URL_PAGINA = "https://www.especialistaenasegurarte.lat/guias";
     $("vRamo").textContent = r ? r.nombre : "";
     $("vTitulo").textContent = g.titulo;
     $("vPic").innerHTML = `<source type="image/avif" srcset="${BASE}${g.id}.avif"><img src="${BASE}${g.id}.jpg" alt="${esc(g.titulo)}" width="${g.w}" height="${g.h}">`;
-    $("vWa").href = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(`Hola Roberto, vi tu guía "${g.titulo}" y quiero más información.`)}`;
+    $("vWa").href = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(`Hola Roberto, vi tu guía "${g.titulo}" y quiero más información. ${ORIGEN}`)}`;
     $("vDown").href = `${BASE}${g.id}.jpg`;
     $("vDown").setAttribute("download", `${g.id}.jpg`);
     if (typeof visor.showModal === "function") visor.showModal(); else visor.setAttribute("open", "");
