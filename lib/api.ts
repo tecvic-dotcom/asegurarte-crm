@@ -187,6 +187,7 @@ export async function crmActualizar(
     fecha_nacimiento?: string | null;
     codigo_postal?: string | null;
     ramo?: Ramo | null;
+    origen?: string;
   },
 ): Promise<Lead> {
   const data = (await jsonOrThrow(

@@ -51,6 +51,7 @@ export async function POST(req: Request): Promise<Response> {
       fecha_nacimiento?: string | null;
       codigo_postal?: string | null;
       ramo?: Ramo | null;
+      origen?: string;
     };
   };
   try {
@@ -92,6 +93,9 @@ export async function POST(req: Request): Promise<Response> {
     if (body.accion === "editar" && body.id && body.patch) {
       if (body.patch.ramo !== undefined && body.patch.ramo !== null && !esRamo(body.patch.ramo)) {
         return Response.json({ error: "Ramo no válido." }, { status: 400 });
+      }
+      if (body.patch.origen !== undefined && (typeof body.patch.origen !== "string" || !body.patch.origen.trim())) {
+        return Response.json({ error: "Origen no válido." }, { status: 400 });
       }
       const lead = await actualizarLead(body.id, body.patch, autor, soloMio);
       if (!lead) return Response.json({ error: "No encontrado" }, { status: 404 });

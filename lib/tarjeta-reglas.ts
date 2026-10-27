@@ -242,3 +242,44 @@ export function contactosPor100(r: Pick<ResumenTarjeta, "visitas" | "toques">): 
   const c = r.toques.wa + r.toques.llamar + r.toques.agendar;
   return Math.round((c / r.visitas) * 1000) / 10;
 }
+
+/**
+ * Lo que Robert (el gerente digital) ve de la tarjeta: totales cortos y anónimos de los últimos 30 y 7 días.
+ * Sin visitas medidas devuelve «disponible: false» para que no confunda «sin datos» con «cero».
+ */
+export function tarjetaParaManager(r30: ResumenTarjeta, r7: ResumenTarjeta): Record<string, unknown> {
+  if (!r30.visitas) {
+    return { disponible: false, motivo: "La tarjeta web aún no ha registrado visitas (la medición anónima empezó el 15 de octubre de 2026)." };
+  }
+  const top = (c: Conteo[], n: number) => c.slice(0, n).map((x) => ({ nombre: x.nombre, veces: x.n }));
+  const periodo = (r: ResumenTarjeta) => ({
+    visitas: r.visitas,
+    toques_whatsapp: r.toques.wa,
+    toques_llamar: r.toques.llamar,
+    toques_agendar: r.toques.agendar,
+    guardaron_contacto: r.toques.guardar,
+    contactos_por_100_visitas: contactosPor100(r),
+  });
+  const s = r30.semana;
+  return {
+    nota: "Medición anónima de la tarjeta web (/roberto). 'Visitas' = veces que se cargó la página (no personas únicas). 'Toques' = botones tocados: NO son mensajes enviados ni prospectos, y no se pueden ligar a un prospecto concreto. 'directo' en fuentes = sin etiqueta de origen (?s=ig|wa|tiktok|qr).",
+    datos_desde: r30.visitasPorDia.find((d) => d.n > 0)?.dia ?? r30.desde,
+    ultimos_30_dias: {
+      ...periodo(r30),
+      desde_celular_pct: Math.round((r30.dispositivos.movil / r30.visitas) * 100),
+      fuentes: top(r30.fuentes, 5),
+      llegaron_a_la_seccion: Object.fromEntries(r30.secciones.filter((x) => x.n > 0).map((x) => [x.id, x.n])),
+      whatsapp_por_lugar: top(r30.waPorLugar, 5),
+      productos_que_piden: top(r30.productos, 4),
+      videos_mas_vistos: top(r30.videos, 3),
+      promociones_toques_whatsapp: top(r30.promosWa, 3),
+    },
+    ultimos_7_dias: periodo(r7),
+    dinero_bajo_control: {
+      abrieron: s.abrieron,
+      armaron_su_plan: s.planes,
+      prospectos_guardados_en_el_crm: s.prospectos,
+      toques_whatsapp: s.waTotal,
+    },
+  };
+}

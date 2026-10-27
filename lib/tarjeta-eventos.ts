@@ -122,6 +122,13 @@ async function leerDesde(desdeISO: string): Promise<FilaEvento[]> {
   return filas;
 }
 
+/** Los últimos 30 y 7 días con UNA sola lectura (es lo que le sirve a Robert, el gerente digital). */
+export async function resumenesParaManager(): Promise<{ d30: ResumenTarjeta; d7: ResumenTarjeta }> {
+  const hoy = hoyLocal();
+  const filas = await leerDesde(new Date(Date.now() - 31 * 86_400_000).toISOString());
+  return { d30: { ...resumir(filas, 30, hoy), cloud: cloudReady }, d7: { ...resumir(filas, 7, hoy), cloud: cloudReady } };
+}
+
 /** Resumen de los últimos 7, 30 o 90 días. */
 export async function resumenTarjeta(dias: number): Promise<ResumenTarjeta> {
   const d = [7, 30, 90].includes(dias) ? dias : 30;

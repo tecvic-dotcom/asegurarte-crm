@@ -20,6 +20,9 @@ import { listarProduccion } from "./produccion";
 import { listarAdjuntas } from "./polizas-adjuntas";
 import { resumenSeguimiento } from "./seguimiento-reglas";
 import { resumenAdjuntas } from "./adjuntas-reglas";
+import { resumenesParaManager } from "./tarjeta-eventos";
+import { tarjetaParaManager } from "./tarjeta-reglas";
+import { MigracionPendienteError } from "./migracion";
 import { acumulado, corteDeDatos, crecimiento as crecPct, porAnio } from "./crecimiento-reglas";
 import { getManagerConfig } from "./manager-config";
 import { RAMOS, infoRamo } from "./ramos";
@@ -712,11 +715,36 @@ export async function numerosParaManager(config: ManagerConfig): Promise<Record<
     al_corriente: sg.alCorriente,
   };
 
+  // Lo que mide la tarjeta web (/roberto): totales anónimos. Con tope de espera para no frenar la respuesta de Robert.
+  let tarjeta_web: Record<string, unknown>;
+  let reloj: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const { d30, d7 } = await Promise.race([
+      resumenesParaManager(),
+      new Promise<never>((_, rechazar) => {
+        reloj = setTimeout(() => rechazar(new Error("tiempo agotado")), 12_000);
+      }),
+    ]);
+    tarjeta_web = tarjetaParaManager(d30, d7);
+    if (!d30.cloud) tarjeta_web = { ...tarjeta_web, demostracion: true };
+  } catch (e) {
+    tarjeta_web = {
+      disponible: false,
+      motivo:
+        e instanceof MigracionPendienteError
+          ? "La medición de la tarjeta web aún no tiene su tabla en Supabase (falta 0019_tarjeta_eventos.sql)."
+          : "No pude leer las estadísticas de la tarjeta web en este momento.",
+    };
+  } finally {
+    if (reloj) clearTimeout(reloj);
+  }
+
   return {
     crecimiento_produccion,
     polizas_adjuntas,
     seguimiento,
     cobranza,
+    tarjeta_web,
     hoy: ctx.hoy,
     meta: {
       estado: meta.estado,

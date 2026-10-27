@@ -1011,7 +1011,9 @@ const CONFIG = {
   mensajes: {
     hola: "Hola Roberto, vi tu tarjeta digital y me gustaría platicar contigo sobre un seguro.",
     cita: "Hola Roberto, vi tu tarjeta digital y quiero agendar una cita. ¿Qué horarios tienes disponibles?",
-    asesoria: "Hola Roberto, quiero recibir asesoría para conocer qué seguro es más adecuado para mí."
+    asesoria: "Hola Roberto, quiero recibir asesoría para conocer qué seguro es más adecuado para mí.",
+    // Se agrega al final de todo mensaje que no diga ya «tarjeta»: así sabes de dónde llega y lo marcas como «Tarjeta web» en el CRM.
+    origen: "Te escribo desde tu tarjeta digital."
   },
 
   // «Conóceme»: 4 preguntas plegables con «+». Cada bloque lleva su ícono y su contenido, con sus propias palabras (sin promesas de tiempos ni de precios).
@@ -1208,7 +1210,7 @@ function vcardTexto() {
   const $ = (s) => document.querySelector(s);
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const ic = (id) => `<svg class="ic" aria-hidden="true"><use href="#i-${id}"/></svg>`;
-  const wa = (msg) => `https://wa.me/${C.whatsapp}?text=${encodeURIComponent(msg)}`;
+  const wa = (msg) => `https://wa.me/${C.whatsapp}?text=${encodeURIComponent(/tarjeta/i.test(msg) ? msg : `${msg} ${C.mensajes.origen}`)}`;
   const get = (path) => path.split(".").reduce((o, k) => (o ? o[k] : ""), C);
   const reducido = matchMedia("(prefers-reduced-motion: reduce)").matches;
 

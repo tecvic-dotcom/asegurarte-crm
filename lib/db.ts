@@ -517,6 +517,8 @@ export interface LeadPatch {
   fecha_nacimiento?: string | null;
   codigo_postal?: string | null;
   ramo?: Ramo | null;
+  /** De dónde llegó el prospecto («Tarjeta web», «Referido»…): alimenta las estadísticas de origen y a Robert. */
+  origen?: string;
 }
 
 export async function actualizarLead(
@@ -540,6 +542,7 @@ export async function actualizarLead(
   if (patch.fecha_nacimiento !== undefined) limpio.fecha_nacimiento = patch.fecha_nacimiento;
   if (patch.codigo_postal !== undefined) limpio.codigo_postal = patch.codigo_postal ? normCodigoPostal(patch.codigo_postal) : null;
   if (patch.ramo !== undefined) limpio.ramo = patch.ramo;
+  if (patch.origen !== undefined) limpio.origen = patch.origen.trim().slice(0, 60) || "Manual";
   // La fecha de cierre alimenta tu meta: se pone al pasar a "ganado" y se borra si regresa.
   if (patch.etapa !== undefined) limpio.cerrado_en = patch.etapa === "ganado" ? nowISO() : null;
   // Con el código postal capturado, la ciudad, el estado y el país se rellenan solos (catálogo de Correos de México).

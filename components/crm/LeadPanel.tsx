@@ -13,6 +13,7 @@ import type { Cotizacion } from "@/lib/cotizaciones-reglas";
 import { aplicarPlantilla } from "@/lib/plantillas";
 import { RAMOS } from "@/lib/ramos";
 import { DictadoBoton } from "./DictadoBoton";
+import { ORIGENES_MANUAL } from "@/lib/types";
 import type { Lead, Actividad, EtapaId, TipoActividad, Genero, PlantillaMensaje, Ramo, FormaPago, Poliza } from "@/lib/types";
 
 /** Mensual → anual, como se elige de corto a largo. */
@@ -44,6 +45,7 @@ export function LeadPanel({ id, onClose, onCambio, onAgregarCobranza, onVerPoliz
   const [plantillas, setPlantillas] = useState<PlantillaMensaje[]>([]);
   const [mostrarPlantillas, setMostrarPlantillas] = useState(false);
   const [errorRamo, setErrorRamo] = useState<string | null>(null);
+  const [errorOrigen, setErrorOrigen] = useState<string | null>(null);
   const [formaPago, setFormaPago] = useState<FormaPago>("anual");
   // La cotización que elegiste para este cliente (si hay): de ella salen la prima, el primer pago y los pagos subsecuentes.
   const [elegida, setElegida] = useState<Cotizacion | null>(null);
@@ -119,6 +121,23 @@ export function LeadPanel({ id, onClose, onCambio, onAgregarCobranza, onVerPoliz
     } catch (e) {
       setLead((l) => (l ? { ...l, ramo: antes } : l));
       setErrorRamo((e as Error).message);
+    }
+  }
+
+  /** El origen se guarda al momento y deja huella en la línea de tiempo (de qué a qué cambió). */
+  async function cambiarOrigen(nuevo: string) {
+    if (!lead || nuevo === lead.origen) return;
+    const antes = lead.origen;
+    setLead({ ...lead, origen: nuevo });
+    setErrorOrigen(null);
+    try {
+      await crmActualizar(id, { origen: nuevo });
+      await crmAgregarActividad(id, "nota", `Origen cambiado de «${antes || "sin origen"}» a «${nuevo}».`);
+      onCambio();
+      void cargar();
+    } catch (e) {
+      setLead((l) => (l ? { ...l, origen: antes } : l));
+      setErrorOrigen((e as Error).message);
     }
   }
 
@@ -244,6 +263,30 @@ export function LeadPanel({ id, onClose, onCambio, onAgregarCobranza, onVerPoliz
             {errorRamo && (
               <p className="mt-1.5 text-xs" style={{ color: "var(--red)" }} role="alert">
                 {errorRamo}
+              </p>
+            )}
+
+            {/* Origen: de dónde llegó. Con «Tarjeta web» Robert puede medir cuántos llegan por ahí y cuántos compran */}
+            <label className="field-label mt-4" htmlFor="lead-origen">¿De dónde viene?</label>
+            <select
+              id="lead-origen"
+              value={lead.origen}
+              onChange={(ev) => cambiarOrigen(ev.target.value)}
+              className="field-input"
+            >
+              {/* Los que llegan solos (landing, campaña, Dinero Bajo Control…) traen un origen propio: se conserva en la lista. */}
+              {!(ORIGENES_MANUAL as readonly string[]).includes(lead.origen) && (
+                <option value={lead.origen}>{lead.origen || "Sin origen"}</option>
+              )}
+              {ORIGENES_MANUAL.map((o) => (
+                <option key={o} value={o}>
+                  {o}
+                </option>
+              ))}
+            </select>
+            {errorOrigen && (
+              <p className="mt-1.5 text-xs" style={{ color: "var(--red)" }} role="alert">
+                {errorOrigen}
               </p>
             )}
             {lead.etapa === "ganado" && onAgregarCobranza && (
@@ -395,7 +438,6 @@ export function LeadPanel({ id, onClose, onCambio, onAgregarCobranza, onVerPoliz
 
             {/* Origen / contexto */}
             <div className="mt-6 grid grid-cols-2 gap-3 rounded-2xl border border-line bg-glass p-4 text-sm">
-              <Dato label="Origen" valor={lead.origen} />
               <Dato label="Campaña" valor={lead.utm_campaign || "—"} />
               <Dato label="Fuente (UTM)" valor={lead.utm_source || "—"} />
               <Dato label="Ciudad" valor={lead.ciudad ?? "—"} />
