@@ -161,6 +161,8 @@ export interface ResumenTarjeta {
   /** Visitas por día de la semana: 7 valores, de lunes a domingo. */
   diasSemana: number[];
   contenido: ItemContenido[];
+  /** Portada de cada video: `claveContenido(título)` → dirección de la imagen. La arma la ruta del CRM (no la medición); sin ella la lista usa el ícono. */
+  miniaturas?: Record<string, string>;
   crm?: ResumenCrm;
   /** Veces que se cargó la página (no son personas únicas). */
   visitas: number;
@@ -235,6 +237,9 @@ export function fuentesLegibles(filas: Conteo[]): Conteo[] {
   return [...m.entries()].map(([nombre, n]) => ({ nombre, n })).sort((a, b) => b.n - a.n || a.nombre.localeCompare(b.nombre, "es"));
 }
 
+/** Llave para juntar un contenido con su apertura y con su toque de WhatsApp (que llega más corto): primeras 50 letras, sin mayúsculas ni espacios de más. */
+export const claveContenido = (nombre: string): string => nombre.replace(/\s+/g, " ").trim().slice(0, 50).toLowerCase();
+
 /**
  * Videos, historias, preguntas, fotos y promociones con cuántas veces los abrieron y cuántos toques de WhatsApp llevan.
  * El botón de WhatsApp guarda «tipo:nombre» recortado a 60 letras (con su prefijo), así que el mismo contenido llega con el
@@ -243,7 +248,7 @@ export function fuentesLegibles(filas: Conteo[]): Conteo[] {
 function contenidoDe(filas: FilaEvento[]): ItemContenido[] {
   const mapa = new Map<string, ItemContenido>();
   const item = (tipo: ItemContenido["tipo"], nombre: string) => {
-    const k = `${tipo}|${nombre.slice(0, 50).toLowerCase()}`;
+    const k = `${tipo}|${claveContenido(nombre)}`;
     let x = mapa.get(k);
     if (!x) mapa.set(k, (x = { tipo, nombre, aperturas: 0, wa: 0 }));
     else if (nombre.length > x.nombre.length) x.nombre = nombre;

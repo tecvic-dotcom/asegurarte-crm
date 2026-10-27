@@ -105,7 +105,7 @@ export function TarjetaWeb() {
         </p>
       </div>
 
-      <div className="flex overflow-x-auto border-b border-line" role="tablist" aria-label="Secciones del panel">
+      <div className="flex overflow-x-auto overflow-y-hidden border-b border-line" role="tablist" aria-label="Secciones del panel">
         {PESTANAS.map(([id, texto]) => (
           <button
             key={id}
@@ -115,7 +115,7 @@ export function TarjetaWeb() {
             aria-selected={pestana === id}
             aria-controls="panel-tarjeta"
             onClick={() => setPestana(id)}
-            className={`-mb-px min-h-[44px] shrink-0 whitespace-nowrap border-b-2 px-3.5 text-sm sm:px-5 ${pestana === id ? "border-brand-2 font-semibold text-ink" : "border-transparent text-ink-mute hover:text-ink"}`}
+            className={`min-h-[44px] shrink-0 whitespace-nowrap border-b-2 px-3.5 text-sm sm:px-5 ${pestana === id ? "border-brand-2 font-semibold text-ink" : "border-transparent text-ink-mute hover:text-ink"}`}
           >
             {texto}
           </button>

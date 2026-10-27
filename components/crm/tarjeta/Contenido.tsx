@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Icon } from "@iconify/react";
-import type { ItemContenido, ResumenTarjeta } from "@/lib/tarjeta-reglas";
+import { claveContenido, type ItemContenido, type ResumenTarjeta } from "@/lib/tarjeta-reglas";
 import { ListaBarras, nf } from "./comunes";
 
 type Tipo = ItemContenido["tipo"];
@@ -17,6 +17,22 @@ const TIPOS: Record<Tipo, { icono: string; nombre: string; plural: string }> = {
   foto: { icono: "flat-color-icons:add-image", nombre: "Foto", plural: "Fotos" },
 };
 const MAX_FILAS = 25;
+
+/** Ícono del tipo de contenido; en los videos, su portada (si la imagen no carga, vuelve al ícono). */
+function Miniatura({ tipo, portada }: { tipo: Tipo; portada?: string }) {
+  const [falla, setFalla] = useState(false);
+  if (tipo === "video" && portada && !falla) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element -- portada de Supabase o de la tarjeta; el CRM no la optimiza
+      <img src={portada} alt="" loading="lazy" decoding="async" onError={() => setFalla(true)} className="h-[72px] w-10 rounded-lg bg-bg-3 object-cover" />
+    );
+  }
+  return (
+    <span className="grid h-12 w-12 place-items-center rounded-xl bg-bg-3">
+      <Icon icon={TIPOS[tipo].icono} width={26} />
+    </span>
+  );
+}
 
 /** Contenido: cada video, historia, pregunta, foto y promoción con cuántas veces lo abrieron, como la lista de «Contenido» de Instagram. */
 export function Contenido({ r }: { r: ResumenTarjeta }) {
@@ -76,8 +92,8 @@ export function Contenido({ r }: { r: ResumenTarjeta }) {
           <ul className="glass divide-y divide-line rounded-2xl">
             {visibles.map((c) => (
               <li key={`${c.tipo}|${c.nombre}`} className="flex items-center gap-3 p-3">
-                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-bg-3" aria-hidden>
-                  <Icon icon={TIPOS[c.tipo].icono} width={26} />
+                <span className="grid w-12 shrink-0 place-items-center" aria-hidden>
+                  <Miniatura tipo={c.tipo} portada={r.miniaturas?.[claveContenido(c.nombre)]} />
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="line-clamp-2 text-sm font-semibold text-ink">{c.nombre}</p>
