@@ -291,7 +291,8 @@ export function ChubbDana() {
                 />
               )}
               {vista === "renovaciones" && <VistaRenovaciones infos={filtradas} />}
-              {vista === "recibos" && <VistaRecibos infos={filtradas} contactos={contactos} />}
+              {/* Al cambiar los filtros se vuelve a ver «todos los pendientes»: una ventana angosta de antes escondería pólizas. */}
+              {vista === "recibos" && <VistaRecibos key={JSON.stringify(filtros)} infos={filtradas} contactos={contactos} />}
               {vista === "polizas" && <VistaPolizas infos={filtradas} />}
               {vista === "revisar" && <VistaRevisar infos={filtradas} />}
             </div>

@@ -43,7 +43,7 @@ const COLOR_VENTANA: Record<VentanaRecibos, string> = {
   "30": "var(--sky)",
   todos: "var(--ink-soft)",
 };
-const VENTANAS: VentanaRecibos[] = ["vencidos", "7", "30", "todos"];
+const VENTANAS: VentanaRecibos[] = ["todos", "vencidos", "7", "30"];
 
 /** Cuántas pólizas, cuántos recibos y cuánto dinero (aprox.) hay en una ventana. */
 function medir(infos: InfoPoliza[], ventana: VentanaRecibos) {
@@ -58,7 +58,8 @@ function medir(infos: InfoPoliza[], ventana: VentanaRecibos) {
  */
 export function VistaRecibos({ infos, contactos }: { infos: InfoPoliza[]; contactos: ContactoCRM[] | null }) {
   const medidas = useMemo(() => Object.fromEntries(VENTANAS.map((v) => [v, medir(infos, v)])) as Record<VentanaRecibos, ReturnType<typeof medir>>, [infos]);
-  const [ventana, setVentana] = useState<VentanaRecibos>(() => (medidas.vencidos.polizas ? "vencidos" : medidas["30"].polizas ? "30" : "todos"));
+  // Se empieza viendo TODAS las pólizas con recibos pendientes (de la más atrasada a la más lejana); las cifras acotan.
+  const [ventana, setVentana] = useState<VentanaRecibos>("todos");
   const [modo, setModo] = useState<Modo>("polizas");
 
   const porPoliza = useMemo(() => listaPolizasConPendientes(infos, ventana), [infos, ventana]);
@@ -110,6 +111,15 @@ export function VistaRecibos({ infos, contactos }: { infos: InfoPoliza[]; contac
         <p className="text-sm text-ink-soft" data-testid="recibos-resumen">
           <strong className="text-ink">{m.polizas}</strong> {m.polizas === 1 ? "póliza" : "pólizas"} · <strong className="text-ink">{m.recibos}</strong>{" "}
           {m.recibos === 1 ? "recibo" : "recibos"} · ≈ <strong className="text-ink">{pesos(m.importe)}</strong>
+          {ventana !== "todos" && (
+            <>
+              {" "}
+              · solo «{TITULO_VENTANA[ventana].toLowerCase()}»
+              <button type="button" onClick={() => setVentana("todos")} className="ml-2 text-xs text-ink-mute underline hover:text-ink" data-testid="recibos-ver-todos">
+                Ver todos los pendientes ({medidas.todos.polizas})
+              </button>
+            </>
+          )}
         </p>
         <Pastillas<Modo>
           etiqueta="Cómo ver los recibos"
