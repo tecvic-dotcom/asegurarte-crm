@@ -580,8 +580,10 @@ export function analizarPoliza(p: PolizaChubb, hoy: string): InfoPoliza {
     }
   }
 
-  // Con verdes se cuentan los verdes; sin ellos, los recibos que faltan por pagar se restan del total.
-  const pagados = hayVerdes && p.frecuencia !== "anual" ? Math.min(n, fechasPagadas.length) : Math.max(0, n - pendientes.length);
+  // Si el Excel marca los recibos con color y la póliza trae fechas, pagado = los verdes (sin verde no hay pagado, aunque
+  // falten fechas por capturar). Sin esas marcas, los recibos que faltan por pagar se restan del total.
+  const conMarcas = conColores && p.frecuencia !== "anual" && (fechasPagadas.length > 0 || fechas.length > 0);
+  const pagados = conMarcas ? Math.min(n, fechasPagadas.length) : Math.max(0, n - pendientes.length);
   const de = Math.max(n, pendientes.length + pagados);
   const importe = p.prima_total === null ? null : p.prima_total / n;
   const recibos: ReciboChubb[] = pendientes.map((fecha, j) => {
@@ -589,7 +591,7 @@ export function analizarPoliza(p: PolizaChubb, hoy: string): InfoPoliza {
     return { numero: pagados + j + 1, de, fecha, dias, estado: estadoDeRecibo(dias), importe, calculado };
   });
   const linea: LineaRecibo[] = [
-    ...Array.from({ length: pagados }, (_, k): LineaRecibo => ({ numero: k + 1, de, fecha: hayVerdes && p.frecuencia !== "anual" ? (fechasPagadas[k] ?? null) : null, estado: "pagado" })),
+    ...Array.from({ length: pagados }, (_, k): LineaRecibo => ({ numero: k + 1, de, fecha: conMarcas ? (fechasPagadas[k] ?? null) : null, estado: "pagado" })),
     ...recibos.map((r): LineaRecibo => ({ numero: r.numero, de: r.de, fecha: r.fecha, estado: r.estado })),
   ];
 
