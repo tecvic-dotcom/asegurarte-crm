@@ -5,7 +5,8 @@
  * texto (XML); aquí abrimos esa carpeta, leemos qué hojas hay, qué dice cada celda y cuáles son fechas.
  *
  * Lo que sabe hacer: leer todas las hojas, texto (incluido el compartido), números, fechas (las devuelve como
- * texto AAAA-MM-DD) y celdas con fórmula (su valor ya calculado). Lo que NO hace: macros, imágenes ni tablas dinámicas.
+ * texto AAAA-MM-DD), celdas con fórmula (su valor ya calculado) y el COLOR DE RELLENO de cada celda (como #RRGGBB;
+ * así Dana distingue un recibo verde de uno amarillo). Lo que NO hace: macros, imágenes ni tablas dinámicas.
  *
  * Usa `DecompressionStream` (viene en los navegadores y en Node 18+), así que no instala nada.
  */
@@ -20,6 +21,11 @@ export interface HojaLeida {
   nombre: string;
   /** Renglones de arriba abajo; cada uno con sus celdas desde la columna A (las vacías son null). */
   filas: ValorLeido[][];
+  /**
+   * Color de relleno de cada celda («#RRGGBB»; null = sin relleno), con la misma forma que `filas`. Un renglón puede
+   * traer menos celdas que `filas`: lo que falta es sin color. Solo viene si el libro trae estilos.
+   */
+  fondos?: (string | null)[][];
 }
 
 export function esFechaExcel(v: ValorLeido | undefined): v is FechaExcel {
@@ -138,6 +144,73 @@ export function serieAFecha(serie: number): string {
 }
 
 // ----------------------------------------------------------------------------
+// Colores de relleno
+// ----------------------------------------------------------------------------
+
+/** Colores «indexados» de la paleta clásica de Excel (los que no están aquí se leen como sin color). */
+const PALETA_INDEXADA: Record<number, string> = {
+  8: "000000", 9: "FFFFFF", 10: "FF0000", 11: "00FF00", 12: "0000FF", 13: "FFFF00", 14: "FF00FF", 15: "00FFFF",
+  16: "800000", 17: "008000", 18: "000080", 19: "808000", 20: "800080", 21: "008080", 22: "C0C0C0", 23: "808080",
+  42: "CCFFCC", 43: "FFFF99", 44: "99CCFF", 45: "FF99CC", 46: "CC99FF", 47: "FFCC99", 51: "99CC00", 52: "FFCC00", 53: "FF9900",
+};
+
+/** Aclara u oscurece un color como lo hace Excel con «tint» (-1 a 1). */
+function aplicarTinte(hex: string, tinte: number): string {
+  if (!tinte) return hex;
+  const r = parseInt(hex.slice(0, 2), 16) / 255;
+  const g = parseInt(hex.slice(2, 4), 16) / 255;
+  const b = parseInt(hex.slice(4, 6), 16) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let l = (max + min) / 2;
+  let h = 0;
+  let s = 0;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    h = max === r ? (g - b) / d + (g < b ? 6 : 0) : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    h /= 6;
+  }
+  l = tinte < 0 ? l * (1 + tinte) : l * (1 - tinte) + tinte;
+  const f = (p: number, q: number, t: number) => {
+    const u = t < 0 ? t + 1 : t > 1 ? t - 1 : t;
+    return u < 1 / 6 ? p + (q - p) * 6 * u : u < 1 / 2 ? q : u < 2 / 3 ? p + (q - p) * (2 / 3 - u) * 6 : p;
+  };
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  const p = 2 * l - q;
+  const canal = (x: number) =>
+    Math.round(Math.min(1, Math.max(0, x)) * 255)
+      .toString(16)
+      .padStart(2, "0");
+  const salida = s === 0 ? canal(l).repeat(3) : `${canal(f(p, q, h + 1 / 3))}${canal(f(p, q, h))}${canal(f(p, q, h - 1 / 3))}`;
+  return salida.toUpperCase();
+}
+
+/** Los 12 colores del tema del libro, en el orden en que Excel los numera (claro 1, oscuro 1, claro 2, oscuro 2, acentos…). */
+function coloresDeTema(xml: string | null): string[] {
+  if (!xml) return [];
+  const esquema = xml.match(/<a:clrScheme\b[^>]*>([\s\S]*?)<\/a:clrScheme>/)?.[1] ?? "";
+  const color = (nombre: string): string | null => {
+    const bloque = esquema.match(new RegExp(`<a:${nombre}\\b[^>]*>([\\s\\S]*?)</a:${nombre}>`))?.[1] ?? "";
+    const v = bloque.match(/<a:srgbClr\b[^>]*val="([0-9a-fA-F]{6})"/)?.[1] ?? bloque.match(/<a:sysClr\b[^>]*lastClr="([0-9a-fA-F]{6})"/)?.[1];
+    return v ? v.toUpperCase() : null;
+  };
+  return ["lt1", "dk1", "lt2", "dk2", "accent1", "accent2", "accent3", "accent4", "accent5", "accent6", "hlink", "folHlink"].map((n) => color(n) ?? "");
+}
+
+/** Un `<fgColor …/>` de estilos → «#RRGGBB», o null si no se puede saber. */
+function colorDeEtiqueta(etiqueta: string, tema: string[]): string | null {
+  const a = atributos(etiqueta);
+  let hex: string | null = null;
+  if (a.rgb && /^[0-9a-fA-F]{6,8}$/.test(a.rgb)) hex = a.rgb.slice(-6).toUpperCase();
+  else if (a.indexed !== undefined) hex = PALETA_INDEXADA[Number(a.indexed)] ?? null;
+  else if (a.theme !== undefined) hex = tema[Number(a.theme)] || null;
+  if (!hex) return null;
+  const tinte = Number(a.tint ?? 0);
+  return `#${aplicarTinte(hex, Number.isFinite(tinte) ? tinte : 0)}`;
+}
+
+// ----------------------------------------------------------------------------
 // Libro
 // ----------------------------------------------------------------------------
 
@@ -166,8 +239,9 @@ export async function leerXlsx(contenido: ArrayBuffer | Uint8Array): Promise<Hoj
   const sst = await textoDe(bytes, indice, "xl/sharedStrings.xml");
   if (sst) for (const m of sst.matchAll(/<si\b[^>]*>([\s\S]*?)<\/si>/g)) compartidos.push(textoDeSi(m[1]));
 
-  // Qué estilos son de fecha.
+  // Qué estilos son de fecha y de qué color es el relleno de cada estilo.
   const estiloEsFecha: boolean[] = [];
+  const estiloFondo: (string | null)[] = [];
   const estilos = await textoDe(bytes, indice, "xl/styles.xml");
   if (estilos) {
     const personalizados = new Map<number, boolean>();
@@ -175,11 +249,24 @@ export async function leerXlsx(contenido: ArrayBuffer | Uint8Array): Promise<Hoj
       const a = atributos(m[0]);
       personalizados.set(Number(a.numFmtId), codigoEsFecha(a.formatCode ?? ""));
     }
+    // Rellenos: la lista de colores que usan los estilos (solo cuentan los rellenos lisos).
+    const tema = coloresDeTema(await textoDe(bytes, indice, "xl/theme/theme1.xml"));
+    const rellenos: (string | null)[] = [];
+    const bloqueRellenos = estilos.match(/<fills\b[^>]*>([\s\S]*?)<\/fills>/);
+    if (bloqueRellenos) {
+      for (const m of bloqueRellenos[1].matchAll(/<fill\b[^>]*>([\s\S]*?)<\/fill>/g)) {
+        const patron = m[1].match(/<patternFill\b[^>]*>/);
+        const fg = m[1].match(/<fgColor\b[^>]*>/);
+        rellenos.push(patron && atributos(patron[0]).patternType === "solid" && fg ? colorDeEtiqueta(fg[0], tema) : null);
+      }
+    }
     const bloque = estilos.match(/<cellXfs\b[^>]*>([\s\S]*?)<\/cellXfs>/);
     if (bloque) {
       for (const m of bloque[1].matchAll(/<xf\b[^>]*>/g)) {
-        const id = Number(atributos(m[0]).numFmtId ?? 0);
+        const a = atributos(m[0]);
+        const id = Number(a.numFmtId ?? 0);
         estiloEsFecha.push(personalizados.has(id) ? personalizados.get(id)! : FORMATOS_FECHA_INTEGRADOS.has(id));
+        estiloFondo.push(rellenos[Number(a.fillId ?? 0)] ?? null);
       }
     }
   }
@@ -192,9 +279,11 @@ export async function leerXlsx(contenido: ArrayBuffer | Uint8Array): Promise<Hoj
     if (!a.name || !xml) continue;
 
     const filas: ValorLeido[][] = [];
+    const fondos: (string | null)[][] = [];
     for (const fila of xml.matchAll(/<row\b([^>]*?)(?:\/>|>([\s\S]*?)<\/row>)/g)) {
       const numero = Number(atributos(fila[1]).r);
       const celdas: ValorLeido[] = [];
+      const fondosFila: (string | null)[] = [];
       for (const c of (fila[2] ?? "").matchAll(/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)) {
         const ca = atributos(c[1]);
         const col = columnaANumero((ca.r ?? "").replace(/\d+/g, ""));
@@ -213,12 +302,18 @@ export async function leerXlsx(contenido: ArrayBuffer | Uint8Array): Promise<Hoj
         }
         while (celdas.length < col) celdas.push(null);
         celdas[col] = valor;
+        while (fondosFila.length < col) fondosFila.push(null);
+        fondosFila[col] = estiloFondo[Number(ca.s ?? 0)] ?? null;
       }
       // Los renglones vacíos entre dos con datos también cuentan (conservan la posición).
-      while (Number.isFinite(numero) && filas.length < numero - 1) filas.push([]);
+      while (Number.isFinite(numero) && filas.length < numero - 1) {
+        filas.push([]);
+        fondos.push([]);
+      }
       filas.push(celdas);
+      fondos.push(fondosFila);
     }
-    hojas.push({ nombre: a.name, filas });
+    hojas.push({ nombre: a.name, filas, fondos });
   }
   if (!hojas.length) throw new Error("Ese Excel no trae ninguna hoja que pueda leer.");
   return hojas;

@@ -27,6 +27,8 @@ export function VistaResumen({
   const ren = r.renovaciones;
   const rc = r.recibos;
   const conAvisos = filtradas.filter((i) => i.avisos.length > 0).length;
+  // ¿El Excel marca los recibos pagados con color verde? (si no, Dana usa la costumbre anterior: toda fecha es pendiente)
+  const conVerdes = filtradas.some((i) => i.p.recibos_pagados !== undefined);
   const proxima = ren.proxima;
   const mesActual = hoy.slice(0, 7);
   const venideras = r.por_mes_renovacion.filter((m) => m.clave >= mesActual).slice(0, 12);
@@ -96,8 +98,9 @@ export function VistaResumen({
 
       {rc.vencidos.n > 0 && (
         <Nota tono="ojo">
-          <strong className="text-ink">{rc.vencidos.n} recibos aparecen vencidos</strong> porque su fecha sigue en la lista de pendientes de tu Excel. Si ya se pagaron, borra esa fecha en el Excel y
-          vuelve a cargarlo: Dana los contará como pagados.
+          <strong className="text-ink">{rc.vencidos.n} {rc.vencidos.n === 1 ? "recibo aparece vencido" : "recibos aparecen vencidos"}</strong>{" "}
+          {conVerdes ? "porque siguen en amarillo en tu Excel. Si ya se pagaron, píntalos de verde" : "porque su fecha sigue en la lista de pendientes de tu Excel. Si ya se pagaron, borra esa fecha"} y vuelve
+          a cargarlo: Dana los contará como pagados.
         </Nota>
       )}
 
@@ -121,7 +124,8 @@ export function VistaResumen({
           <span className="text-ink-mute">Prima neta promedio por póliza: {pesos(r.neta_promedio)}</span>
         </div>
         <p className="mt-2 text-xs text-ink-mute">
-          Estimado: la prima se reparte parejo entre los recibos y un recibo cuenta como pagado cuando su fecha ya no está en tu lista de pendientes.
+          Estimado: la prima se reparte parejo entre los recibos y un recibo cuenta como pagado{" "}
+          {conVerdes ? "cuando está en verde en tu Excel." : "cuando su fecha ya no está en tu lista de pendientes."}
         </p>
       </section>
 

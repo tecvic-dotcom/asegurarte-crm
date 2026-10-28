@@ -58,7 +58,7 @@ import type { DatosFamiliar } from "./cruzada-familia";
 import type { ResultadoSincronizar } from "./clientes-plan";
 import type { Cotizacion, DatosCotizacion, EstadoCotizacion, LecturaCotizacion } from "./cotizaciones-reglas";
 import type { DatosPendiente, Pendiente } from "./pendientes-reglas";
-import type { CargaChubb, PolizaChubb } from "./chubb-reglas";
+import type { CargaChubb, ContactoCRM, PolizaChubb } from "./chubb-reglas";
 
 async function jsonOrThrow(res: Response): Promise<unknown> {
   const data = await res.json().catch(() => ({}));
@@ -341,6 +341,12 @@ export async function crmGuardarManagerConfig(config: ManagerConfig): Promise<Ma
 export async function crmChubb(): Promise<CargaChubb | null> {
   const res = await fetch("/api/crm/chubb", { cache: "no-store" });
   return ((await jsonOErrorCRM(res)) as { carga: CargaChubb | null }).carga;
+}
+
+/** Nombre y WhatsApp de tus contactos del CRM, para que Dana encuentre a quién mandarle el recordatorio de un recibo. */
+export async function crmContactosChubb(): Promise<ContactoCRM[]> {
+  const res = await fetch("/api/crm/chubb?contactos=1", { cache: "no-store" });
+  return ((await jsonOErrorCRM(res)) as { contactos: ContactoCRM[] }).contactos;
 }
 
 /** Guarda un Excel nuevo (ya leído en el navegador) como la carga más reciente de Dana. */

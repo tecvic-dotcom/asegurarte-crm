@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Icon } from "@iconify/react";
-import { crmChubb, ErrorCRM } from "@/lib/api";
+import { crmChubb, crmContactosChubb, ErrorCRM } from "@/lib/api";
 import { diasEntre, fechaLarga, fechaLocal, hoyLocal } from "@/lib/fechas";
 import {
   FRECUENCIAS,
@@ -16,6 +16,7 @@ import {
   resumenChubb,
   textoReporteChubb,
   type CargaChubb,
+  type ContactoCRM,
   type FiltrosChubb,
 } from "@/lib/chubb-reglas";
 import { hojasChubb } from "@/lib/chubb-excel";
@@ -24,30 +25,12 @@ import { AvatarEmpleado } from "./AvatarEmpleado";
 import { AvisoMigracion } from "./panel/AvisoMigracion";
 import { CargarExcel } from "./chubb/CargarExcel";
 import { Filtros } from "./chubb/Filtros";
-import { Nota, Pastillas, type VistaDana } from "./chubb/piezas";
+import { Nota, Pastillas, copiarTexto, type VistaDana } from "./chubb/piezas";
 import { VistaPolizas } from "./chubb/VistaPolizas";
 import { VistaRecibos } from "./chubb/VistaRecibos";
 import { VistaRenovaciones } from "./chubb/VistaRenovaciones";
 import { VistaResumen } from "./chubb/VistaResumen";
 import { VistaRevisar } from "./chubb/VistaRevisar";
-
-/** Copia al portapapeles (con plan B para navegadores viejos). */
-async function copiar(texto: string): Promise<boolean> {
-  try {
-    await navigator.clipboard.writeText(texto);
-    return true;
-  } catch {
-    const area = document.createElement("textarea");
-    area.value = texto;
-    area.style.position = "fixed";
-    area.style.opacity = "0";
-    document.body.appendChild(area);
-    area.select();
-    const ok = document.execCommand("copy");
-    area.remove();
-    return ok;
-  }
-}
 
 /** «Por renovación · 2026 · diciembre · mensual», para el encabezado del reporte y del Excel. */
 function describirFiltros(f: FiltrosChubb): string {
@@ -75,6 +58,8 @@ export function ChubbDana() {
   const [vista, setVista] = useState<VistaDana>("resumen");
   const [filtros, setFiltros] = useState<FiltrosChubb>(SIN_FILTROS);
   const [aviso, setAviso] = useState<string | null>(null);
+  // Nombre y WhatsApp de tus contactos del CRM; se piden una sola vez, la primera vez que abres «Recibos pendientes».
+  const [contactos, setContactos] = useState<ContactoCRM[] | null>(null);
 
   const cargar = useCallback(
     () =>
@@ -99,7 +84,20 @@ export function ChubbDana() {
   }, [aviso]);
 
   const { carga } = estado;
-  const infos = useMemo(() => (carga ? analizarTodas(carga.polizas, hoy) : []), [carga, hoy]);
+  const necesitaContactos = vista === "recibos" && carga !== null && contactos === null;
+  useEffect(() => {
+    if (!necesitaContactos) return;
+    let vigente = true;
+    // Si no se pueden leer, el mensaje se abre en WhatsApp sin número y tú eliges el chat.
+    crmContactosChubb().then(
+      (c) => vigente && setContactos(c),
+      () => vigente && setContactos([]),
+    );
+    return () => {
+      vigente = false;
+    };
+  }, [necesitaContactos]);
+  const infos =useMemo(() => (carga ? analizarTodas(carga.polizas, hoy) : []), [carga, hoy]);
   const filtradas = useMemo(() => filtrarPolizas(infos, filtros), [infos, filtros]);
   const resumen = useMemo(() => resumenChubb(filtradas), [filtradas]);
   const opciones = useMemo(() => opcionesDeFiltro(infos, filtros.ver), [infos, filtros.ver]);
@@ -108,7 +106,7 @@ export function ChubbDana() {
   const diasSinCargar = carga ? diasEntre(fechaLocal(carga.cargado_en), hoy) : 0;
 
   async function copiarReporte() {
-    setAviso((await copiar(textoReporteChubb(filtradas, hoy, nota))) ? "Reporte copiado: pégalo donde quieras." : "No pude copiar. Intenta de nuevo.");
+    setAviso((await copiarTexto(textoReporteChubb(filtradas, hoy, nota))) ? "Reporte copiado: pégalo donde quieras." : "No pude copiar. Intenta de nuevo.");
   }
 
   /** Baja a tu compu el Excel del reporte, con lo que ves hoy en pantalla (respeta los filtros). */
@@ -213,7 +211,7 @@ export function ChubbDana() {
             <li>Confirma, y listo: indicadores, renovaciones y recibos pendientes.</li>
           </ol>
           <p className="mt-3 text-xs text-ink-mute">
-            Cuando se pague un recibo, borra su fecha en el Excel (columnas «Siguiente recibo pendiente» y las de su derecha) y vuelve a cargarlo: así Dana sabe qué ya se pagó. Cada carga queda guardada.
+            En las pólizas que no son anuales, pinta de <strong className="text-ink-soft">verde</strong> cada recibo pagado y de <strong className="text-ink-soft">amarillo</strong> cada recibo pendiente (columnas «Siguiente recibo» y las de su derecha); cuando se pague uno, cámbialo a verde y vuelve a cargar el Excel. Cada carga queda guardada.
           </p>
         </div>
       ) : (
@@ -293,7 +291,7 @@ export function ChubbDana() {
                 />
               )}
               {vista === "renovaciones" && <VistaRenovaciones infos={filtradas} />}
-              {vista === "recibos" && <VistaRecibos infos={filtradas} />}
+              {vista === "recibos" && <VistaRecibos infos={filtradas} contactos={contactos} />}
               {vista === "polizas" && <VistaPolizas infos={filtradas} />}
               {vista === "revisar" && <VistaRevisar infos={filtradas} />}
             </div>

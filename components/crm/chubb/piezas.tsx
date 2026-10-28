@@ -201,6 +201,24 @@ export function Nota({ children, tono = "info" }: { children: ReactNode; tono?: 
   );
 }
 
+/** Copia al portapapeles (con plan B para navegadores viejos). */
+export async function copiarTexto(texto: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(texto);
+    return true;
+  } catch {
+    const area = document.createElement("textarea");
+    area.value = texto;
+    area.style.position = "fixed";
+    area.style.opacity = "0";
+    document.body.appendChild(area);
+    area.select();
+    const ok = document.execCommand("copy");
+    area.remove();
+    return ok;
+  }
+}
+
 /** Las pantallas de Dana. */
 export type VistaDana = "resumen" | "renovaciones" | "recibos" | "polizas" | "revisar";
 

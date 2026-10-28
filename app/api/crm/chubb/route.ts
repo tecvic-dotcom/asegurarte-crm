@@ -1,5 +1,5 @@
 import { exigirAdmin } from "@/lib/sesion-admin";
-import { guardarCarga, ultimaCarga } from "@/lib/chubb";
+import { contactosDelCRM, guardarCarga, ultimaCarga } from "@/lib/chubb";
 import { limpiarNombreArchivo, validarPolizasChubb } from "@/lib/chubb-reglas";
 import { MigracionPendienteError } from "@/lib/migracion";
 import { rateLimit } from "@/lib/rate-limit";
@@ -18,11 +18,15 @@ function fallo(e: unknown): Response {
   return Response.json({ error: "Dana no pudo leer ni guardar tu Excel de Chubb Autos. Intenta de nuevo." }, { status: 500 });
 }
 
-/** La última carga del Excel de Chubb Autos (o `carga: null` si aún no subes ninguno). Solo admin. */
+/**
+ * La última carga del Excel de Chubb Autos (o `carga: null` si aún no subes ninguno). Solo admin.
+ * Con `?contactos=1` devuelve en cambio nombre y WhatsApp de tus contactos, para mandar el recordatorio de un recibo.
+ */
 export async function GET(req: Request): Promise<Response> {
   const puerta = exigirAdmin(req, "Chubb Autos");
   if ("respuesta" in puerta) return puerta.respuesta;
   try {
+    if (new URL(req.url).searchParams.get("contactos")) return Response.json({ contactos: await contactosDelCRM() });
     return Response.json({ carga: await ultimaCarga() });
   } catch (e) {
     return fallo(e);

@@ -5,15 +5,17 @@
  * y te dice (1) qué renovaciones vienen, (2) cuánto de la prima ya está pagado y (3) qué recibos siguen sin pagarse.
  *
  * De dónde sale todo: de la hoja «Producción» de tu Excel «Producción Detalle». Cada renglón es una póliza; en las
- * pólizas que NO se pagan de contado, las columnas de «Siguiente recibo pendiente» en adelante traen las FECHAS de los
- * recibos que aún no se pagan (cuando pagas uno, borras su fecha y subes el Excel de nuevo).
+ * pólizas que NO se pagan de contado, las columnas de «Siguiente recibo» en adelante traen la FECHA de cada recibo.
+ * El COLOR dice si ya se pagó: VERDE = pagado, AMARILLO = pendiente. Cuando pagas uno, lo pintas de verde y subes el Excel
+ * de nuevo. (Si tu Excel no trae verdes, Dana usa la costumbre anterior: toda fecha que aparece es un recibo pendiente.)
  *
  * Qué NO se sabe y por eso se estima (y la pantalla lo dice):
  *  - Cuánto pesa cada recibo: se reparte parejo (prima ÷ número de recibos). El primero suele ser un poco mayor porque lleva
  *    el derecho de póliza, así que el «pagado» es una aproximación muy cercana, no un dato del banco.
- *  - Si un recibo está pagado: se asume que SI no aparece su fecha en la lista de pendientes, ya está pagado.
+ *  - Si no hay colores: un recibo está pagado cuando su fecha ya no aparece en la lista.
  */
-import { diasEntre, esFechaValida, fechaLarga, fechaNumerica, sumarMeses } from "./fechas";
+import { saludoPara } from "./cobranza-reglas";
+import { diasEntre, esFechaValida, fechaLarga, fechaNumerica, sumarDias, sumarMeses } from "./fechas";
 import { esFechaExcel, serieAFecha, type HojaLeida, type ValorLeido } from "./xlsx-lector";
 
 // ----------------------------------------------------------------------------
@@ -38,8 +40,13 @@ export interface PolizaChubb {
   prima_total: number | null;
   frecuencia: FrecuenciaChubb;
   estatus: EstatusChubb;
-  /** Fechas de los recibos que aún no se pagan (AAAA-MM-DD, de la más antigua a la más nueva). */
+  /** Fechas de los recibos que aún no se pagan: los amarillos del Excel (AAAA-MM-DD, de la más antigua a la más nueva). */
   recibos_pendientes: string[];
+  /**
+   * Fechas de los recibos ya pagados: los verdes del Excel. Solo existe cuando el Excel trae colores; sin él (Excel
+   * anterior o de otra época) no se sabe cuáles fueron y Dana los cuenta por diferencia.
+   */
+  recibos_pagados?: string[];
 }
 
 /** Una carga del Excel guardada en tu Supabase. */
@@ -165,6 +172,23 @@ export interface LecturaExcelChubb {
   polizas: PolizaChubb[];
   avisos: string[];
   hoja: string;
+  /** Qué leyó Dana en las columnas de recibos. `con_colores` = el Excel trae recibos en verde (pagados). */
+  recibos: { con_colores: boolean; pagados: number; pendientes: number };
+}
+
+/** ¿Este relleno («#RRGGBB») es verde? Se mira el tono (no el código exacto) para aceptar cualquier verde de Excel. */
+export function esFondoVerde(fondo: string | null | undefined): boolean {
+  const m = (fondo ?? "").match(/^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$/);
+  if (!m) return false;
+  const [r, g, b] = [m[1], m[2], m[3]].map((x) => parseInt(x, 16) / 255);
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const d = max - min;
+  if (d < 0.08 || max !== g) return false; // gris, o el canal dominante no es el verde
+  const tono = 60 * (2 + (b - r) / d); // el verde puro es 120°
+  const claridad = (max + min) / 2;
+  const saturacion = d / (1 - Math.abs(2 * claridad - 1) || 1);
+  return tono >= 75 && tono <= 165 && saturacion >= 0.2;
 }
 
 type Columnas = Partial<Record<"poliza" | "asegurado" | "vehiculo" | "inicio" | "fin" | "neta" | "total" | "frecuencia" | "estatus" | "anio" | "mes" | "recibos", number>>;
@@ -224,6 +248,10 @@ export function polizasDesdeHojas(hojas: HojaLeida[]): { ok: true; lectura: Lect
 
   const avisos: string[] = [];
   const polizas = new Map<string, PolizaChubb>();
+  // Recibos en verde (pagados) de cada póliza; solo se guardan si el Excel realmente usa colores.
+  const verdes = new Map<string, string[]>();
+  let hayVerde = false;
+  let sinColor = 0;
   for (let r = fila + 1; r < hoja.filas.length; r++) {
     const f = hoja.filas[r];
     const numero = normalizarPoliza(f[cols.poliza!]);
@@ -251,15 +279,27 @@ export function polizasDesdeHojas(hojas: HojaLeida[]): { ok: true; lectura: Lect
     }
     if (polizas.has(numero)) avisos.push(`${donde}: el número aparece más de una vez; me quedé con el último renglón.`);
 
-    // Las fechas de recibos pendientes: todas las celdas de la columna «Siguiente recibo pendiente» hacia la derecha.
+    // Las fechas de recibos: todas las celdas de la columna «Siguiente recibo» hacia la derecha. Verde = pagado; cualquier
+    // otro color (amarillo) o sin color = pendiente.
     const recibos: string[] = [];
+    const pagados: string[] = [];
     if (cols.recibos !== undefined) {
       for (let c = cols.recibos; c < f.length; c++) {
         const d = aFecha(f[c]);
-        if (d && !recibos.includes(d)) recibos.push(d);
+        if (!d || recibos.includes(d) || pagados.includes(d)) continue;
+        const fondo = hoja.fondos?.[r]?.[c] ?? null;
+        if (esFondoVerde(fondo)) {
+          pagados.push(d);
+          hayVerde = true;
+        } else {
+          recibos.push(d);
+          if (!fondo) sinColor++;
+        }
       }
     }
     recibos.sort();
+    pagados.sort();
+    verdes.set(numero, pagados);
 
     const textoEstatus = llave(aTexto(f[cols.estatus ?? -1]));
     const estatus: EstatusChubb = textoEstatus.includes("pend") ? "pendiente" : textoEstatus.includes("pag") ? "pagada" : recibos.length ? "pendiente" : "pagada";
@@ -285,7 +325,27 @@ export function polizasDesdeHojas(hojas: HojaLeida[]): { ok: true; lectura: Lect
     if (recibos.length > MAX_RECIBOS) avisos.push(`${donde}: trae ${recibos.length} fechas de recibos; solo tomé las primeras ${MAX_RECIBOS}.`);
   }
   if (!polizas.size) return { ok: false, error: `La hoja «${hoja.nombre}» no trae ninguna póliza que pueda leer.` };
-  return { ok: true, lectura: { polizas: [...polizas.values()], avisos, hoja: hoja.nombre } };
+
+  // Con colores: los verdes quedan como pagados. Sin ellos se conserva la costumbre anterior (toda fecha = pendiente).
+  if (hayVerde) {
+    for (const p of polizas.values()) p.recibos_pagados = verdes.get(p.poliza)?.slice(0, MAX_RECIBOS) ?? [];
+    if (sinColor > 0) {
+      avisos.push(
+        `${sinColor} ${sinColor === 1 ? "fecha de recibo no tiene" : "fechas de recibo no tienen"} color: las tomé como pendientes. Pinta de verde los recibos pagados y de amarillo los pendientes.`,
+      );
+    }
+  }
+  const lista = [...polizas.values()];
+  const total = (campo: "recibos_pagados" | "recibos_pendientes") => lista.reduce((s, p) => s + (p[campo]?.length ?? 0), 0);
+  return {
+    ok: true,
+    lectura: {
+      polizas: lista,
+      avisos,
+      hoja: hoja.nombre,
+      recibos: { con_colores: hayVerde, pagados: total("recibos_pagados"), pendientes: total("recibos_pendientes") },
+    },
+  };
 }
 
 // ----------------------------------------------------------------------------
@@ -329,6 +389,14 @@ export function validarPolizasChubb(entrada: unknown): { ok: true; polizas: Poli
     if (recibosCrudos.length > MAX_RECIBOS || recibosCrudos.some((x) => typeof x !== "string" || !esFechaValida(x))) {
       return { ok: false, error: `La póliza ${poliza} trae fechas de recibos que no son válidas.` };
     }
+    // Los recibos pagados (verdes) son opcionales: las cargas anteriores a los colores no los traen.
+    let pagados: string[] | undefined;
+    if (o.recibos_pagados !== undefined && o.recibos_pagados !== null) {
+      if (!Array.isArray(o.recibos_pagados) || o.recibos_pagados.length > MAX_RECIBOS || o.recibos_pagados.some((x) => typeof x !== "string" || !esFechaValida(x))) {
+        return { ok: false, error: `La póliza ${poliza} trae fechas de recibos pagados que no son válidas.` };
+      }
+      pagados = [...new Set(o.recibos_pagados as string[])].sort();
+    }
     salida.push({
       poliza,
       anio,
@@ -342,6 +410,7 @@ export function validarPolizasChubb(entrada: unknown): { ok: true; polizas: Poli
       frecuencia,
       estatus: o.estatus,
       recibos_pendientes: [...new Set(recibosCrudos as string[])].sort(),
+      ...(pagados ? { recibos_pagados: pagados } : {}),
     });
   }
   return { ok: true, polizas: salida };
@@ -373,6 +442,15 @@ export interface ReciboChubb {
   calculado: boolean;
 }
 
+/** Un recibo de la «línea de pagos» de una póliza: ya pagado (verde) o pendiente (con su urgencia). */
+export interface LineaRecibo {
+  numero: number;
+  de: number;
+  /** Fecha del recibo; null cuando se sabe que está pagado pero el Excel no trae su fecha (Excel sin colores). */
+  fecha: string | null;
+  estado: "pagado" | EstadoRecibo;
+}
+
 export type CodigoAviso =
   | "sin_vehiculo"
   | "sin_prima"
@@ -380,6 +458,8 @@ export type CodigoAviso =
   | "sin_fechas"
   | "pagada_con_pendientes"
   | "fechas_de_mas"
+  | "recibos_no_cuadran"
+  | "pendiente_sin_amarillos"
   | "fecha_fuera_calendario"
   | "vigencia_rara"
   | "anual_con_fechas";
@@ -397,7 +477,10 @@ export interface InfoPoliza {
   nivel: NivelRenovacion;
   recibos_total: number;
   recibos_pagados: number;
+  /** Los recibos que siguen sin pagarse (los amarillos), del más atrasado al más lejano. */
   recibos: ReciboChubb[];
+  /** Todos los recibos de la póliza en orden, pagados y pendientes (para dibujar su línea de pagos). */
+  linea: LineaRecibo[];
   neta_pagada: number;
   neta_por_cobrar: number;
   total_pagada: number;
@@ -412,6 +495,8 @@ export const TITULO_AVISO: Record<CodigoAviso, string> = {
   sin_fechas: "Recibos sin fechas",
   pagada_con_pendientes: "Pagada con recibos pendientes",
   fechas_de_mas: "Más fechas que recibos",
+  recibos_no_cuadran: "Recibos que no cuadran",
+  pendiente_sin_amarillos: "Pendiente sin recibos amarillos",
   fecha_fuera_calendario: "Fecha fuera de calendario",
   vigencia_rara: "Vigencia rara",
   anual_con_fechas: "Anual con fechas",
@@ -441,6 +526,10 @@ export function analizarPoliza(p: PolizaChubb, hoy: string): InfoPoliza {
   const n = cfg.recibos;
   const avisos: AvisoChubb[] = [];
   const fechas = [...p.recibos_pendientes].sort();
+  // Con colores en el Excel, los verdes son los recibos pagados: se sabe cuáles y cuántos son.
+  const conColores = p.recibos_pagados !== undefined;
+  const fechasPagadas = [...(p.recibos_pagados ?? [])].sort();
+  const hayVerdes = conColores && fechasPagadas.length > 0;
 
   // Qué recibos siguen sin pagarse.
   let pendientes: string[];
@@ -450,7 +539,7 @@ export function analizarPoliza(p: PolizaChubb, hoy: string): InfoPoliza {
     if (fechas.length) avisos.push({ codigo: "anual_con_fechas", texto: "Es anual pero trae fechas de recibos pendientes." });
   } else if (fechas.length) {
     pendientes = fechas;
-  } else if (p.estatus === "pendiente") {
+  } else if (p.estatus === "pendiente" && !hayVerdes) {
     pendientes = calendarioDePagos(p.inicio, p.frecuencia);
     calculado = true;
     avisos.push({
@@ -459,17 +548,30 @@ export function analizarPoliza(p: PolizaChubb, hoy: string): InfoPoliza {
     });
   } else {
     pendientes = [];
+    if (p.estatus === "pendiente") {
+      avisos.push({
+        codigo: "pendiente_sin_amarillos",
+        texto: "Dice «pendiente de pago» pero ninguno de sus recibos está en amarillo; Dana la contó sin recibos pendientes.",
+      });
+    }
   }
 
   if (p.estatus === "pagada" && fechas.length && p.frecuencia !== "anual") {
-    avisos.push({ codigo: "pagada_con_pendientes", texto: "Dice «pagada» pero trae fechas de recibos pendientes; Dana tomó las fechas como pendientes." });
+    avisos.push({ codigo: "pagada_con_pendientes", texto: "Dice «pagada» pero trae recibos pendientes; Dana tomó esas fechas como pendientes." });
   }
-  if (p.frecuencia !== "anual" && fechas.length > n) {
+  if (!conColores && p.frecuencia !== "anual" && fechas.length > n) {
     avisos.push({ codigo: "fechas_de_mas", texto: `Trae ${fechas.length} fechas pendientes y por su frecuencia solo debe tener ${n} recibos.` });
   }
-  if (p.frecuencia !== "anual" && fechas.length) {
+  const conFecha = fechas.length + fechasPagadas.length;
+  if (conColores && p.frecuencia !== "anual" && conFecha > 0 && conFecha !== n) {
+    avisos.push({
+      codigo: "recibos_no_cuadran",
+      texto: `Trae ${fechasPagadas.length} ${fechasPagadas.length === 1 ? "recibo en verde" : "recibos en verde"} y ${fechas.length} en amarillo (${conFecha} en total), pero por su frecuencia debe tener ${n}.`,
+    });
+  }
+  if (p.frecuencia !== "anual" && conFecha) {
     const calendario = calendarioDePagos(p.inicio, p.frecuencia);
-    const raras = fechas.filter((f) => !calendario.some((c) => Math.abs(diasEntre(c, f)) <= 7));
+    const raras = [...fechasPagadas, ...fechas].filter((f) => !calendario.some((c) => Math.abs(diasEntre(c, f)) <= 7)).sort();
     if (raras.length) {
       avisos.push({
         codigo: "fecha_fuera_calendario",
@@ -478,14 +580,18 @@ export function analizarPoliza(p: PolizaChubb, hoy: string): InfoPoliza {
     }
   }
 
-  const de = Math.max(n, pendientes.length);
-  const pagados = Math.max(0, n - pendientes.length);
-  const primero = Math.max(0, n - pendientes.length);
+  // Con verdes se cuentan los verdes; sin ellos, los recibos que faltan por pagar se restan del total.
+  const pagados = hayVerdes && p.frecuencia !== "anual" ? Math.min(n, fechasPagadas.length) : Math.max(0, n - pendientes.length);
+  const de = Math.max(n, pendientes.length + pagados);
   const importe = p.prima_total === null ? null : p.prima_total / n;
   const recibos: ReciboChubb[] = pendientes.map((fecha, j) => {
     const dias = diasEntre(hoy, fecha);
-    return { numero: primero + j + 1, de, fecha, dias, estado: estadoDeRecibo(dias), importe, calculado };
+    return { numero: pagados + j + 1, de, fecha, dias, estado: estadoDeRecibo(dias), importe, calculado };
   });
+  const linea: LineaRecibo[] = [
+    ...Array.from({ length: pagados }, (_, k): LineaRecibo => ({ numero: k + 1, de, fecha: hayVerdes && p.frecuencia !== "anual" ? (fechasPagadas[k] ?? null) : null, estado: "pagado" })),
+    ...recibos.map((r): LineaRecibo => ({ numero: r.numero, de: r.de, fecha: r.fecha, estado: r.estado })),
+  ];
 
   // Cuánto de la prima ya está pagado (reparto parejo entre los recibos).
   const fraccion = pagados / n;
@@ -514,6 +620,7 @@ export function analizarPoliza(p: PolizaChubb, hoy: string): InfoPoliza {
     recibos_total: n,
     recibos_pagados: pagados,
     recibos,
+    linea,
     neta_pagada,
     neta_por_cobrar: redondear(neta - neta_pagada),
     total_pagada,
@@ -783,6 +890,109 @@ export function listaRecibos(infos: InfoPoliza[], ventana: VentanaRecibos): Reci
     .flatMap((info) => info.recibos.map((r) => ({ ...r, info })))
     .filter((r) => (ventana === "vencidos" ? r.dias < 0 : ventana === "todos" ? true : r.dias >= 0 && r.dias <= Number(ventana)))
     .sort((a, b) => a.dias - b.dias || a.info.p.asegurado.localeCompare(b.info.p.asegurado));
+}
+
+/** Una póliza con recibos sin pagar (amarillos) en la ventana elegida, lista para cobrar. */
+export interface PolizaConPendientes {
+  info: InfoPoliza;
+  /** El recibo que toca cobrar ahora: el más atrasado de la ventana. */
+  recibo: ReciboChubb;
+  /** Todos los recibos pendientes de la póliza que caen en esa ventana (el primero es `recibo`). */
+  enVentana: ReciboChubb[];
+}
+
+/** Pólizas con recibos pendientes, de la más atrasada a la más lejana. Cada póliza sale una sola vez. */
+export function listaPolizasConPendientes(infos: InfoPoliza[], ventana: VentanaRecibos): PolizaConPendientes[] {
+  const cae = (r: ReciboChubb) => (ventana === "vencidos" ? r.dias < 0 : ventana === "todos" ? true : r.dias >= 0 && r.dias <= Number(ventana));
+  return infos
+    .flatMap((info) => {
+      const enVentana = info.recibos.filter(cae);
+      return enVentana.length ? [{ info, recibo: enVentana[0], enVentana }] : [];
+    })
+    .sort((a, b) => a.recibo.dias - b.recibo.dias || a.info.p.asegurado.localeCompare(b.info.p.asegurado, "es"));
+}
+
+// ----------------------------------------------------------------------------
+// Mensaje de cobro para el cliente + su WhatsApp (buscado en el CRM)
+// ----------------------------------------------------------------------------
+
+function listaDeNumeros(n: number[]): string {
+  return n.length <= 1 ? String(n[0] ?? "") : `${n.slice(0, -1).join(", ")} y ${n[n.length - 1]}`;
+}
+
+/**
+ * El mensaje de WhatsApp para pedir un recibo. No lleva importe a propósito: el de Dana es aproximado (el primer recibo
+ * lleva el derecho de póliza) y a un cliente no se le cobra una cifra que no es exacta. Sale en el tono de Valeri.
+ */
+export function mensajeReciboChubb(info: InfoPoliza, recibo: ReciboChubb): string {
+  const saludo = saludoPara(info.p.asegurado);
+  const seguro = `tu seguro de auto con Chubb (póliza ${info.p.poliza})`;
+  const hoy = sumarDias(recibo.fecha, -recibo.dias);
+  const cuando = (f: string) => `${fechaLarga(f)}${f.slice(0, 4) !== hoy.slice(0, 4) ? ` de ${f.slice(0, 4)}` : ""}`;
+  if (recibo.dias < 0) {
+    const vencidos = info.recibos.filter((r) => r.dias < 0);
+    if (vencidos.length > 1) {
+      const numeros = listaDeNumeros(vencidos.map((r) => r.numero));
+      return `${saludo}, te escribo por ${vencidos.length} recibos vencidos de ${seguro}: los recibos ${numeros} de ${recibo.de} (el más atrasado venció el ${cuando(vencidos[0].fecha)}) y todavía no los veo pagados. Para que tu protección siga sin problema, ¿te ayudo a dejarlos pagados hoy? Si ya los pagaste, mándame tu comprobante y los reviso. Quedo atento.`;
+    }
+    return `${saludo}, te escribo por el recibo ${recibo.numero} de ${recibo.de} de ${seguro}, que venció el ${cuando(recibo.fecha)} y todavía no lo veo pagado. Para que tu protección siga sin problema, ¿te ayudo a dejarlo pagado hoy? Si ya lo pagaste, mándame tu comprobante y lo reviso. Quedo atento.`;
+  }
+  if (recibo.dias === 0) {
+    return `${saludo}, te recuerdo que hoy vence el recibo ${recibo.numero} de ${recibo.de} de ${seguro}. Si necesitas apoyo para pagarlo, avísame. Saludos!`;
+  }
+  return `${saludo}, te recuerdo el recibo ${recibo.numero} de ${recibo.de} de ${seguro}: vence el ${cuando(recibo.fecha)}. Si requieres apoyo para realizar el pago, avísame. Saludos!`;
+}
+
+/** Una persona o empresa del CRM con su WhatsApp (clientes de Camila, pólizas de Valeri o prospectos). */
+export interface ContactoCRM {
+  nombre: string;
+  whatsapp: string;
+}
+
+export type WhatsAppDelCliente =
+  | { tipo: "encontrado"; whatsapp: string; nombre: string; exacto: boolean }
+  | { tipo: "varios"; cuantos: number }
+  | { tipo: "ninguno" };
+
+// Palabras que no ayudan a reconocer a alguien: «de», «y», la abreviatura «Ma» (María) y la cola de una razón social.
+const PALABRAS_VACIAS = new Set(["de", "del", "la", "las", "los", "y", "e", "ma", "sa", "cv", "sc", "sapi", "rl", "srl", "s", "c", "v", "a", "r", "l", "cia"]);
+
+function palabrasDeNombre(nombre: string): string[] {
+  return [...new Set(llave(nombre).split(/[^a-z0-9]+/).filter((t) => t && !PALABRAS_VACIAS.has(t)))];
+}
+
+/**
+ * Busca el WhatsApp del asegurado entre los contactos del CRM, por nombre. «Exacto» = mismas palabras en cualquier orden
+ * (el Excel de Chubb escribe «NOMBRE APELLIDO APELLIDO»); si no, acepta que el nombre del CRM esté contenido en el del Excel
+ * (o al revés) con al menos dos palabras, y lo marca como parcial para que se verifique antes de mandar nada.
+ * Si hay varios contactos distintos con la misma coincidencia, no adivina.
+ */
+export function buscarWhatsApp(asegurado: string, contactos: ContactoCRM[]): WhatsAppDelCliente {
+  const buscado = palabrasDeNombre(asegurado);
+  if (!buscado.length) return { tipo: "ninguno" };
+  const hallados: { nombre: string; whatsapp: string; exacto: boolean }[] = [];
+  for (const c of contactos) {
+    const whatsapp = c.whatsapp.replace(/\D+/g, "").slice(-10);
+    if (whatsapp.length !== 10) continue;
+    const palabras = palabrasDeNombre(c.nombre);
+    if (!palabras.length) continue;
+    const dentro = (chico: string[], grande: string[]) => chico.every((x) => grande.includes(x));
+    const exacto = buscado.length >= 2 && buscado.length === palabras.length && dentro(buscado, palabras);
+    const [chico, grande] = buscado.length <= palabras.length ? [buscado, palabras] : [palabras, buscado];
+    const parcial = chico.length >= 2 && dentro(chico, grande);
+    if (exacto || parcial) hallados.push({ nombre: c.nombre, whatsapp, exacto });
+  }
+  // Se queda con el mejor nivel de coincidencia; si ahí hay números distintos, mejor no elegir por el usuario.
+  const mejores = hallados.some((h) => h.exacto) ? hallados.filter((h) => h.exacto) : hallados;
+  const numeros = new Set(mejores.map((h) => h.whatsapp));
+  if (numeros.size === 0) return { tipo: "ninguno" };
+  if (numeros.size > 1) return { tipo: "varios", cuantos: numeros.size };
+  return { tipo: "encontrado", ...mejores[0] };
+}
+
+/** Liga directa a WhatsApp con el mensaje escrito; sin número abre WhatsApp para que elijas el chat. */
+export function ligaWhatsAppChubb(whatsapp: string | null, texto: string): string {
+  return `https://wa.me/${whatsapp ? `52${whatsapp}` : ""}?text=${encodeURIComponent(texto)}`;
 }
 
 export function etiquetaVencimiento(dias: number): string {

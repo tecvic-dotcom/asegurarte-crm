@@ -56,6 +56,18 @@ function vehiculoDe(i: InfoPoliza): string {
   return i.p.vehiculo ?? "(sin descripción)";
 }
 
+/** Las dos celdas del próximo recibo sin pagar (el primer amarillo de la póliza): su fecha y cuándo vence, con el color de su urgencia. */
+function proximoRecibo(i: InfoPoliza): Celda[] {
+  const r = i.recibos[0];
+  if (!r) return [fechaCelda(null), { v: "", e: CENTRO }];
+  const t = TONO_RECIBO[r.estado];
+  const estilo: Estilo = { borde: true, negrita: true, color: t.letra, relleno: t.fondo, alinear: "centro" };
+  return [
+    { v: serieExcel(r.fecha), e: { ...estilo, formato: "fecha" } },
+    { v: `${t.nombre.split(" (")[0]} · ${etiquetaVencimiento(r.dias)}${r.calculado ? " (fecha calculada)" : ""}`, e: estilo },
+  ];
+}
+
 // ----------------------------------------------------------------------------
 // Hoja 4: pólizas
 // ----------------------------------------------------------------------------
@@ -75,6 +87,8 @@ function hojaPolizas(infos: InfoPoliza[]): Hoja {
     "Prima total",
     "Recibos pagados (est.)",
     "Recibos pendientes",
+    "Próximo recibo pendiente",
+    "Cuándo vence",
     "Prima neta pagada (est.)",
     "Prima neta por cobrar (est.)",
     "Por revisar",
@@ -94,6 +108,7 @@ function hojaPolizas(infos: InfoPoliza[]): Hoja {
     { v: i.p.prima_total, e: DINERO },
     { v: `${i.recibos_pagados} de ${i.recibos_total}`, e: CENTRO },
     { v: i.recibos.length, e: ENTERO },
+    ...proximoRecibo(i),
     { v: i.neta_pagada, e: DINERO },
     { v: i.neta_por_cobrar, e: DINERO },
     { v: i.avisos.map((a) => a.texto).join(" "), e: { borde: true, envolver: true } },
@@ -105,11 +120,11 @@ function hojaPolizas(infos: InfoPoliza[]): Hoja {
   const dinero = (col: string, valor: number): Celda => ({ v: valor, f: `SUBTOTAL(109,${col}2:${col}${ultima})`, e: { ...TOTAL, formato: "moneda" } });
   total[9] = dinero("J", suma((i) => i.p.prima_neta ?? 0));
   total[10] = dinero("K", suma((i) => i.p.prima_total ?? 0));
-  total[13] = dinero("N", suma((i) => i.neta_pagada));
-  total[14] = dinero("O", suma((i) => i.neta_por_cobrar));
+  total[15] = dinero("P", suma((i) => i.neta_pagada));
+  total[16] = dinero("Q", suma((i) => i.neta_por_cobrar));
   return {
     nombre: "Pólizas",
-    anchos: [7, 12, 14, 36, 44, 13, 13, 11, 13, 14, 14, 13, 11, 15, 15, 50],
+    anchos: [7, 12, 14, 36, 44, 13, 13, 11, 13, 14, 14, 13, 11, 15, 30, 15, 15, 50],
     filas: [encabezados.map((t) => ({ v: t, e: ENCABEZADO })), ...datos, total],
     altos: { 1: 34 },
     congelar: { filas: 1, columnas: 4 },
@@ -161,7 +176,7 @@ function hojaRenovaciones(infos: InfoPoliza[]): Hoja {
 // ----------------------------------------------------------------------------
 
 function hojaRecibos(infos: InfoPoliza[]): Hoja {
-  const encabezados = ["Estado", "Días", "Fecha del recibo", "Asegurado", "Póliza", "Vehículo", "Frecuencia de pago", "Recibo", "Importe aprox.", "Fecha calculada por Dana"];
+  const encabezados = ["Estado", "Días", "Fecha del recibo", "Asegurado", "Póliza", "Vehículo", "Frecuencia de pago", "Recibo", "Pagados de la póliza", "Importe aprox.", "Fecha calculada por Dana"];
   const lista = listaRecibos(infos, "todos");
   const datos: Celda[][] = lista.map((r) => {
     const t = TONO_RECIBO[r.estado];
@@ -174,6 +189,7 @@ function hojaRecibos(infos: InfoPoliza[]): Hoja {
       { v: vehiculoDe(r.info), e: TEXTO },
       { v: FRECUENCIAS[r.info.p.frecuencia].nombre, e: CENTRO },
       { v: `${r.numero} de ${r.de}`, e: CENTRO },
+      { v: `${r.info.recibos_pagados} de ${r.info.recibos_total}`, e: CENTRO },
       { v: r.importe === null ? null : Math.round(r.importe * 100) / 100, e: DINERO },
       { v: r.calculado ? "Sí (el Excel no traía la fecha)" : "", e: CENTRO },
     ];
@@ -181,10 +197,10 @@ function hojaRecibos(infos: InfoPoliza[]): Hoja {
   const ultima = datos.length + 1;
   const total: Celda[] = encabezados.map(() => ({ v: null, e: TOTAL }));
   total[7] = { v: "Total (cambia al filtrar)", e: { ...TOTAL, alinear: "derecha" } };
-  total[8] = { v: lista.reduce((s, r) => s + (r.importe ?? 0), 0), f: `SUBTOTAL(109,I2:I${ultima})`, e: { ...TOTAL, formato: "moneda" } };
+  total[9] = { v: lista.reduce((s, r) => s + (r.importe ?? 0), 0), f: `SUBTOTAL(109,J2:J${ultima})`, e: { ...TOTAL, formato: "moneda" } };
   return {
     nombre: "Recibos pendientes",
-    anchos: [36, 8, 14, 36, 14, 44, 13, 10, 14, 30],
+    anchos: [36, 8, 14, 36, 14, 44, 13, 10, 12, 14, 30],
     filas: [encabezados.map((t) => ({ v: t, e: ENCABEZADO })), ...datos, total],
     altos: { 1: 34 },
     congelar: { filas: 1, columnas: 1 },
@@ -285,7 +301,11 @@ function hojaResumen(infos: InfoPoliza[], hoy: string, nota: string): Hoja {
   nueva([]);
   const aviso = nueva([
     {
-      v: "Lo «pagado» y los importes de cada recibo son estimaciones: la prima se reparte parejo entre los recibos y se asume que un recibo ya está pagado cuando su fecha no aparece en la lista de pendientes de tu Excel.",
+      v: `Lo «pagado» y los importes de cada recibo son estimaciones: la prima se reparte parejo entre los recibos y ${
+        infos.some((i) => i.p.recibos_pagados !== undefined)
+          ? "un recibo cuenta como pagado cuando está en verde en tu Excel (amarillo = pendiente)."
+          : "se asume que un recibo ya está pagado cuando su fecha no aparece en la lista de pendientes de tu Excel."
+      }`,
       e: { cursiva: true, color: GRIS, envolver: true },
     },
   ]);

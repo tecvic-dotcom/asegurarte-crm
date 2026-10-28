@@ -12,8 +12,11 @@ import "server-only";
  * Son datos de tus clientes: las rutas exigen sesión de administrador y la tabla está cerrada al público (RLS).
  */
 import { adminDb, cloudReady } from "./supabase-admin";
+import { listarClientes } from "./clientes";
+import { listarPolizas } from "./cobranza";
+import { listLeads } from "./db";
 import { faltaMigracion, MENSAJE_MIGRACION_CHUBB, MigracionPendienteError } from "./migracion";
-import { validarPolizasChubb, type CargaChubb, type PolizaChubb } from "./chubb-reglas";
+import { validarPolizasChubb, type CargaChubb, type ContactoCRM, type PolizaChubb } from "./chubb-reglas";
 
 const TABLA = "chubb_cargas";
 
@@ -70,4 +73,30 @@ export async function guardarCarga(archivo: string, polizas: PolizaChubb[]): Pro
   const nueva: CargaChubb = { id: `chubb_${(s.seq++).toString(36)}`, cargado_en: new Date().toISOString(), archivo, polizas };
   s.cargas.push(nueva);
   return nueva;
+}
+
+/**
+ * Nombre y WhatsApp de la gente que ya tienes en el CRM (clientes de Camila, pólizas de Valeri y prospectos), para que
+ * Dana encuentre a quién mandarle el recordatorio de un recibo. Solo salen esos dos datos y solo los que traen un número
+ * de 10 dígitos. Si alguna fuente falla (por ejemplo, una tabla que aún no se crea) se sigue con las demás.
+ */
+export async function contactosDelCRM(): Promise<ContactoCRM[]> {
+  const [clientes, polizas, leads] = await Promise.allSettled([listarClientes(), listarPolizas(), listLeads()]);
+  const filas: { nombre: string; whatsapp: string }[] = [
+    ...(clientes.status === "fulfilled" ? clientes.value : []),
+    ...(polizas.status === "fulfilled" ? polizas.value.map((p) => ({ nombre: p.asegurado, whatsapp: p.whatsapp })) : []),
+    ...(leads.status === "fulfilled" ? leads.value : []),
+  ];
+  const vistos = new Set<string>();
+  const salida: ContactoCRM[] = [];
+  for (const f of filas) {
+    const nombre = (f.nombre ?? "").trim();
+    const whatsapp = (f.whatsapp ?? "").replace(/\D+/g, "").slice(-10);
+    if (!nombre || whatsapp.length !== 10) continue;
+    const clave = `${nombre.toLowerCase()}|${whatsapp}`;
+    if (vistos.has(clave)) continue;
+    vistos.add(clave);
+    salida.push({ nombre, whatsapp });
+  }
+  return salida;
 }

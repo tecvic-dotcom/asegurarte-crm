@@ -129,6 +129,21 @@ export function CargarExcel({
             Leí <strong className="text-ink">{subida.lectura.polizas.length} pólizas</strong> de la hoja «{subida.lectura.hoja}» de <em>{subida.archivo}</em>.
           </p>
 
+          <p className="mt-1 text-sm text-ink-soft" data-testid="chubb-colores">
+            {subida.lectura.recibos.con_colores ? (
+              <>
+                Leí los colores de los recibos: <strong className="text-ink">{subida.lectura.recibos.pagados} en verde</strong> (pagados) y{" "}
+                <strong className="text-ink">{subida.lectura.recibos.pendientes} en amarillo</strong> (pendientes).
+              </>
+            ) : (
+              subida.lectura.recibos.pendientes > 0 && (
+                <>
+                  Tu Excel no trae recibos en verde: Dana toma las <strong className="text-ink">{subida.lectura.recibos.pendientes} fechas de recibos</strong> como pendientes.
+                </>
+              )
+            )}
+          </p>
+
           {subida.pocas && actual && (
             <p className="mt-2 flex items-start gap-2 text-sm text-ink">
               <Icon icon="flat-color-icons:medium-priority" width={18} className="mt-0.5 shrink-0" aria-hidden />
