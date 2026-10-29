@@ -9,6 +9,8 @@ import "server-only";
  *
  * Cada carga es una FOTO completa del Excel (todas sus pólizas). Nunca se edita ni se borra una póliza suelta:
  * subir un Excel nuevo agrega una foto nueva y Dana trabaja con la más reciente. Las anteriores se conservan.
+ * Lo único que se anota después en la foto más reciente es el WhatsApp que capturas en «Recibos pendientes» (el Excel no lo
+ * trae); al subir un Excel nuevo pasa a la foto nueva por nombre del asegurado.
  * Son datos de tus clientes: las rutas exigen sesión de administrador y la tabla está cerrada al público (RLS).
  */
 import { adminDb, cloudReady } from "./supabase-admin";
@@ -16,7 +18,7 @@ import { listarClientes } from "./clientes";
 import { listarPolizas } from "./cobranza";
 import { listLeads } from "./db";
 import { faltaMigracion, MENSAJE_MIGRACION_CHUBB, MigracionPendienteError } from "./migracion";
-import { validarPolizasChubb, type CargaChubb, type ContactoCRM, type PolizaChubb } from "./chubb-reglas";
+import { claveAsegurado, validarPolizasChubb, whatsappDe10, type CargaChubb, type ContactoCRM, type PolizaChubb } from "./chubb-reglas";
 
 const TABLA = "chubb_cargas";
 
@@ -59,7 +61,15 @@ export async function ultimaCarga(): Promise<CargaChubb | null> {
 }
 
 /** Guarda un Excel nuevo como la foto más reciente. Ya viene validado (ver `validarPolizasChubb`). */
-export async function guardarCarga(archivo: string, polizas: PolizaChubb[]): Promise<CargaChubb> {
+export async function guardarCarga(archivo: string, entrantes: PolizaChubb[]): Promise<CargaChubb> {
+  // Los WhatsApp que ya capturaste no vienen en el Excel: pasan de la foto anterior a la nueva, por nombre del asegurado.
+  const anterior = await ultimaCarga();
+  const guardados = new Map<string, string>();
+  for (const p of anterior?.polizas ?? []) if (p.whatsapp) guardados.set(claveAsegurado(p.asegurado), p.whatsapp);
+  const polizas = entrantes.map((p) => {
+    const whatsapp = p.whatsapp ?? guardados.get(claveAsegurado(p.asegurado));
+    return whatsapp ? { ...p, whatsapp } : p;
+  });
   if (cloudReady && adminDb) {
     const { data, error } = await adminDb
       .from(TABLA)
@@ -76,16 +86,38 @@ export async function guardarCarga(archivo: string, polizas: PolizaChubb[]): Pro
 }
 
 /**
- * Nombre y WhatsApp de la gente que ya tienes en el CRM (clientes de Camila, pólizas de Valeri y prospectos), para que
- * Dana encuentre a quién mandarle el recordatorio de un recibo. Solo salen esos dos datos y solo los que traen un número
- * de 10 dígitos. Si alguna fuente falla (por ejemplo, una tabla que aún no se crea) se sigue con las demás.
+ * Anota el WhatsApp de un asegurado en la carga más reciente (en todas sus pólizas de Chubb). Devuelve el contacto guardado,
+ * o null si el número no es de 10 dígitos o ese asegurado ya no está en la carga.
+ */
+export async function guardarWhatsapp(asegurado: string, numero: unknown): Promise<ContactoCRM | null> {
+  const whatsapp = whatsappDe10(numero);
+  const carga = await ultimaCarga();
+  if (!whatsapp || !carga) return null;
+  const clave = claveAsegurado(asegurado);
+  const de = carga.polizas.filter((p) => claveAsegurado(p.asegurado) === clave);
+  if (!de.length) return null;
+  const polizas = carga.polizas.map((p) => (claveAsegurado(p.asegurado) === clave ? { ...p, whatsapp } : p));
+  if (cloudReady && adminDb) {
+    const { error } = await adminDb.from(TABLA).update({ polizas }).eq("id", carga.id);
+    if (error) throw errorDeBase(error);
+  } else {
+    carga.polizas = polizas;
+  }
+  return { nombre: de[0].asegurado, whatsapp };
+}
+
+/**
+ * Nombre y WhatsApp de la gente que ya tienes en el CRM (clientes de Camila, pólizas de Valeri y prospectos) y los que
+ * capturaste en Dana, para encontrar a quién mandarle el recordatorio de un recibo. Solo salen esos dos datos y solo los
+ * que traen un número de 10 dígitos. Si alguna fuente falla (por ejemplo, una tabla que aún no se crea) se sigue con las demás.
  */
 export async function contactosDelCRM(): Promise<ContactoCRM[]> {
-  const [clientes, polizas, leads] = await Promise.allSettled([listarClientes(), listarPolizas(), listLeads()]);
+  const [clientes, polizas, leads, carga] = await Promise.allSettled([listarClientes(), listarPolizas(), listLeads(), ultimaCarga()]);
   const filas: { nombre: string; whatsapp: string }[] = [
     ...(clientes.status === "fulfilled" ? clientes.value : []),
     ...(polizas.status === "fulfilled" ? polizas.value.map((p) => ({ nombre: p.asegurado, whatsapp: p.whatsapp })) : []),
     ...(leads.status === "fulfilled" ? leads.value : []),
+    ...(carga.status === "fulfilled" && carga.value ? carga.value.polizas.flatMap((p) => (p.whatsapp ? [{ nombre: p.asegurado, whatsapp: p.whatsapp }] : [])) : []),
   ];
   const vistos = new Set<string>();
   const salida: ContactoCRM[] = [];

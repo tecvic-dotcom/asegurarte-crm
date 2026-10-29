@@ -47,6 +47,11 @@ export interface PolizaChubb {
    * anterior o de otra época) no se sabe cuáles fueron y Dana los cuenta por diferencia.
    */
   recibos_pagados?: string[];
+  /**
+   * WhatsApp del asegurado (10 dígitos), capturado en «Recibos pendientes» cuando el CRM no lo tenía. El Excel no lo trae:
+   * se guarda en la carga más reciente y pasa a la siguiente carga por nombre del asegurado.
+   */
+  whatsapp?: string;
 }
 
 /** Una carga del Excel guardada en tu Supabase. */
@@ -88,6 +93,21 @@ function llave(s: string): string {
 
 export function normalizarPoliza(v: unknown): string {
   return String(v ?? "").replace(/\s+/g, "").toUpperCase();
+}
+
+/** Los 10 dígitos de un WhatsApp mexicano escrito como sea («81 1234 5678», «+52 (81) 1234-5678»), o null si no alcanzan. */
+export function whatsappDe10(v: unknown): string | null {
+  const d = String(v ?? "").replace(/\D+/g, "");
+  return d.length >= 10 ? d.slice(-10) : null;
+}
+
+/** El nombre del asegurado sin mayúsculas, acentos ni espacios de más: dos pólizas con la misma clave son de la misma persona. */
+export function claveAsegurado(nombre: string): string {
+  return llave(nombre);
+}
+
+export function mismoAsegurado(a: string, b: string): boolean {
+  return llave(a) === llave(b);
 }
 
 /** $8,520.13 · $4,644 (en dinero de seguros importan los centavos). */
@@ -397,6 +417,10 @@ export function validarPolizasChubb(entrada: unknown): { ok: true; polizas: Poli
       }
       pagados = [...new Set(o.recibos_pagados as string[])].sort();
     }
+    // El WhatsApp es opcional: el Excel no lo trae, lo agrega el servidor al guardar o lo captura el usuario.
+    const hayWhatsapp = o.whatsapp !== undefined && o.whatsapp !== null && o.whatsapp !== "";
+    const whatsapp = hayWhatsapp ? whatsappDe10(o.whatsapp) : undefined;
+    if (whatsapp === null) return { ok: false, error: `La póliza ${poliza} trae un WhatsApp que no es válido.` };
     salida.push({
       poliza,
       anio,
@@ -411,6 +435,7 @@ export function validarPolizasChubb(entrada: unknown): { ok: true; polizas: Poli
       estatus: o.estatus,
       recibos_pendientes: [...new Set(recibosCrudos as string[])].sort(),
       ...(pagados ? { recibos_pagados: pagados } : {}),
+      ...(whatsapp ? { whatsapp } : {}),
     });
   }
   return { ok: true, polizas: salida };
@@ -979,7 +1004,8 @@ export function buscarWhatsApp(asegurado: string, contactos: ContactoCRM[]): Wha
     const palabras = palabrasDeNombre(c.nombre);
     if (!palabras.length) continue;
     const dentro = (chico: string[], grande: string[]) => chico.every((x) => grande.includes(x));
-    const exacto = buscado.length >= 2 && buscado.length === palabras.length && dentro(buscado, palabras);
+    // Nombre escrito igual (incluso de una sola palabra, como una razón social) o mismas palabras en otro orden.
+    const exacto = mismoAsegurado(c.nombre, asegurado) || (buscado.length >= 2 && buscado.length === palabras.length && dentro(buscado, palabras));
     const [chico, grande] = buscado.length <= palabras.length ? [buscado, palabras] : [palabras, buscado];
     const parcial = chico.length >= 2 && dentro(chico, grande);
     if (exacto || parcial) hallados.push({ nombre: c.nombre, whatsapp, exacto });

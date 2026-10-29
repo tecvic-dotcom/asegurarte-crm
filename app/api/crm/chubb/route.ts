@@ -1,6 +1,6 @@
 import { exigirAdmin } from "@/lib/sesion-admin";
-import { contactosDelCRM, guardarCarga, ultimaCarga } from "@/lib/chubb";
-import { limpiarNombreArchivo, validarPolizasChubb } from "@/lib/chubb-reglas";
+import { contactosDelCRM, guardarCarga, guardarWhatsapp, ultimaCarga } from "@/lib/chubb";
+import { limpiarNombreArchivo, validarPolizasChubb, whatsappDe10 } from "@/lib/chubb-reglas";
 import { MigracionPendienteError } from "@/lib/migracion";
 import { rateLimit } from "@/lib/rate-limit";
 
@@ -41,7 +41,7 @@ export async function POST(req: Request): Promise<Response> {
     return Response.json({ error: "Vas muy rápido. Espera unos segundos e intenta de nuevo." }, { status: 429 });
   }
 
-  let body: { accion?: string; archivo?: unknown; polizas?: unknown };
+  let body: { accion?: string; archivo?: unknown; polizas?: unknown; asegurado?: unknown; whatsapp?: unknown };
   try {
     const texto = await req.text();
     if (texto.length > MAX_BYTES) return Response.json({ error: "Ese Excel es demasiado grande." }, { status: 413 });
@@ -55,6 +55,14 @@ export async function POST(req: Request): Promise<Response> {
       const r = validarPolizasChubb(body.polizas);
       if (!r.ok) return Response.json({ error: r.error }, { status: 422 });
       return Response.json({ carga: await guardarCarga(limpiarNombreArchivo(body.archivo), r.polizas) });
+    }
+    if (body.accion === "whatsapp") {
+      const asegurado = typeof body.asegurado === "string" ? body.asegurado.trim() : "";
+      if (!asegurado || asegurado.length > 200) return Response.json({ error: "Falta el nombre del asegurado." }, { status: 422 });
+      if (whatsappDe10(body.whatsapp) === null) return Response.json({ error: "Escribe los 10 dígitos de su WhatsApp." }, { status: 422 });
+      const contacto = await guardarWhatsapp(asegurado, body.whatsapp);
+      if (!contacto) return Response.json({ error: "No encontré a ese asegurado en tu última carga. Recarga la pantalla." }, { status: 404 });
+      return Response.json({ contacto });
     }
     return Response.json({ error: "Acción no reconocida" }, { status: 400 });
   } catch (e) {

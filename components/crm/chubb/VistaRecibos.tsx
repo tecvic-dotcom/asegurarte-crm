@@ -19,6 +19,7 @@ import {
   type PolizaConPendientes,
   type VentanaRecibos,
 } from "@/lib/chubb-reglas";
+import { CapturaWhatsapp } from "../camila/CapturaWhatsapp";
 import { COLOR_RECIBO, Dato, Nota, PALABRA_RECIBO, Pastillas, copiarTexto } from "./piezas";
 
 type Modo = "polizas" | "recibos";
@@ -56,7 +57,16 @@ function medir(infos: InfoPoliza[], ventana: VentanaRecibos) {
  * Las pólizas que tienen recibos sin pagar (los que están en amarillo en tu Excel), con lo necesario para cobrarlos:
  * qué recibo toca, cómo van sus pagos y el mensaje de WhatsApp listo. Las cifras de arriba filtran como en Valeri.
  */
-export function VistaRecibos({ infos, contactos }: { infos: InfoPoliza[]; contactos: ContactoCRM[] | null }) {
+export function VistaRecibos({
+  infos,
+  contactos,
+  onWhatsapp,
+}: {
+  infos: InfoPoliza[];
+  contactos: ContactoCRM[] | null;
+  /** Guarda el WhatsApp de un asegurado; devuelve el motivo si no se pudo. */
+  onWhatsapp: (asegurado: string, numero: string) => Promise<string | null>;
+}) {
   const medidas = useMemo(() => Object.fromEntries(VENTANAS.map((v) => [v, medir(infos, v)])) as Record<VentanaRecibos, ReturnType<typeof medir>>, [infos]);
   // Se empieza viendo TODAS las pólizas con recibos pendientes (de la más atrasada a la más lejana); las cifras acotan.
   const [ventana, setVentana] = useState<VentanaRecibos>("todos");
@@ -158,7 +168,7 @@ export function VistaRecibos({ infos, contactos }: { infos: InfoPoliza[]; contac
           </p>
           <ul className="space-y-2.5" data-testid="recibos-polizas">
             {porPoliza.map((x) => (
-              <TarjetaPoliza key={`${x.info.p.poliza}-${x.recibo.fecha}`} x={x} contactos={contactos} />
+              <TarjetaPoliza key={`${x.info.p.poliza}-${x.recibo.fecha}`} x={x} contactos={contactos} onWhatsapp={onWhatsapp} />
             ))}
           </ul>
         </>
@@ -207,7 +217,15 @@ function LineaPagos({ linea }: { linea: LineaRecibo[] }) {
 }
 
 /** Una póliza con recibos pendientes: qué recibo toca, su línea de pagos y el mensaje listo para el cliente. */
-function TarjetaPoliza({ x, contactos }: { x: PolizaConPendientes; contactos: ContactoCRM[] | null }) {
+function TarjetaPoliza({
+  x,
+  contactos,
+  onWhatsapp,
+}: {
+  x: PolizaConPendientes;
+  contactos: ContactoCRM[] | null;
+  onWhatsapp: (asegurado: string, numero: string) => Promise<string | null>;
+}) {
   const { info, recibo, enVentana } = x;
   const color = COLOR_RECIBO[recibo.estado];
   const original = useMemo(() => mensajeReciboChubb(info, recibo), [info, recibo]);
@@ -216,9 +234,12 @@ function TarjetaPoliza({ x, contactos }: { x: PolizaConPendientes; contactos: Co
   const [editando, setEditando] = useState(false);
   const [completo, setCompleto] = useState(false);
   const [copiado, setCopiado] = useState(false);
+  const [agregando, setAgregando] = useState(false);
   const texto = editado ?? original;
   const wa = useMemo(() => (contactos ? buscarWhatsApp(info.p.asegurado, contactos) : null), [contactos, info.p.asegurado]);
   const numero = wa?.tipo === "encontrado" ? wa.whatsapp : null;
+  // Solo cuando el CRM de plano no lo tiene: con varios números posibles o una coincidencia parcial hay que elegir, no agregar.
+  const faltaNumero = wa?.tipo === "ninguno";
   const pendientes = info.recibos.length;
   const porCobrar = info.recibos.reduce((s, r) => s + (r.importe ?? 0), 0);
 
@@ -314,7 +335,24 @@ function TarjetaPoliza({ x, contactos }: { x: PolizaConPendientes; contactos: Co
       )}
 
       <div className="mt-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-        <a href={ligaWhatsAppChubb(numero, texto)} target="_blank" rel="noopener noreferrer" className="btn-primary col-span-2 w-full text-sm sm:w-auto" data-testid="recibos-whatsapp">
+        {faltaNumero && (
+          <button
+            type="button"
+            onClick={() => setAgregando((v) => !v)}
+            aria-expanded={agregando}
+            className="btn-primary col-span-2 w-full text-sm sm:w-auto"
+            data-testid="recibos-agregar-whatsapp"
+          >
+            <Icon icon="logos:whatsapp-icon" width={18} aria-hidden /> Agregar WhatsApp
+          </button>
+        )}
+        <a
+          href={ligaWhatsAppChubb(numero, texto)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`${faltaNumero ? "btn-ghost" : "btn-primary"} col-span-2 w-full text-sm sm:w-auto`}
+          data-testid="recibos-whatsapp"
+        >
           <Icon icon="logos:whatsapp-icon" width={18} aria-hidden /> {numero ? "Enviar WhatsApp" : "Abrir WhatsApp"}
         </a>
         <button type="button" onClick={() => void copiar()} className="btn-ghost w-full text-sm sm:w-auto" data-testid="recibos-copiar">
@@ -327,6 +365,19 @@ function TarjetaPoliza({ x, contactos }: { x: PolizaConPendientes; contactos: Co
         )}
       </div>
 
+      {faltaNumero && agregando && (
+        <div className="mt-3 flex">
+          <CapturaWhatsapp
+            nombre={info.p.asegurado}
+            onGuardar={async (n) => {
+              const motivo = await onWhatsapp(info.p.asegurado, n);
+              if (!motivo) setAgregando(false);
+              return motivo;
+            }}
+          />
+        </div>
+      )}
+
       <p className="mt-2 text-xs text-ink-mute" data-testid="recibos-destino">
         {wa === null
           ? "Buscando su WhatsApp en tu CRM…"
@@ -334,7 +385,7 @@ function TarjetaPoliza({ x, contactos }: { x: PolizaConPendientes; contactos: Co
             ? `Se enviará al WhatsApp de ${wa.nombre} (····${wa.whatsapp.slice(-4)})${wa.exacto ? "." : ". Coincidencia parcial de nombre: verifica que sea la misma persona antes de enviar."}`
             : wa.tipo === "varios"
               ? "Hay varios contactos con ese nombre y números distintos en tu CRM: elige el chat en WhatsApp."
-              : "No encontré su WhatsApp en tu CRM: se abre WhatsApp para que elijas el chat."}
+              : "No encontré su WhatsApp en tu CRM: agrégalo aquí y queda guardado para la próxima, o abre WhatsApp y elige el chat."}
       </p>
     </li>
   );

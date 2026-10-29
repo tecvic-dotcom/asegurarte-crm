@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Icon } from "@iconify/react";
-import { crmChubb, crmContactosChubb, ErrorCRM } from "@/lib/api";
+import { crmChubb, crmContactosChubb, crmGuardarWhatsappChubb, ErrorCRM } from "@/lib/api";
 import { diasEntre, fechaLarga, fechaLocal, hoyLocal } from "@/lib/fechas";
 import {
   FRECUENCIAS,
@@ -15,6 +15,7 @@ import {
   opcionesDeFiltro,
   resumenChubb,
   textoReporteChubb,
+  whatsappDe10,
   type CargaChubb,
   type ContactoCRM,
   type FiltrosChubb,
@@ -104,6 +105,19 @@ export function ChubbDana() {
   const conAvisos = useMemo(() => filtradas.filter((i) => i.avisos.length > 0).length, [filtradas]);
   const nota = describirFiltros(filtros);
   const diasSinCargar = carga ? diasEntre(fechaLocal(carga.cargado_en), hoy) : 0;
+
+  /** Guarda el WhatsApp de un asegurado que el CRM no tenía y lo suma a los contactos. Devuelve el motivo si no se pudo. */
+  async function guardarWhatsapp(asegurado: string, numero: string): Promise<string | null> {
+    if (whatsappDe10(numero) === null) return "Escribe los 10 dígitos de su WhatsApp.";
+    try {
+      const nuevo = await crmGuardarWhatsappChubb(asegurado, numero);
+      setContactos((c) => [...(c ?? []), nuevo]);
+      setAviso(`Listo: guardé el WhatsApp de ${nuevo.nombre}. Ya queda para los próximos recordatorios.`);
+      return null;
+    } catch (e) {
+      return (e as Error).message || "No pude guardarlo. Intenta de nuevo.";
+    }
+  }
 
   async function copiarReporte() {
     setAviso((await copiarTexto(textoReporteChubb(filtradas, hoy, nota))) ? "Reporte copiado: pégalo donde quieras." : "No pude copiar. Intenta de nuevo.");
@@ -292,7 +306,7 @@ export function ChubbDana() {
               )}
               {vista === "renovaciones" && <VistaRenovaciones infos={filtradas} />}
               {/* Al cambiar los filtros se vuelve a ver «todos los pendientes»: una ventana angosta de antes escondería pólizas. */}
-              {vista === "recibos" && <VistaRecibos key={JSON.stringify(filtros)} infos={filtradas} contactos={contactos} />}
+              {vista === "recibos" && <VistaRecibos key={JSON.stringify(filtros)} infos={filtradas} contactos={contactos} onWhatsapp={guardarWhatsapp} />}
               {vista === "polizas" && <VistaPolizas infos={filtradas} />}
               {vista === "revisar" && <VistaRevisar infos={filtradas} />}
             </div>

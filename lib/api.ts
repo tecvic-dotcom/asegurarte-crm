@@ -349,6 +349,12 @@ export async function crmContactosChubb(): Promise<ContactoCRM[]> {
   return ((await jsonOErrorCRM(res)) as { contactos: ContactoCRM[] }).contactos;
 }
 
+/** Anota el WhatsApp de un asegurado de Chubb Autos cuando el CRM no lo tenía. Devuelve el contacto guardado. */
+export async function crmGuardarWhatsappChubb(asegurado: string, whatsapp: string): Promise<ContactoCRM> {
+  const data = await jsonOErrorCRM(await postJSON("/api/crm/chubb", { accion: "whatsapp", asegurado, whatsapp }));
+  return (data as { contacto: ContactoCRM }).contacto;
+}
+
 /** Guarda un Excel nuevo (ya leído en el navegador) como la carga más reciente de Dana. */
 export async function crmCargarChubb(archivo: string, polizas: PolizaChubb[]): Promise<CargaChubb> {
   const data = await jsonOErrorCRM(await postJSON("/api/crm/chubb", { accion: "cargar", archivo, polizas }));
