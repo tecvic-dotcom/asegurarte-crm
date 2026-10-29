@@ -143,6 +143,18 @@ export function Contenido({ r }: { r: ResumenTarjeta }) {
           <ListaBarras titulo="Productos (historial)" ayuda="Toques anteriores en «Quiero información» de cada seguro (ese botón ya no está en las tarjetas)." filas={r.productos} vacio="Sin toques de productos." />
         </div>
       </section>
+
+      <section className="space-y-3">
+        <h2 className="font-display text-lg text-ink">Asistente virtual</h2>
+        <p className="text-xs text-ink-mute">
+          Veces que alguien abrió el asistente: <strong className="text-ink">{nf(r.asistente.abrieron)}</strong>. Son veces, no personas, y no son mensajes: el asistente no recibe texto ni datos de nadie; solo cuenta qué botón se toca. Sus salidas a WhatsApp, cita y llamada suman en «Toques de contacto» como «Asistente virtual».
+        </p>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <ListaBarras titulo="Temas que eligen" ayuda="El primer botón que tocan al abrirlo." filas={r.asistente.temas} vacio="Aún nadie lo usa." />
+          <ListaBarras titulo="Preguntas que abren" ayuda="Las dudas que más se tocan dentro del asistente." filas={r.asistente.preguntas} vacio="Aún nadie abre una pregunta." />
+          <ListaBarras titulo="Páginas a las que los lleva" ayuda="Calculadora, vida con ahorro, hombre clave…" filas={r.asistente.paginas} vacio="Aún nadie sale hacia una página." />
+        </div>
+      </section>
     </div>
   );
 }

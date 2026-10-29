@@ -91,7 +91,7 @@ export default async function PrivacidadPage() {
         <section>
           <h2 className="font-display text-xl text-ink">6. Medición de la tarjeta digital</h2>
           <p>
-            En la tarjeta digital (/roberto) contamos de forma <strong>anónima</strong> qué se toca —por ejemplo, «se vio la
+            En la tarjeta digital (/roberto), en sus páginas de contenido y en su asistente virtual contamos de forma <strong>anónima</strong> qué se toca —por ejemplo, «se vio la
             sección Seguros» o «se tocó el botón de WhatsApp»—, si la visita fue desde un celular o una computadora y, si el
             enlace lo indica, desde qué red llegaste (por ejemplo, Instagram). Esta medición <strong>no usa cookies, no guarda
             tu dirección IP, tu nombre ni tu teléfono</strong> y no puede relacionarse contigo; sirve únicamente para saber qué

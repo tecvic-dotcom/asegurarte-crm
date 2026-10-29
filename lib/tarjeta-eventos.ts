@@ -48,6 +48,14 @@ function semilla(): FilaEvento[] {
       if (hasta > 7 && rnd() < 0.4) e("faq", elige(preguntas), 70);
       if (hasta > 2 && rnd() < 0.12) e("rec", elige(["producto:Gastos Médicos Mayores", "producto:Seguro de Vida", "video:¿Casados… o socios financieros?", "pregunta:¿Qué seguro debería contratar primero?"]), 40);
       if (hasta > 2 && rnd() < 0.2) e("chip", elige(chips), 35);
+      if (hasta > 0 && rnd() < 0.1) {
+        e("bot", "abrir", 30);
+        const tema = elige(["Familia", "Vida con ahorro", "Negocio", "Gastos médicos", "Contacto"]);
+        e("bot", `tema:${tema}`, 34);
+        if (rnd() < 0.6) e("bot", `p:${elige(["Cuánto seguro de vida necesito", "Es una inversión", "Quién puede contratarlo", "Se deduce de impuestos", "La aseguradora me va a pagar"])}`, 40);
+        if (rnd() < 0.25) e("bot", `pagina:${elige(["Calculadora", "Vida con ahorro", "Hombre clave"])}`, 46);
+        if (rnd() < 0.2) e("wa", `asistente:${tema}`, 50);
+      }
       if (rnd() < 0.09) e("wa", "hero", 12);
       if (hasta > 1 && rnd() < 0.05) e("wa", `producto:${elige(productos)}`, 30);
       if (hasta > 2 && rnd() < 0.05) e("wa", "asesoria:Mi familia", 45);

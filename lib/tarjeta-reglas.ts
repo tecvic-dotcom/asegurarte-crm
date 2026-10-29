@@ -31,6 +31,7 @@ export const EVENTOS_TARJETA = [
   "rec", // tocó una recomendación de «Para ti»
   "promo", // abrió el video de una promoción (detalle: nombre de la campaña)
   "car", // deslizó un carrusel
+  "bot", // usó el asistente virtual (detalle: abrir | tema:X | p:pregunta | pagina:X; sus salidas a WhatsApp, cita y llamada van como wa/agendar/llamar con «asistente:…»)
   // Guía «Dinero Bajo Control» (/semana). La tabla limita el nombre a 20 caracteres.
   "sf_abrir", // abrió la guía
   "sf_plan", // terminó de armar su plan (detalle: plan | ejemplo)
@@ -89,6 +90,7 @@ const LUGAR_WA: Record<string, string> = {
   promo: "Botón de una promoción",
   video: "Dentro de un video",
   faq: "Preguntas frecuentes",
+  asistente: "Asistente virtual",
 };
 
 export interface Conteo {
@@ -181,6 +183,8 @@ export interface ResumenTarjeta {
   fotos: Conteo[];
   preguntas: Conteo[];
   recomendaciones: Conteo[];
+  /** Asistente virtual guiado: veces que lo abrieron, temas que eligen, preguntas que abren y páginas a las que los lleva. */
+  asistente: { abrieron: number; temas: Conteo[]; preguntas: Conteo[]; paginas: Conteo[] };
   intereses: Conteo[];
   carruseles: { productos: number; testimonios: number; reconocimientos: number; videos: number; eventos: number };
   redes: Conteo[];
@@ -410,6 +414,12 @@ export function resumir(filas: FilaEvento[], dias: number, hoy: string): Omit<Re
     fotos: contar(dentro, "foto", (f) => f.detalle, 6),
     preguntas: contar(dentro, "faq", (f) => f.detalle, 6),
     recomendaciones: contar(dentro, "rec", (f) => f.detalle, 8),
+    asistente: {
+      abrieron: dentro.filter((f) => f.evento === "bot" && f.detalle === "abrir").length,
+      temas: contar(dentro, "bot", (f) => (f.detalle.startsWith("tema:") ? f.detalle.slice(5) : ""), 8),
+      preguntas: contar(dentro, "bot", (f) => (f.detalle.startsWith("p:") ? f.detalle.slice(2) : ""), 8),
+      paginas: contar(dentro, "bot", (f) => (f.detalle.startsWith("pagina:") ? f.detalle.slice(7) : ""), 6),
+    },
     intereses: contar(dentro, "chip", (f) => f.detalle, 8),
     carruseles: {
       productos: dentro.filter((f) => f.evento === "car" && f.detalle === "productos").length,

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Mascota provisional del asistente">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7f98ff"/>
+      <stop offset="1" stop-color="#2a22f5"/>
+    </linearGradient>
+    <radialGradient id="f" cx=".5" cy=".35" r=".8">
+      <stop offset="0" stop-color="#1b2150"/>
+      <stop offset="1" stop-color="#0a0c1c"/>
+    </radialGradient>
+  </defs>
+  <circle cx="64" cy="64" r="63" fill="url(#f)"/>
+  <circle cx="64" cy="64" r="62" fill="none" stroke="#5b7bff" stroke-opacity=".55" stroke-width="2"/>
+  <path d="M64 14C74 22 88 26 100 26V62C100 88 84 104 64 114C44 104 28 88 28 62V26C40 26 54 22 64 14Z" fill="url(#g)"/>
+  <path d="M64 20C73 27 85 31 95 31.5V40C84 39 73 35 64 28Z" fill="#fff" fill-opacity=".18"/>
+  <ellipse cx="50" cy="61" rx="5.5" ry="8" fill="#fff"/>
+  <ellipse cx="78" cy="61" rx="5.5" ry="8" fill="#fff"/>
+  <circle cx="51.5" cy="58.5" r="2" fill="#2a22f5"/>
+  <circle cx="79.5" cy="58.5" r="2" fill="#2a22f5"/>
+  <path d="M51 80Q64 92 77 80" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+  <path d="M104 22l2.2 5.8 5.8 2.2-5.8 2.2-2.2 5.8-2.2-5.8-5.8-2.2 5.8-2.2z" fill="#c3ccff"/>
+</svg>
