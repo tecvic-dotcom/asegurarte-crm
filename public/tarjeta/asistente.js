@@ -19,7 +19,12 @@
   const BOT = {
     nombre: "Asistente de Roberto",
     mascota: "/tarjeta/bot/mascota.svg", // mascota provisional: se reemplaza por la definitiva
-    burbuja: "¿Te ayudo?",
+    // Preguntas que lanza la burbuja para que lo vean (máximo 2 por visita, solo mientras nadie lo haya abierto). Cada página puede tener las suyas.
+    avisos: ["¿Qué seguro te interesa?", "¿Dudas sobre tu seguro? Pregúntame."],
+    avisosPagina: {
+      "/seguro-de-vida-con-ahorro": ["¿Dudas sobre el seguro de vida con ahorro?", "Pregúntame lo que quieras de este seguro."],
+      "/empresarios": ["¿Tu negocio depende de una persona clave?", "Pregúntame cómo protegerlo."],
+    },
   };
   const WHATSAPP = "528182800234";
   const TELEFONO = "+528182800234";
@@ -481,15 +486,25 @@
 :host{all:initial}
 *,*::before,*::after{box-sizing:border-box}
 button,a{font:inherit;color:inherit}
-.lanza,.burbuja,.panel{position:fixed;right:max(12px,env(safe-area-inset-right,0px));z-index:60;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.lanza,.burbuja,.panel,.aro{position:fixed;right:max(12px,env(safe-area-inset-right,0px));z-index:60;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 .lanza{bottom:calc(var(--abajo,20px) + env(safe-area-inset-bottom,0px));width:64px;height:64px;padding:0;border-radius:50%;border:2px solid rgba(91,123,255,.6);background:#0a0c1c;
   cursor:pointer;overflow:hidden;box-shadow:0 12px 32px -10px rgba(42,34,245,.85),0 0 0 4px rgba(91,123,255,.14);transition:bottom .25s ease,transform .15s ease,opacity .2s ease}
 .lanza:hover{transform:scale(1.06)}
 .lanza.espera,.burbuja.espera{opacity:0;visibility:hidden;pointer-events:none;transform:scale(.85)}
 .lanza img{display:block;width:100%;height:100%;object-fit:cover}
+/* Llamar la atención sin molestar: entra con un salto, da un saltito con un aro que se expande y lanza la pregunta. Solo transform/opacity (no mueve nada de la página), dura pocos segundos y no se repite en bucle */
+.aro{z-index:59;bottom:calc(var(--abajo,20px) + env(safe-area-inset-bottom,0px));width:64px;height:64px;border:3px solid #5b7bff;border-radius:50%;opacity:0;pointer-events:none;transition:bottom .25s ease}
+.aro.on{animation:aro 1.6s ease-out 2}
+.lanza.espera~.aro,.lanza.abierto~.aro{display:none}
+.lanza.entra{animation:pop .6s cubic-bezier(.2,.9,.3,1.25) both}
+.lanza.hola{animation:hola 1.4s ease-in-out}
+@keyframes pop{0%{opacity:0;transform:scale(.35)}100%{opacity:1;transform:none}}
+@keyframes hola{0%,100%{transform:none}12%{transform:translateY(-14px) rotate(-8deg)}26%{transform:translateY(0) rotate(7deg)}40%{transform:translateY(-8px) rotate(-5deg)}54%{transform:translateY(0) rotate(3deg)}68%{transform:none}}
+@keyframes aro{0%{opacity:.8;transform:scale(1)}100%{opacity:0;transform:scale(1.7)}}
 .lanza:focus-visible,.cerrar:focus-visible,.inicio:focus-visible,.mas-ops:focus-visible,.chip:focus-visible,.sal:focus-visible,.burbuja:focus-visible{outline:3px solid #fff;outline-offset:3px}
 .panel:focus,.panel:focus-visible{outline:none}
-.burbuja{bottom:calc(var(--abajo,20px) + env(safe-area-inset-bottom,0px) + 76px);max-width:210px;padding:10px 14px;border:0;border-radius:16px 16px 4px 16px;background:#fff;color:#0a0c1c;
+.burbuja::after{content:"";position:absolute;right:24px;bottom:-5px;width:12px;height:12px;background:#fff;border-radius:0 0 3px 0;transform:rotate(45deg)}
+.burbuja{bottom:calc(var(--abajo,20px) + env(safe-area-inset-bottom,0px) + 76px);max-width:230px;padding:10px 14px;border:0;border-radius:16px 16px 4px 16px;background:#fff;color:#0a0c1c;
   font-weight:700;font-size:14px;line-height:1.3;text-align:left;cursor:pointer;box-shadow:0 14px 34px -12px rgba(0,0,0,.7);
   opacity:0;transform:translateY(6px);pointer-events:none;transition:opacity .25s,transform .25s,bottom .25s}
 .burbuja.on{opacity:1;transform:none;pointer-events:auto}
@@ -550,6 +565,7 @@ button,a{font:inherit;color:inherit}
 @media print{:host{display:none}}
 </style>
 <button type="button" class="lanza" aria-haspopup="dialog" aria-expanded="false"><img alt="" width="64" height="64" decoding="async"></button>
+<span class="aro" aria-hidden="true"></span>
 <button type="button" class="burbuja" tabindex="-1" aria-hidden="true"></button>
 <section class="panel" role="dialog" aria-modal="false" tabindex="-1">
   <header class="cab">
@@ -563,13 +579,12 @@ button,a{font:inherit;color:inherit}
 </section>`;
 
   const $ = (s) => raiz.querySelector(s);
-  const lanza = $(".lanza"), burbuja = $(".burbuja"), panel = $(".panel"), cuerpo = $(".cuerpo"), inicioBtn = $(".inicio"), masOps = $(".mas-ops");
+  const lanza = $(".lanza"), burbuja = $(".burbuja"), aro = $(".aro"), panel = $(".panel"), cuerpo = $(".cuerpo"), inicioBtn = $(".inicio"), masOps = $(".mas-ops");
   const imgs = raiz.querySelectorAll("img");
   imgs.forEach((im) => { im.src = BOT.mascota; im.addEventListener("error", () => { im.src = SVG_RESPALDO; }, { once: true }); });
   $(".cab h2").textContent = BOT.nombre;
   panel.setAttribute("aria-label", BOT.nombre);
   lanza.setAttribute("aria-label", "Abrir el " + BOT.nombre.charAt(0).toLowerCase() + BOT.nombre.slice(1));
-  burbuja.textContent = BOT.burbuja;
 
   const IC = {
     wa: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.6 20.4l1.25-4.3A8.6 8.6 0 1 1 8 19.3z"/><path d="M9.2 8.1c-.4.4-.6 1-.4 1.8.6 2.2 2.6 4.3 4.9 4.9.8.2 1.4 0 1.8-.4l.4-.6-1.9-1.1-.8.7c-.9-.4-1.8-1.3-2.2-2.2l.7-.8-1.1-1.9z"/></svg>',
@@ -577,6 +592,34 @@ button,a{font:inherit;color:inherit}
     tel: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.2a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg>',
     arr: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>',
   };
+
+  /* ---------- Avisos: para que lo noten, al verse entra con un salto y, a los 2.5 s, da un saltito con un aro y lanza una pregunta
+     en la burbuja (9 s). Si nadie lo abre, repite 20 s después con otra pregunta y ya no insiste. Se cuenta por visita (sessionStorage):
+     al cambiar de página no empieza de cero y, si ya lo abrieron, no vuelve a avisar. Sin repetir en bucle: nada dura más de unos segundos. ---------- */
+  const PAGINA = location.pathname.replace(/\/+$/, "") || "/";
+  const PREGUNTAS = BOT.avisosPagina[PAGINA] || BOT.avisos;
+  const MAX_AVISOS = 2;
+  const leer = (k) => { try { return sessionStorage.getItem(k); } catch (_) { return null; } };
+  const guardar = (k, v) => { try { sessionStorage.setItem(k, v); } catch (_) {} };
+  let hechos = parseInt(leer("asistente-avisos"), 10) || 0, yaAbierto = !!leer("asistente-abierto");
+  let yaEntro = false, tSig = null, tBurbuja = null;
+  function animar(el, clase, ms) { el.classList.remove(clase); void el.offsetWidth; el.classList.add(clase); setTimeout(() => el.classList.remove(clase), ms); }
+  function planear() {
+    if (tSig || abierto || abiertoAntes || yaAbierto || hechos >= MAX_AVISOS || lanza.classList.contains("espera")) return;
+    tSig = setTimeout(avisar, hechos === 0 ? 2500 : 20000);
+  }
+  function avisar() {
+    tSig = null;
+    if (abierto || abiertoAntes || yaAbierto || hechos >= MAX_AVISOS) return;
+    if (lanza.classList.contains("espera")) return; // se ve de nuevo (barra de abajo) y acomodar() lo reprograma
+    if (document.hidden) { planear(); return; }
+    burbuja.textContent = PREGUNTAS[Math.min(hechos, PREGUNTAS.length - 1)];
+    hechos++; guardar("asistente-avisos", String(hechos));
+    burbuja.classList.add("on");
+    animar(lanza, "hola", 1500); animar(aro, "on", 3400);
+    clearTimeout(tBurbuja); tBurbuja = setTimeout(() => burbuja.classList.remove("on"), 9000);
+    planear();
+  }
 
   /* ---------- Posición: se acomoda sobre las barras fijas de abajo (la de la tarjeta o la de las páginas de contenido) ---------- */
   function acomodar() {
@@ -590,6 +633,10 @@ button,a{font:inherit;color:inherit}
     const espera = !abierto && !!dock && getComputedStyle(dock).display !== "none" && !dock.classList.contains("on");
     lanza.classList.toggle("espera", espera); burbuja.classList.toggle("espera", espera);
     lanza.tabIndex = espera ? -1 : 0; lanza.setAttribute("aria-hidden", espera ? "true" : "false");
+    if (!espera && !abierto) { // en cuanto se ve por primera vez: entra con un salto y se programan los avisos
+      if (!yaEntro) { yaEntro = true; animar(lanza, "entra", 700); }
+      planear();
+    }
   }
   ["dock", "bar"].forEach((id) => { const el = document.getElementById(id); if (el) new MutationObserver(acomodar).observe(el, { attributes: true, attributeFilter: ["class", "hidden"] }); });
   addEventListener("resize", acomodar);
@@ -723,7 +770,7 @@ button,a{font:inherit;color:inherit}
   /* ---------- Abrir y cerrar ---------- */
   function abrir() {
     if (abierto) return;
-    abierto = true; acomodar();
+    abierto = true; yaAbierto = true; guardar("asistente-abierto", "1"); clearTimeout(tSig); tSig = null; clearTimeout(tBurbuja); acomodar();
     panel.classList.add("on"); lanza.setAttribute("aria-expanded", "true"); burbuja.classList.remove("on");
     lanza.classList.add("abierto"); burbuja.classList.add("abierto");
     if (!abiertoAntes) { abiertoAntes = true; medir("bot", "abrir"); mostrar("inicio"); }
@@ -746,20 +793,8 @@ button,a{font:inherit;color:inherit}
   burbuja.addEventListener("click", abrir);
   raiz.addEventListener("keydown", (e) => { if (e.key === "Escape" && abierto) { e.stopPropagation(); cerrar(); } });
 
-  /* ---------- Saludo discreto: una sola vez por visita, a los 9 segundos, si no lo han abierto ---------- */
-  let intentosSaludo = 0;
-  function saludo() {
-    try { if (sessionStorage.getItem("asistente-saludo")) return; } catch (_) {}
-    if (abierto || abiertoAntes) return;
-    if (lanza.classList.contains("espera")) { if (++intentosSaludo < 8) setTimeout(saludo, 3000); return; }
-    try { sessionStorage.setItem("asistente-saludo", "1"); } catch (_) {}
-    burbuja.classList.add("on");
-    setTimeout(() => burbuja.classList.remove("on"), 8000);
-  }
-
   document.body.appendChild(host);
   acomodar();
-  setTimeout(saludo, 9000);
   window.AsistenteRR = { abrir, cerrar };
   }
 
