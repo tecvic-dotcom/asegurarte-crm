@@ -84,6 +84,9 @@ const nextConfig: NextConfig = {
       { source: "/escudo", destination: "/tarjeta/escudo.html" },
       // Guías de seguros agrupadas por ramo (imágenes en public/tarjeta/guias/)
       { source: "/guias", destination: "/tarjeta/guias.html" },
+      // Páginas de contenido (texto escrito en el HTML, para que Google y las vistas previas lo lean)
+      { source: "/seguro-de-vida-con-ahorro", destination: "/tarjeta/vida-ahorro.html" },
+      { source: "/empresarios", destination: "/tarjeta/empresarios.html" },
       { source: "/semana/:path*", destination: "/tarjeta/semana/:path*" },
     ];
   },
