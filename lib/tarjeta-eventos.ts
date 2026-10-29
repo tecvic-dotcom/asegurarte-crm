@@ -50,7 +50,7 @@ function semilla(): FilaEvento[] {
       if (hasta > 2 && rnd() < 0.2) e("chip", elige(chips), 35);
       if (hasta > 0 && rnd() < 0.1) {
         e("bot", "abrir", 30);
-        const tema = elige(["Familia", "Vida con ahorro", "Negocio", "Gastos médicos", "Contacto"]);
+        const tema = elige(["Vida y ahorro", "Hombre clave", "Gastos médicos", "Auto", "Hogar", "Contacto"]);
         e("bot", `tema:${tema}`, 34);
         if (rnd() < 0.6) e("bot", `p:${elige(["Cuánto seguro de vida necesito", "Es una inversión", "Quién puede contratarlo", "Se deduce de impuestos", "La aseguradora me va a pagar"])}`, 40);
         if (rnd() < 0.25) e("bot", `pagina:${elige(["Calculadora", "Vida con ahorro", "Hombre clave"])}`, 46);
