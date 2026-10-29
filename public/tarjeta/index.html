@@ -130,6 +130,21 @@ a{color:inherit}
 .logo.big .l2{font-size:15.5px}
 .logo.big b{font-size:40px}
 .logo img{display:block;max-height:64px;width:auto}
+/* Logo animado de la portada: la caja mide lo mismo que el logo fijo (235×55 px, a la izquierda) para no mover nada.
+   El video es más grande que la caja (deja respirar el destello) y está colocado para que el texto caiga donde va el logo.
+   El fondo negro del video se hace transparente (mezcla «pantalla») y los bordes se desvanecen. Al terminar la animación,
+   el video se desvanece y entra el logo fijo en la misma caja. Con «fijo» (sin video) el logo fijo está desde el inicio. */
+.logo-anim{position:relative;width:235px;height:55px}
+.logo-anim [data-logo]{position:absolute;left:0;top:0;opacity:0;transition:opacity .8s ease}
+.logo-anim.fin [data-logo]{opacity:1}
+.logo-anim.fin video{opacity:0}
+.logo-anim.fijo [data-logo]{opacity:1;transition:none}
+.logo-anim.fijo video{display:none}
+.logo-anim video{position:absolute;left:-64px;top:-19px;width:358px;height:93px;pointer-events:none;mix-blend-mode:screen;transition:opacity .8s ease;
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 11%,#000 89%,transparent 100%),linear-gradient(180deg,transparent 0,#000 12%,#000 88%,transparent 100%);
+  -webkit-mask-composite:source-in;
+  mask-image:linear-gradient(90deg,transparent 0,#000 11%,#000 89%,transparent 100%),linear-gradient(180deg,transparent 0,#000 12%,#000 88%,transparent 100%);
+  mask-composite:intersect}
 
 /* ---------- Botones ---------- */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:52px;padding:0 20px;border-radius:14px;
@@ -737,7 +752,7 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
   <!-- PORTADA -->
   <header class="hero" id="inicio">
     <div class="hero-inner">
-      <div data-logo></div>
+      <div class="logo-anim" id="logoAnim"><video muted playsinline autoplay preload="auto" poster="/tarjeta/img/logo-animado-poster.jpg" aria-hidden="true" tabindex="-1" disablepictureinpicture><source src="/tarjeta/img/logo-animado.mp4" type="video/mp4"></video><div data-logo id="logoFijo"></div></div>
       <figure class="portrait" style="margin-bottom:0"><picture id="fotoPic"><source type="image/avif" srcset="/tarjeta/img/roberto-600.avif 600w, /tarjeta/img/roberto-900.avif 900w, /tarjeta/img/roberto-1200.avif 1200w" sizes="(min-width: 1000px) 440px, 100vw"><source type="image/webp" srcset="/tarjeta/img/roberto-600.webp 600w, /tarjeta/img/roberto-900.webp 900w, /tarjeta/img/roberto-1200.webp 1200w" sizes="(min-width: 1000px) 440px, 100vw"><img id="foto" alt="Fotografía de Roberto Rodríguez" width="1200" height="1245" fetchpriority="high" decoding="async" src="/tarjeta/img/roberto-900.jpg" srcset="/tarjeta/img/roberto-600.jpg 600w, /tarjeta/img/roberto-900.jpg 900w, /tarjeta/img/roberto-1200.jpg 1200w" sizes="(min-width: 1000px) 440px, 100vw"></picture></figure>
       <div class="id">
         <h1 id="nombre"></h1>
@@ -1244,6 +1259,16 @@ function vcardTexto() {
       ? `<span class="logo"><img src="${esc(C.logoUrl)}" alt="${esc(C.nombre)}"></span>`
       : `<span class="logo${el.dataset.logo === "big" ? " big" : ""}" role="img" aria-label="${esc(C.logo.linea1 + " " + C.logo.linea2 + " " + C.logo.marca)}"><span class="l1">${esc(C.logo.linea1)}</span><span class="l2"><span>${esc(C.logo.linea2)}</span><b>${esc(C.logo.marca)}</b></span></span>`;
   });
+  // Logo animado de la portada: sin sonido, se reproduce una vez y, al terminar, se desvanece y vuelve el logo fijo (de la misma medida).
+  // El logo fijo se queda desde el inicio con «reducir movimiento», si el video falla o si el celular bloquea la reproducción automática.
+  (() => {
+    const caja = $("#logoAnim"), v = caja.querySelector("video");
+    const logoFijo = () => { caja.classList.add("fijo"); v.remove(); };
+    v.addEventListener("ended", () => caja.classList.add("fin"));
+    if (matchMedia("(prefers-reduced-motion:reduce)").matches) return logoFijo();
+    v.querySelector("source").addEventListener("error", logoFijo);
+    const p = v.play(); if (p) p.catch(logoFijo);
+  })();
   const partes = C.nombre.split(" ");
   $("#nombre").innerHTML = partes.length > 1 ? `${esc(partes[0])}<br>${esc(partes.slice(1).join(" "))}` : esc(C.nombre);
   const foto = $("#foto");
