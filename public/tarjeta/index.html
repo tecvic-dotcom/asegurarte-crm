@@ -1872,8 +1872,8 @@ function vcardTexto() {
 })();
 </script>
 
-<!-- Halloween: fondo de octubre (se enciende solo del 1 oct al 1 nov). Para quitarlo, borrar esta línea. -->
-<script src="/halloween/halloween.js" defer></script>
+<!-- Halloween: solo en octubre. Desde el 1 de noviembre este bloque no carga nada (ni el script, ni el vampiro). Para probarlo fuera de fecha: ?halloween=1. Para quitarlo del todo, borrar este bloque. -->
+<script>(function(){if(new Date().getMonth()===9||/[?&]halloween=1/.test(location.search)){var s=document.createElement("script");s.src="/halloween/halloween.js";document.body.appendChild(s);}})();</script>
 <script src="/tarjeta/asistente.js" defer></script>
 
 </body>

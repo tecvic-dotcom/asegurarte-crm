@@ -1,7 +1,7 @@
 /* Halloween de octubre — fondo animado para el sitio de Roberto.
    Un solo archivo: inyecta su propio CSS y su propio HTML (cielo morado, luna, nubes, estrellas,
    destellos, brasas, silueta de rocas y murciélagos que vuelan y aletean). Sin imágenes ni librerías.
-   - Se enciende solo del 1 de octubre al 1 de noviembre (fecha del visitante) y después se apaga solo.
+   - Se enciende solo durante octubre (fecha del visitante). El 1 de noviembre ya no corre ni se descarga (decisión de Roberto, 2026-10-29).
    - Para probar fuera de fecha: agregar ?halloween=1 a la dirección; ?halloween=0 lo apaga.
    - Para quitarlo: borrar la línea <script src="/halloween/halloween.js"> de la página.
    - Respeta «reducir movimiento»: ese visitante ve los murciélagos quietos. */
@@ -12,7 +12,7 @@
   var forzar = "";
   try { forzar = new URLSearchParams(location.search).get("halloween") || ""; } catch (e) {}
   var hoy = new Date();
-  var activo = hoy.getMonth() === 9 || (hoy.getMonth() === 10 && hoy.getDate() === 1);
+  var activo = hoy.getMonth() === 9; // solo octubre: el 1 de noviembre ya está apagado
   if (forzar === "1") activo = true;
   if (forzar === "0") activo = false;
   if (!activo) return;
