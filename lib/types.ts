@@ -48,6 +48,9 @@ export type Genero = "mujer" | "hombre" | "prefiero_no_decir";
 /** Ramo del seguro. Cada uno tiene su propia meta en el Panel de Mando. */
 export type Ramo = "vida" | "gmm" | "ahorro" | "autos" | "hogar";
 
+/** Con qué aseguradora llevas la cobranza de un cliente de Autos: AXA la lleva Valeri y Chubb la lleva Dana. */
+export type CobranzaAseguradora = "axa" | "chubb";
+
 export interface Lead {
   id: string;
   nombre: string;
@@ -76,6 +79,8 @@ export interface Lead {
   ramo: Ramo | null;
   /** Cuándo pasó a "Cliente ganado". Null si no está ganado. */
   cerrado_en: string | null;
+  /** Solo clientes de Autos: con qué aseguradora llevas su cobranza (null = todavía no lo decides). */
+  cobranza_aseguradora?: CobranzaAseguradora | null;
   creado_en: string;
   actualizado_en: string;
 }

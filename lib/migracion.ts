@@ -77,6 +77,9 @@ export function contactoRepetidoEnBase(error: { code?: string } | null | undefin
   return error?.code === "23505";
 }
 
+export const MENSAJE_MIGRACION_COBRANZA_ASEGURADORA =
+  "Falta un paso para recordar si la cobranza de un cliente de Autos va con AXA (Valeri) o con Chubb (Dana): abre Supabase → SQL Editor → New query, pega el archivo supabase/migrations/0025_cobranza_aseguradora.sql y dale Run.";
+
 export const MENSAJE_MIGRACION_CRUZADA_2 =
   "Falta un paso para activar las familias, los momentos de confianza y las ventas cruzadas en tu meta: abre Supabase → SQL Editor → New query, pega el archivo supabase/migrations/0017_venta_cruzada_2.sql y dale Run.";
 

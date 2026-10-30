@@ -13,6 +13,7 @@ import {
   hayFiltros,
   nombreArchivoChubb,
   opcionesDeFiltro,
+  polizasDeCliente,
   resumenChubb,
   textoReporteChubb,
   whatsappDe10,
@@ -47,11 +48,16 @@ function describirFiltros(f: FiltrosChubb): string {
 
 type Estado = { carga: CargaChubb | null; error: Error | null; listo: boolean };
 
+interface ChubbDanaProps {
+  /** Llegaste desde «Clientes ganados» o desde el aviso de cierre: el cliente de Autos que acabas de dejar con Chubb. */
+  clienteNuevo?: { nombre: string; onCerrar: () => void } | null;
+}
+
 /**
  * Dana, tu empleada digital de Chubb Autos: lee tu Excel «Producción Detalle» y te dice qué renovaciones vienen,
  * cuánta prima neta ya está pagada y qué recibos siguen sin pagarse. Sin IA y sin costo: son cuentas sobre tu Excel.
  */
-export function ChubbDana() {
+export function ChubbDana({ clienteNuevo = null }: ChubbDanaProps) {
   const hoy = useMemo(() => hoyLocal(), []);
   const [estado, setEstado] = useState<Estado>({ carga: null, error: null, listo: false });
   // Falta correr el SQL 0021: puede saberse al leer o al guardar el primer Excel.
@@ -98,6 +104,7 @@ export function ChubbDana() {
       vigente = false;
     };
   }, [necesitaContactos]);
+  const suPoliza = useMemo(() => (carga && clienteNuevo ? polizasDeCliente(clienteNuevo.nombre, carga.polizas) : []), [carga, clienteNuevo]);
   const infos =useMemo(() => (carga ? analizarTodas(carga.polizas, hoy) : []), [carga, hoy]);
   const filtradas = useMemo(() => filtrarPolizas(infos, filtros), [infos, filtros]);
   const resumen = useMemo(() => resumenChubb(filtradas), [filtradas]);
@@ -176,6 +183,24 @@ export function ChubbDana() {
           </div>
         </div>
       </div>
+
+      {clienteNuevo && (
+        <div className="flex items-start gap-2" data-testid="chubb-cliente-nuevo">
+          <div className="min-w-0 flex-1">
+            <Nota>
+              <strong className="text-ink">{clienteNuevo.nombre}</strong> quedó con Chubb.{" "}
+              {!estado.listo || !carga
+                ? "Su póliza se captura en tu Excel de Chubb: cuando lo subas, Dana la reconoce por nombre."
+                : suPoliza.length > 0
+                  ? `Ya aparece en tu Excel (${suPoliza.map((p) => p.poliza).join(", ")}).`
+                  : "Todavía no aparece en tu Excel: agrégalo ahí y vuelve a cargarlo para que Dana lo vea."}
+            </Nota>
+          </div>
+          <button type="button" onClick={clienteNuevo.onCerrar} className="rounded-lg px-2 py-1 text-lg leading-none text-ink-mute hover:text-ink" aria-label="Cerrar este aviso">
+            ×
+          </button>
+        </div>
+      )}
 
       {aviso && (
         <p role="status" className="flex items-center gap-2 rounded-xl border border-line bg-glass px-3 py-2 text-sm text-ink">

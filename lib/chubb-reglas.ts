@@ -989,26 +989,34 @@ function palabrasDeNombre(nombre: string): string[] {
 }
 
 /**
- * Busca el WhatsApp del asegurado entre los contactos del CRM, por nombre. «Exacto» = mismas palabras en cualquier orden
- * (el Excel de Chubb escribe «NOMBRE APELLIDO APELLIDO»); si no, acepta que el nombre del CRM esté contenido en el del Excel
- * (o al revés) con al menos dos palabras, y lo marca como parcial para que se verifique antes de mandar nada.
+ * Qué tanto se parecen dos nombres. «Exacto» = escrito igual (incluso de una sola palabra, como una razón social) o con las
+ * mismas palabras en otro orden (el Excel de Chubb escribe «NOMBRE APELLIDO APELLIDO»); «parcial» = uno está contenido en el
+ * otro con al menos dos palabras; null = no parecen la misma persona.
+ */
+function parecidoDeNombres(a: string, b: string): "exacto" | "parcial" | null {
+  const pa = palabrasDeNombre(a);
+  const pb = palabrasDeNombre(b);
+  if (!pa.length || !pb.length) return null;
+  const dentro = (chico: string[], grande: string[]) => chico.every((x) => grande.includes(x));
+  if (mismoAsegurado(a, b) || (pa.length >= 2 && pa.length === pb.length && dentro(pa, pb))) return "exacto";
+  const [chico, grande] = pa.length <= pb.length ? [pa, pb] : [pb, pa];
+  return chico.length >= 2 && dentro(chico, grande) ? "parcial" : null;
+}
+
+/**
+ * Busca el WhatsApp del asegurado entre los contactos del CRM, por nombre. «Exacto» = mismas palabras en cualquier orden;
+ * si no, acepta que el nombre del CRM esté contenido en el del Excel (o al revés) con al menos dos palabras, y lo marca como
+ * parcial para que se verifique antes de mandar nada.
  * Si hay varios contactos distintos con la misma coincidencia, no adivina.
  */
 export function buscarWhatsApp(asegurado: string, contactos: ContactoCRM[]): WhatsAppDelCliente {
-  const buscado = palabrasDeNombre(asegurado);
-  if (!buscado.length) return { tipo: "ninguno" };
+  if (!palabrasDeNombre(asegurado).length) return { tipo: "ninguno" };
   const hallados: { nombre: string; whatsapp: string; exacto: boolean }[] = [];
   for (const c of contactos) {
     const whatsapp = c.whatsapp.replace(/\D+/g, "").slice(-10);
     if (whatsapp.length !== 10) continue;
-    const palabras = palabrasDeNombre(c.nombre);
-    if (!palabras.length) continue;
-    const dentro = (chico: string[], grande: string[]) => chico.every((x) => grande.includes(x));
-    // Nombre escrito igual (incluso de una sola palabra, como una razón social) o mismas palabras en otro orden.
-    const exacto = mismoAsegurado(c.nombre, asegurado) || (buscado.length >= 2 && buscado.length === palabras.length && dentro(buscado, palabras));
-    const [chico, grande] = buscado.length <= palabras.length ? [buscado, palabras] : [palabras, buscado];
-    const parcial = chico.length >= 2 && dentro(chico, grande);
-    if (exacto || parcial) hallados.push({ nombre: c.nombre, whatsapp, exacto });
+    const parecido = parecidoDeNombres(asegurado, c.nombre);
+    if (parecido) hallados.push({ nombre: c.nombre, whatsapp, exacto: parecido === "exacto" });
   }
   // Se queda con el mejor nivel de coincidencia; si ahí hay números distintos, mejor no elegir por el usuario.
   const mejores = hallados.some((h) => h.exacto) ? hallados.filter((h) => h.exacto) : hallados;
@@ -1016,6 +1024,14 @@ export function buscarWhatsApp(asegurado: string, contactos: ContactoCRM[]): Wha
   if (numeros.size === 0) return { tipo: "ninguno" };
   if (numeros.size > 1) return { tipo: "varios", cuantos: numeros.size };
   return { tipo: "encontrado", ...mejores[0] };
+}
+
+/**
+ * Las pólizas de tu Excel de Chubb que son de esa persona del CRM, por nombre (mismas reglas que `buscarWhatsApp`).
+ * Sirve para saber si un cliente ganado ya está en Dana.
+ */
+export function polizasDeCliente(nombre: string, polizas: PolizaChubb[]): PolizaChubb[] {
+  return polizas.filter((p) => parecidoDeNombres(nombre, p.asegurado) !== null);
 }
 
 /** Liga directa a WhatsApp con el mensaje escrito; sin número abre WhatsApp para que elijas el chat. */

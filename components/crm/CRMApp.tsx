@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
-import { crmLeads, crmMover, crmLogout, getAjustesPublicas } from "@/lib/api";
+import { crmActualizar, crmLeads, crmMover, crmLogout, getAjustesPublicas } from "@/lib/api";
+import { aQuienPreguntarCobranza, etapasDe } from "@/lib/cobranza-autos";
 import { ETAPAS } from "@/lib/crm-data";
 import { Pipeline } from "./Pipeline";
 import { TablaLeads } from "./TablaLeads";
@@ -27,10 +28,11 @@ import { SeguimientoSofi } from "./SeguimientoSofi";
 import { ReportesClara } from "./ReportesClara";
 import { Camila } from "./Camila";
 import { ChubbDana } from "./ChubbDana";
+import { DondeRegistrarPoliza } from "./DondeRegistrarPoliza";
 import { MenuLateral, opcionDe, type Pestana } from "./MenuLateral";
 import { polizaDesdeVenta } from "@/lib/poliza-desde-venta";
 import type { Cotizacion } from "@/lib/cotizaciones-reglas";
-import type { Lead, Sesion, EtapaId, DatosPoliza, FormaPago, Poliza } from "@/lib/types";
+import type { Lead, Sesion, EtapaId, DatosPoliza, FormaPago, Poliza, CobranzaAseguradora } from "@/lib/types";
 
 interface CRMAppProps {
   sesion: Sesion;
@@ -59,6 +61,14 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
   const [clientesSinRamo, setClientesSinRamo] = useState(false);
   // Celular: el menú vive escondido a la izquierda y se abre con el botón "Menú".
   const [menuAbierto, setMenuAbierto] = useState(false);
+  // Un cliente de Autos recién ganado: se le pregunta si su póliza va con AXA (Valeri) o con Chubb (Dana). Guarda su id.
+  const [preguntaCobranza, setPreguntaCobranza] = useState<string | null>(null);
+  const [guardandoCobranza, setGuardandoCobranza] = useState<CobranzaAseguradora | null>(null);
+  const [errorCobranza, setErrorCobranza] = useState<string | null>(null);
+  // El cliente que acaba de quedar con Chubb: Dana lo menciona al abrirse.
+  const [danaCliente, setDanaCliente] = useState<string | null>(null);
+  // La etapa de cada prospecto en la lectura anterior, para notar quién acaba de pasar a «ganado» (null = aún no se lee ninguna).
+  const etapasVistas = useRef<Map<string, string> | null>(null);
   // Si el servidor rechaza mover a un prospecto de etapa, se dice por qué (antes la tarjeta solo regresaba sin explicar).
   const [falloMover, setFalloMover] = useState<string | null>(null);
   useEffect(() => {
@@ -136,9 +146,25 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
   const esAdmin = sesion.rol === "admin";
   const actual = opcionDe(pestana);
 
+  // Marques a quien marques como GANADO (arrastrándolo, en la tabla o en su ficha), si es de Autos se pregunta dónde va su póliza.
+  // Se nota por la diferencia entre una lectura de los prospectos y la siguiente, así no hay que avisarle desde cada pantalla.
+  useEffect(() => {
+    const antes = etapasVistas.current;
+    etapasVistas.current = etapasDe(leads);
+    if (!antes || !esAdmin) return;
+    const nuevo = aQuienPreguntarCobranza(antes, leads);
+    if (nuevo) {
+      setErrorCobranza(null);
+      setPreguntaCobranza(nuevo.id);
+    }
+  }, [leads, esAdmin]);
+  // Si la venta se revirtió (el servidor rechazó el cambio) ya no hay a quién preguntarle.
+  const clientePregunta = esAdmin && preguntaCobranza ? leads.find((l) => l.id === preguntaCobranza && l.etapa === "ganado") : undefined;
+
   function elegir(id: Pestana) {
     // Una búsqueda escrita en otra pantalla no se lleva a la nueva: así el tablero no aparece «vacío» sin saber por qué.
     if (id !== pestana) setBusca("");
+    setDanaCliente(null);
     // Entrar a Clientes ganados desde el menú lo muestra completo; solo el Panel de Mando lo abre ya filtrado.
     if (id === "clientes") setClientesSinRamo(false);
     // Un filtro «Cliente ganado» o «Perdido» pendiente dejaría vacío Prospectos (esos ya no viven ahí).
@@ -175,6 +201,42 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
     setSeleccion(null);
     setPestana("valeri");
     window.scrollTo({ top: 0 });
+  }
+
+  /** Lleva a Dana al cliente que quedó con Chubb (ella le avisa que su póliza sale de tu Excel). */
+  function abrirDana(lead: Lead) {
+    setDanaCliente(lead.nombre);
+    setSeleccion(null);
+    setPestana("dana");
+    setMenuAbierto(false);
+    window.scrollTo({ top: 0 });
+  }
+
+  /** Vuelve a preguntar dónde va la póliza de un cliente de Autos (desde su tarjeta de «Clientes ganados»). */
+  function preguntarCobranza(lead: Lead) {
+    setErrorCobranza(null);
+    setPreguntaCobranza(lead.id);
+  }
+
+  /** La respuesta a «¿Dónde registras la póliza?»: AXA te lleva a su ficha (Valeri) y Chubb lo deja anotado y abre Dana. */
+  async function elegirCobranza(lead: Lead, aseguradora: CobranzaAseguradora) {
+    setErrorCobranza(null);
+    setGuardandoCobranza(aseguradora);
+    try {
+      await crmActualizar(lead.id, { cobranza_aseguradora: aseguradora });
+    } catch (e) {
+      // AXA funciona aunque falte el SQL 0025 (su póliza se da de alta en Valeri igual); Chubb necesita que quede anotado.
+      if (aseguradora === "chubb") {
+        setErrorCobranza((e as Error).message || "No pude guardarlo. Inténtalo de nuevo.");
+        setGuardandoCobranza(null);
+        return;
+      }
+    }
+    setGuardandoCobranza(null);
+    setPreguntaCobranza(null);
+    await recargar();
+    if (aseguradora === "chubb") abrirDana(lead);
+    else setSeleccion(lead.id);
   }
 
   /** Desde Camila: abre Valeri con una póliza nueva ya prellenada con los datos del cliente que acaba de contratar. */
@@ -326,7 +388,17 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
           )}
           {pestana === "contactos" && <Contactos leads={prospectosFiltrados} onAbrir={setSeleccion} onCambio={recargar} />}
           {pestana === "perdidos" && <ProspectosPerdidos leads={leads} onAbrir={setSeleccion} onCotizar={cotizarA} onReactivar={(l) => void mover(l.id, "nuevo")} />}
-          {pestana === "clientes" && <ClientesGanados leads={leads} esAdmin={esAdmin} soloSinRamo={clientesSinRamo} onAbrir={setSeleccion} onCotizar={cotizarA} />}
+          {pestana === "clientes" && (
+            <ClientesGanados
+              leads={leads}
+              esAdmin={esAdmin}
+              soloSinRamo={clientesSinRamo}
+              onAbrir={setSeleccion}
+              onCotizar={cotizarA}
+              onAbrirDana={abrirDana}
+              onElegirCobranza={preguntarCobranza}
+            />
+          )}
           {pestana === "reportes" && <EmbudoVentas leads={buscados} todos={leads} busca={busca} onQuitarBusqueda={() => setBusca("")} onMover={mover} onAbrir={setSeleccion} />}
           {esAdmin && pestana === "panel" && <PanelMando onVerSinRamo={verGanadasSinRamo} />}
           {esAdmin && pestana === "crecimiento" && <Crecimiento />}
@@ -349,7 +421,7 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
 
           {esAdmin && pestana === "camila" && <Camila onCotizar={cotizarPorId} onVerPoliza={verPolizaEnValeri} onAgregarPoliza={agregarPolizaDeCliente} />}
 
-          {esAdmin && pestana === "dana" && <ChubbDana />}
+          {esAdmin && pestana === "dana" && <ChubbDana clienteNuevo={danaCliente ? { nombre: danaCliente, onCerrar: () => setDanaCliente(null) } : null} />}
 
           {esAdmin && pestana === "clara" && <ReportesClara />}
 
@@ -360,11 +432,22 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
               onCambio={recargar}
               onAgregarCobranza={esAdmin ? agregarACobranza : undefined}
               onVerPoliza={esAdmin ? verPolizaEnValeri : undefined}
+              onAbrirDana={esAdmin ? abrirDana : undefined}
               onCotizar={cotizarA}
             />
           )}
         </div>
       </main>
+
+      {clientePregunta && (
+        <DondeRegistrarPoliza
+          lead={clientePregunta}
+          guardando={guardandoCobranza}
+          error={errorCobranza}
+          onElegir={(a) => void elegirCobranza(clientePregunta, a)}
+          onDespues={() => setPreguntaCobranza(null)}
+        />
+      )}
 
       {falloMover && (
         <div

@@ -9,12 +9,13 @@ import { COLOR_ESTADO, FORMAS_PAGO, esPrimerPago, estadoDe, etiquetaEstado } fro
 import { textoDeCobro } from "@/lib/clientes-reglas";
 import { hoyLocal } from "@/lib/fechas";
 import { avisoDeMontos, cotizacionElegida } from "@/lib/poliza-desde-venta";
+import { ASEGURADORAS_COBRANZA } from "@/lib/cobranza-autos";
 import type { Cotizacion } from "@/lib/cotizaciones-reglas";
 import { aplicarPlantilla } from "@/lib/plantillas";
 import { RAMOS } from "@/lib/ramos";
 import { DictadoBoton } from "./DictadoBoton";
 import { ORIGENES_MANUAL } from "@/lib/types";
-import type { Lead, Actividad, EtapaId, TipoActividad, Genero, PlantillaMensaje, Ramo, FormaPago, Poliza } from "@/lib/types";
+import type { Lead, Actividad, EtapaId, TipoActividad, Genero, PlantillaMensaje, Ramo, FormaPago, Poliza, CobranzaAseguradora } from "@/lib/types";
 
 /** Mensual → anual, como se elige de corto a largo. */
 const FORMAS_DE_CORTO_A_LARGO = [...FORMAS_PAGO].reverse();
@@ -27,11 +28,13 @@ interface LeadPanelProps {
   onAgregarCobranza?: (lead: Lead, forma: FormaPago, cotizacion: Cotizacion | null) => void;
   /** Abre en Valeri la póliza que ya tiene el cliente para verla o editarla. */
   onVerPoliza?: (poliza: Poliza) => void;
+  /** Solo admin: lleva a Dana al cliente de Autos cuya cobranza va con Chubb. */
+  onAbrirDana?: (lead: Lead) => void;
   /** Lleva a Cotizaciones con este prospecto ya elegido. */
   onCotizar?: (lead: Lead) => void;
 }
 
-export function LeadPanel({ id, onClose, onCambio, onAgregarCobranza, onVerPoliza, onCotizar }: LeadPanelProps) {
+export function LeadPanel({ id, onClose, onCambio, onAgregarCobranza, onVerPoliza, onAbrirDana, onCotizar }: LeadPanelProps) {
   const puedeAgregarCobranza = Boolean(onAgregarCobranza);
   const [lead, setLead] = useState<Lead | null>(null);
   const [actividad, setActividad] = useState<Actividad[]>([]);
@@ -46,12 +49,15 @@ export function LeadPanel({ id, onClose, onCambio, onAgregarCobranza, onVerPoliz
   const [mostrarPlantillas, setMostrarPlantillas] = useState(false);
   const [errorRamo, setErrorRamo] = useState<string | null>(null);
   const [errorOrigen, setErrorOrigen] = useState<string | null>(null);
+  const [errorCobranza, setErrorCobranza] = useState<string | null>(null);
   const [formaPago, setFormaPago] = useState<FormaPago>("anual");
   // La cotización que elegiste para este cliente (si hay): de ella salen la prima, el primer pago y los pagos subsecuentes.
   const [elegida, setElegida] = useState<Cotizacion | null>(null);
   // Las pólizas que este cliente YA tiene en Valeri: null = revisando · "no" = no se pudo leer la cartera.
   const [susPolizas, setSusPolizas] = useState<Poliza[] | null | "no">(null);
   const [agregandoOtra, setAgregandoOtra] = useState(false);
+  // Un cliente de Autos cuya cobranza va con Chubb: la lleva Dana, así que no se le da de alta en Valeri.
+  const conChubb = lead?.ramo === "autos" && lead.cobranza_aseguradora === "chubb";
 
   function cargarDesde(l: Lead) {
     setLead(l);
@@ -105,8 +111,32 @@ export function LeadPanel({ id, onClose, onCambio, onAgregarCobranza, onVerPoliz
     if (!lead) return;
     setLead({ ...lead, etapa: e });
     await crmMover(id, e);
+    // Recién ganado: se revisa su póliza en Valeri (al abrir la ficha solo se hacía si ya llegaba ganado).
+    if (e === "ganado" && puedeAgregarCobranza && susPolizas === null) {
+      crmPolizas()
+        .then((todas) => setSusPolizas(todas.filter((p) => p.lead_id === id)))
+        .catch(() => setSusPolizas("no"));
+      crmCotizaciones(id)
+        .then((lista) => setElegida(cotizacionElegida(lista)))
+        .catch(() => {});
+    }
     onCambio();
     void cargar();
+  }
+
+  /** Con qué aseguradora se cobra su auto (AXA → Valeri, Chubb → Dana): se guarda al momento, como el ramo. */
+  async function cambiarCobranza(a: CobranzaAseguradora) {
+    if (!lead || a === lead.cobranza_aseguradora) return;
+    const antes = lead.cobranza_aseguradora ?? null;
+    setLead({ ...lead, cobranza_aseguradora: a });
+    setErrorCobranza(null);
+    try {
+      await crmActualizar(id, { cobranza_aseguradora: a });
+      onCambio();
+    } catch (e) {
+      setLead((l) => (l ? { ...l, cobranza_aseguradora: antes } : l));
+      setErrorCobranza((e as Error).message);
+    }
   }
 
   /** El ramo se guarda al momento (como la etapa): cuenta para tu meta del Panel. */
@@ -291,7 +321,48 @@ export function LeadPanel({ id, onClose, onCambio, onAgregarCobranza, onVerPoliz
             )}
             {lead.etapa === "ganado" && onAgregarCobranza && (
               <>
-                {susPolizas === null && <p className="mt-4 text-xs text-ink-mute">Revisando su póliza en Valeri…</p>}
+                {/* Autos: se cobra con AXA (Valeri) o con Chubb (Dana); aquí se decide y se puede cambiar */}
+                {lead.ramo === "autos" && (
+                  <div className="mt-4" data-testid="cobranza-aseguradora">
+                    <p className="field-label !mb-1.5">¿Dónde registras su póliza?</p>
+                    <div className="grid grid-cols-2 gap-2" role="group" aria-label="Aseguradora de su póliza de Autos">
+                      {ASEGURADORAS_COBRANZA.map((a) => {
+                        const activa = lead.cobranza_aseguradora === a.id;
+                        return (
+                          <button
+                            key={a.id}
+                            type="button"
+                            onClick={() => void cambiarCobranza(a.id)}
+                            aria-pressed={activa}
+                            data-testid={`ficha-${a.id}`}
+                            className={`rounded-xl border px-3 py-2 text-sm font-semibold transition-colors ${activa ? "border-brand-2 bg-brand/20 text-ink" : "border-line bg-glass text-ink-soft hover:border-brand-2"}`}
+                          >
+                            {a.nombre} <span className="font-normal text-ink-mute">· {a.empleado}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {errorCobranza && (
+                      <p className="mt-1.5 text-xs" style={{ color: "var(--red)" }} role="alert">
+                        {errorCobranza}
+                      </p>
+                    )}
+                    {!lead.cobranza_aseguradora && !errorCobranza && <p className="mt-1.5 text-xs text-ink-mute">Elige una para saber con quién se cobra: Valeri lleva AXA y Dana lleva Chubb.</p>}
+                  </div>
+                )}
+                {conChubb && (
+                  <div className="mt-3 rounded-xl border border-line bg-glass p-3 text-sm" data-testid="cobranza-en-dana">
+                    <p className="font-semibold text-ink">Su cobranza la lleva Dana (Chubb)</p>
+                    <p className="mt-0.5 text-xs text-ink-soft">Su póliza se captura en tu Excel de Chubb; Dana la reconoce por nombre cuando lo subas.</p>
+                    {onAbrirDana && (
+                      <button type="button" onClick={() => onAbrirDana(lead)} className="btn-ghost mt-2 px-3 py-2 text-xs">
+                        <Icon icon="flat-color-icons:data-sheet" width={16} aria-hidden /> Abrir Dana
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {!conChubb && susPolizas === null && <p className="mt-4 text-xs text-ink-mute">Revisando su póliza en Valeri…</p>}
 
                 {/* Lo que este cliente ya tiene en Valeri: su frecuencia de pago REAL y cómo quedan sus pagos */}
                 {Array.isArray(susPolizas) && susPolizas.length > 0 && (
@@ -326,7 +397,7 @@ export function LeadPanel({ id, onClose, onCambio, onAgregarCobranza, onVerPoliz
                   </div>
                 )}
 
-                {susPolizas !== null && (susPolizas === "no" || susPolizas.length === 0 || agregandoOtra) && (
+                {!conChubb && susPolizas !== null && (susPolizas === "no" || susPolizas.length === 0 || agregandoOtra) && (
                   <>
                 <label className="field-label mt-4" htmlFor="lead-forma-pago">
                   {agregandoOtra ? "Frecuencia de pago de la otra póliza" : "Frecuencia de pago de su póliza"}

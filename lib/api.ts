@@ -20,6 +20,7 @@ import type {
   Genero,
   PlantillaMensaje,
   Ramo,
+  CobranzaAseguradora,
   PeriodoPanel,
   PanelSnapshot,
   Movimiento,
@@ -188,6 +189,7 @@ export async function crmActualizar(
     codigo_postal?: string | null;
     ramo?: Ramo | null;
     origen?: string;
+    cobranza_aseguradora?: CobranzaAseguradora | null;
   },
 ): Promise<Lead> {
   const data = (await jsonOrThrow(

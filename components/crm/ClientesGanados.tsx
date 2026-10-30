@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Icon } from "@iconify/react";
-import { crmPolizas } from "@/lib/api";
+import { crmChubb, crmPolizas } from "@/lib/api";
+import { polizasDeCliente, type CargaChubb } from "@/lib/chubb-reglas";
 import { textoDeCobro } from "@/lib/clientes-reglas";
 import { moneda, monedaConCentavos } from "@/lib/crm-data";
 import { infoRamo, RAMOS } from "@/lib/ramos";
@@ -22,7 +23,17 @@ interface ClientesGanadosProps {
   onAbrir: (id: string) => void;
   /** Cotizarle OTRO seguro a un cliente que ya compró. */
   onCotizar: (lead: Lead) => void;
+  /** Lleva a Dana a un cliente de Autos cuya cobranza va con Chubb. */
+  onAbrirDana: (lead: Lead) => void;
+  /** Pregunta de nuevo «¿AXA o Chubb?» para un cliente de Autos que aún no lo decide. */
+  onElegirCobranza: (lead: Lead) => void;
 }
+
+/** Un cliente de Autos cuya póliza se cobra con Chubb: la lleva Dana, no Valeri. */
+const conChubb = (c: Lead) => c.ramo === "autos" && c.cobranza_aseguradora === "chubb";
+
+type TonoPastilla = "ok" | "ojo" | "info";
+const COLOR_PASTILLA: Record<TonoPastilla, string> = { ok: "var(--green)", ojo: "var(--amber)", info: "var(--sky)" };
 
 function cuando(iso: string | null): string {
   return iso ? new Date(iso).toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" }) : "";
@@ -33,12 +44,14 @@ function cuando(iso: string | null): string {
  * muestren solo a quien todavía estás atendiendo; aquí los encuentras con su ramo, lo que vale cada venta y, si eres
  * administrador, si ya tienen su póliza en Valeri (cobranza).
  */
-export function ClientesGanados({ leads, esAdmin, soloSinRamo = false, onAbrir, onCotizar }: ClientesGanadosProps) {
+export function ClientesGanados({ leads, esAdmin, soloSinRamo = false, onAbrir, onCotizar, onAbrirDana, onElegirCobranza }: ClientesGanadosProps) {
   const [busca, setBusca] = useState("");
   const [ramo, setRamo] = useState<FiltroRamo>(soloSinRamo ? "sin_ramo" : "todos");
   const [faltaPoliza, setFaltaPoliza] = useState(false);
   // null = todavía cargando · "no" = no se pudo leer la cartera (por ejemplo, un vendedor no la ve)
   const [polizas, setPolizas] = useState<Poliza[] | null | "no">(null);
+  // El Excel de Chubb que Dana tiene cargado (null = todavía no llega, no hay ninguno o no se pudo leer).
+  const [carga, setCarga] = useState<CargaChubb | null>(null);
 
   useEffect(() => {
     if (!esAdmin) return;
@@ -63,15 +76,52 @@ export function ClientesGanados({ leads, esAdmin, soloSinRamo = false, onAbrir, 
   }, [polizas]);
   const sabeDePolizas = esAdmin && Array.isArray(polizas);
 
+  // Solo si hay clientes con Chubb se le pide a Dana su Excel, para ver quiénes ya aparecen ahí.
+  const hayConChubb = esAdmin && clientes.some(conChubb);
+  useEffect(() => {
+    if (!hayConChubb) return;
+    let vivo = true;
+    crmChubb()
+      .then((c) => vivo && setCarga(c))
+      .catch(() => {}); // sin su Excel (o sin su SQL) la tarjeta dice «Cobranza en Chubb (Dana)» y listo
+    return () => {
+      vivo = false;
+    };
+  }, [hayConChubb]);
+  const enDana = useMemo(() => {
+    const m = new Map<string, string>();
+    if (carga) for (const c of clientes) if (conChubb(c)) polizasDeCliente(c.nombre, carga.polizas).slice(0, 1).forEach((p) => m.set(c.id, p.asegurado));
+    return m;
+  }, [carga, clientes]);
+
+  // Lo de Chubb no se cuenta como «falta en Valeri»: esa póliza la lleva Dana.
+  const faltaEnValeri = (c: Lead) => !polizasDe.has(c.id) && !conChubb(c);
+
+  /** La pastilla de cada tarjeta: dónde está (o falta) la póliza del cliente. */
+  function pastillaDe(c: Lead): { texto: string; tono: TonoPastilla; titulo: string; alTocar: () => void } {
+    const suyas = polizasDe.get(c.id) ?? [];
+    if (suyas.length) return { texto: `✓ En Valeri${suyas.length > 1 ? ` · ${suyas.length} pólizas` : ""}`, tono: "ok", titulo: "Ya está en tu cobranza (Valeri)", alTocar: () => onAbrir(c.id) };
+    if (conChubb(c)) {
+      const asegurado = enDana.get(c.id);
+      return asegurado
+        ? { texto: "✓ En Dana (Chubb)", tono: "ok", titulo: `Aparece en tu Excel de Chubb como «${asegurado}»`, alTocar: () => onAbrirDana(c) }
+        : { texto: "Cobranza en Chubb (Dana)", tono: "info", titulo: "Su póliza se captura en tu Excel de Chubb y aparece en Dana cuando lo subas", alTocar: () => onAbrirDana(c) };
+    }
+    if (c.ramo === "autos" && !c.cobranza_aseguradora) {
+      return { texto: "¿AXA o Chubb? Elegir", tono: "ojo", titulo: "Elige dónde registras su póliza: AXA (Valeri) o Chubb (Dana)", alTocar: () => onElegirCobranza(c) };
+    }
+    return { texto: "Falta su póliza en Valeri", tono: "ojo", titulo: "Abre su ficha para agregarlo a cobranza", alTocar: () => onAbrir(c.id) };
+  }
+
   const sinRamo = clientes.filter((c) => !c.ramo).length;
-  const sinPoliza = sabeDePolizas ? clientes.filter((c) => !polizasDe.has(c.id)).length : 0;
+  const sinPoliza = sabeDePolizas ? clientes.filter(faltaEnValeri).length : 0;
   const total = clientes.reduce((s, c) => s + c.valor, 0);
 
   const texto = sinAcentos(busca.trim());
   const visibles = clientes.filter((c) => {
     if (ramo === "sin_ramo" && c.ramo) return false;
     if (ramo !== "todos" && ramo !== "sin_ramo" && c.ramo !== ramo) return false;
-    if (faltaPoliza && polizasDe.has(c.id)) return false;
+    if (faltaPoliza && !faltaEnValeri(c)) return false;
     if (!texto) return true;
     return sinAcentos(c.nombre).includes(texto) || sinAcentos(c.correo).includes(texto) || c.whatsapp.includes(texto);
   });
@@ -98,7 +148,7 @@ export function ClientesGanados({ leads, esAdmin, soloSinRamo = false, onAbrir, 
           <Cifra
             icono="flat-color-icons:debt"
             etiqueta="Sin póliza en Valeri"
-            bien={sabeDePolizas && sinPoliza === 0 ? "✓ Todos ya están en Valeri" : undefined}
+            bien={sabeDePolizas && sinPoliza === 0 ? (hayConChubb ? "✓ Todos en Valeri o en Dana" : "✓ Todos ya están en Valeri") : undefined}
             valor={sabeDePolizas ? String(sinPoliza) : polizas === "no" ? "—" : "…"}
             alerta={sinPoliza > 0}
             activa={faltaPoliza}
@@ -173,6 +223,7 @@ export function ClientesGanados({ leads, esAdmin, soloSinRamo = false, onAbrir, 
           {visibles.map((c) => {
             const wa = whatsappDe(c);
             const suyas = polizasDe.get(c.id) ?? [];
+            const pastilla = sabeDePolizas ? pastillaDe(c) : null;
             return (
               <li key={c.id} className="glass flex flex-col rounded-2xl p-4" data-testid="cliente-ganado">
                 <div className="flex items-start justify-between gap-2">
@@ -210,19 +261,16 @@ export function ClientesGanados({ leads, esAdmin, soloSinRamo = false, onAbrir, 
                     <p className="text-[11px] uppercase tracking-wide text-ink-mute">Prima total</p>
                     <p className="text-lg font-bold text-ink">{c.valor > 0 ? monedaConCentavos(c.valor) : "Sin capturar"}</p>
                   </div>
-                  {sabeDePolizas && (
+                  {pastilla && (
                     <button
                       type="button"
-                      onClick={() => onAbrir(c.id)}
+                      onClick={pastilla.alTocar}
                       className="rounded-full px-2.5 py-1 text-xs font-semibold"
-                      style={
-                        suyas.length
-                          ? { color: "var(--green)", background: "color-mix(in srgb, var(--green) 14%, transparent)" }
-                          : { color: "var(--amber)", background: "color-mix(in srgb, var(--amber) 14%, transparent)" }
-                      }
-                      title={suyas.length ? "Ya está en tu cobranza (Valeri)" : "Abre su ficha para agregarlo a cobranza"}
+                      style={{ color: COLOR_PASTILLA[pastilla.tono], background: `color-mix(in srgb, ${COLOR_PASTILLA[pastilla.tono]} 14%, transparent)` }}
+                      title={pastilla.titulo}
+                      data-testid="pastilla-cobranza"
                     >
-                      {suyas.length ? `✓ En Valeri${suyas.length > 1 ? ` · ${suyas.length} pólizas` : ""}` : "Falta su póliza en Valeri"}
+                      {pastilla.texto}
                     </button>
                   )}
                 </div>

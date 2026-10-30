@@ -1,7 +1,8 @@
 import { sesionDesdeRequest } from "@/lib/auth";
 import { listLeads, getLead, listActividad, actualizarLead, agregarActividad, crearLeadManual } from "@/lib/db";
 import { esRamo } from "@/lib/ramos";
-import type { EtapaId, TipoActividad, Genero, Ramo, NuevoLeadManual } from "@/lib/types";
+import { esCobranzaAseguradora } from "@/lib/cobranza-autos";
+import type { EtapaId, TipoActividad, Genero, Ramo, NuevoLeadManual, CobranzaAseguradora } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -54,6 +55,7 @@ export async function POST(req: Request): Promise<Response> {
       codigo_postal?: string | null;
       ramo?: Ramo | null;
       origen?: string;
+      cobranza_aseguradora?: CobranzaAseguradora | null;
     };
   };
   try {
@@ -99,6 +101,12 @@ export async function POST(req: Request): Promise<Response> {
       }
       if (body.patch.origen !== undefined && (typeof body.patch.origen !== "string" || !body.patch.origen.trim())) {
         return Response.json({ error: "Origen no válido." }, { status: 400 });
+      }
+      const aseg = body.patch.cobranza_aseguradora;
+      if (aseg !== undefined) {
+        if (aseg !== null && !esCobranzaAseguradora(aseg)) return Response.json({ error: "Aseguradora no válida." }, { status: 400 });
+        // Valeri y Dana son del administrador: un vendedor no decide dónde se cobra.
+        if (s.rol !== "admin") return Response.json({ error: "Solo el administrador decide dónde se lleva la cobranza." }, { status: 403 });
       }
       const lead = await actualizarLead(body.id, body.patch, autor, soloMio);
       if (!lead) return Response.json({ error: "No encontrado" }, { status: 404 });

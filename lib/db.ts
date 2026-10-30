@@ -21,6 +21,7 @@ import {
   etapaNoPermitida,
   faltaMigracion,
   MENSAJE_MIGRACION,
+  MENSAJE_MIGRACION_COBRANZA_ASEGURADORA,
   MENSAJE_MIGRACION_CONTACTO_COMPARTIDO,
   MENSAJE_MIGRACION_DOBLE_FACTOR,
   MENSAJE_MIGRACION_STAND_BY,
@@ -28,6 +29,7 @@ import {
 } from "./migracion";
 import { podriaSerLaMismaPersona } from "./clientes-agrupar";
 import { esRamo } from "./ramos";
+import { esCobranzaAseguradora } from "./cobranza-autos";
 import { AVISO_SEMANA_VERSION, resumenPlan, validarProspectoSemana, type PlanSemana } from "./semana-reglas";
 import { ZONA_HORARIA } from "./fechas";
 import { ubicacionDeCP } from "./codigos-postales";
@@ -47,6 +49,7 @@ import type {
   Genero,
   PlantillaMensaje,
   Ramo,
+  CobranzaAseguradora,
 } from "./types";
 
 export function isCloud(): boolean {
@@ -510,7 +513,12 @@ export async function crearLeadManual(
  * si la migración 0003 aún no corre, esas columnas no vienen y quedan en null.
  */
 function conCamposManager(fila: Lead): Lead {
-  return { ...fila, ramo: esRamo(fila.ramo) ? fila.ramo : null, cerrado_en: fila.cerrado_en ?? null };
+  return {
+    ...fila,
+    ramo: esRamo(fila.ramo) ? fila.ramo : null,
+    cerrado_en: fila.cerrado_en ?? null,
+    cobranza_aseguradora: esCobranzaAseguradora(fila.cobranza_aseguradora) ? fila.cobranza_aseguradora : null,
+  };
 }
 
 /**
@@ -555,6 +563,8 @@ export interface LeadPatch {
   ramo?: Ramo | null;
   /** De dónde llegó el prospecto («Tarjeta web», «Referido»…): alimenta las estadísticas de origen y a Robert. */
   origen?: string;
+  /** Con qué aseguradora llevas la cobranza de un cliente de Autos (AXA → Valeri, Chubb → Dana). */
+  cobranza_aseguradora?: CobranzaAseguradora | null;
 }
 
 export async function actualizarLead(
@@ -579,6 +589,7 @@ export async function actualizarLead(
   if (patch.codigo_postal !== undefined) limpio.codigo_postal = patch.codigo_postal ? normCodigoPostal(patch.codigo_postal) : null;
   if (patch.ramo !== undefined) limpio.ramo = patch.ramo;
   if (patch.origen !== undefined) limpio.origen = patch.origen.trim().slice(0, 60) || "Manual";
+  if (patch.cobranza_aseguradora !== undefined) limpio.cobranza_aseguradora = patch.cobranza_aseguradora;
   // La fecha de cierre alimenta tu meta: se pone al pasar a "ganado" y se borra si regresa.
   if (patch.etapa !== undefined) limpio.cerrado_en = patch.etapa === "ganado" ? nowISO() : null;
   // Con el código postal capturado, la ciudad, el estado y el país se rellenan solos (catálogo de Correos de México).
@@ -597,6 +608,10 @@ export async function actualizarLead(
       // Sin la migración 0003 tu CRM sigue funcionando igual que antes: guardamos
       // todo menos los campos nuevos. Solo el ramo necesita la migración.
       if (patch.ramo !== undefined) throw new Error(MENSAJE_MIGRACION);
+      // La cobranza de Autos (AXA o Chubb) sí necesita su migración: sin ella no hay dónde anotarla.
+      if (patch.cobranza_aseguradora !== undefined) {
+        throw new MigracionPendienteError(MENSAJE_MIGRACION_COBRANZA_ASEGURADORA, "0025_cobranza_aseguradora.sql");
+      }
       const { ramo: _r, cerrado_en: _c, ...sinCamposNuevos } = limpio;
       void _r;
       void _c;
