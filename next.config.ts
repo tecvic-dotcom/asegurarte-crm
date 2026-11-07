@@ -69,6 +69,7 @@ const paginasEstaticas: Record<string, string> = {
   "/guias": "guias.html",
   "/seguro-de-vida-con-ahorro": "vida-ahorro.html",
   "/empresarios": "empresarios.html",
+  "/cotiza": "cotiza.html",
 };
 
 const securityHeaders = (scriptSrc: string = SCRIPT_SRC_APP) => [
@@ -134,6 +135,8 @@ const nextConfig: NextConfig = {
       // Páginas de contenido (texto escrito en el HTML, para que Google y las vistas previas lo lean)
       { source: "/seguro-de-vida-con-ahorro", destination: "/tarjeta/vida-ahorro.html" },
       { source: "/empresarios", destination: "/tarjeta/empresarios.html" },
+      // Anuncio para los grupos de WhatsApp: 4 seguros que abren WhatsApp con el mensaje listo (noindex)
+      { source: "/cotiza", destination: "/tarjeta/cotiza.html" },
       { source: "/semana/:path*", destination: "/tarjeta/semana/:path*" },
     ];
   },

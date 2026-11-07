@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#06070f">
+<title>Tu cotización gratis, en diez minutos · Roberto Rodríguez</title>
+<meta name="description" content="Elige tu seguro (auto, hogar, vida o salud) y escríbeme por WhatsApp para cotizar. Roberto Rodríguez, especialista en Asegur-Arte, Monterrey.">
+<meta name="robots" content="noindex,follow">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Tu cotización gratis. Diez minutos.">
+<meta property="og:description" content="Elige tu seguro (auto, hogar, vida o salud) y escríbeme por WhatsApp. Asesoría personal, opciones claras.">
+<meta property="og:url" content="https://www.especialistaenasegurarte.lat/cotiza">
+<meta property="og:image" content="https://www.especialistaenasegurarte.lat/tarjeta/img/cotiza-og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://www.especialistaenasegurarte.lat/cotiza">
+<link rel="preload" href="/tarjeta/fonts/anton-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/tarjeta/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+@font-face { font-family: 'Anton'; font-style: normal; font-weight: 400; font-display: swap; src: url(/tarjeta/fonts/anton-latin.woff2) format('woff2'); }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 100 900; font-display: swap; src: url(/tarjeta/fonts/inter-latin.woff2) format('woff2'); }
+@font-face { font-family: 'Montserrat'; font-style: normal; font-weight: 100 900; font-display: swap; src: url(/tarjeta/fonts/montserrat-latin.woff2) format('woff2'); }
+
+:root {
+  --noche: #06070f;
+  --superficie: #0a0c1c;
+  --superficie-2: #101536;
+  --royal: #2a22f5;
+  --royal-2: #5b7bff;
+  --texto: #f2f4ff;
+  --wa: #25D366;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html { background: var(--noche); }
+body { font-family: 'Inter', system-ui, sans-serif; color: var(--texto); background: var(--noche); min-height: 100dvh; -webkit-text-size-adjust: 100%; }
+a { color: inherit; }
+
+.fondo {
+  position: fixed; inset: 0; z-index: -1;
+  background:
+    radial-gradient(760px 560px at 95% 0%, rgba(42,34,245,.40), transparent 70%),
+    radial-gradient(620px 500px at 0% 100%, rgba(42,34,245,.20), transparent 70%),
+    var(--noche);
+}
+
+.wrap {
+  max-width: 560px; margin: 0 auto; min-height: 100dvh;
+  padding: max(22px, env(safe-area-inset-top)) 20px max(22px, env(safe-area-inset-bottom));
+  display: flex; flex-direction: column;
+}
+
+/* Logo (Anton cursiva, igual que la tarjeta) */
+.logo { font-family: 'Anton', sans-serif; font-style: italic; line-height: 1; }
+.logo .nombre { font-size: clamp(24px, 7vw, 32px); letter-spacing: .5px; text-transform: uppercase; }
+.logo .linea { display: flex; align-items: baseline; gap: 8px; margin-top: 4px; }
+.logo .esp { font-size: clamp(14px, 4vw, 18px); text-transform: uppercase; }
+.logo .marca { font-size: clamp(30px, 8.6vw, 40px); color: var(--royal-2); }
+
+/* El 10 y el titular */
+.hero { display: flex; align-items: center; gap: clamp(8px, 3vw, 18px); margin-top: clamp(14px, 4vh, 34px); }
+.diez {
+  flex: none; font-family: 'Anton', sans-serif; font-style: italic; line-height: .88;
+  font-size: clamp(108px, 34vw, 224px); color: var(--royal-2); letter-spacing: -.01em;
+  text-shadow: 0 0 40px rgba(91,123,255,.4), 0 0 100px rgba(42,34,245,.5);
+  animation: respira 4.5s ease-in-out infinite;
+  padding-right: .04em;
+}
+.diez .n { display: inline-block; }
+.txt h1 { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: clamp(19px, 5.6vw, 34px); line-height: 1.1; letter-spacing: -.01em; }
+.txt h1 .acento { color: var(--royal-2); }
+.txt p { margin-top: clamp(10px, 2.4vw, 16px); font-size: clamp(15px, 4.1vw, 21px); line-height: 1.3; font-weight: 500; color: rgba(242,244,255,.82); }
+
+.guia { margin: clamp(22px, 5vh, 38px) 0 12px; font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 16px; text-align: center; color: rgba(242,244,255,.9); }
+.guia::after { content: ' ↓'; color: var(--royal-2); }
+
+/* Los 4 ramos: cada uno abre WhatsApp con el mensaje listo */
+.ramos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.ramo {
+  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  padding: 20px 8px 16px; text-decoration: none; text-align: center;
+  background: linear-gradient(180deg, rgba(16,21,54,.96), rgba(10,12,28,.96));
+  border: 1.5px solid rgba(91,123,255,.35); border-radius: 26px;
+  box-shadow: 0 14px 36px rgba(0,0,0,.4);
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+  animation: entra .55s cubic-bezier(.2,.8,.2,1) both;
+}
+.ramo:nth-child(1) { animation-delay: .10s; } .ramo:nth-child(2) { animation-delay: .18s; }
+.ramo:nth-child(3) { animation-delay: .26s; } .ramo:nth-child(4) { animation-delay: .34s; }
+.ramo:hover, .ramo:focus-visible { transform: translateY(-3px); border-color: var(--royal-2); box-shadow: 0 16px 44px rgba(42,34,245,.45); outline: none; }
+.ramo:focus-visible { outline: 3px solid var(--royal-2); outline-offset: 3px; }
+.ramo:active { transform: scale(.97); }
+.ramo svg { width: 60px; height: 60px; fill: none; stroke: #fff; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; overflow: visible; }
+.ramo b { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 21px; }
+.ramo small { font-size: 13px; font-weight: 600; color: rgba(242,244,255,.7); min-height: 1.3em; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.ramo small::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--wa); box-shadow: 0 0 0 0 rgba(37,211,102,.6); }
+.ramo small .b { display: none; }
+.ramo.abriendo { border-color: var(--wa); box-shadow: 0 16px 44px rgba(37,211,102,.28); }
+.ramo.abriendo small .a { display: none; }
+.ramo.abriendo small .b { display: inline; color: #fff; }
+.ramo.abriendo small::before { animation: ping 1s ease-out infinite; }
+
+/* Un movimiento propio por icono al tocar o pasar el dedo/ratón */
+.ramo:hover .i-auto, .ramo:focus-visible .i-auto, .ramo.abriendo .i-auto { animation: maneja .7s ease-in-out; }
+.ramo:hover .i-hogar, .ramo:focus-visible .i-hogar, .ramo.abriendo .i-hogar { animation: brinca .6s ease-in-out; }
+.ramo:hover .i-vida, .ramo:focus-visible .i-vida, .ramo.abriendo .i-vida { animation: late .8s ease-in-out; }
+.ramo:hover .i-salud, .ramo:focus-visible .i-salud, .ramo.abriendo .i-salud { animation: pulso .7s ease-in-out; }
+.ramo:hover .i-vida .palomita, .ramo.abriendo .i-vida .palomita { stroke-dasharray: 40; animation: dibuja .6s ease-out; }
+
+.otro { margin-top: 18px; text-align: center; font-size: 15px; color: rgba(242,244,255,.75); line-height: 1.7; }
+.otro a { color: #fff; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgba(91,123,255,.7); }
+.otro a:hover { text-decoration-color: #fff; }
+.otro .sep { margin: 0 8px; opacity: .45; }
+
+footer { margin-top: auto; padding-top: 26px; text-align: center; font-size: 12px; line-height: 1.6; color: rgba(242,244,255,.55); }
+footer a { text-decoration: underline; text-underline-offset: 2px; }
+
+@keyframes entra { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@keyframes respira { 0%, 100% { text-shadow: 0 0 40px rgba(91,123,255,.4), 0 0 100px rgba(42,34,245,.5); } 50% { text-shadow: 0 0 56px rgba(91,123,255,.55), 0 0 130px rgba(42,34,245,.65); } }
+@keyframes maneja { 0%, 100% { transform: translateX(0); } 45% { transform: translateX(9px); } }
+@keyframes brinca { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-7px); } 70% { transform: translateY(1px); } }
+@keyframes late { 0%, 100% { transform: scale(1); } 25% { transform: scale(1.16); } 50% { transform: scale(1.03); } 70% { transform: scale(1.1); } }
+@keyframes pulso { 0%, 100% { transform: scale(1) rotate(0); } 50% { transform: scale(1.14) rotate(90deg); } }
+@keyframes dibuja { from { stroke-dashoffset: 40; } to { stroke-dashoffset: 0; } }
+@keyframes ping { 0% { box-shadow: 0 0 0 0 rgba(37,211,102,.7); } 100% { box-shadow: 0 0 0 9px rgba(37,211,102,0); } }
+
+@media (min-width: 560px) {
+  .wrap { padding-top: max(48px, 7vh); }
+  .ramos { grid-template-columns: repeat(4, 1fr); }
+  .ramo { padding: 22px 6px 16px; }
+  .ramo svg { width: 52px; height: 52px; }
+  .ramo b { font-size: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="fondo"></div>
+
+<main class="wrap">
+  <div class="logo" role="img" aria-label="Roberto Rodriguez, especialista en Asegur-Arte">
+    <div class="nombre">Roberto Rodriguez</div>
+    <div class="linea"><span class="esp">Especialista en</span><span class="marca">Asegur-Arte</span></div>
+  </div>
+
+  <section class="hero">
+    <div class="diez" aria-hidden="true"><span class="n" id="n">10</span></div>
+    <div class="txt">
+      <h1>Tu cotización gratis.<br><span class="acento">Diez minutos.</span></h1>
+      <p>Asesoría personal.<br>Opciones claras.</p>
+    </div>
+  </section>
+
+  <p class="guia">Toca tu seguro y te escribo por WhatsApp</p>
+
+  <nav class="ramos" aria-label="Elige tu seguro">
+    <a class="ramo" href="https://wa.me/528182800234?text=Hola%20Roberto%2C%20quiero%20cotizar%20mi%20seguro%20de%20auto.%20Vi%20tu%20anuncio." target="_blank" rel="noopener" data-ev="wa" data-d="producto:Cotiza auto" aria-label="Cotizar seguro de auto por WhatsApp">
+      <svg class="i-auto" viewBox="0 0 64 64" aria-hidden="true"><path d="M15 34 L21 22 Q22.5 19.5 26 19.5 H38 Q41.5 19.5 43 22 L49 34"/><rect x="7" y="34" width="50" height="14" rx="5"/><path d="M32 20 V34"/><circle cx="19" cy="48" r="5.5" fill="#0a0c1c"/><circle cx="45" cy="48" r="5.5" fill="#0a0c1c"/></svg>
+      <b>Auto</b><small><span class="a">Cotizar</span><span class="b">Abriendo…</span></small>
+    </a>
+    <a class="ramo" href="https://wa.me/528182800234?text=Hola%20Roberto%2C%20quiero%20cotizar%20mi%20seguro%20de%20hogar.%20Vi%20tu%20anuncio." target="_blank" rel="noopener" data-ev="wa" data-d="producto:Cotiza hogar" aria-label="Cotizar seguro de hogar por WhatsApp">
+      <svg class="i-hogar" viewBox="0 0 64 64" aria-hidden="true"><path d="M8 32 L32 12 L56 32"/><path d="M15 27 V52 H49 V27"/><path d="M27 52 V39 H37 V52"/></svg>
+      <b>Hogar</b><small><span class="a">Cotizar</span><span class="b">Abriendo…</span></small>
+    </a>
+    <a class="ramo" href="https://wa.me/528182800234?text=Hola%20Roberto%2C%20quiero%20cotizar%20mi%20seguro%20de%20vida.%20Vi%20tu%20anuncio." target="_blank" rel="noopener" data-ev="wa" data-d="producto:Cotiza vida" aria-label="Cotizar seguro de vida por WhatsApp">
+      <svg class="i-vida" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 54 C14 42 8 32 8 24 C8 17 13 12 20 12 C25 12 29 15 32 19 C35 15 39 12 44 12 C51 12 56 17 56 24 C56 32 50 42 32 54 Z"/><path class="palomita" d="M22 29 L29.5 36 L42 22"/></svg>
+      <b>Vida</b><small><span class="a">Cotizar</span><span class="b">Abriendo…</span></small>
+    </a>
+    <a class="ramo" href="https://wa.me/528182800234?text=Hola%20Roberto%2C%20quiero%20cotizar%20mi%20seguro%20de%20gastos%20m%C3%A9dicos.%20Vi%20tu%20anuncio." target="_blank" rel="noopener" data-ev="wa" data-d="producto:Cotiza salud" aria-label="Cotizar seguro de gastos médicos por WhatsApp">
+      <svg class="i-salud" viewBox="0 0 64 64" aria-hidden="true"><path d="M25 9 H39 V25 H55 V39 H39 V55 H25 V39 H9 V25 H25 Z"/></svg>
+      <b>Salud</b><small><span class="a">Cotizar</span><span class="b">Abriendo…</span></small>
+    </a>
+  </nav>
+
+  <p class="otro">
+    ¿Buscas otro seguro?
+    <a href="https://wa.me/528182800234?text=Hola%20Roberto%2C%20quiero%20una%20cotizaci%C3%B3n.%20Vi%20tu%20anuncio." target="_blank" rel="noopener" data-ev="wa" data-d="producto:Cotiza otro">Escríbeme</a>
+    <span class="sep">·</span>
+    <a href="/roberto?s=cotiza" data-ev="recurso" data-d="Tarjeta de Roberto">Conóceme</a>
+  </p>
+
+  <footer>Roberto Rodríguez · Agente de seguros<br>Cédula CNSF V394637 · <a href="/privacidad">Aviso de privacidad</a></footer>
+</main>
+
+<script>
+(() => {
+  // Medición anónima y sin cookies, la misma de la tarjeta (/api/tarjeta/evento): solo cuenta la visita y qué seguro se toca.
+  // «?s=grupos» en el enlace dice que la visita llegó de los grupos de WhatsApp.
+  const qs = new URLSearchParams(location.search);
+  let refHost = ""; try { refHost = document.referrer ? new URL(document.referrer).hostname.replace(/^www\./, "") : ""; } catch {}
+  const ctx = {
+    v: matchMedia("(hover:none) and (pointer:coarse)").matches ? "movil" : "escritorio",
+    f: (qs.get("s") || refHost || "directo").toLowerCase().replace(/[^a-z0-9._-]/g, "").slice(0, 30) || "directo"
+  };
+  const track = (e, d = "") => {
+    try {
+      const body = JSON.stringify({ e, d: String(d).slice(0, 60), ...ctx });
+      if (navigator.sendBeacon) navigator.sendBeacon("/api/tarjeta/evento", new Blob([body], { type: "application/json" }));
+      else fetch("/api/tarjeta/evento", { method: "POST", headers: { "content-type": "application/json" }, body, keepalive: true });
+    } catch {}
+  };
+  document.addEventListener("click", (e) => { const el = e.target.closest("[data-ev]"); if (el) track(el.dataset.ev, el.dataset.d || ""); });
+  track("vista");
+
+  // Al tocar un seguro: aviso de que se abre WhatsApp (se quita solo por si la persona regresa a esta página).
+  document.querySelectorAll(".ramo").forEach((a) => a.addEventListener("click", () => {
+    a.classList.add("abriendo");
+    setTimeout(() => a.classList.remove("abriendo"), 3500);
+  }));
+
+  // El 10 cuenta de 0 a 10 al abrir (el ancho se fija antes para que nada se mueva). Con «reducir movimiento» se queda en 10.
+  const n = document.getElementById("n");
+  if (n && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    n.style.minWidth = n.offsetWidth + "px";
+    const t0 = performance.now(), dur = 1100;
+    n.textContent = "0";
+    const paso = (t) => {
+      const p = Math.min(1, (t - t0) / dur);
+      n.textContent = String(Math.round(10 * (1 - Math.pow(1 - p, 3))));
+      if (p < 1) requestAnimationFrame(paso); else n.textContent = "10";
+    };
+    requestAnimationFrame(paso);
+  }
+})();
+</script>
+</body>
+</html>
