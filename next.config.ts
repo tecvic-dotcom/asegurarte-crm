@@ -1,4 +1,7 @@
 import type { NextConfig } from "next";
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 /**
  * Configuración endurecida para producción del kit AI Cash Machine.
@@ -10,12 +13,17 @@ import type { NextConfig } from "next";
  * los íconos a color (Iconify). Si agregas otro servicio (un video embebido,
  * un pixel, etc.) quizá tengas que añadir su dominio aquí. Está comentado.
  */
-const csp = [
+// Política de las páginas del CRM (Next.js): necesita inline para hidratar.
+const SCRIPT_SRC_APP =
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://connect.facebook.net https://analytics.tiktok.com https://challenges.cloudflare.com";
+
+const csp = (scriptSrc: string) => [
   "default-src 'self'",
   // Next.js necesita inline para hidratar; los estilos de Tailwind van inline.
   // Meta Pixel y TikTok Pixel se cargan solo tras aceptar cookies (ver Pixels.tsx).
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://connect.facebook.net https://analytics.tiktok.com https://challenges.cloudflare.com",
+  scriptSrc,
   "style-src 'self' 'unsafe-inline'",
+  "object-src 'none'",
   "img-src 'self' data: blob: https:",
   // Videos de la tarjeta (/roberto): los que subes desde el CRM viven en el cajón público de Supabase; blob: es la vista previa al comprimirlos.
   "media-src 'self' blob: https://*.supabase.co",
@@ -30,7 +38,40 @@ const csp = [
   "form-action 'self'",
 ].join("; ");
 
-const securityHeaders = [
+/**
+ * Páginas estáticas de la tarjeta (public/tarjeta/*.html): su JavaScript va en el propio HTML,
+ * así que en vez de abrir `'unsafe-inline'` (que deja correr cualquier script inyectado) se
+ * autoriza solo el contenido EXACTO de cada <script> con su huella SHA-256. Se calcula al
+ * construir el sitio: si editas un script de estas páginas, la huella se actualiza sola.
+ * - Los <script src="..."> ya los cubre 'self'.
+ * - Los <script type="application/ld+json"> son datos (no se ejecutan) y no necesitan huella.
+ * - El navegador convierte CRLF en LF antes de calcular la huella; aquí se hace igual.
+ */
+function scriptSrcConHuellas(archivo: string): string {
+  const html = readFileSync(join(process.cwd(), "public", "tarjeta", archivo), "utf8");
+  const huellas: string[] = [];
+  for (const m of html.matchAll(/<script(\s[^>]*)?>([\s\S]*?)<\/script>/gi)) {
+    const atributos = m[1] ?? "";
+    if (/\bsrc\s*=/i.test(atributos)) continue;
+    if (/type\s*=\s*["']?application\/ld\+json/i.test(atributos)) continue;
+    const cuerpo = m[2].replace(/\r\n?/g, "\n");
+    if (!cuerpo.trim()) continue;
+    huellas.push(`'sha256-${createHash("sha256").update(cuerpo, "utf8").digest("base64")}'`);
+  }
+  return ["script-src 'self'", ...new Set(huellas)].join(" ");
+}
+
+// Dirección pública → archivo que la sirve (ver rewrites más abajo).
+const paginasEstaticas: Record<string, string> = {
+  "/roberto": "index.html",
+  "/tarjeta": "index.html",
+  "/escudo": "escudo.html",
+  "/guias": "guias.html",
+  "/seguro-de-vida-con-ahorro": "vida-ahorro.html",
+  "/empresarios": "empresarios.html",
+};
+
+const securityHeaders = (scriptSrc: string = SCRIPT_SRC_APP) => [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "SAMEORIGIN" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
@@ -45,7 +86,7 @@ const securityHeaders = [
     key: "Strict-Transport-Security",
     value: "max-age=63072000; includeSubDomains; preload",
   },
-  { key: "Content-Security-Policy", value: csp },
+  { key: "Content-Security-Policy", value: csp(scriptSrc) },
 ];
 
 const nextConfig: NextConfig = {
@@ -58,7 +99,13 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
-      { source: "/:path*", headers: securityHeaders },
+      { source: "/:path*", headers: securityHeaders() },
+      // Páginas estáticas de la tarjeta: CSP estricta (sin 'unsafe-inline' ni 'unsafe-eval' en script-src).
+      // Va después de la general: si dos reglas fijan la misma cabecera, gana la última.
+      ...Object.entries(paginasEstaticas).map(([source, archivo]) => ({
+        source,
+        headers: securityHeaders(scriptSrcConHuellas(archivo)),
+      })),
       // Contacto de la tarjeta: el celular lo abre como "Agregar a contactos"
       {
         source: "/tarjeta/roberto-rodriguez.vcf",
