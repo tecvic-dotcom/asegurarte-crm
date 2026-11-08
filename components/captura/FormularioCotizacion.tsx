@@ -50,6 +50,8 @@ export interface FormularioCotizacionProps {
   origen?: string;
   /** Muestra el aviso «modo de prueba: no se guarda nada». */
   modoSimulado?: boolean;
+  /** Aviso propio arriba del formulario y en la confirmación (p. ej. «prueba conectada: SÍ se guarda»). Sustituye al de `modoSimulado`. */
+  avisoPrueba?: { formulario: ReactNode; confirmacion: ReactNode };
   /** Texto de la confirmación (por defecto, uno genérico sin promesas de tiempos). */
   mensajeConfirmacion?: ReactNode;
   /** Se llama una vez que el servidor confirmó la recepción. */
@@ -72,6 +74,7 @@ export function FormularioCotizacion({
   valoresIniciales,
   origen,
   modoSimulado = false,
+  avisoPrueba,
   mensajeConfirmacion,
   onExito,
   className = "",
@@ -230,9 +233,9 @@ export function FormularioCotizacion({
         </dl>
         <p className="mx-auto mt-3 max-w-md text-center text-xs text-ink-mute">¿Algún dato está mal? Envía otra solicitud con la corrección.</p>
 
-        {modoSimulado && (
+        {(avisoPrueba || modoSimulado) && (
           <p className="mx-auto mt-4 max-w-md rounded-xl border border-amber/40 bg-amber/10 px-3 py-2 text-center text-xs text-amber">
-            Modo de prueba: no se guardó ni se envió nada a nadie.
+            {avisoPrueba ? avisoPrueba.confirmacion : "Modo de prueba: no se guardó ni se envió nada a nadie."}
           </p>
         )}
 
@@ -251,9 +254,15 @@ export function FormularioCotizacion({
 
   return (
     <form ref={formRef} onSubmit={alEnviar} noValidate aria-busy={ocupado} className={`glass-strong rounded-[22px] p-6 sm:p-8 ${className}`}>
-      {modoSimulado && (
+      {(avisoPrueba || modoSimulado) && (
         <p className="mb-5 rounded-xl border border-amber/40 bg-amber/10 px-3 py-2 text-xs text-amber">
-          <strong>Modo de prueba.</strong> Lo que escribas aquí NO se guarda ni se envía a nadie. Usa datos inventados.
+          {avisoPrueba ? (
+            avisoPrueba.formulario
+          ) : (
+            <>
+              <strong>Modo de prueba.</strong> Lo que escribas aquí NO se guarda ni se envía a nadie. Usa datos inventados.
+            </>
+          )}
         </p>
       )}
 

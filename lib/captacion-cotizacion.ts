@@ -97,6 +97,28 @@ export function prepararSolicitud(s: SolicitudCotizacion): SolicitudCotizacion {
   };
 }
 
+/**
+ * Arma una solicitud a partir de un JSON que llegó por la red (tipos inciertos). Nunca lanza error: lo que no es
+ * texto queda vacío y lo que no sea válido lo marca después `validarSolicitud`. Es la PRIMERA línea del servidor.
+ */
+export function leerSolicitud(cuerpo: unknown): SolicitudCotizacion {
+  const o = (cuerpo && typeof cuerpo === "object" ? cuerpo : {}) as Record<string, unknown>;
+  const u = (o.utm && typeof o.utm === "object" ? o.utm : {}) as Record<string, unknown>;
+  const txt = (v: unknown, max: number) => (typeof v === "string" ? v.slice(0, max) : "");
+  return {
+    nombre: txt(o.nombre, 200),
+    whatsapp: txt(o.whatsapp, 40),
+    tipoSeguro: txt(o.tipoSeguro, 20) as TipoSeguroId | "",
+    paraQuien: txt(o.paraQuien, 20) as ParaQuienId | "",
+    correo: txt(o.correo, 200),
+    consentimiento: o.consentimiento === true,
+    trampa: txt(o.trampa, 200),
+    tiempoMs: typeof o.tiempoMs === "number" ? o.tiempoMs : Number.NaN,
+    utm: { source: txt(u.source, 120), medium: txt(u.medium, 120), campaign: txt(u.campaign, 120), term: txt(u.term, 120), content: txt(u.content, 120) },
+    origen: txt(o.origen, 30).toLowerCase().replace(/[^a-z0-9._-]/g, ""),
+  };
+}
+
 /* ---------------------------------------------------------------------------------------------- */
 /* Validación (cliente Y servidor)                                                                 */
 /* ---------------------------------------------------------------------------------------------- */

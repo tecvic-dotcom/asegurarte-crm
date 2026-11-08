@@ -14,7 +14,7 @@ import "server-only";
  */
 import { listUsuarios } from "./db";
 import { hoyLocal } from "./fechas";
-import { crearPendiente } from "./pendientes";
+import { crearPendiente, listarPendientes } from "./pendientes";
 import { MAX_TEXTO_PENDIENTE, validarPendiente } from "./pendientes-reglas";
 import type { Lead } from "./types";
 
@@ -25,19 +25,27 @@ async function duenoDeLosPendientes(): Promise<string | null> {
 }
 
 /** «Contactar a María López (8112345678) · llegó por landing», recortado al máximo que acepta un pendiente. */
-export function textoDeSeguimiento(lead: Pick<Lead, "nombre" | "whatsapp" | "origen">): string {
-  const origen = lead.origen ? ` · llegó por ${lead.origen}` : "";
+export function textoDeSeguimiento(lead: Pick<Lead, "nombre" | "whatsapp" | "origen">, opciones: { repetido?: boolean } = {}): string {
+  const origen = lead.origen ? ` · ${opciones.repetido ? "volvió a pedir cotización por" : "llegó por"} ${lead.origen}` : "";
   const contacto = lead.whatsapp ? ` (${lead.whatsapp})` : "";
   const texto = `Contactar a ${lead.nombre}${contacto}${origen}`;
   return texto.length <= MAX_TEXTO_PENDIENTE ? texto : `${texto.slice(0, MAX_TEXTO_PENDIENTE - 1)}…`;
 }
 
-/** Crea el pendiente de hoy para el prospecto. true = quedó agendado. */
-export async function agendarSeguimientoNuevoLead(lead: Lead): Promise<boolean> {
+/**
+ * Crea el pendiente de hoy para el prospecto. true = quedó agendado.
+ * `repetido`: la persona ya estaba en el CRM y volvió a pedir cotización (se le avisa a Roberto igual: es una señal caliente).
+ */
+export async function agendarSeguimientoNuevoLead(lead: Lead, opciones: { repetido?: boolean } = {}): Promise<boolean> {
   try {
     const usuarioId = await duenoDeLosPendientes();
     if (!usuarioId) return false;
-    const r = validarPendiente({ texto: textoDeSeguimiento(lead), fecha: "", hora: "", lead_id: lead.id }, hoyLocal());
+    // Si la persona insiste y ya hay un pendiente abierto para ella, no se amontonan más: con ese ya la vas a contactar.
+    if (opciones.repetido) {
+      const { activos } = await listarPendientes(usuarioId);
+      if (activos.some((p) => p.lead_id === lead.id)) return true;
+    }
+    const r = validarPendiente({ texto: textoDeSeguimiento(lead, opciones), fecha: "", hora: "", lead_id: lead.id }, hoyLocal());
     if (!r.ok) return false;
     await crearPendiente(usuarioId, r.datos);
     return true;

@@ -11,7 +11,10 @@ import type { Lead } from "./types";
  */
 const DESDE = process.env.RESEND_FROM || "Asegurarte <onboarding@resend.dev>";
 
-export async function notificarNuevoLead(lead: Lead, opciones: { pendienteAgendado?: boolean } = {}): Promise<void> {
+/** Lo que viene de la red (nombre, correo…) se escapa antes de ponerlo en el HTML del correo. */
+const esc = (t: string): string => String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] as string);
+
+export async function notificarNuevoLead(lead: Lead, opciones: { pendienteAgendado?: boolean; resumen?: string } = {}): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return;
 
@@ -20,14 +23,15 @@ export async function notificarNuevoLead(lead: Lead, opciones: { pendienteAgenda
     await resend.emails.send({
       from: DESDE,
       to: CONTENIDO.contacto.correo,
-      subject: `Nuevo prospecto: ${lead.nombre}`,
+      subject: `Nuevo prospecto: ${lead.nombre.replace(/[\r\n]+/g, " ")}`,
       html: `
         <div style="font-family: sans-serif; max-width: 480px;">
           <h2 style="color:#2a22f5;">Tienes un prospecto nuevo 🎉</h2>
-          <p><strong>Nombre:</strong> ${lead.nombre}</p>
-          <p><strong>Correo:</strong> ${lead.correo}</p>
-          <p><strong>WhatsApp:</strong> <a href="https://wa.me/52${lead.whatsapp}">${lead.whatsapp}</a></p>
-          <p><strong>Origen:</strong> ${lead.origen}${lead.utm_source ? ` (${lead.utm_source})` : ""}</p>
+          <p><strong>Nombre:</strong> ${esc(lead.nombre)}</p>
+          ${lead.correo ? `<p><strong>Correo:</strong> ${esc(lead.correo)}</p>` : ""}
+          <p><strong>WhatsApp:</strong> <a href="https://wa.me/52${encodeURIComponent(lead.whatsapp)}">${esc(lead.whatsapp)}</a></p>
+          <p><strong>Origen:</strong> ${esc(lead.origen)}${lead.utm_source ? ` (${esc(lead.utm_source)})` : ""}</p>
+          ${opciones.resumen ? `<p><strong>Pidió:</strong> ${esc(opciones.resumen)}</p>` : ""}
           ${opciones.pendienteAgendado ? `<p>Ya te dejé un pendiente para hoy en «Mis pendientes».</p>` : ""}
           <p style="margin-top:24px;">
             <a href="${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/crm"

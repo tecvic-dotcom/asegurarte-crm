@@ -31,6 +31,8 @@ import { podriaSerLaMismaPersona } from "./clientes-agrupar";
 import { esRamo } from "./ramos";
 import { esCobranzaAseguradora } from "./cobranza-autos";
 import { AVISO_SEMANA_VERSION, resumenPlan, validarProspectoSemana, type PlanSemana } from "./semana-reglas";
+import { prepararSolicitud, textoParaQuien, textoTipoSeguro, validarSolicitud } from "./captacion-cotizacion";
+import type { SolicitudCotizacion } from "./captacion-cotizacion";
 import { ZONA_HORARIA } from "./fechas";
 import { ubicacionDeCP } from "./codigos-postales";
 import type {
@@ -404,6 +406,108 @@ export async function crearLeadSemana(input: NuevoLeadSemana): Promise<CrearLead
     s.actividad.unshift({ id: uid("ac"), lead_id: existe.id, tipo: "nota", texto: textoRepetido, autor: "Sistema", creado_en: nowISO() });
     return { ok: true, duplicado: true, id: existe.id };
   }
+  const id = uid("ld");
+  s.leads.unshift({ id, asignado_a: null, ramo: null, cerrado_en: null, creado_en: nowISO(), actualizado_en: nowISO(), ...fila });
+  s.actividad.unshift({ id: uid("ac"), lead_id: id, tipo: "nota", texto: textoNuevo, autor: "Sistema", creado_en: nowISO() });
+  return { ok: true, duplicado: false, id };
+}
+
+/** Origen que lleva el prospecto que llega por el formulario «Cotiza tu seguro» (cuenta en «Leads por origen»). */
+export const ORIGEN_SITIO_WEB = "Sitio web";
+
+/**
+ * Guarda la solicitud del formulario «Cotiza tu seguro» como prospecto NUEVO con origen «Sitio web».
+ *
+ * NO crea tablas ni columnas: usa `leads` (el tipo de seguro y para quién es quedan en `mensaje`) y `actividad`
+ * (el consentimiento, con fecha). Mismo patrón que la guía «Dinero Bajo Control».
+ *
+ * Un prospecto = una sola ficha: si el correo o el WhatsApp ya existen, NO se crea otra; se identifica la que ya
+ * está y se le agrega una nota (con el nombre que escribió ahora, si es distinto). No se toca su etapa ni
+ * `actualizado_en` (de eso depende Sofi). `duplicado: true` avisa a quien llama que no es un prospecto nuevo.
+ *
+ * El antispam (señuelo, tiempo, límites) lo decide la ruta; aquí se vuelve a validar todo, porque nunca se confía
+ * en el navegador.
+ */
+export async function crearLeadCotizacion(solicitud: SolicitudCotizacion, geo?: Partial<Geo>): Promise<CrearLeadResultado> {
+  const p = prepararSolicitud(solicitud);
+  const v = validarSolicitud(p);
+  if (!v.ok) return { ok: false, duplicado: false, errores: v.errores };
+
+  const tipo = textoTipoSeguro(p.tipoSeguro);
+  const para = textoParaQuien(p.paraQuien).toLowerCase();
+  const resumen = `Pidió cotización de: ${tipo}. Es ${para}.`;
+  const desde = p.origen ? ` Desde: ${p.origen}.` : "";
+  const cuando = new Date().toLocaleString("es-MX", { timeZone: ZONA_HORARIA, dateStyle: "short", timeStyle: "short" }).replace(/\.$/, "");
+  const consentimiento = `Aceptó el aviso de privacidad el ${cuando}.`;
+  const utm = p.utm ?? {};
+
+  const fila = {
+    nombre: p.nombre.slice(0, 160),
+    correo: p.correo,
+    whatsapp: p.whatsapp,
+    mensaje: resumen.slice(0, 1000),
+    etapa: "nuevo" as EtapaId,
+    valor: 0,
+    origen: ORIGEN_SITIO_WEB,
+    utm_source: (utm.source ?? "").slice(0, 120),
+    utm_medium: (utm.medium ?? "").slice(0, 120),
+    utm_campaign: (utm.campaign ?? "").slice(0, 120),
+    utm_term: (utm.term ?? "").slice(0, 120),
+    utm_content: (utm.content ?? "").slice(0, 120),
+    pais: geo?.pais ?? null,
+    ciudad: geo?.ciudad ?? null,
+    region: geo?.region ?? null,
+    dispositivo: geo?.dispositivo ?? null,
+    notas: "",
+    genero: null as Genero | null,
+    fecha_nacimiento: null as string | null,
+    codigo_postal: null as string | null,
+  };
+  const textoNuevo = `Llegó por el formulario «Cotiza tu seguro» del sitio. ${resumen}${desde} ${consentimiento}`;
+  const textoRepetido = (existente: string) => {
+    const otroNombre = podriaSerLaMismaPersona(existente, p.nombre) ? "" : ` Esta vez escribió el nombre «${p.nombre}» (aquí figura como «${existente}»).`;
+    return `Volvió a pedir cotización por el sitio. ${resumen}${desde}${otroNombre} ${consentimiento}`;
+  };
+
+  // Busca a la persona por correo (si lo dio) y por WhatsApp, con consultas parametrizadas.
+  const buscar = async (): Promise<{ id: string; nombre: string } | null> => {
+    if (cloudReady && adminDb) {
+      if (p.correo) {
+        const { data } = await adminDb.from("leads").select("id, nombre").eq("correo", p.correo).limit(1);
+        if (data?.length) return data[0] as { id: string; nombre: string };
+      }
+      const { data } = await adminDb.from("leads").select("id, nombre").eq("whatsapp", p.whatsapp).limit(1);
+      return data?.length ? (data[0] as { id: string; nombre: string }) : null;
+    }
+    const e = store().leads.find((l) => (p.correo && l.correo === p.correo) || l.whatsapp === p.whatsapp);
+    return e ? { id: e.id, nombre: e.nombre } : null;
+  };
+  const registrarRepetida = async (previo: { id: string; nombre: string }): Promise<CrearLeadResultado> => {
+    const texto = textoRepetido(previo.nombre);
+    if (cloudReady && adminDb) await adminDb.from("actividad").insert({ lead_id: previo.id, tipo: "nota", texto, autor: "Sistema" });
+    else store().actividad.unshift({ id: uid("ac"), lead_id: previo.id, tipo: "nota", texto, autor: "Sistema", creado_en: nowISO() });
+    return { ok: true, duplicado: true, id: previo.id };
+  };
+
+  const previo = await buscar();
+  if (previo) return registrarRepetida(previo);
+
+  if (cloudReady && adminDb) {
+    const { data, error } = await adminDb.from("leads").insert(fila).select("id").limit(1);
+    if (error) {
+      // Otra solicitud igual llegó al mismo tiempo y la base (con sus índices únicos) la dejó pasar primero: se trata como repetida.
+      if (contactoRepetidoEnBase(error)) {
+        const otro = await buscar();
+        if (otro) return registrarRepetida(otro);
+      }
+      throw new Error(error.message);
+    }
+    const id = (data?.[0] as { id: string } | undefined)?.id;
+    if (id) await adminDb.from("actividad").insert({ lead_id: id, tipo: "nota", texto: textoNuevo, autor: "Sistema" });
+    return { ok: true, duplicado: false, id };
+  }
+
+  const s = store();
   const id = uid("ld");
   s.leads.unshift({ id, asignado_a: null, ramo: null, cerrado_en: null, creado_en: nowISO(), actualizado_en: nowISO(), ...fila });
   s.actividad.unshift({ id: uid("ac"), lead_id: id, tipo: "nota", texto: textoNuevo, autor: "Sistema", creado_en: nowISO() });
