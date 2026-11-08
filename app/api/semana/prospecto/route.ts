@@ -1,5 +1,6 @@
 import { crearLeadSemana, getLead } from "@/lib/db";
 import { notificarNuevoLead } from "@/lib/email";
+import { agendarSeguimientoNuevoLead } from "@/lib/seguimiento-nuevo-lead";
 import { rateLimit, ipDe } from "@/lib/rate-limit";
 import { registrarEventoTarjeta } from "@/lib/tarjeta-eventos";
 import { limpiarTexto } from "@/lib/tarjeta-reglas";
@@ -51,7 +52,10 @@ export async function POST(req: Request): Promise<Response> {
       });
       if (!r.duplicado) {
         const lead = await getLead(r.id);
-        if (lead) await notificarNuevoLead(lead); // falla en silencio adentro
+        if (lead) {
+          const pendienteAgendado = await agendarSeguimientoNuevoLead(lead); // falla en silencio adentro
+          await notificarNuevoLead(lead, { pendienteAgendado }); // falla en silencio adentro
+        }
       }
     }
     return Response.json({ ok: true, duplicado: r.duplicado });

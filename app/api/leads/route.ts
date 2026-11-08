@@ -1,6 +1,7 @@
 import { crearLead, getLead } from "@/lib/db";
 import { rateLimit, ipDe } from "@/lib/rate-limit";
 import { notificarNuevoLead } from "@/lib/email";
+import { agendarSeguimientoNuevoLead } from "@/lib/seguimiento-nuevo-lead";
 import type { NuevoLead } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -57,7 +58,11 @@ export async function POST(req: Request): Promise<Response> {
       // Esperamos el correo (falla silencioso adentro) para que funcione también
       // en Vercel, donde la función puede cortarse justo al responder.
       const lead = await getLead(r.id);
-      if (lead) await notificarNuevoLead(lead);
+      if (lead) {
+        // Pendiente de hoy en «Mis pendientes» + correo; ambos fallan en silencio sin tocar el prospecto ya guardado.
+        const pendienteAgendado = await agendarSeguimientoNuevoLead(lead);
+        await notificarNuevoLead(lead, { pendienteAgendado });
+      }
     }
     return Response.json({ ok: true, duplicado: r.duplicado });
   } catch {

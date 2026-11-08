@@ -11,7 +11,7 @@ import type { Lead } from "./types";
  */
 const DESDE = process.env.RESEND_FROM || "Asegurarte <onboarding@resend.dev>";
 
-export async function notificarNuevoLead(lead: Lead): Promise<void> {
+export async function notificarNuevoLead(lead: Lead, opciones: { pendienteAgendado?: boolean } = {}): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return;
 
@@ -28,6 +28,7 @@ export async function notificarNuevoLead(lead: Lead): Promise<void> {
           <p><strong>Correo:</strong> ${lead.correo}</p>
           <p><strong>WhatsApp:</strong> <a href="https://wa.me/52${lead.whatsapp}">${lead.whatsapp}</a></p>
           <p><strong>Origen:</strong> ${lead.origen}${lead.utm_source ? ` (${lead.utm_source})` : ""}</p>
+          ${opciones.pendienteAgendado ? `<p>Ya te dejé un pendiente para hoy en «Mis pendientes».</p>` : ""}
           <p style="margin-top:24px;">
             <a href="${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/crm"
                style="background:#2a22f5;color:#fff;padding:10px 18px;border-radius:10px;text-decoration:none;">
