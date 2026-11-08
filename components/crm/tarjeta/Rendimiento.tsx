@@ -15,6 +15,7 @@ export function Rendimiento({ r }: { r: ResumenTarjeta }) {
   const datos = serie === "visitas" ? r.visitasPorDia : r.contactosPorDia;
   const actividad: Array<[string, number]> = [
     ["Tocaron WhatsApp", r.toques.wa],
+    ["Tocaron «Cotiza tu seguro»", r.toques.cotizar],
     ["Llamadas", r.toques.llamar],
     ["Citas para agendar", r.toques.agendar],
     ["Guardaron tu contacto", r.toques.guardar],
@@ -101,7 +102,15 @@ export function Rendimiento({ r }: { r: ResumenTarjeta }) {
             })}
           </ul>
         </section>
-        <ListaBarras titulo="Dónde tocan WhatsApp" ayuda="Qué botón los lleva a escribirte." filas={r.waPorLugar} vacio="Aún nadie ha tocado WhatsApp en estos días." />
+        <div className="space-y-3">
+          <ListaBarras titulo="Dónde tocan WhatsApp" ayuda="Qué botón los lleva a escribirte." filas={r.waPorLugar} vacio="Aún nadie ha tocado WhatsApp en estos días." />
+          <ListaBarras
+            titulo="Dónde tocan «Cotiza tu seguro»"
+            ayuda="Qué botón los lleva a la sección de cotización. Son toques, no solicitudes: las enviadas llegan a Prospectos con origen «Sitio web»."
+            filas={r.cotizarPorLugar}
+            vacio="Aún nadie ha tocado «Cotiza tu seguro» en estos días."
+          />
+        </div>
       </div>
     </div>
   );

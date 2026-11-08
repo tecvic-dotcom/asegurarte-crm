@@ -13,6 +13,7 @@ export const ORIGEN_TARJETA = "Tarjeta web";
 export const EVENTOS_TARJETA = [
   "vista", // se cargó la página
   "sec", // llegó a ver una sección (una vez por visita)
+  "cotizar", // tocó un botón «Cotiza tu seguro» (detalle: hero | barra | menu | soluciones | por-que-yo | testimonios); NO es una solicitud enviada: esas llegan al CRM como prospectos con origen «Sitio web»
   "wa", // tocó un botón de WhatsApp
   "llamar",
   "agendar",
@@ -84,10 +85,21 @@ export const SECCIONES_TARJETA: ReadonlyArray<{ id: string; nombre: string }> = 
   { id: "contacto", nombre: "Contacto" },
 ];
 
+/** Dónde está cada botón «Cotiza tu seguro» (el detalle que manda la tarjeta con el evento `cotizar`). */
+export const LUGAR_COTIZAR: Record<string, string> = {
+  hero: "Portada (botón grande)",
+  barra: "Barra fija de abajo (celular)",
+  menu: "Menú de arriba (ícono «Cotizar»)",
+  soluciones: "Al final de «Soluciones de seguros»",
+  "por-que-yo": "Al final de «¿Por qué asesorarte conmigo?»",
+  testimonios: "Al final de «Testimonios»",
+};
+
 const LUGAR_WA: Record<string, string> = {
   hero: "Portada",
   barra: "Barra fija de abajo",
-  asesoria: "«Quiero una asesoría» (¿qué quieres proteger?)",
+  cotizacion: "Después de enviar el formulario de cotización",
+  asesoria: "«Quiero una asesoría» (sección Cotiza tu seguro)",
   contacto: "Sección Contacto",
   historia: "Historia completa de un cliente",
   producto: "Botón de un producto",
@@ -175,8 +187,10 @@ export interface ResumenTarjeta {
   visitasPorDia: Array<{ dia: string; n: number }>;
   dispositivos: { movil: number; escritorio: number };
   fuentes: Conteo[];
-  toques: { wa: number; llamar: number; agendar: number; guardar: number; compartir: number; correo: number };
+  toques: { wa: number; llamar: number; agendar: number; guardar: number; compartir: number; correo: number; cotizar: number };
   waPorLugar: Conteo[];
+  /** Toques a los botones «Cotiza tu seguro», por lugar. */
+  cotizarPorLugar: Conteo[];
   secciones: Array<{ id: string; nombre: string; n: number }>;
   productos: Conteo[];
   historias: Conteo[];
@@ -407,8 +421,10 @@ export function resumir(filas: FilaEvento[], dias: number, hoy: string): Omit<Re
       guardar: total("guardar"),
       compartir: total("compartir"),
       correo: total("correo"),
+      cotizar: total("cotizar"),
     },
     waPorLugar: contar(dentro, "wa", lugar, 10),
+    cotizarPorLugar: contar(dentro, "cotizar", (f) => LUGAR_COTIZAR[f.detalle] ?? (f.detalle || "Otro"), 8),
     secciones: SECCIONES_TARJETA.map((s) => ({ ...s, n: dentro.filter((f) => f.evento === "sec" && f.detalle === s.id).length })),
     productos: contar(dentro, "wa", (f) => (f.detalle.startsWith("producto:") ? f.detalle.slice(9) : ""), 8),
     historias: contar(dentro, "historia", (f) => f.detalle, 5),
@@ -472,6 +488,7 @@ export function tarjetaParaManager(r30: ResumenTarjeta, r7: ResumenTarjeta): Rec
   const periodo = (r: ResumenTarjeta) => ({
     visitas: r.visitas,
     toques_whatsapp: r.toques.wa,
+    toques_cotiza_tu_seguro: r.toques.cotizar,
     toques_llamar: r.toques.llamar,
     toques_agendar: r.toques.agendar,
     guardaron_contacto: r.toques.guardar,
@@ -479,7 +496,7 @@ export function tarjetaParaManager(r30: ResumenTarjeta, r7: ResumenTarjeta): Rec
   });
   const s = r30.semana;
   return {
-    nota: "Medición anónima de la tarjeta web (/roberto). 'Visitas' = veces que se cargó la página (no personas únicas). 'Toques' = botones tocados: NO son mensajes enviados ni prospectos, y no se pueden ligar a un prospecto concreto. 'Directo (sin etiqueta)' en fuentes = sin etiqueta de origen en el enlace (?s=ig|wa|tiktok|qr).",
+    nota: "Medición anónima de la tarjeta web (/roberto). 'Visitas' = veces que se cargó la página (no personas únicas). 'Toques' = botones tocados: NO son mensajes enviados ni prospectos, y no se pueden ligar a un prospecto concreto. 'Cotiza tu seguro' = toques a los botones que llevan a la sección de cotización: tampoco son solicitudes enviadas (esas llegan al CRM como prospectos con origen «Sitio web»). 'Directo (sin etiqueta)' en fuentes = sin etiqueta de origen en el enlace (?s=ig|wa|tiktok|qr).",
     datos_desde: r30.visitasPorDia.find((d) => d.n > 0)?.dia ?? r30.desde,
     ultimos_30_dias: {
       ...periodo(r30),
@@ -487,6 +504,7 @@ export function tarjetaParaManager(r30: ResumenTarjeta, r7: ResumenTarjeta): Rec
       fuentes: top(fuentesLegibles(r30.fuentes), 5),
       llegaron_a_la_seccion: Object.fromEntries(r30.secciones.filter((x) => x.n > 0).map((x) => [x.id, x.n])),
       whatsapp_por_lugar: top(r30.waPorLugar, 5),
+      cotiza_tu_seguro_por_lugar: top(r30.cotizarPorLugar, 6),
       productos_que_piden: top(r30.productos, 4),
       videos_mas_vistos: top(r30.videos, 3),
       promociones_toques_whatsapp: top(r30.promosWa, 3),

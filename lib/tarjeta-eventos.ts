@@ -59,6 +59,7 @@ function semilla(): FilaEvento[] {
       if (rnd() < 0.09) e("wa", "hero", 12);
       if (hasta > 1 && rnd() < 0.05) e("wa", `producto:${elige(productos)}`, 30);
       if (hasta > 2 && rnd() < 0.05) e("wa", "asesoria:Mi familia", 45);
+      if (hasta > 0 && rnd() < 0.22) e("cotizar", elige(["hero", "hero", "barra", "menu", "soluciones", "por-que-yo", "testimonios"]), 25);
       if (rnd() < 0.015) e("llamar", "hero", 10);
       if (rnd() < 0.02) e("agendar", "hero", 14);
       if (rnd() < 0.04) e("guardar", "hero", 16);
