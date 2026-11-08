@@ -66,17 +66,21 @@ export interface FilaEvento {
 }
 
 export const SECCIONES_TARJETA: ReadonlyArray<{ id: string; nombre: string }> = [
-  { id: "quien", nombre: "Quién soy" },
+  // En el orden en que salen en la tarjeta (rediseño de 9 secciones, nov 2026). Los id viejos se conservan para no perder el histórico.
+  { id: "proteger", nombre: "¿Qué necesitas proteger? (mosaicos)" },
+  { id: "seguros", nombre: "Soluciones de seguros (carrusel)" },
   { id: "promociones", nombre: "Promociones (solo se ve mientras hay una campaña vigente)" },
-  { id: "herramientas", nombre: "Herramientas (guía Dinero Bajo Control y calculadora)" },
-  { id: "seguros", nombre: "¿Qué quieres proteger? (chips y seguros)" },
-  { id: "asesoria", nombre: "Asesoría (botones «Quiero una asesoría» y «Agendar»)" },
-  { id: "opiniones", nombre: "Opiniones" },
-  { id: "reconocimientos", nombre: "Reconocimientos" },
+  { id: "quien", nombre: "Por qué asesorarte conmigo" },
+  { id: "opiniones", nombre: "Testimonios" },
+  { id: "herramientas", nombre: "Herramientas y recursos (guía Dinero Bajo Control y calculadora)" },
+  { id: "recursos", nombre: "Recursos (guías y otros)" },
   { id: "videos", nombre: "Videos" },
+  { id: "trayectoria", nombre: "Trayectoria y reconocimientos" },
+  { id: "reconocimientos", nombre: "Reconocimientos" },
   { id: "eventos", nombre: "Eventos" },
   { id: "faq", nombre: "Preguntas frecuentes" },
-  { id: "recursos", nombre: "Recursos" },
+  { id: "cotizacion", nombre: "Cotiza tu seguro (cotización y contacto)" },
+  { id: "asesoria", nombre: "Asesoría (botones «Quiero una asesoría» y «Agendar»)" },
   { id: "contacto", nombre: "Contacto" },
 ];
 

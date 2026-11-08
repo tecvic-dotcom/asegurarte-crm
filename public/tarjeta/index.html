@@ -194,8 +194,9 @@ a{color:inherit}
 .role i{width:4px;height:4px;border-radius:50%;background:var(--brand-2);opacity:.6}
 .tagline{margin:16px 0 0;font-size:18.5px;line-height:1.5;color:var(--ink-soft);max-width:34ch}
 .hero-ctas{display:grid;gap:10px;margin-top:24px}
-/* Tres atajos compactos (Llamar · Agendar cita · Compartir): así la portada tiene 1 botón principal, 1 secundario y atajos */
-.quick{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+/* Cuatro atajos compactos (Llamar · Agendar cita · Guarda mi contacto · Compartir): la portada tiene 1 botón principal (Cotiza tu seguro), 1 secundario (WhatsApp) y atajos */
+.quick{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.quick .tile{font-size:12.5px;padding-inline:3px}
 .tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-height:62px;padding:8px 4px;border-radius:14px;
   font:600 13px/1.15 var(--body);text-align:center;text-decoration:none;color:var(--ink);background:var(--glass);border:1px solid var(--line-strong);cursor:pointer;
   transition:background .15s,border-color .15s,transform .15s;-webkit-tap-highlight-color:transparent}
@@ -219,6 +220,10 @@ a{color:inherit}
 @media (hover:hover){ .secnav a:hover{color:var(--ink);background:var(--glass-2)} }
 .secnav a{-webkit-tap-highlight-color:transparent}
 .secnav a[aria-current="true"]{background:linear-gradient(180deg,var(--brand-2),var(--brand));color:#fff}
+/* «Cotizar» siempre destaca (aro y fondo de marca); cuando es la sección activa se llena como los demás */
+.secnav a.nav-cta{color:#fff;background:rgba(91,123,255,.20);box-shadow:inset 0 0 0 1px var(--brand-2)}
+.secnav a.nav-cta[aria-current="true"]{background:linear-gradient(180deg,var(--brand-2),var(--brand));box-shadow:none}
+@media (hover:hover){ .secnav a.nav-cta:hover{background:rgba(91,123,255,.34)} }
 @media (min-width:600px){
   .secnav{padding:10px 20px}
 }
@@ -258,6 +263,14 @@ main{padding-inline:20px;padding-bottom:52px}
 .eyebrow::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--brand-2);box-shadow:0 0 10px var(--brand-2)}
 h2{font:800 clamp(27px,7.4vw,34px)/1.12 var(--display);letter-spacing:-.01em;margin:14px 0 0;text-wrap:balance;color:var(--ink)}
 .lead{margin:14px 0 0;color:var(--ink-soft);max-width:60ch}
+/* Bloques dentro de una sección (Herramientas y recursos, Trayectoria, Cotización y contacto): una línea los separa y su título es más chico que el de la sección */
+.sub{margin-top:44px;padding-top:36px;border-top:1px solid var(--line);scroll-margin-top:68px}
+.sub.sub0{margin-top:20px;padding-top:0;border-top:0}
+.sub-k{margin:0;font:700 12px/1.2 var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--brand-2)}
+.sub-t{margin:8px 0 0;font:800 clamp(21px,5.8vw,25px)/1.18 var(--display);letter-spacing:-.005em;text-wrap:balance;color:var(--ink)}
+.sub-k + .lead{margin-top:10px}
+/* «Cotiza tu seguro» al final de cada bloque: lleva a la sección de cotización */
+.sec-cta{margin-top:30px}
 
 /* Carruseles: se deslizan con el dedo (scroll-snap), con flechas y puntos. Sin avance automático ni librerías. */
 .car{margin-top:24px}
@@ -302,6 +315,10 @@ h2{font:800 clamp(27px,7.4vw,34px)/1.12 var(--display);letter-spacing:-.01em;mar
 .cta .car{margin-top:22px}
 .cta .car-track{margin-inline:calc(var(--cpx) * -1);padding-inline:var(--cpx);scroll-padding-inline:var(--cpx)}
 .cta-fin{margin-top:4px}
+/* Caja de la sección «Cotiza tu seguro»: pegada a su texto y sin hueco arriba del primer botón */
+.cta.cot-box{margin-top:26px;padding-top:26px}
+.cot-box .cta-fin{margin-top:0}
+.cot-box .cta-fin > .btn:first-child{margin-top:0}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
 .chip{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--line-strong);
   background:var(--glass);color:var(--ink);font:600 15px/1 var(--body);cursor:pointer;transition:background .15s,color .15s,border-color .15s}
@@ -309,6 +326,17 @@ h2{font:800 clamp(27px,7.4vw,34px)/1.12 var(--display);letter-spacing:-.01em;mar
 .chip .ic{width:15px;height:15px;stroke-width:2.6;display:none}
 .chip[aria-pressed="true"]{background:linear-gradient(180deg,var(--brand-2),var(--brand));border-color:transparent;color:#fff}
 .chip[aria-pressed="true"] .ic{display:block}
+/* ¿Qué necesitas proteger?: mosaicos grandes con ícono (es el mismo botón .chip, en otro tamaño) */
+.chips.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:24px}
+@media (min-width:480px){ .chips.tiles{grid-template-columns:repeat(3,minmax(0,1fr))} }
+.tiles .chip{position:relative;flex-direction:column;justify-content:center;gap:9px;min-height:100px;padding:16px 8px 14px;border-radius:20px;text-align:center;font:700 15.5px/1.2 var(--display)}
+.tiles .chip .ico{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;background:var(--glass-2);border:1px solid var(--line-strong);color:var(--brand-2);transition:background .15s,color .15s,border-color .15s}
+.tiles .chip .ico .ic{display:block;width:22px;height:22px;stroke-width:1.7}
+.tiles .chip .ok{position:absolute;top:9px;right:9px;display:none;place-items:center;width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.24)}
+.tiles .chip .ok .ic{display:block;width:12px;height:12px;stroke-width:3.2}
+.tiles .chip[aria-pressed="true"] .ok{display:grid}
+.tiles .chip[aria-pressed="true"] .ico{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.4);color:#fff}
+.ver-soluciones{margin-top:16px}
 .cta .btn{margin-top:22px}
 .cta .note{margin:12px 0 0;text-align:center;font-size:13.5px;color:var(--ink-mute)}
 
@@ -501,7 +529,6 @@ dialog.vid[open]{animation:subir .25s ease-out}
 .faq .ans p,.acc .ans p{margin:0 0 12px;color:var(--ink-soft);font-size:16px}
 .faq .ans .btn{margin-top:4px}
 
-#quien > h2:first-child,#herramientas > h2:first-child{margin-top:0}
 .tools{display:grid;gap:12px;margin-top:20px}
 .tools .teaser{margin-top:0}
 .acc summary{min-height:68px;justify-content:flex-start;font-size:17px}
@@ -616,8 +643,8 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
   background:rgba(10,12,28,.9);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-top:1px solid var(--line-strong);
   transform:translateY(110%);transition:transform .25s ease}
 .dock.on{transform:none}
-.dock .btn-wa{flex:1}
-.dock .call{width:52px;padding:0}
+.dock .cot{flex:1}
+.dock .wa-ico,.dock .call{width:52px;padding:0}
 
 .toast{position:fixed;left:50%;bottom:calc(88px + env(safe-area-inset-bottom,0px));z-index:40;transform:translate(-50%,12px);opacity:0;pointer-events:none;
   width:max-content;max-width:calc(100% - 32px);padding:12px 18px;border-radius:14px;background:var(--bg-3);border:1px solid var(--line-strong);color:var(--ink);font-size:15px;line-height:1.4;text-align:center;
@@ -662,6 +689,9 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
   /* en ventanas bajas los atajos se ponen en una sola línea (ícono + texto) para que la portada siga cabiendo */
   .tile{flex-direction:row;gap:7px;min-height:46px;padding:0 6px;font-size:12.5px}
   .tile .ic{width:18px;height:18px}
+  /* son 4 atajos en 368 px: ícono y texto un poco más chicos para que «Compartir» no se corte */
+  .quick .tile{gap:5px;padding:0 4px;font-size:12px}
+  .quick .tile .ic{width:16px;height:16px}
   .hero-ctas{margin-top:12px;gap:6px}
   .hero-inner{padding-bottom:12px}
 }
@@ -732,20 +762,23 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
     <symbol id="i-steps" viewBox="0 0 24 24"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></symbol>
     <symbol id="i-zoom" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="M11 8v6"/><path d="M8 11h6"/></symbol>
     <symbol id="i-promo" viewBox="0 0 24 24"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".6" fill="currentColor"/></symbol>
+    <symbol id="i-award" viewBox="0 0 24 24"><path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"/><circle cx="12" cy="8" r="6"/></symbol>
+    <symbol id="i-quote" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></symbol>
   </defs>
 </svg>
 
 <div class="page">
   <!-- Menú de secciones para celular y tablet: pegado arriba desde el primer momento. En pantalla grande (≥1000 px) se usa el que está dentro de la columna derecha (<main>); son los mismos enlaces. -->
-  <nav class="secnav secnav-top" aria-label="Secciones">
+  <nav class="secnav secnav-top siete" aria-label="Secciones">
     <div class="in">
-      <a href="#quien"><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg><span class="lbl">Quién soy</span></a>
+      <a href="#proteger"><svg class="ic" aria-hidden="true"><use href="#i-medical"/></svg><span class="lbl">Seguros</span></a>
       <a href="#promociones" data-promo-nav hidden><svg class="ic" aria-hidden="true"><use href="#i-promo"/></svg><span class="lbl">Promociones</span></a>
-      <a href="#herramientas"><svg class="ic" aria-hidden="true"><use href="#i-tools"/></svg><span class="lbl">Herramientas</span></a>
-      <a href="#seguros"><svg class="ic" aria-hidden="true"><use href="#i-medical"/></svg><span class="lbl">Seguros</span></a>
-      <a href="#opiniones"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg><span class="lbl">Opiniones</span></a>
+      <a href="#quien"><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg><span class="lbl">Por qué yo</span></a>
+      <a href="#opiniones"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg><span class="lbl">Testimonios</span></a>
+      <a href="#herramientas"><svg class="ic" aria-hidden="true"><use href="#i-tools"/></svg><span class="lbl">Recursos</span></a>
+      <a href="#trayectoria"><svg class="ic" aria-hidden="true"><use href="#i-award"/></svg><span class="lbl">Trayectoria</span></a>
       <a href="#faq"><svg class="ic" aria-hidden="true"><use href="#i-help"/></svg><span class="lbl">FAQ</span></a>
-      <a href="#contacto"><svg class="ic" aria-hidden="true"><use href="#i-phone"/></svg><span class="lbl">Contacto</span></a>
+      <a href="#cotizacion" class="nav-cta"><svg class="ic" aria-hidden="true"><use href="#i-quote"/></svg><span class="lbl">Cotizar</span></a>
     </div>
   </nav>
 
@@ -759,11 +792,12 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
         <div class="role"><span data-c="cargo"></span><i></i><span data-c="ciudadCorta"></span></div>
         <p class="tagline" data-c="frase"></p>
         <div class="hero-ctas" id="heroCtas">
+          <a class="btn btn-save" id="cotHero" href="#cotizacion"><svg class="ic" aria-hidden="true"><use href="#i-quote"/></svg><span class="two"><strong>Cotiza tu seguro</strong><small>Asesoría sin costo</small></span></a>
           <a class="btn btn-wa btn-big" id="waHero" target="_blank" rel="noopener" data-ev="wa" data-d="hero"><svg class="ic"><use href="#i-wa"/></svg>Escríbeme por WhatsApp</a>
-          <button class="btn btn-save" id="saveHero" type="button" data-ev="guardar" data-d="hero"><svg class="ic"><use href="#i-userplus"/></svg><span class="two"><strong>Guarda mi contacto</strong><small>Lo vas a necesitar</small></span></button>
           <div class="quick">
             <a class="tile" id="callHero" data-ev="llamar" data-d="hero"><svg class="ic"><use href="#i-phone"/></svg>Llamar</a>
             <a class="tile" id="agendaHero" data-agenda target="_blank" rel="noopener" data-ev="agendar" data-d="hero"><svg class="ic"><use href="#i-cal"/></svg>Agendar cita</a>
+            <button class="tile" id="saveHero" type="button" data-ev="guardar" data-d="hero"><svg class="ic"><use href="#i-userplus"/></svg>Guarda mi contacto</button>
             <button class="tile" id="shareHero" type="button" data-ev="compartir" data-d="hero"><svg class="ic"><use href="#i-share"/></svg>Compartir</button>
           </div>
           <div class="hero-social" id="heroSocial"><p class="social-label">Sigue mis canales</p><div class="social" id="socialHero"></div></div>
@@ -774,21 +808,40 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
 
   <div class="col">
     <main>
-      <nav class="secnav" aria-label="Secciones">
+      <nav class="secnav siete" aria-label="Secciones">
         <div class="in">
-          <a href="#quien"><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg><span class="lbl">Quién soy</span></a>
+          <a href="#proteger"><svg class="ic" aria-hidden="true"><use href="#i-medical"/></svg><span class="lbl">Seguros</span></a>
           <a href="#promociones" data-promo-nav hidden><svg class="ic" aria-hidden="true"><use href="#i-promo"/></svg><span class="lbl">Promociones</span></a>
-          <a href="#herramientas"><svg class="ic" aria-hidden="true"><use href="#i-tools"/></svg><span class="lbl">Herramientas</span></a>
-          <a href="#seguros"><svg class="ic" aria-hidden="true"><use href="#i-medical"/></svg><span class="lbl">Seguros</span></a>
-          <a href="#opiniones"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg><span class="lbl">Opiniones</span></a>
+          <a href="#quien"><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg><span class="lbl">Por qué yo</span></a>
+          <a href="#opiniones"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg><span class="lbl">Testimonios</span></a>
+          <a href="#herramientas"><svg class="ic" aria-hidden="true"><use href="#i-tools"/></svg><span class="lbl">Recursos</span></a>
+          <a href="#trayectoria"><svg class="ic" aria-hidden="true"><use href="#i-award"/></svg><span class="lbl">Trayectoria</span></a>
           <a href="#faq"><svg class="ic" aria-hidden="true"><use href="#i-help"/></svg><span class="lbl">FAQ</span></a>
-          <a href="#contacto"><svg class="ic" aria-hidden="true"><use href="#i-phone"/></svg><span class="lbl">Contacto</span></a>
+          <a href="#cotizacion" class="nav-cta"><svg class="ic" aria-hidden="true"><use href="#i-quote"/></svg><span class="lbl">Cotizar</span></a>
         </div>
       </nav>
 
-      <section class="sec" id="quien" aria-labelledby="h-quien">
-        <h2 id="h-quien" data-c="quienSoy.titulo"></h2>
-        <div class="acc" id="acc"></div>
+      <!-- 2 · ¿Qué necesitas proteger? Los mosaicos marcan lo que te interesa: el carrusel de «Soluciones» destaca esos seguros («Para ti») y el mensaje de la cotización lo incluye. -->
+      <section class="sec" id="proteger" aria-labelledby="h-proteger">
+        <p class="eyebrow">Empieza aquí</p>
+        <h2 id="h-proteger">¿Qué necesitas proteger?</h2>
+        <p class="lead">Marca lo que te interesa; puedes elegir varias. Es opcional, y te sirve para ver primero las soluciones que más encajan contigo.</p>
+        <div class="chips tiles" id="chips" role="group" aria-label="Qué necesitas proteger"></div>
+        <a class="btn btn-ghost btn-big block ver-soluciones" id="verSoluciones" href="#seguros"><span id="verTxt">Ver todas las soluciones</span><svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+      </section>
+
+      <!-- 3 · Soluciones de seguros -->
+      <section class="cta" id="seguros" aria-labelledby="h-seguros">
+        <p class="eyebrow">Soluciones</p>
+        <h2 id="h-seguros">Soluciones de seguros</h2>
+        <p class="lead">Una estrategia de protección adecuada para cada etapa de la vida. Desliza para conocerlas; las que marcaste arriba salen como «Para ti».</p>
+        <div class="car" id="carProductos" role="group" aria-roledescription="carrusel" aria-label="Seguros que ofrezco">
+          <div class="car-track" id="products" tabindex="0" aria-label="Seguros que ofrezco: desliza para ver más"></div>
+          <div class="car-ctl"></div>
+        </div>
+        <div class="match" id="match" hidden aria-live="polite"></div>
+        <a class="btn btn-primary btn-caps btn-big block sec-cta" href="#cotizacion"><svg class="ic" aria-hidden="true"><use href="#i-quote"/></svg>Cotiza tu seguro</a>
+        <p class="note">Asesoría sin costo.</p>
       </section>
 
       <!-- Promociones: las campañas vigentes que publicas desde el CRM (pestaña «Promociones de la tarjeta»). Sin ninguna vigente, la sección y su botón del menú no se ven. -->
@@ -797,9 +850,30 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
         <div class="promos" id="promos"></div>
       </section>
 
-      <!-- Herramientas: la guía gratis (tarjeta plegable) y la calculadora, juntas debajo de «Conóceme» -->
+      <!-- 4 · Por qué asesorarte conmigo -->
+      <section class="sec" id="quien" aria-labelledby="h-quien">
+        <p class="eyebrow" data-c="quienSoy.titulo"></p>
+        <h2 id="h-quien">¿Por qué asesorarte conmigo?</h2>
+        <p class="lead">Una asesoría personalizada, clara y enfocada en las necesidades reales de cada persona o familia.</p>
+        <div class="acc" id="acc"></div>
+        <a class="btn btn-primary btn-caps btn-big block sec-cta" href="#cotizacion"><svg class="ic" aria-hidden="true"><use href="#i-quote"/></svg>Cotiza tu seguro</a>
+      </section>
+
+      <!-- 5 · Testimonios de clientes -->
+      <section class="sec" id="opiniones" aria-labelledby="h-opiniones">
+        <p class="eyebrow">Testimonios</p>
+        <h2 id="h-opiniones">La confianza de nuestros clientes</h2>
+        <div class="car" id="carOpiniones" role="group" aria-roledescription="carrusel" aria-label="Testimonios de clientes">
+          <div class="car-track" id="quotes" tabindex="0" aria-label="Testimonios de clientes: desliza para ver más"></div>
+          <div class="car-ctl"></div>
+        </div>
+        <a class="btn btn-primary btn-caps btn-big block sec-cta" href="#cotizacion"><svg class="ic" aria-hidden="true"><use href="#i-quote"/></svg>Cotiza tu seguro</a>
+      </section>
+
+      <!-- 6 · Herramientas y recursos: la guía y la calculadora, los recursos y los videos -->
       <section class="sec" id="herramientas" aria-labelledby="h-herramientas">
-        <h2 id="h-herramientas">Herramientas</h2>
+        <p class="eyebrow">Aprende y calcula</p>
+        <h2 id="h-herramientas">Herramientas y recursos</h2>
         <div class="tools">
           <div class="regalo" id="regaloCard">
             <h3 class="reg-h" id="h-regalo">
@@ -827,82 +901,70 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
             <svg class="ic go" aria-hidden="true"><use href="#i-arrow"/></svg>
           </a>
         </div>
-      </section>
-
-      <!-- Una sola sección: los chips «¿Qué quieres proteger?» marcan los seguros que se muestran «Para ti» en el carrusel de abajo, y los dos botones de contacto cierran la sección -->
-      <section class="cta" id="seguros" aria-labelledby="h-seguros">
-        <p class="eyebrow">Asesoría sin costo</p>
-        <h2 id="h-seguros">¿Qué quieres proteger hoy?</h2>
-        <p class="lead">Permíteme ayudarte a encontrar la protección adecuada para ti y tu familia. Marca lo que te interesa (opcional):</p>
-        <div class="chips" id="chips" role="group" aria-label="Qué quieres proteger"></div>
-        <div class="car" id="carProductos" role="group" aria-roledescription="carrusel" aria-label="Seguros que ofrezco">
-          <div class="car-track" id="products" tabindex="0" aria-label="Seguros que ofrezco: desliza para ver más"></div>
-          <div class="car-ctl"></div>
-        </div>
-        <div class="match" id="match" hidden aria-live="polite"></div>
-        <section class="cta-fin" id="asesoria" aria-label="Pedir asesoría">
-          <a class="btn btn-primary btn-caps btn-big block" id="waAsesoria" target="_blank" rel="noopener" data-ev="wa" data-d="asesoria"><svg class="ic"><use href="#i-wa"/></svg>Quiero una asesoría</a>
-          <p class="note" id="notaAsesoria">Se abre WhatsApp con tu mensaje listo para enviar.</p>
-          <a class="btn btn-ghost block alt" id="agendaAsesoria" data-agenda data-ev="agendar" data-d="asesoria" target="_blank" rel="noopener"><svg class="ic"><use href="#i-cal"/></svg>Prefiero agendar una cita</a>
+        <section class="sub" id="recursos" aria-labelledby="h-recursos">
+          <p class="sub-k">Recursos</p>
+          <h3 class="sub-t" id="h-recursos">Aprende a proteger mejor tu futuro</h3>
+        <div class="res" id="res"></div>
         </section>
-      </section>
-
-      <section class="sec" id="opiniones" aria-labelledby="h-opiniones">
-        <p class="eyebrow">Testimonios</p>
-        <h2 id="h-opiniones">La confianza de nuestros clientes</h2>
-        <div class="car" id="carOpiniones" role="group" aria-roledescription="carrusel" aria-label="Testimonios de clientes">
-          <div class="car-track" id="quotes" tabindex="0" aria-label="Testimonios de clientes: desliza para ver más"></div>
-          <div class="car-ctl"></div>
-        </div>
-      </section>
-
-      <section class="sec" id="reconocimientos" aria-labelledby="h-reco">
-        <p class="eyebrow">Reconocimientos</p>
-        <h2 id="h-reco" data-c="reconocimientos.titulo"></h2>
-        <p class="lead" data-c="reconocimientos.texto"></p>
-        <div class="car car-fotos" id="carReco" role="group" aria-roledescription="carrusel" aria-label="Fotos de reconocimientos">
-          <div class="car-track" id="reco" tabindex="0" aria-label="Fotos de reconocimientos: desliza para ver más"></div>
-          <div class="car-ctl"></div>
-        </div>
-      </section>
-
-      <section class="sec" id="videos" aria-labelledby="h-videos">
-        <p class="eyebrow">Videos</p>
-        <h2 id="h-videos">Ideas claras sobre seguros y dinero</h2>
-        <p class="lead">Toca uno para verlo aquí mismo, sin salir de la tarjeta.</p>
+        <section class="sub" id="videos" aria-labelledby="h-videos">
+          <p class="sub-k">Videos</p>
+          <h3 class="sub-t" id="h-videos">Ideas claras sobre seguros y dinero</h3>
+          <p class="lead">Toca uno para verlo aquí mismo, sin salir de la tarjeta.</p>
         <div class="car car-reels" id="carReels" role="group" aria-roledescription="carrusel" aria-label="Videos">
           <div class="car-track" id="reels" tabindex="0" aria-label="Videos: desliza para ver más"></div>
           <div class="car-ctl"></div>
         </div>
         <p class="aviso-ia" id="avisoIa"></p>
+        </section>
       </section>
 
-      <section class="sec" id="eventos" aria-labelledby="h-eventos">
-        <p class="eyebrow">Eventos</p>
-        <h2 id="h-eventos" data-c="eventos.titulo"></h2>
-        <p class="lead" data-c="eventos.texto"></p>
+      <!-- 7 · Trayectoria y reconocimientos -->
+      <section class="sec" id="trayectoria" aria-labelledby="h-trayectoria">
+        <p class="eyebrow">Trayectoria</p>
+        <h2 id="h-trayectoria">Trayectoria y reconocimientos</h2>
+        <section class="sub sub0" id="reconocimientos" aria-labelledby="h-trayectoria">
+          <p class="sub-k" data-c="reconocimientos.titulo"></p>
+          <p class="lead" data-c="reconocimientos.texto"></p>
+        <div class="car car-fotos" id="carReco" role="group" aria-roledescription="carrusel" aria-label="Fotos de reconocimientos">
+          <div class="car-track" id="reco" tabindex="0" aria-label="Fotos de reconocimientos: desliza para ver más"></div>
+          <div class="car-ctl"></div>
+        </div>
+        </section>
+        <section class="sub" id="eventos" aria-labelledby="h-eventos">
+          <p class="sub-k">Eventos</p>
+          <h3 class="sub-t" id="h-eventos" data-c="eventos.titulo"></h3>
+          <p class="lead" data-c="eventos.texto"></p>
         <div class="car car-fotos" id="carEventos" role="group" aria-roledescription="carrusel" aria-label="Video y fotos del evento">
           <div class="car-track" id="fotos" tabindex="0" aria-label="Video y fotos del evento: desliza para ver más"></div>
           <div class="car-ctl"></div>
         </div>
         <p class="aviso-ia" id="avisoIaEv"></p>
+        </section>
       </section>
 
+      <!-- 8 · Preguntas frecuentes -->
       <section class="sec" id="faq" aria-labelledby="h-faq">
         <p class="eyebrow">Preguntas frecuentes</p>
         <h2 id="h-faq">Lo que casi todos me preguntan</h2>
         <div class="faq" id="faqList"></div>
       </section>
 
-      <section class="sec" id="recursos" aria-labelledby="h-recursos">
-        <p class="eyebrow">Recursos</p>
-        <h2 id="h-recursos">Aprende a proteger mejor tu futuro</h2>
-        <div class="res" id="res"></div>
-      </section>
+      <!-- 9 · Cotización y contacto. HOY la cotización se pide por WhatsApp o con una cita. FUTURO: el formulario de cotización va dentro de «.cot-box», arriba de los dos botones. -->
+      <section class="sec" id="cotizacion" aria-labelledby="h-cotizacion">
+        <p class="eyebrow">Asesoría sin costo</p>
+        <h2 id="h-cotizacion">Cotiza tu seguro</h2>
+        <p class="lead">Cuéntame qué quieres proteger y platicamos qué opciones te convienen. Permíteme ayudarte a encontrar la protección adecuada para ti y tu familia.</p>
+        <div class="cta cot-box">
+          <section class="cta-fin" id="asesoria" aria-label="Pedir asesoría">
+            <a class="btn btn-primary btn-caps btn-big block" id="waAsesoria" target="_blank" rel="noopener" data-ev="wa" data-d="asesoria"><svg class="ic"><use href="#i-wa"/></svg>Quiero una asesoría</a>
+            <p class="note" id="notaAsesoria">Se abre WhatsApp con tu mensaje listo para enviar.</p>
+            <a class="btn btn-ghost block alt" id="agendaAsesoria" data-agenda data-ev="agendar" data-d="asesoria" target="_blank" rel="noopener"><svg class="ic"><use href="#i-cal"/></svg>Prefiero agendar una cita</a>
+          </section>
+        </div>
 
-      <section class="sec" id="contacto" aria-labelledby="h-contacto">
-        <p class="eyebrow">Contacto</p>
-        <h2 id="h-contacto">Hablemos cuando tú quieras</h2>
+        <section class="sub" id="contacto" aria-labelledby="h-contacto">
+          <p class="sub-k">Contacto</p>
+          <h3 class="sub-t" id="h-contacto">Hablemos cuando tú quieras</h3>
         <div class="card glass">
           <div data-logo></div>
           <p class="ch-meta"><span data-c="cargo"></span><em id="ced"></em></p>
@@ -926,6 +988,7 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
             <button class="btn btn-ghost" id="shCopy" type="button" data-ev="compartir" data-d="copiar enlace"><svg class="ic"><use href="#i-link"/></svg>Copiar enlace</button>
           </div>
         </div>
+        </section>
       </section>
     </main>
 
@@ -941,7 +1004,8 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
 </div>
 
 <div class="dock" id="dock" inert>
-  <a class="btn btn-wa" id="waDock" target="_blank" rel="noopener" data-ev="wa" data-d="barra"><svg class="ic"><use href="#i-wa"/></svg>Escríbeme por WhatsApp</a>
+  <a class="btn btn-primary cot" id="cotDock" href="#cotizacion"><svg class="ic" aria-hidden="true"><use href="#i-quote"/></svg>Cotiza tu seguro</a>
+  <a class="btn btn-wa wa-ico" id="waDock" aria-label="Escríbeme por WhatsApp" target="_blank" rel="noopener" data-ev="wa" data-d="barra"><svg class="ic"><use href="#i-wa"/></svg></a>
   <a class="btn btn-ghost call" id="callDock" aria-label="Llamar" data-ev="llamar" data-d="barra"><svg class="ic"><use href="#i-phone"/></svg></a>
 </div>
 <dialog class="story" id="story" aria-labelledby="storyH">
@@ -1080,10 +1144,10 @@ const CONFIG = {
     { icono: "car",     titulo: "Seguro de Auto", tags: ["auto"], texto: "Protección para tu vehículo y responsabilidad civil ante terceros.", detalle: "Cobertura amplia, limitada o de responsabilidad civil." }
   ],
 
-  // Opciones del bloque "¿Qué quieres proteger hoy?"
+  // Opciones del bloque "¿Qué necesitas proteger?" (cada una con su ícono)
   intereses: [
-    { id: "salud", texto: "Mi salud" }, { id: "familia", texto: "Mi familia" }, { id: "retiro", texto: "Mi retiro" },
-    { id: "casa", texto: "Mi casa" }, { id: "auto", texto: "Mi auto" }, { id: "impuestos", texto: "Mis impuestos" }
+    { id: "salud", texto: "Mi salud", icono: "medical" }, { id: "familia", texto: "Mi familia", icono: "heart" }, { id: "retiro", texto: "Mi retiro", icono: "coins" },
+    { id: "casa", texto: "Mi casa", icono: "home" }, { id: "auto", texto: "Mi auto", icono: "car" }, { id: "impuestos", texto: "Mis impuestos", icono: "trend" }
   ],
 
   testimonios: [
@@ -1387,12 +1451,14 @@ function vcardTexto() {
   const btnAsesoria = $("#waAsesoria"), notaAsesoria = $("#notaAsesoria");
   const NOTA_BASE = notaAsesoria.textContent;
   btnAsesoria.href = wa(msgAsesoria());
-  $("#chips").innerHTML = C.intereses.map((t) => `<button type="button" class="chip" aria-pressed="false" data-v="${esc(t.id)}">${ic("check")}${esc(t.texto)}</button>`).join("");
+  $("#chips").innerHTML = C.intereses.map((t) => `<button type="button" class="chip" aria-pressed="false" data-v="${esc(t.id)}"><span class="ico">${ic(t.icono || "shield")}</span><span class="tx">${esc(t.texto)}</span><span class="ok">${ic("check")}</span></button>`).join("");
+  const verTxt = $("#verTxt");
   $("#chips").addEventListener("click", (e) => {
     const bt = e.target.closest(".chip"); if (!bt) return;
     const on = bt.getAttribute("aria-pressed") !== "true";
     bt.setAttribute("aria-pressed", String(on));
     on ? elegidos.add(bt.dataset.v) : elegidos.delete(bt.dataset.v);
+    verTxt.textContent = elegidos.size ? `Ver mis soluciones (${elegidos.size})` : "Ver todas las soluciones";   // el botón de abajo lleva al carrusel de «Soluciones», que ya destaca lo marcado
     btnAsesoria.href = wa(msgAsesoria());
     btnAsesoria.dataset.d = "asesoria:" + [...elegidos].map(textoDe).join("+").slice(0, 45);
     // El botón avisa que el mensaje lleva lo marcado
@@ -1699,14 +1765,16 @@ function vcardTexto() {
 
   // Entrada suave de los bloques al aparecer en pantalla (nada queda oculto si el navegador no puede observar o la persona prefiere sin movimiento)
   if ("IntersectionObserver" in window && !reducido) {
-    const rv = [...document.querySelectorAll(".sec > .eyebrow, .sec > h2, .sec > .lead, .teaser, .regalo, .car, .aviso-ia, .faq details, .acc details, .res a, .cta > *, .card, .share")];
+    const rv = [...document.querySelectorAll(".sec > .eyebrow, .sec > h2, .sec > .lead, .sub > .sub-k, .sub > .sub-t, .sub > .lead, .sec > .chips, .sec > .ver-soluciones, .sec-cta, .teaser, .regalo, .car, .aviso-ia, .faq details, .acc details, .res a, .cta > *, .card, .share")];
     rv.forEach((x) => x.classList.add("rv"));
     const ioR = new IntersectionObserver((ens) => ens.forEach((en) => { if (en.isIntersecting) { en.target.classList.add("in"); ioR.unobserve(en.target); } }), { threshold: 0.12, rootMargin: "0px 0px -6% 0px" });
     rv.forEach((x) => ioR.observe(x));
   }
 
   // Recursos
-  const recursos = C.recursos.filter((r) => r.url || r.mensaje);
+  // La guía «Dinero Bajo Control» y la calculadora ya salen arriba, en las tarjetas de Herramientas: no se repiten en la lista de recursos
+  const enHerramientas = (u) => /\/(escudo|semana)\/?$/.test(u || "");
+  const recursos = C.recursos.filter((r) => (r.url || r.mensaje) && !enHerramientas(r.url));
   // Las páginas de mi mismo sitio (guía, calculadora, guías) se abren en esta misma pestaña (el botón «atrás» regresa a la tarjeta); WhatsApp y otros sitios, en una nueva
   const esMiSitio = (u) => { try { return /(^|\.)especialistaenasegurarte\.lat$/.test(new URL(u, location.href).hostname); } catch (e) { return false; } };
   if (recursos.length) {
@@ -1821,14 +1889,13 @@ function vcardTexto() {
     document.querySelectorAll("main section[id]").forEach((x) => ioS.observe(x));
   }
 
-  // Barra fija de WhatsApp: aparece al pasar la portada
+  // Barra fija («Cotiza tu seguro» + WhatsApp + llamar): aparece al pasar la portada y se esconde mientras ya estás en la sección de cotización
   const dock = $("#dock");
   if ("IntersectionObserver" in window) {
-    new IntersectionObserver(([en]) => {
-      const show = !en.isIntersecting && en.boundingClientRect.top < 0;
-      dock.classList.toggle("on", show); dock.inert = !show;
-    }).observe($("#heroCtas"));
-
+    let pasoPortada = false, enCotizacion = false;
+    const pinta = () => { const show = pasoPortada && !enCotizacion; dock.classList.toggle("on", show); dock.inert = !show; };
+    new IntersectionObserver(([en]) => { pasoPortada = !en.isIntersecting && en.boundingClientRect.top < 0; pinta(); }).observe($("#heroCtas"));
+    new IntersectionObserver(([en]) => { enCotizacion = en.isIntersecting; pinta(); }, { threshold: 0.2 }).observe($("#cotizacion"));
   }
 
   // Navegación superior: marca la sección que está arriba, justo debajo de la barra.
