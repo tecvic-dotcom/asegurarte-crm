@@ -18,10 +18,10 @@ import type { UTM } from "./types";
 export const TIPOS_SEGURO = [
   { id: "vida", texto: "Seguro de vida", icono: "heart", ramo: "vida" },
   { id: "gmm", texto: "Gastos médicos mayores", icono: "medical", ramo: "gmm" },
+  { id: "autos", texto: "Seguro de auto", icono: "car", ramo: "autos" },
+  { id: "hogar", texto: "Protección patrimonial (casa)", icono: "home", ramo: "hogar" },
   { id: "ahorro", texto: "Ahorro y retiro", icono: "coins", ramo: "ahorro" },
   { id: "ppr", texto: "PPR / Planeación fiscal", icono: "trend", ramo: "ahorro" },
-  { id: "hogar", texto: "Protección patrimonial (casa)", icono: "home", ramo: "hogar" },
-  { id: "autos", texto: "Seguro de auto", icono: "car", ramo: "autos" },
   { id: "no-se", texto: "No estoy seguro, oriéntame", icono: "help", ramo: null },
 ] as const;
 export type TipoSeguroId = (typeof TIPOS_SEGURO)[number]["id"];
