@@ -319,6 +319,64 @@ h2{font:800 clamp(27px,7.4vw,34px)/1.12 var(--display);letter-spacing:-.01em;mar
 .cta.cot-box{margin-top:26px;padding-top:26px}
 .cot-box .cta-fin{margin-top:0}
 .cot-box .cta-fin > .btn:first-child{margin-top:0}
+/* ---------- Formulario «Cotiza tu seguro» en línea ---------- */
+.cf-wrap{margin-top:26px}
+.cf-wrap[hidden]{display:none}
+.cf,.cf-ok{padding:24px 20px;border-radius:26px}
+.cf-nota{margin:0 0 18px;font-size:13px;color:var(--ink-mute)}
+.cf-nota i,.cf-l i{font-style:normal;color:var(--brand-2)}
+.cf-f{margin-bottom:18px}
+.cf-l{display:block;margin:0 0 7px;padding:0;font:600 14px/1.25 var(--body);color:var(--ink-soft)}
+.cf-l small{font:400 13px/1 var(--body);color:var(--ink-mute)}
+.cf input[type=text],.cf input[type=tel],.cf input[type=email]{display:block;width:100%;min-height:54px;padding:0 15px;border-radius:14px;border:1px solid var(--line-strong);background:rgba(10,12,28,.6);color:var(--ink);font:400 16px/1.2 var(--body);transition:border-color .15s,box-shadow .15s}
+.cf input::placeholder{color:var(--ink-mute)}
+.cf input:focus{outline:none;border-color:var(--brand-2);box-shadow:0 0 0 3px rgba(91,123,255,.2)}
+.cf input[aria-invalid="true"]{border-color:#ff7a7a;box-shadow:0 0 0 3px rgba(255,122,122,.16)}
+.cf-hint{margin:6px 0 0;font-size:12.5px;color:var(--ink-mute)}
+.cf-err{display:none;margin:7px 0 0;font-size:14px;line-height:1.35;color:#ff9a9a}
+.cf-err.on{display:flex;gap:7px;align-items:flex-start}
+.cf-err::before{content:"!";flex:none;display:grid;place-items:center;width:17px;height:17px;margin-top:1px;border-radius:50%;background:#ff9a9a;color:#1a0b0b;font:800 11px/1 var(--body)}
+.cf fieldset{min-width:0;margin:0 0 18px;padding:0;border:0}
+.cf fieldset legend{padding:0}
+.cf-opts{display:grid;gap:8px}
+@media (min-width:600px){ .cf-opts{grid-template-columns:1fr 1fr} }
+.cf-opt{position:relative;display:flex;align-items:center;gap:12px;min-height:56px;padding:9px 12px;border-radius:16px;border:1px solid var(--line-strong);background:var(--glass);cursor:pointer;transition:border-color .15s,background .15s;-webkit-tap-highlight-color:transparent}
+.cf-opt:hover{border-color:var(--brand-2)}
+.cf-opt input{position:absolute;opacity:0;width:1px;height:1px;margin:0}
+.cf-opt:has(input:focus-visible){outline:2px solid var(--brand-2);outline-offset:2px}
+.cf-opt .ico{display:grid;place-items:center;flex:none;width:38px;height:38px;border-radius:12px;border:1px solid var(--line-strong);background:var(--glass-2);color:var(--brand-2)}
+.cf-opt .ico .ic{width:20px;height:20px}
+.cf-opt .tx{flex:1;min-width:0;font:600 15px/1.25 var(--body);color:var(--ink)}
+.cf-opt .tx small{display:block;margin-top:2px;font:400 12.5px/1.25 var(--body);color:var(--ink-mute)}
+.cf-opt .ok{display:grid;place-items:center;flex:none;width:20px;height:20px;border-radius:50%;border:1px solid var(--line-strong);color:transparent}
+.cf-opt .ok .ic{width:12px;height:12px;stroke-width:3.4}
+.cf-opt.on{border-color:var(--brand-2);background:linear-gradient(180deg,rgba(91,123,255,.30),rgba(42,34,245,.18))}
+.cf-opt.on .ico{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.38);color:#fff}
+.cf-opt.on .ok{border-color:transparent;background:var(--brand-2);color:#fff}
+.cf-opt.bad{border-color:rgba(255,122,122,.6)}
+.cf-priv{display:flex;align-items:flex-start;gap:12px;margin:4px 0 14px;font-size:14px;line-height:1.45;color:var(--ink-soft);cursor:pointer}
+.cf-priv input{flex:none;width:22px;height:22px;margin:1px 0 0;accent-color:var(--brand)}
+.cf-priv a{color:var(--brand-2);text-underline-offset:3px}
+.cf-aviso{display:none;margin:0 0 14px;padding:12px 14px;border-radius:14px;border:1px solid rgba(255,122,122,.4);background:rgba(255,122,122,.1);font-size:14.5px;line-height:1.4;color:#ffb4b4}
+.cf-aviso.on{display:block}
+.cf .btn{width:100%}
+.cf .btn[disabled]{opacity:.6;cursor:wait}
+.cf-trampa{position:absolute!important;left:-9999px;top:-9999px;width:0;height:0;overflow:hidden}
+.cf-ok{text-align:center}
+.cf-ok .cf-check{display:grid;place-items:center;width:64px;height:64px;margin:0 auto;border-radius:50%;background:rgba(43,212,160,.15);color:#2bd4a0}
+.cf-ok .cf-check .ic{width:34px;height:34px;stroke-width:2.6}
+.cf-ok h3{margin:16px 0 0;font:800 clamp(22px,6vw,26px)/1.2 var(--display);outline:none}
+.cf-ok .cf-p{margin:8px auto 0;max-width:42ch;color:var(--ink-soft)}
+.cf-ok dl{margin:20px auto 0;max-width:420px;padding:14px 16px;border-radius:16px;border:1px solid var(--line);background:var(--glass);text-align:left;font-size:14.5px}
+.cf-ok dl div{display:flex;justify-content:space-between;gap:14px;padding:5px 0}
+.cf-ok dt{color:var(--ink-mute)}
+.cf-ok dd{margin:0;text-align:right;font-weight:600;color:var(--ink)}
+.cf-ok .btn{margin-top:14px;width:100%;max-width:420px}
+.cf-ok .cf-otra{display:block;margin:12px auto 0;padding:10px;border:0;background:none;color:var(--brand-2);font:600 15px/1 var(--body);text-decoration:underline;text-underline-offset:4px;cursor:pointer}
+.cf-o{margin:22px 0 0;text-align:center;font-size:14px;color:var(--ink-mute)}
+.cf-wrap:not([hidden]) ~ .cot-box{margin-top:12px}
+.sr-solo{position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+@media (min-width:600px){ .cf,.cf-ok{padding:30px} }
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
 .chip{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--line-strong);
   background:var(--glass);color:var(--ink);font:600 15px/1 var(--body);cursor:pointer;transition:background .15s,color .15s,border-color .15s}
@@ -954,6 +1012,9 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
         <p class="eyebrow">Asesoría sin costo</p>
         <h2 id="h-cotizacion">Cotiza tu seguro</h2>
         <p class="lead">Cuéntame qué quieres proteger y platicamos qué opciones te convienen. Permíteme ayudarte a encontrar la protección adecuada para ti y tu familia.</p>
+        <!-- Formulario en línea: lo arma public/tarjeta/cotizacion-form.js (usa las reglas generadas en cotizacion-reglas.js). Oculto hasta que CONFIG.cotizacionEnLinea sea true o la dirección lleve ?cotizacion=1 -->
+        <div class="cf-wrap" id="cotForm" hidden></div>
+        <p class="cf-o" id="cotOtro" hidden>¿Prefieres otro medio?</p>
         <div class="cta cot-box">
           <section class="cta-fin" id="asesoria" aria-label="Pedir asesoría">
             <a class="btn btn-primary btn-caps btn-big block" id="waAsesoria" target="_blank" rel="noopener" data-ev="wa" data-d="asesoria"><svg class="ic"><use href="#i-wa"/></svg>Quiero una asesoría</a>
@@ -1084,6 +1145,8 @@ const CONFIG = {
   agendaEmbed: "https://calendar.google.com/calendar/appointments/schedules/AcZssZ23yt8JINAoiLLwoLTxqyG9FS7NXxh-2R3H6VONo3-hdG0Xyix-2PhjCXHTbVUKGaGzFcUcrfGK?gv=true&hl=es",   // la misma agenda de citas (en español), para abrirla dentro de la tarjeta; vacío = se abre en otra pestaña
   agendaUrl: "https://calendar.app.google/dxf4aRZFHkux6MqL8",   // Agenda de citas de Google Calendar (45 min, L-V); vacío = pide la cita por WhatsApp
   cedulaCNSF: "V394637",                  // número de cédula de agente; aparece en el aviso legal
+  // Formulario «Cotiza tu seguro» en línea (sección Cotiza): false = oculto para tus clientes; con «?cotizacion=1» en la dirección se ve para probarlo. Pasa a true para encenderlo.
+  cotizacionEnLinea: false,
 
   colores: { brand: "#2a22f5", "brand-2": "#5b7bff" },
 
@@ -1961,6 +2024,8 @@ function vcardTexto() {
     if (!raf) raf = requestAnimationFrame(() => { raf = 0; espiar(); });
   }, { passive: true });
   espiar();
+  // Lo que usa el formulario de cotización (public/tarjeta/cotizacion-form.js): mismos mensajes de WhatsApp, medición y origen de la visita
+  window.__tarjeta = { C, wa, track, ctx, reducido };
 })();
 </script>
 
@@ -1969,6 +2034,8 @@ function vcardTexto() {
 
 <!-- Navidad: del 1 de noviembre de 2026 al 6 de enero (fondo, nieve y gorro de Santa en la foto). Fuera de esas fechas este bloque no descarga nada. La ventana de fechas vive en public/navidad/navidad.js. Para probarlo fuera de fecha: ?navidad=1 (con ?halloween=0 si es octubre). Para quitarlo del todo, borrar este bloque. -->
 <script>(function(){var n=new Date().getMonth()*100+new Date().getDate();if(n>=1001||n<=6||/[?&]navidad=1/.test(location.search)){var s=document.createElement("script");s.src="/navidad/navidad.js";document.body.appendChild(s);}})();</script>
+<script src="/tarjeta/cotizacion-reglas.js" defer></script>
+<script src="/tarjeta/cotizacion-form.js" defer></script>
 <script src="/tarjeta/asistente.js" defer></script>
 
 </body>

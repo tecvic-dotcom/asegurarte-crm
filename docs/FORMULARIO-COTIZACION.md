@@ -41,6 +41,22 @@ formulario → POST /api/cotizacion → crearLeadCotizacion → Supabase (leads 
 - `/cotizacion-prueba` tiene un interruptor «Conectado a tu CRM» que SÍ guarda (usar nombres «PRUEBA …» para encontrarlos y borrarlos desde el CRM).
 - Pendiente a futuro: Cloudflare Turnstile (el login ya lo contempla) si llega spam real.
 
+## En la tarjeta `/roberto` (formulario en línea)
+
+La tarjeta es HTML estático (sin React), así que allí el formulario se arma con JavaScript propio y el diseño de la tarjeta:
+
+| Archivo | Qué hace |
+|---|---|
+| `public/tarjeta/cotizacion-reglas.js` | **GENERADO** desde `lib/normalize.ts`, `lib/validacion.ts` y `lib/captacion-cotizacion.ts` (listas, validación, antispam). No editar a mano. |
+| `scripts/construir-cotizacion-tarjeta.cjs` | Lo genera (`npm run cotizacion:tarjeta`). `--verificar` avisa si quedó viejo. **Correrlo y subir el archivo cada vez que cambien esas reglas** (p. ej. el orden de los seguros). |
+| `public/tarjeta/cotizacion-form.js` | El formulario de la tarjeta: campos, errores, confirmación (con botón de WhatsApp), antispam y envío a `/api/cotizacion`. |
+| `public/tarjeta/index.html` | Punto de enganche `#cotForm` en la sección «Cotiza tu seguro», estilos `.cf-*` y la llave `CONFIG.cotizacionEnLinea`. |
+
+- **Encendido:** `CONFIG.cotizacionEnLinea` en `index.html`. En `false` el formulario no se ve para los clientes; con `?cotizacion=1` en la dirección sí (para probarlo). Pasar a `true` lo enciende para todos.
+- Si marcan un interés en «¿Qué necesitas proteger?», se sugiere el seguro en el formulario (salvo que ya hayan elegido uno).
+- La fuente de la visita (`?s=ig`, `?s=wa`…) viaja como `utm.source` y aparece en el CRM junto al origen «Sitio web»; el historial dice «Desde: tarjeta».
+- No hay cambios de CSP: los scripts son del mismo sitio y la petición va a `/api/cotizacion` (`connect-src 'self'`).
+
 ## Antispam que ya trae
 
 - **Señuelo** invisible (`confirmar_sitio_web`): con texto = bot; se finge éxito y no se envía.
