@@ -98,6 +98,7 @@ export const LUGAR_COTIZAR: Record<string, string> = {
   calculadora: "Debajo de la calculadora",
   herramientas: "Al final de «Herramientas y recursos»",
   videos: "Botón bajo cada video destacado",
+  faq: "Botón dentro de las preguntas frecuentes",
 };
 
 const LUGAR_WA: Record<string, string> = {

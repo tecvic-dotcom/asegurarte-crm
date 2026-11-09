@@ -1375,15 +1375,17 @@ const CONFIG = {
 
   // Preguntas frecuentes: de sus guiones de «5 preguntas frecuentes de seguros» (más la de enfermedad previa, de su video)
   faq: [
-    { p: "¿Los seguros son demasiado caros?", tags: ["salud", "familia", "retiro", "casa", "auto", "impuestos"], clave: "PROTECCIÓN", r: [
+    // `cta`: texto del botón principal que lleva a la cotización (auditoría: solo las 3 objeciones principales); las demás conservan su botón de WhatsApp con la palabra clave.
+    { p: "¿Los seguros son demasiado caros?", tags: ["salud", "familia", "retiro", "casa", "auto", "impuestos"], clave: "PROTECCIÓN", cta: "Quiero conocer mis opciones", r: [
       "No necesitas ser rico para tener un seguro, pero sí podrías necesitar mucho dinero para no tenerlo. Una enfermedad, un accidente o la pérdida del principal proveedor puede desestabilizar las finanzas de una familia en cuestión de días.",
+      "El costo depende de tus necesidades, edad, coberturas y características del plan.",
       "La solución no es contratar el seguro más caro, sino encontrar una protección que se ajuste a tu presupuesto y a tus necesidades: revisamos tus prioridades y comparamos opciones."
     ] },
-    { p: "¿Estoy tirando mi dinero si nunca uso mi seguro?", tags: ["salud", "casa", "auto"], clave: "SEGURO", r: [
+    { p: "¿Estoy tirando mi dinero si nunca uso mi seguro?", tags: ["salud", "casa", "auto"], clave: "SEGURO", cta: "Quiero revisar mi póliza", r: [
       "El seguro no se contrata esperando enfermarte o tener un accidente: se contrata para reducir el impacto económico de ciertos imprevistos. Si nunca lo has usado, quizá nunca enfrentaste una emergencia cubierta.",
       "Antes de cancelarlo, revisa qué riesgos cubre tu póliza, cuáles son sus exclusiones y si la protección sigue siendo adecuada para ti."
     ] },
-    { p: "¿La aseguradora realmente me va a pagar?", tags: ["salud", "casa", "auto"], clave: "LETRAS PEQUEÑAS", r: [
+    { p: "¿La aseguradora realmente me va a pagar?", tags: ["salud", "casa", "auto"], clave: "LETRAS PEQUEÑAS", cta: "Quiero entender mi póliza", r: [
       "Tener una póliza no garantiza que cualquier gasto te lo paguen: hay exclusiones, periodos de espera, deducibles y requisitos para presentar una reclamación.",
       "Para evitar sorpresas, antes de contratar pide que te expliquen con claridad qué cubre, qué no cubre y en qué condiciones responde la aseguradora. Parte de mi trabajo es ayudarte a entender tu póliza."
     ] },
@@ -1854,7 +1856,9 @@ function vcardTexto() {
       <summary><span>${esc(q.p)}</span><span class="mas" aria-hidden="true"></span></summary>
       <div class="ans">
         ${q.r.map((t) => `<p>${esc(t)}</p>`).join("")}
-        <a class="btn btn-ghost" target="_blank" rel="noopener" data-ev="wa" data-d="faq:${esc(q.p)}" href="${wa(`${q.clave}. Hola Roberto, leí en tu tarjeta la pregunta «${q.p}» y quiero que platiquemos.`)}">${ic("wa")}Escríbeme «${esc(q.clave)}»</a>
+        ${q.cta
+          ? `<a class="btn btn-primary btn-caps" href="#cotizacion" data-ev="cotizar" data-d="faq">${ic("quote")}${esc(q.cta)}</a>`
+          : `<a class="btn btn-ghost" target="_blank" rel="noopener" data-ev="wa" data-d="faq:${esc(q.p)}" href="${wa(`${q.clave}. Hola Roberto, leí en tu tarjeta la pregunta «${q.p}» y quiero que platiquemos.`)}">${ic("wa")}Escríbeme «${esc(q.clave)}»</a>`}
       </div>
     </details>`).join("");
   $("#faqList").addEventListener("toggle", (e) => { if (e.target.open && !e.target.dataset.rec) track("faq", e.target.dataset.p); }, true);
