@@ -31,6 +31,7 @@ import { podriaSerLaMismaPersona } from "./clientes-agrupar";
 import { esRamo } from "./ramos";
 import { esCobranzaAseguradora } from "./cobranza-autos";
 import { AVISO_SEMANA_VERSION, resumenPlan, validarProspectoSemana, type PlanSemana } from "./semana-reglas";
+import { ORIGEN_GUIA_FUTUROS_PAPAS, validarProspectoGuia } from "./guia-futuros-papas-reglas";
 import { prepararSolicitud, textoParaQuien, textoTipoSeguro, validarSolicitud } from "./captacion-cotizacion";
 import type { SolicitudCotizacion } from "./captacion-cotizacion";
 import { ZONA_HORARIA } from "./fechas";
@@ -46,6 +47,7 @@ import type {
   NuevoLead,
   NuevoLeadManual,
   Geo,
+  UTM,
   Metricas,
   EtapaId,
   Genero,
@@ -402,6 +404,85 @@ export async function crearLeadSemana(input: NuevoLeadSemana): Promise<CrearLead
 
   const s = store();
   const existe = s.leads.find((l) => (v.correo && l.correo === v.correo) || l.whatsapp === v.whatsapp);
+  if (existe) {
+    s.actividad.unshift({ id: uid("ac"), lead_id: existe.id, tipo: "nota", texto: textoRepetido, autor: "Sistema", creado_en: nowISO() });
+    return { ok: true, duplicado: true, id: existe.id };
+  }
+  const id = uid("ld");
+  s.leads.unshift({ id, asignado_a: null, ramo: null, cerrado_en: null, creado_en: nowISO(), actualizado_en: nowISO(), ...fila });
+  s.actividad.unshift({ id: uid("ac"), lead_id: id, tipo: "nota", texto: textoNuevo, autor: "Sistema", creado_en: nowISO() });
+  return { ok: true, duplicado: false, id };
+}
+
+/** Prospecto que pidió la «Guía para futuros papás» (tarjeta /roberto o landing). */
+export interface NuevoLeadGuia {
+  nombre: unknown;
+  whatsapp: unknown;
+  correo: unknown;
+  consentimiento: unknown;
+  /** Honeypot anti-spam: si trae valor, es un bot. */
+  trampa?: unknown;
+  /** De dónde llegó la persona (UTMs de la visita o «?s=ig» de la tarjeta). */
+  utm?: Partial<UTM>;
+}
+
+/**
+ * Guarda al prospecto que dejó sus datos para recibir la «Guía para futuros papás»: lead NUEVO con origen «Guía para futuros papás».
+ * NO crea tablas ni columnas (usa `leads` y `actividad`): en la bitácora queda el consentimiento con su fecha. Un prospecto = una sola ficha:
+ * si el correo o el WhatsApp ya existen no se crea otra, se le agrega una nota (y no se toca su etapa). `duplicado: true` avisa que ya estaba.
+ * El antispam y los límites los decide la ruta; aquí se valida todo otra vez (nunca se confía en el navegador).
+ */
+export async function crearLeadGuia(input: NuevoLeadGuia, geo?: Partial<Geo>): Promise<CrearLeadResultado> {
+  if (typeof input.trampa === "string" && input.trampa.trim().length > 0) return { ok: true, duplicado: false };
+
+  const v = validarProspectoGuia(input);
+  if (!v.ok) return { ok: false, duplicado: false, errores: v.errores };
+
+  const utm = input.utm ?? {};
+  const cuando = new Date().toLocaleString("es-MX", { timeZone: ZONA_HORARIA, dateStyle: "short", timeStyle: "short" }).replace(/\.$/, "");
+  const textoNuevo = `Descargó la «Guía para futuros papás». Autorizó el aviso de privacidad el ${cuando}.`;
+  const textoRepetido = `Volvió a pedir la «Guía para futuros papás». Autorizó el aviso de privacidad el ${cuando}.`;
+  const fila = {
+    nombre: v.nombre.slice(0, 160),
+    correo: v.correo,
+    whatsapp: v.whatsapp,
+    mensaje: "Pidió la «Guía para futuros papás».",
+    etapa: "nuevo" as EtapaId,
+    valor: 0,
+    origen: ORIGEN_GUIA_FUTUROS_PAPAS,
+    utm_source: (utm.source ?? "").slice(0, 120),
+    utm_medium: (utm.medium ?? "").slice(0, 120),
+    utm_campaign: (utm.campaign ?? "").slice(0, 120),
+    utm_term: (utm.term ?? "").slice(0, 120),
+    utm_content: (utm.content ?? "").slice(0, 120),
+    pais: geo?.pais ?? null,
+    ciudad: geo?.ciudad ?? null,
+    region: geo?.region ?? null,
+    dispositivo: geo?.dispositivo ?? null,
+    notas: "",
+    genero: null as Genero | null,
+    fecha_nacimiento: null as string | null,
+    codigo_postal: null as string | null,
+  };
+
+  if (cloudReady && adminDb) {
+    const { data: porCorreo } = await adminDb.from("leads").select("id").eq("correo", v.correo).limit(1);
+    const { data: porWa } = porCorreo && porCorreo.length ? { data: null } : await adminDb.from("leads").select("id").eq("whatsapp", v.whatsapp).limit(1);
+    const previo = (porCorreo && porCorreo[0]) || (porWa && porWa[0]);
+    if (previo) {
+      const id = (previo as { id: string }).id;
+      await adminDb.from("actividad").insert({ lead_id: id, tipo: "nota", texto: textoRepetido, autor: "Sistema" });
+      return { ok: true, duplicado: true, id };
+    }
+    const { data, error } = await adminDb.from("leads").insert(fila).select("id").limit(1);
+    if (error) throw new Error(error.message);
+    const id = (data?.[0] as { id: string } | undefined)?.id;
+    if (id) await adminDb.from("actividad").insert({ lead_id: id, tipo: "nota", texto: textoNuevo, autor: "Sistema" });
+    return { ok: true, duplicado: false, id };
+  }
+
+  const s = store();
+  const existe = s.leads.find((l) => l.correo === v.correo || l.whatsapp === v.whatsapp);
   if (existe) {
     s.actividad.unshift({ id: uid("ac"), lead_id: existe.id, tipo: "nota", texto: textoRepetido, autor: "Sistema", creado_en: nowISO() });
     return { ok: true, duplicado: true, id: existe.id };

@@ -710,6 +710,12 @@ details[open] > summary .mas::after,.regalo.abierto .mas::after{transform:rotate
 .regalo .btn{margin-top:20px}
 .regalo .btn + .btn{margin-top:10px}
 .reg-nota{margin:12px 0 14px;text-align:center;font-size:13px;line-height:1.5;color:var(--ink-mute)}
+/* Guía para futuros papás: misma tarjeta del regalo, con su formulario dentro (se abre solo al tocarla, para no cerrarse mientras escribes) */
+.reg-top .ico-g{display:grid;place-items:center;width:38px;height:38px;border-radius:11px;flex:none;background:linear-gradient(180deg,var(--brand-2),var(--brand));color:#fff;box-shadow:0 0 0 1px var(--line-strong)}
+.reg-top .ico-g .ic{width:20px;height:20px}
+.gf,.gf-listo{margin-top:18px;padding:0;border-radius:0}
+.gf .cf-f{margin-bottom:14px}
+.gf-listo .btn{max-width:none}
 
 /* Agenda de citas dentro de la tarjeta (pantalla completa en el celular, ventana en escritorio) */
 dialog.agenda{overflow:hidden}
@@ -1049,6 +1055,50 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
               <a class="btn btn-primary btn-caps btn-big block" href="/semana?s=tarjeta" data-ev="recurso" data-d="Dinero Bajo Control (regalo)"><svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg>Quiero mi guía gratis</a>
               <a class="btn btn-ghost btn-big block" href="/semana?s=tarjeta&amp;instalar=1" data-ev="recurso" data-d="Dinero Bajo Control (instalar)"><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg>Instalarla en mi celular</a>
               <p class="reg-nota">Se instala en tu celular y funciona sin internet. Lo que anotas se queda en tu teléfono.</p>
+            </div></div>
+          </div>
+          <!-- Guía gratuita para futuros papás: formulario (nombre, WhatsApp, correo) y descarga inmediata del PDF; el prospecto llega al CRM con origen «Guía para futuros papás» -->
+          <div class="regalo guia" id="guiaCard">
+            <h3 class="reg-h" id="h-guia">
+              <button class="reg-top" type="button" id="guiaTop" aria-expanded="false" aria-controls="guiaBody">
+                <span class="ico-g" aria-hidden="true"><svg class="ic"><use href="#i-book"/></svg></span>
+                <span class="t"><small>Guía gratuita</small><b>Guía para futuros papás</b></span>
+                <span class="mas" aria-hidden="true"></span>
+              </button>
+            </h3>
+            <div class="reg-body" id="guiaBody"><div class="reg-in">
+              <p class="lead">¿Estás por convertirte en papá o mamá? Descubre qué decisiones de protección conviene considerar antes de la llegada de tu bebé.</p>
+              <ul class="reg-list">
+                <li><strong>Cuándo conviene contratar</strong> y por qué el periodo de espera cambia el calendario.</li>
+                <li>Qué da la <strong>cobertura de maternidad</strong> y cómo queda protegido el recién nacido.</li>
+                <li>Lo que <strong>no cubre</strong> y 8 preguntas para hacer antes de contratar.</li>
+              </ul>
+              <form class="cf gf" id="guiaForm" novalidate aria-label="Recibir la guía para futuros papás">
+                <p class="cf-nota"><i aria-hidden="true">*</i> Los campos con asterisco son obligatorios.</p>
+                <div class="cf-f"><label class="cf-l" for="gf-nombre">Tu nombre <i aria-hidden="true">*</i></label>
+                  <input type="text" id="gf-nombre" name="nombre" autocomplete="name" maxlength="80" placeholder="Ej. María González" required aria-required="true" aria-describedby="gf-err-nombre">
+                  <p class="cf-err" id="gf-err-nombre" role="alert"></p></div>
+                <div class="cf-f"><label class="cf-l" for="gf-wa">Tu WhatsApp <i aria-hidden="true">*</i></label>
+                  <input type="tel" id="gf-wa" name="whatsapp" inputmode="tel" autocomplete="tel" placeholder="81 1234 5678" required aria-required="true" aria-describedby="gf-hint-wa gf-err-wa">
+                  <p class="cf-hint" id="gf-hint-wa">10 dígitos. Es por donde te escribiré si te queda alguna duda.</p>
+                  <p class="cf-err" id="gf-err-wa" role="alert"></p></div>
+                <div class="cf-f"><label class="cf-l" for="gf-correo">Tu correo <i aria-hidden="true">*</i></label>
+                  <input type="email" id="gf-correo" name="correo" inputmode="email" autocomplete="email" placeholder="nombre@correo.com" required aria-required="true" aria-describedby="gf-err-correo">
+                  <p class="cf-err" id="gf-err-correo" role="alert"></p></div>
+                <div class="cf-trampa" aria-hidden="true"><label>No llenar este campo<input name="confirmar_sitio_web" id="gf-trampa" tabindex="-1" autocomplete="off"></label></div>
+                <label class="cf-priv"><input type="checkbox" id="gf-ok"><span>Acepto el <a href="/privacidad" target="_blank" rel="noopener">aviso de privacidad</a> y que Roberto me contacte por WhatsApp o correo. <i aria-hidden="true" style="color:var(--brand-2);font-style:normal">*</i></span></label>
+                <p class="cf-err" id="gf-err-consent" role="alert"></p>
+                <div class="cf-aviso" id="gf-aviso" role="alert"></div>
+                <button class="btn btn-primary btn-caps btn-big block" type="submit" id="gf-enviar"><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg>Recibir guía gratuita</button>
+              </form>
+              <div class="cf-ok gf-listo" id="guiaListo" hidden>
+                <span class="cf-check" aria-hidden="true"><svg class="ic"><use href="#i-check"/></svg></span>
+                <h3 id="guiaListoT" tabindex="-1">¡Listo! Aquí está tu guía</h3>
+                <p class="cf-p">Descárgala y léela con calma. Si algo te queda en duda, escríbeme.</p>
+                <a class="btn btn-primary btn-caps btn-big block" id="guiaDescarga" href="#" download="Guia-para-futuros-papas.pdf" data-ev="guia" data-d="descarga"><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg>Descargar guía (PDF)</a>
+                <a class="btn btn-ghost block" id="guiaWa" target="_blank" rel="noopener" data-ev="wa" data-d="guia-papas"><svg class="ic" aria-hidden="true"><use href="#i-wa"/></svg>Tengo una duda: escríbeme</a>
+              </div>
+              <p class="reg-nota">Sin costo. La recibes al instante, en PDF.</p>
             </div></div>
           </div>
           </div>
@@ -1405,7 +1455,6 @@ const CONFIG = {
 
   // url vacía + mensaje = se pide por WhatsApp; url vacía sin mensaje = no se muestra
   recursos: [
-    { icono: "book",      titulo: "Guía para futuros papás", texto: "Qué seguro necesitan antes del embarazo", url: "https://www.especialistaenasegurarte.lat" },
     { icono: "book",      titulo: "Seguro de vida con ahorro", texto: "Cómo saber si te conviene y qué preguntar", url: "https://www.especialistaenasegurarte.lat/seguro-de-vida-con-ahorro" },
     { icono: "book",      titulo: "Seguro de hombre clave", texto: "Para empresarios: protege a tu negocio", url: "https://www.especialistaenasegurarte.lat/empresarios" },
     { icono: "calc",      titulo: "¿Cuánta suma asegurada necesito?", texto: "Calculadora Tu Escudo Familiar", url: "https://www.especialistaenasegurarte.lat/escudo" },
@@ -1514,21 +1563,84 @@ function vcardTexto() {
 
   // Regalo (guía gratis): cerrado se ve como la franja de la portada. Con el ratón encima se despliega (con una pequeña espera para que no
   // salte al pasar el cursor mientras se hace scroll); un clic o toque lo deja fijo abierto o cerrado, que es lo que usa el celular.
-  {
-    const card = $("#regaloCard"), top = $("#regTop");
-    let fijo = false, sobre = false, quieto = false, t = 0;
+  // La tarjeta de la guía (con formulario) NO se abre al pasar el ratón: solo con clic o toque, para que no se cierre mientras se escribe.
+  const montarRegalo = (card, top, alPasarRaton, alAbrir) => {
+    let fijo = false, sobre = false, quieto = false, t = 0, abierto = false;
     const pinta = () => {
       const a = fijo || (sobre && !quieto);
       card.classList.toggle("abierto", a);
       top.setAttribute("aria-expanded", a ? "true" : "false");
+      if (a && !abierto) { abierto = true; if (alAbrir) alAbrir(); }
     };
     top.addEventListener("click", () => {
       if (fijo || (sobre && !quieto)) { fijo = false; quieto = true; } else { fijo = true; }   // «quieto»: cerrado a mano mientras el ratón sigue encima
       pinta();
     });
     card.addEventListener("keydown", (e) => { if (e.key === "Escape" && (fijo || sobre)) { fijo = false; quieto = true; pinta(); top.focus(); } });
+    if (!alPasarRaton) return;
     card.addEventListener("pointerenter", (e) => { if (e.pointerType !== "mouse") return; clearTimeout(t); t = setTimeout(() => { sobre = true; pinta(); }, 130); });
     card.addEventListener("pointerleave", (e) => { if (e.pointerType !== "mouse") return; clearTimeout(t); t = setTimeout(() => { sobre = false; quieto = false; pinta(); }, 220); });
+  };
+  montarRegalo($("#regaloCard"), $("#regTop"), true);
+
+  // «Guía para futuros papás»: nombre, WhatsApp y correo → /api/guia-futuros-papas (guarda el prospecto en el CRM) → descarga inmediata del PDF
+  {
+    let abiertoEn = 0, enviando = false;
+    montarRegalo($("#guiaCard"), $("#guiaTop"), false, () => { abiertoEn = Date.now(); track("guia", "abrir"); });
+    const f = $("#guiaForm"), aviso = $("#gf-aviso");
+    const campos = { nombre: $("#gf-nombre"), wa: $("#gf-wa"), correo: $("#gf-correo"), consent: $("#gf-ok") };
+    const err = (k, msg) => {
+      const e = $("#gf-err-" + k); e.textContent = msg || ""; e.classList.toggle("on", Boolean(msg));
+      const c = campos[k]; if (c && k !== "consent") c.setAttribute("aria-invalid", msg ? "true" : "false");
+    };
+    const limpiaWa = (v) => { let d = String(v).replace(/\D+/g, ""); if (d.length === 13 && d.startsWith("521")) d = d.slice(3); else if (d.length === 12 && d.startsWith("52")) d = d.slice(2); return d; };
+    const formatoWa = (d) => (d.length > 6 ? d.slice(0, 2) + " " + d.slice(2, 6) + " " + d.slice(6, 10) : d.length > 2 ? d.slice(0, 2) + " " + d.slice(2) : d);
+    campos.wa.addEventListener("input", () => { const d = limpiaWa(campos.wa.value).slice(0, 10); campos.wa.value = formatoWa(d); });
+    const validar = () => {
+      const e = {};
+      if (campos.nombre.value.trim().length < 2) e.nombre = "Escribe tu nombre (al menos 2 letras).";
+      if (limpiaWa(campos.wa.value).length !== 10) e.wa = "Tu WhatsApp debe tener 10 dígitos (puedes incluir +52).";
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(campos.correo.value.trim())) e.correo = "Revisa tu correo (ejemplo: nombre@correo.com).";
+      if (!campos.consent.checked) e.consent = "Acepta el aviso de privacidad para recibir tu guía.";
+      return e;
+    };
+    const pintaErrores = (e) => { ["nombre", "wa", "correo", "consent"].forEach((k) => err(k, e[k] || "")); };
+    const mostrarAviso = (m) => { aviso.textContent = m || ""; aviso.classList.toggle("on", Boolean(m)); };
+    const listo = (nombre, url) => {
+      f.hidden = true;
+      const primer = String(nombre).trim().split(/\s+/)[0];
+      $("#guiaListoT").textContent = primer ? "¡Listo, " + primer + "! Aquí está tu guía" : "¡Listo! Aquí está tu guía";
+      $("#guiaDescarga").href = url;
+      $("#guiaWa").href = wa("Hola Roberto, descargué tu «Guía para futuros papás» y tengo una duda.");
+      $("#guiaListo").hidden = false;
+      $("#guiaListoT").focus();
+    };
+    f.addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      if (enviando) return;
+      mostrarAviso("");
+      const e = validar(); pintaErrores(e);
+      const primero = ["nombre", "wa", "correo", "consent"].find((k) => e[k]);
+      if (primero) { const c = campos[primero]; c.focus(); c.scrollIntoView({ block: "center", behavior: reducido ? "auto" : "smooth" }); return; }
+      if (Date.now() - abiertoEn < 3000) { mostrarAviso("Un momento: revisa tus datos con calma y vuelve a enviar."); return; }
+      enviando = true;
+      const btn = $("#gf-enviar"); btn.disabled = true; btn.setAttribute("aria-busy", "true");
+      try {
+        const fuente = ctx && ctx.f && ctx.f !== "directo" ? ctx.f : "";
+        const r = await fetch("/api/guia-futuros-papas", {
+          method: "POST", headers: { "content-type": "application/json" },
+          body: JSON.stringify({ nombre: campos.nombre.value.trim(), whatsapp: limpiaWa(campos.wa.value), correo: campos.correo.value.trim(), consentimiento: true, trampa: $("#gf-trampa").value, utm: { source: fuente }, f: fuente }),
+        });
+        const j = await r.json().catch(() => ({}));
+        if (r.ok && j.ok && typeof j.url === "string" && j.url.startsWith("/descargas/")) { listo(campos.nombre.value, j.url); return; }
+        if (r.status === 422 && j.errores) { pintaErrores({ nombre: j.errores.nombre, wa: j.errores.whatsapp, correo: j.errores.correo, consent: j.errores.consentimiento }); return; }
+        mostrarAviso(j.error || "No pudimos enviar tus datos. Intenta de nuevo en unos minutos.");
+      } catch (x) {
+        mostrarAviso("No pudimos enviar tus datos. Revisa tu conexión e inténtalo otra vez; lo que escribiste sigue aquí.");
+      } finally {
+        enviando = false; btn.disabled = false; btn.removeAttribute("aria-busy");
+      }
+    });
   }
 
   // Carruseles: se deslizan con el dedo, con flechas o con los puntos. Sin avance automático.

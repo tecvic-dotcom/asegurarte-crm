@@ -40,6 +40,8 @@ export const EVENTOS_TARJETA = [
   "sf_wa", // tocó el botón de WhatsApp (detalle: datos | directo)
   "sf_dato", // dejó sus datos y se guardó el prospecto (lo manda el SERVIDOR; detalle: nuevo | repetido)
   "sf_pdf", // descargó o compartió un reporte en PDF (detalle: descarga | compartir; con «-mes» o «-anio» si es el reporte del mes o del año)
+  // «Guía para futuros papás» (formulario de la tarjeta y de la landing). Por ahora solo se guardan; el prospecto llega al CRM con origen «Guía para futuros papás».
+  "guia", // detalle: abrir | dato-nuevo | dato-repetido (lo manda el SERVIDOR) | descarga
 ] as const;
 export type EventoTarjeta = (typeof EVENTOS_TARJETA)[number];
 

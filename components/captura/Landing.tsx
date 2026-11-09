@@ -8,6 +8,7 @@ import { CONTENIDO } from "@/lib/landing-content";
 import { enviarCotizacionServidor } from "@/lib/cotizacion-cliente";
 import { dispararConversionLead } from "@/lib/pixels";
 import { FormularioCotizacion } from "./FormularioCotizacion";
+import { FormularioGuia } from "./FormularioGuia";
 import { PopupActividad } from "./PopupActividad";
 import { AgendaCita } from "./AgendaCita";
 import { Logo } from "@/components/ui/Logo";
@@ -381,7 +382,11 @@ export function Landing({ negocio, popupActivo, heroTitulo, heroCta }: LandingPr
             <h2 className="mt-4 font-display text-3xl sm:text-4xl">{c.recursos.titulo}</h2>
             <p className="mt-3 text-lg text-ink-soft">{c.recursos.texto}</p>
           </motion.div>
-          <div className="mt-10 grid gap-5 sm:grid-cols-3">
+          {/* Guía gratuita para futuros papás: deja sus datos y la descarga al instante */}
+          <motion.div {...aparecer} className="mt-10">
+            <FormularioGuia />
+          </motion.div>
+          <div className="mt-6 grid gap-5 sm:grid-cols-3">
             {c.recursos.items.map((r, i) => (
               <motion.a
                 key={r.url}

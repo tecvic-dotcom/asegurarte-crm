@@ -107,6 +107,8 @@ const nextConfig: NextConfig = {
         source,
         headers: securityHeaders(scriptSrcConHuellas(archivo)),
       })),
+      // Guías en PDF que se entregan a quien deja sus datos (public/descargas/): fuera de los buscadores
+      { source: "/descargas/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] },
       // Contacto de la tarjeta: el celular lo abre como "Agregar a contactos"
       {
         source: "/tarjeta/roberto-rodriguez.vcf",
