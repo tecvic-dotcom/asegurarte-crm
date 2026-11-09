@@ -67,6 +67,8 @@ const paginasEstaticas: Record<string, string> = {
   "/tarjeta": "index.html",
   "/escudo": "escudo.html",
   "/guias": "guias.html",
+  "/trayectoria": "trayectoria.html",
+  "/mi-tarjeta-digital": "mi-tarjeta-digital.html",
   "/seguro-de-vida-con-ahorro": "vida-ahorro.html",
   "/empresarios": "empresarios.html",
   "/cotiza": "cotiza.html",
@@ -134,6 +136,9 @@ const nextConfig: NextConfig = {
       { source: "/escudo", destination: "/tarjeta/escudo.html" },
       // Guías de seguros agrupadas por ramo (imágenes en public/tarjeta/guias/)
       { source: "/guias", destination: "/tarjeta/guias.html" },
+      // Trayectoria y actividad profesional (reconocimientos completos y evento) y «Mi tarjeta digital» (código QR, compartir y guardar contacto)
+      { source: "/trayectoria", destination: "/tarjeta/trayectoria.html" },
+      { source: "/mi-tarjeta-digital", destination: "/tarjeta/mi-tarjeta-digital.html" },
       // Páginas de contenido (texto escrito en el HTML, para que Google y las vistas previas lo lean)
       { source: "/seguro-de-vida-con-ahorro", destination: "/tarjeta/vida-ahorro.html" },
       { source: "/empresarios", destination: "/tarjeta/empresarios.html" },

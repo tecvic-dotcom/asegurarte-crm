@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#06070f">
+<meta name="robots" content="noindex">
+<title>Mi tarjeta digital · Roberto Rodríguez</title>
+<meta name="description" content="Código QR para escanear y compartir la tarjeta digital de Roberto Rodríguez, asesor de seguros en Monterrey.">
+<link rel="canonical" href="https://www.especialistaenasegurarte.lat/roberto">
+<link rel="preload" href="/tarjeta/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/tarjeta/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+@font-face{font-family:'Anton';font-style:normal;font-weight:400;font-display:swap;src:url(/tarjeta/fonts/anton-latin.woff2) format('woff2')}
+@font-face{font-family:'Inter';font-style:normal;font-weight:400 700;font-display:swap;src:url(/tarjeta/fonts/inter-latin.woff2) format('woff2')}
+@font-face{font-family:'Montserrat';font-style:normal;font-weight:600 900;font-display:swap;src:url(/tarjeta/fonts/montserrat-latin.woff2) format('woff2')}
+
+/* Marca de especialistaenasegurarte.lat. Una columna angosta: el código QR, compartir, guardar el contacto y los datos de contacto. */
+:root{
+  --bg:#06070f; --bg-3:#101536;
+  --ink:#f2f4ff; --ink-soft:#b8bedd; --ink-mute:#7d83a8;
+  --brand:#2a22f5; --brand-2:#5b7bff;
+  --line:rgba(180,192,255,.10); --line-strong:rgba(180,192,255,.20);
+  --glass:rgba(120,140,255,.05); --glass-2:rgba(120,140,255,.09);
+  --wa:#25D366; --wa-hover:#45E07F; --wa-ink:#04230F;
+  --display:"Montserrat", ui-sans-serif, system-ui, sans-serif;
+  --body:"Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --logo:"Anton", Impact, "Arial Narrow", sans-serif;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{background:var(--bg);-webkit-text-size-adjust:100%}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font:400 17px/1.55 var(--body);-webkit-font-smoothing:antialiased;
+  padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:
+  radial-gradient(900px 620px at 10% -12%,rgba(42,34,245,.30),transparent 60%),
+  radial-gradient(820px 640px at 100% 6%,rgba(91,123,255,.18),transparent 60%),
+  radial-gradient(1000px 820px at 50% 122%,rgba(154,107,255,.12),transparent 60%),var(--bg)}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--brand-2);outline-offset:3px;border-radius:8px}
+.ic{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.glass{background:linear-gradient(160deg,var(--glass-2),var(--glass));-webkit-backdrop-filter:blur(22px) saturate(140%);backdrop-filter:blur(22px) saturate(140%);
+  border:1px solid var(--line);box-shadow:0 1px 0 0 rgba(180,192,255,.08) inset,0 24px 60px -28px rgba(0,0,0,.75)}
+
+.wrap{max-width:520px;margin:0 auto;padding:18px 20px 48px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.logo{display:inline-flex;flex-direction:column;line-height:1;font-family:var(--logo);font-style:italic;letter-spacing:.025em;text-decoration:none;user-select:none}
+.logo .l1{font-size:19px;color:var(--ink)}
+.logo .l2{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:7px;margin-top:4px;font-size:11.5px;color:var(--ink)}
+.logo b{font-weight:400;font-size:25px;color:var(--brand-2)}
+.back{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 14px;border-radius:999px;border:1px solid var(--line-strong);background:var(--glass);
+  color:var(--ink-soft);font:600 14px/1 var(--body);text-decoration:none;white-space:nowrap;transition:border-color .15s,color .15s}
+.back:hover{border-color:var(--brand-2);color:var(--ink)}
+.back .ic{width:16px;height:16px}
+
+.hero{text-align:center;padding:22px 0 8px}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:7px 13px;border-radius:999px;border:1px solid var(--line-strong);background:var(--glass);
+  font:600 12.5px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
+.chip::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--brand-2);box-shadow:0 0 10px var(--brand-2)}
+h1{margin:16px 0 0;font:900 clamp(32px,9.6vw,44px)/1.06 var(--display);letter-spacing:-.015em;
+  background:linear-gradient(100deg,#ffffff,var(--brand-2) 70%,#c3ccff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{margin:12px auto 0;max-width:34ch;color:var(--ink-soft);font-size:17px}
+
+.qrcard{margin-top:22px;padding:22px 20px;border-radius:26px;text-align:center}
+.qr{display:block;width:min(100%,260px);aspect-ratio:1;margin:0 auto;padding:14px;border-radius:20px;background:#fff}
+.qr svg{display:block;width:100%;height:100%}
+.url{margin:14px 0 0;font:600 15px/1.3 var(--body);color:var(--ink-soft);word-break:break-all}
+.qrcard .nota{margin:6px 0 0;font-size:13.5px;color:var(--ink-mute)}
+
+.acciones{display:grid;gap:10px;margin-top:16px}
+.btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:54px;padding:0 18px;border-radius:14px;border:1px solid transparent;
+  font:700 16px/1.2 var(--body);text-decoration:none;text-align:center;cursor:pointer;transition:background .15s,border-color .15s,transform .15s}
+.btn:active{transform:translateY(1px)}
+.btn-primary{color:#fff;background:linear-gradient(180deg,var(--brand-2),var(--brand));box-shadow:0 14px 34px -14px rgba(42,34,245,.85)}
+.btn-wa{background:var(--wa);color:var(--wa-ink);box-shadow:0 14px 34px -16px rgba(37,211,102,.7)}
+.btn-wa:hover{background:var(--wa-hover)}
+.btn-ghost{background:var(--glass);color:var(--ink);border-color:var(--line-strong);font-weight:600;font:inherit;font-weight:600}
+.btn-ghost:hover{background:var(--glass-2);border-color:var(--brand-2)}
+.btn-ghost .ic{color:var(--brand-2)}
+.btn-caps{letter-spacing:.06em;text-transform:uppercase;font-size:15px}
+.panel{display:grid;gap:10px;padding:16px;border-radius:18px}
+.panel[hidden]{display:none}
+.panel p{margin:0;font-size:14.5px;color:var(--ink-soft)}
+
+.contacto{margin-top:30px}
+.contacto h2{margin:0 0 12px;font:800 20px/1.2 var(--display)}
+.filas{display:grid;gap:8px}
+.fila{display:flex;align-items:center;gap:12px;min-height:56px;padding:10px 14px;border-radius:16px;text-decoration:none}
+.fila .ico{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:var(--glass-2);border:1px solid var(--line-strong);color:var(--brand-2);flex:none}
+.fila small{display:block;font:600 12px/1.2 var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-mute)}
+.fila b{display:block;margin-top:2px;font:600 16px/1.25 var(--body);color:var(--ink);word-break:break-word}
+
+footer{margin-top:28px;padding-top:18px;border-top:1px solid var(--line);font-size:12.5px;line-height:1.65;color:var(--ink-mute)}
+footer p{margin:0 0 8px}
+footer a{color:var(--ink-soft)}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));z-index:100;transform:translate(-50%,12px);opacity:0;pointer-events:none;
+  max-width:calc(100% - 32px);padding:12px 18px;border-radius:14px;background:var(--bg-3);border:1px solid var(--line-strong);color:var(--ink);font-size:15px;transition:opacity .2s,transform .2s}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){ *,*::before,*::after{transition:none!important} }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="m16 6-4-4-4 4"/><path d="M12 2v13"/></symbol>
+  <symbol id="i-userplus" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6"/><path d="M22 11h-6"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></symbol>
+  <symbol id="i-wa" viewBox="0 0 24 24"><path d="M3.6 20.4l1.25-4.3A8.6 8.6 0 1 1 8 19.3z"/><path d="M9.2 8.1c-.4.4-.6 1-.4 1.8.6 2.2 2.6 4.3 4.9 4.9.8.2 1.4 0 1.8-.4l.4-.6-1.9-1.1-.8.7c-.9-.4-1.8-1.3-2.2-2.2l.7-.8-1.1-1.9z"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></symbol>
+  <symbol id="i-facebook" viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></symbol>
+  <symbol id="i-linkedin" viewBox="0 0 24 24"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></symbol>
+</defs></svg>
+
+<div class="wrap">
+  <header class="top">
+    <a class="logo" href="/roberto" aria-label="Roberto Rodríguez, especialista en Asegur-Arte"><span class="l1">ROBERTO RODRIGUEZ</span><span class="l2"><span>ESPECIALISTA EN</span><b>Asegur-Arte</b></span></a>
+    <a class="back" href="/roberto"><svg class="ic" aria-hidden="true"><use href="#i-back"/></svg>Inicio</a>
+  </header>
+
+  <section class="hero">
+    <span class="chip">Tarjeta digital</span>
+    <h1>Mi tarjeta digital</h1>
+    <p>Escanea el código con la cámara de tu celular o comparte mi tarjeta con quien quieras.</p>
+  </section>
+
+  <section class="qrcard glass" aria-label="Código QR de la tarjeta digital">
+    <div class="qr" id="qr" role="img" aria-label="Código QR de la tarjeta digital de Roberto Rodríguez"></div>
+    <p class="url" id="cardUrl"></p>
+    <p class="nota">Ideal para presentaciones, reuniones y material impreso.</p>
+  </section>
+
+  <div class="acciones">
+    <button class="btn btn-primary btn-caps" id="compartir" type="button"><svg class="ic" aria-hidden="true"><use href="#i-share"/></svg>Compartir mi tarjeta</button>
+    <div class="panel glass" id="panel" hidden>
+      <p>Elige dónde compartirla:</p>
+      <a class="btn btn-wa" id="shWa" target="_blank" rel="noopener"><svg class="ic" aria-hidden="true"><use href="#i-wa"/></svg>WhatsApp</a>
+      <a class="btn btn-ghost" id="shFb" target="_blank" rel="noopener"><svg class="ic" aria-hidden="true"><use href="#i-facebook"/></svg>Facebook</a>
+      <a class="btn btn-ghost" id="shIn" target="_blank" rel="noopener"><svg class="ic" aria-hidden="true"><use href="#i-linkedin"/></svg>LinkedIn</a>
+      <button class="btn btn-ghost" id="shCopy" type="button"><svg class="ic" aria-hidden="true"><use href="#i-link"/></svg>Copiar enlace</button>
+    </div>
+    <a class="btn btn-ghost" href="/tarjeta/roberto-rodriguez.vcf"><svg class="ic" aria-hidden="true"><use href="#i-userplus"/></svg>Guardar contacto</a>
+  </div>
+
+  <section class="contacto" aria-labelledby="h-contacto">
+    <h2 id="h-contacto">Contacto</h2>
+    <div class="filas">
+      <a class="fila glass" href="https://wa.me/528182800234?text=Hola%20Roberto%2C%20te%20escribo%20desde%20tu%20tarjeta%20digital." target="_blank" rel="noopener"><span class="ico"><svg class="ic" aria-hidden="true"><use href="#i-wa"/></svg></span><span><small>WhatsApp</small><b>81 8280 0234</b></span></a>
+      <a class="fila glass" href="tel:+528182800234"><span class="ico"><svg class="ic" aria-hidden="true"><use href="#i-phone"/></svg></span><span><small>Llamar</small><b>81 8280 0234</b></span></a>
+      <a class="fila glass" href="mailto:rdz.roberto@outlook.com"><span class="ico"><svg class="ic" aria-hidden="true"><use href="#i-mail"/></svg></span><span><small>Correo</small><b>rdz.roberto@outlook.com</b></span></a>
+    </div>
+  </section>
+
+  <footer>
+    <p>Roberto Rodríguez · Agente de seguros · Cédula CNSF V394637.</p>
+    <p><a href="/privacidad">Aviso de privacidad</a> · <a href="/roberto">Volver a mi tarjeta</a></p>
+  </footer>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="/tarjeta/qrcode.min.js"></script>
+<script>
+(function () {
+  const URL_TARJETA = "https://www.especialistaenasegurarte.lat/roberto";
+  const TEXTO = "Roberto Rodríguez · Asesor de seguros. Protege lo que has construido. Asegura lo que más amas.";
+  const $ = (id) => document.getElementById(id);
+  const toastEl = $("toast"); let tt;
+  const toast = (m) => { toastEl.textContent = m; toastEl.classList.add("on"); clearTimeout(tt); tt = setTimeout(() => toastEl.classList.remove("on"), 2800); };
+
+  // Código QR (el mismo que traía la tarjeta; «?s=qr» marca en la medición que llegaron por el código)
+  $("cardUrl").textContent = URL_TARJETA.replace(/^https?:\/\/(www\.)?/, "");
+  try {
+    const q = qrcode(0, "M"); q.addData(URL_TARJETA + "?s=qr"); q.make();
+    const n = q.getModuleCount(); let d = "";
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (q.isDark(r, c)) d += `M${c} ${r}h1v1h-1z`;
+    $("qr").innerHTML = `<svg viewBox="0 0 ${n} ${n}" shape-rendering="crispEdges" aria-hidden="true"><path d="${d}" fill="#06070f"/></svg>`;
+  } catch (e) { $("qr").hidden = true; }
+
+  // Compartir: el menú del teléfono; si no hay, WhatsApp, Facebook, LinkedIn y copiar el enlace
+  $("shWa").href = "https://wa.me/?text=" + encodeURIComponent(TEXTO + " " + URL_TARJETA);
+  $("shFb").href = "https://www.facebook.com/sharer/sharer.php?u=" + encodeURIComponent(URL_TARJETA);
+  $("shIn").href = "https://www.linkedin.com/sharing/share-offsite/?url=" + encodeURIComponent(URL_TARJETA);
+  $("shCopy").addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText(URL_TARJETA); toast("Enlace copiado"); }
+    catch (e) { toast("No pude copiarlo. Mantén presionado el enlace para copiarlo."); }
+  });
+  $("compartir").addEventListener("click", async () => {
+    if (navigator.share) {
+      try { await navigator.share({ title: "Roberto Rodríguez · Asesor de seguros", text: TEXTO, url: URL_TARJETA }); return; }
+      catch (e) { if (e && e.name === "AbortError") return; }
+    }
+    const p = $("panel"); p.hidden = false;
+    p.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" });
+  });
+})();
+</script>
+</body>
+</html>
