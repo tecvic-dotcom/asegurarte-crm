@@ -35,10 +35,53 @@ export interface PreguntaFrecuente {
   respuesta: string;
 }
 
+export interface Recurso {
+  icono: string; // ícono Iconify a color (flat-color-icons:*)
+  titulo: string;
+  texto: string;
+  url: string;
+}
+
+export interface FotoReconocimiento {
+  /** Archivo en /tarjeta/reconocimientos/<id>.webp|jpg (los mismos de la tarjeta /roberto). */
+  id: string;
+  pie: string;
+  alt: string;
+  /** Qué parte de la foto se ve en el recuadro (object-position). */
+  pos: string;
+}
+
 export interface LandingContent {
   negocio: string;
   /** Para el aviso de privacidad (LFPDPPP): responsable, correo y domicilio reales. */
-  contacto: { correo: string; domicilio: string; agendaUrl: string; agendaEmbed: string };
+  contacto: {
+    correo: string;
+    domicilio: string;
+    agendaUrl: string;
+    agendaEmbed: string;
+    /** Como se muestra. */
+    telefono: string;
+    /** Para llamar (tel:). */
+    telefonoIntl: string;
+    /** 52 + 10 dígitos, sin espacios (wa.me). */
+    whatsapp: string;
+    mensajeWhatsapp: string;
+  };
+  /** 2 · ¿Qué necesitas proteger? */
+  proteger: { titulo: string; texto: string };
+  /** 4 · ¿Por qué asesorarte conmigo? (mismos textos de «Conóceme» de la tarjeta /roberto). */
+  quien: {
+    titulo: string;
+    texto: string;
+    parrafos: string[];
+    nota: string;
+    cedula: string;
+    foto: { src: string; ancho: number; alto: number; alt: string };
+  };
+  /** 6 · Herramientas y recursos. */
+  recursos: { titulo: string; texto: string; items: Recurso[] };
+  /** 7 · Trayectoria y reconocimientos (mismas fotos y pies que la tarjeta). */
+  trayectoria: { titulo: string; texto: string; fotos: FotoReconocimiento[]; enlace: string };
   eyebrow: string;
   hero: { gancho: string; titulo: string; subtitulo: string; cta: string };
   confianza: string[];
@@ -63,7 +106,52 @@ export const CONTENIDO: LandingContent = {
     agendaUrl: "https://calendar.app.google/dxf4aRZFHkux6MqL8",
     // La misma agenda, para mostrarla en una ventana dentro de la página (sin abrir otra pestaña); en español.
     agendaEmbed: "https://calendar.google.com/calendar/appointments/schedules/AcZssZ23yt8JINAoiLLwoLTxqyG9FS7NXxh-2R3H6VONo3-hdG0Xyix-2PhjCXHTbVUKGaGzFcUcrfGK?gv=true&hl=es",
+    telefono: "81 8280 0234",
+    telefonoIntl: "+528182800234",
+    whatsapp: "528182800234",
+    mensajeWhatsapp: "Hola Roberto, vi tu página y quiero recibir asesoría para conocer qué seguro es más adecuado para mí.",
   },
+
+  proteger: {
+    titulo: "¿Qué necesitas proteger?",
+    texto: "Cuando esperan un bebé, lo que está en juego es la salud de su familia y la tranquilidad de su economía. Esto es lo que conviene tener claro antes de buscar el embarazo.",
+  },
+
+  quien: {
+    titulo: "¿Por qué asesorarte conmigo?",
+    texto: "Una asesoría personalizada, clara y enfocada en las necesidades reales de cada persona o familia.",
+    parrafos: [
+      "Soy Roberto Rodríguez, emprendedor, informático de profesión, agente de seguros por vocación. Mi propósito es ayudar a las personas y a las familias a tomar mejores decisiones para proteger su patrimonio, cuidar su salud y construir un futuro financiero con mayor tranquilidad.",
+    ],
+    nota: "Mi objetivo es que cada cliente comprenda qué está contratando, por qué lo necesita y cómo puede ayudarle.",
+    cedula: "Agente de seguros · Cédula CNSF V394637",
+    foto: { src: "/tarjeta/img/roberto-900.jpg", ancho: 900, alto: 934, alt: "Roberto Rodríguez, asesor de seguros, con traje azul" },
+  },
+
+  recursos: {
+    titulo: "Herramientas y recursos",
+    texto: "Material gratuito para que llegues con más claridad a tu asesoría.",
+    items: [
+      { icono: "flat-color-icons:calculator", titulo: "¿Cuánta suma asegurada necesito?", texto: "Calculadora Tu Escudo Familiar, en 3 pasos", url: "/escudo" },
+      { icono: "flat-color-icons:pie-chart", titulo: "Dinero Bajo Control", texto: "Guía gratuita para cuidar el dinero de tu hogar", url: "/semana" },
+      { icono: "flat-color-icons:reading-ebook", titulo: "Guías de seguros", texto: "Salud, ahorro, hogar y autos", url: "/guias" },
+    ],
+  },
+
+  trayectoria: {
+    titulo: "Trayectoria y reconocimientos",
+    texto: "Algunos de los reconocimientos que he recibido a lo largo de mi trayectoria.",
+    enlace: "/roberto#trayectoria",
+    fotos: [
+      { id: "entrega", pie: "Entrega de reconocimientos 2026", alt: "Cuatro agentes sostienen sus reconocimientos enmarcados en la entrega de reconocimientos 2026", pos: "50% 65%" },
+      { id: "mesa-campeones", pie: "Mesa de Campeones Vida", alt: "Roberto Rodríguez frente al letrero «Mesa de Campeones Vida: tu lugar entre los mejores»", pos: "86% 50%" },
+      { id: "rompe-paradigmas", pie: "Reconocimiento «Rompe paradigmas»", alt: "Roberto Rodríguez con su reconocimiento «Rompe paradigmas»", pos: "50% 50%" },
+      { id: "escenario", pie: "Reconocimiento Agente ALFA", alt: "Roberto Rodríguez recibiendo la placa «Reconocimiento Agente ALFA» en el escenario", pos: "50% 50%" },
+      { id: "congreso-agentes", pie: "Congreso Nacional de Agentes", alt: "Entrega de reconocimientos en el Congreso Nacional de Agentes", pos: "40% 50%" },
+      { id: "recibiendo", pie: "Entrega de premios campaña Salud", alt: "Roberto Rodríguez junto a un compañero con un obsequio en la entrega de premios de la campaña Salud", pos: "50% 40%" },
+    ],
+  },
+
   eyebrow: "Para parejas que están pensando en embarazarse pronto",
 
   hero: {

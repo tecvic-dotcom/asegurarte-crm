@@ -241,6 +241,27 @@ details[open] > summary .mas::after {
   transition: background 0.15s ease, border-color 0.15s ease;
 }
 .btn-ghost:hover { background: var(--glass-2); border-color: var(--brand-2); }
+/* Versión compacta (menú fijo): va DESPUÉS de .btn-primary/.btn-ghost para ganarles por orden. */
+.btn-sm { padding: 0.55rem 1rem; font-size: 0.875rem; border-radius: 12px; box-shadow: none; }
+/* «‹ Inicio»: igual al botón de regreso de /escudo, /guias, /empresarios y /seguro-de-vida-con-ahorro. */
+.btn-volver {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--glass);
+  color: var(--ink-soft);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s;
+}
+.btn-volver:hover { border-color: var(--brand-2); color: var(--ink); }
 
 .field-label {
   display: block;

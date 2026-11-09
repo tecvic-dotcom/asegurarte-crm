@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Icon } from "@/components/ui/Icono";
 import { ConversionYRedireccion } from "@/components/gracias/ConversionYRedireccion";
 import { Logo } from "@/components/ui/Logo";
+import { BotonInicio } from "@/components/ui/BotonInicio";
 import { getAjustes } from "@/lib/db";
 
 export const metadata: Metadata = {
@@ -66,10 +67,9 @@ export default async function GraciasPage() {
           </ol>
         </div>
 
-        {/* <a> normal: /roberto es un archivo estático (rewrite), no una página de Next */}
-        <a href="/roberto" className="mt-8 inline-block text-sm text-ink-mute underline hover:text-ink-soft">
-          Volver al inicio
-        </a>
+        <div className="mt-8 flex justify-center">
+          <BotonInicio />
+        </div>
       </div>
     </main>
   );
