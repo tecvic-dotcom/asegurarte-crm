@@ -2058,7 +2058,7 @@ function vcardTexto() {
 <!-- Halloween: solo en octubre. Desde el 1 de noviembre este bloque no carga nada (ni el script, ni el vampiro). Para probarlo fuera de fecha: ?halloween=1. Para quitarlo del todo, borrar este bloque. -->
 <script>(function(){if(new Date().getMonth()===9||/[?&]halloween=1/.test(location.search)){var s=document.createElement("script");s.src="/halloween/halloween.js";document.body.appendChild(s);}})();</script>
 
-<!-- Navidad: del 1 de noviembre de 2026 al 6 de enero (fondo, nieve y gorro de Santa en la foto). Fuera de esas fechas este bloque no descarga nada. La ventana de fechas vive en public/navidad/navidad.js. Para probarlo fuera de fecha: ?navidad=1 (con ?halloween=0 si es octubre). Para quitarlo del todo, borrar este bloque. -->
+<!-- Navidad: del 1 de noviembre de 2026 al 6 de enero (solo nieve que cae sobre el fondo oficial; sin imagen de fondo ni cambio de colores). Fuera de esas fechas este bloque no descarga nada. La ventana de fechas vive en public/navidad/navidad.js. Para probarlo fuera de fecha: ?navidad=1 (con ?halloween=0 si es octubre). Para quitarlo del todo, borrar este bloque. -->
 <script>(function(){var n=new Date().getMonth()*100+new Date().getDate();if(n>=1001||n<=6||/[?&]navidad=1/.test(location.search)){var s=document.createElement("script");s.src="/navidad/navidad.js";document.body.appendChild(s);}})();</script>
 <script src="/tarjeta/cotizacion-reglas.js" defer></script>
 <script src="/tarjeta/cotizacion-form.js" defer></script>
