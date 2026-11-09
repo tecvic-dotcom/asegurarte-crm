@@ -21,6 +21,8 @@ export interface Testimonio {
   fotoAlto: number;
   /** Párrafos separados por una línea en blanco. */
   texto: string;
+  /** Una frase TEXTUAL del cliente (sin cambiar palabras) que se muestra grande arriba. Nunca se escribe una que el cliente no haya dicho. */
+  destacada?: string;
 }
 
 export interface PasoProceso {
@@ -226,6 +228,7 @@ export const CONTENIDO: LandingContent = {
   testimonios: [
     {
       nombre: "Istmenia y Carlos, papás de Carlitos",
+      destacada: "Tener un asesor que te acompañe cuando más lo necesitas también hace una gran diferencia.",
       foto: "/img/testimonio-carlitos.jpg",
       fotoAncho: 960,
       fotoAlto: 1280,
@@ -233,6 +236,7 @@ export const CONTENIDO: LandingContent = {
     },
     {
       nombre: "Tere y Mauricio, papás de Mateo",
+      destacada: "Contar con una póliza de gastos médicos mayores hizo la diferencia en el proceso y cubrieron los gastos necesarios para que Mateo recibiera la atención que necesitaba.",
       foto: "/img/testimonio-mateo.jpg",
       fotoAncho: 1280,
       fotoAlto: 960,
@@ -241,6 +245,7 @@ export const CONTENIDO: LandingContent = {
     },
     {
       nombre: "Nere y Sergio, papás de Rafael",
+      destacada: "Un seguro de gastos médicos no evita que ocurran los problemas de salud. Pero sí puede evitar que una enfermedad o una cirugía se convierta, además, en un problema financiero para la familia.",
       foto: "/img/testimonio-rafael.jpg",
       fotoAncho: 768,
       fotoAlto: 823,

@@ -414,6 +414,9 @@ h2{font:800 clamp(27px,7.4vw,34px)/1.12 var(--display);letter-spacing:-.01em;mar
 .quote{margin:0;padding:22px 20px 16px;border-radius:var(--r);min-width:0;display:flex;flex-direction:column}
 .quote .mark{display:block;height:30px;font:900 60px/1 var(--display);color:var(--brand-2)}
 .quote blockquote{margin:0;flex:1;font:500 17.5px/1.5 var(--body);color:var(--ink)}
+/* Frase destacada: lo que el cliente dijo, en grande; el resto de su cita, más suave debajo */
+.quote .q-hl{margin:0;font:800 clamp(20px,5.4vw,23px)/1.25 var(--display);letter-spacing:-.005em;text-wrap:balance;color:var(--ink)}
+.quote .q-sub{margin:14px 0 0;font:500 15.5px/1.5 var(--body);color:var(--ink-soft)}
 .who{display:flex;align-items:center;gap:12px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
 .who img{width:56px;height:56px;border-radius:50%;object-fit:cover;box-shadow:0 0 0 2px var(--bg),0 0 0 3px var(--brand-2);flex:none}
 .who strong{display:block;font:700 16px/1.3 var(--display)}
@@ -847,10 +850,10 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
   <nav class="secnav secnav-top siete" aria-label="Secciones">
     <div class="in">
       <a href="#proteger"><svg class="ic" aria-hidden="true"><use href="#i-medical"/></svg><span class="lbl">Seguros</span></a>
-      <a href="#promociones" data-promo-nav hidden><svg class="ic" aria-hidden="true"><use href="#i-promo"/></svg><span class="lbl">Promociones</span></a>
       <a href="#quien"><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg><span class="lbl">Por qué yo</span></a>
       <a href="#opiniones"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg><span class="lbl">Testimonios</span></a>
       <a href="#trayectoria"><svg class="ic" aria-hidden="true"><use href="#i-award"/></svg><span class="lbl">Trayectoria</span></a>
+      <a href="#promociones" data-promo-nav hidden><svg class="ic" aria-hidden="true"><use href="#i-promo"/></svg><span class="lbl">Promociones</span></a>
       <a href="#herramientas"><svg class="ic" aria-hidden="true"><use href="#i-tools"/></svg><span class="lbl">Recursos</span></a>
       <a href="#faq"><svg class="ic" aria-hidden="true"><use href="#i-help"/></svg><span class="lbl">FAQ</span></a>
       <a href="#cotizacion" class="nav-cta" data-ev="cotizar" data-d="menu"><svg class="ic" aria-hidden="true"><use href="#i-quote"/></svg><span class="lbl">Cotizar</span></a>
@@ -887,10 +890,10 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
       <nav class="secnav siete" aria-label="Secciones">
         <div class="in">
           <a href="#proteger"><svg class="ic" aria-hidden="true"><use href="#i-medical"/></svg><span class="lbl">Seguros</span></a>
-          <a href="#promociones" data-promo-nav hidden><svg class="ic" aria-hidden="true"><use href="#i-promo"/></svg><span class="lbl">Promociones</span></a>
           <a href="#quien"><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg><span class="lbl">Por qué yo</span></a>
           <a href="#opiniones"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg><span class="lbl">Testimonios</span></a>
           <a href="#trayectoria"><svg class="ic" aria-hidden="true"><use href="#i-award"/></svg><span class="lbl">Trayectoria</span></a>
+          <a href="#promociones" data-promo-nav hidden><svg class="ic" aria-hidden="true"><use href="#i-promo"/></svg><span class="lbl">Promociones</span></a>
           <a href="#herramientas"><svg class="ic" aria-hidden="true"><use href="#i-tools"/></svg><span class="lbl">Recursos</span></a>
           <a href="#faq"><svg class="ic" aria-hidden="true"><use href="#i-help"/></svg><span class="lbl">FAQ</span></a>
           <a href="#cotizacion" class="nav-cta" data-ev="cotizar" data-d="menu"><svg class="ic" aria-hidden="true"><use href="#i-quote"/></svg><span class="lbl">Cotizar</span></a>
@@ -905,12 +908,6 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
         <div class="chips tiles" id="chips" role="group" aria-label="Qué necesitas proteger"></div>
         <!-- Al tocar un mosaico, public/tarjeta/cotizacion-form.js abre aquí el formulario de ese ramo, con lo que cubre (los textos salen de CONFIG.productos) -->
         <div class="ramo-panel" id="ramoPanel" hidden role="region" aria-labelledby="rp-t"></div>
-      </section>
-
-      <!-- Promociones: las campañas vigentes que publicas desde el CRM (pestaña «Promociones de la tarjeta»). Sin ninguna vigente, la sección y su botón del menú no se ven. -->
-      <section class="sec" id="promociones" aria-labelledby="h-promociones" hidden>
-        <h2 id="h-promociones">Promociones</h2>
-        <div class="promos" id="promos"></div>
       </section>
 
       <!-- 4 · Por qué asesorarte conmigo -->
@@ -967,6 +964,12 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
         </div>
         <p class="aviso-ia" id="avisoIaEv"></p>
         </section>
+      </section>
+
+      <!-- Promociones (van DESPUÉS de la confianza: testimonios y trayectoria): las campañas vigentes que publicas desde el CRM (pestaña «Promociones de la tarjeta»). Sin ninguna vigente, la sección y su botón del menú no se ven. -->
+      <section class="sec" id="promociones" aria-labelledby="h-promociones" hidden>
+        <h2 id="h-promociones">Promociones</h2>
+        <div class="promos" id="promos"></div>
       </section>
 
       <!-- 7 · Herramientas y recursos: la guía y la calculadora, los recursos y los videos (van DESPUÉS de la confianza: testimonios y trayectoria) -->
@@ -1039,8 +1042,8 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
 
       <!-- 9 · Cotización y contacto. HOY la cotización se pide por WhatsApp o con una cita. FUTURO: el formulario de cotización va dentro de «.cot-box», arriba de los dos botones. -->
       <section class="sec" id="cotizacion" aria-labelledby="h-cotizacion">
-        <p class="eyebrow">Asesoría sin costo</p>
-        <h2 id="h-cotizacion">Cotiza tu seguro</h2>
+        <p class="eyebrow">Cotiza tu seguro</p>
+        <h2 id="h-cotizacion">Solicita tu asesoría sin costo</h2>
         <p class="lead">Cuéntame qué quieres proteger y platicamos qué opciones te convienen. Permíteme ayudarte a encontrar la protección adecuada para ti y tu familia.</p>
         <!-- Formulario en línea: lo arma public/tarjeta/cotizacion-form.js (usa las reglas generadas en cotizacion-reglas.js). Oculto hasta que CONFIG.cotizacionEnLinea sea true o la dirección lleve ?cotizacion=1 -->
         <div class="cf-wrap" id="cotForm" hidden></div>
@@ -1254,7 +1257,10 @@ const CONFIG = {
   ],
 
   testimonios: [
+    // «destacada»: UNA frase textual del propio cliente (sin cambiar una sola palabra) que se muestra grande arriba de la tarjeta; el resto de la cita queda debajo.
+    // Sin «destacada», la cita completa es la frase destacada. Nunca se escribe aquí algo que el cliente no haya dicho.
     { nombre: "Istmenia y Carlos", detalle: "Papás de Carlitos · Gastos Médicos Mayores", foto: IMG.istmenia,
+      destacada: "Tener un asesor que te acompañe cuando más lo necesitas también hace una gran diferencia.",
       cita: "Quiero hacer una mención especial a Roberto Rodríguez, mi asesor de seguros, por su excelente atención y seguimiento durante todo el proceso. Tener un asesor que te acompañe cuando más lo necesitas también hace una gran diferencia.",
       historia: "Hoy quiero compartir algo que aprendí de la manera más especial: cuando se trata de salud, estar protegido hace toda la diferencia.\n\nDurante mi primer embarazo, mi ginecólogo me informó que necesitaba realizarme un procedimiento llamado cerclaje cervical. En ese momento, escuchar que necesitaba una operación fue algo inesperado y que, sinceramente, me tomó por sorpresa.\n\nPero hubo algo que me dio tranquilidad: ya contaba con una póliza de Gastos Médicos Mayores.\n\nGracias a mi seguro, los gastos relacionados con la operación (doctores, hospital, medicamentos y demás) estuvieron cubiertos, teniendo que pagar únicamente una diferencia mínima en comparación con la cantidad tan alta que representaba la cuenta.\n\nMeses después nació mi bebé y, gracias a Dios, todo salió muy bien. Además, mi seguro me otorgó una cantidad por el nacimiento de mi hijo, que aunque no cubrió el total de los gastos, fue una gran ayuda en ese momento tan importante para nuestra familia.\n\nHoy, con mucha tranquilidad y confianza, estoy esperando a mi segundo bebé. Nuevamente será necesario realizar el mismo procedimiento y, hasta ahora, todo marcha perfectamente, tal como ocurrió en mi primera experiencia.\n\nPor eso quiero hacer una mención especial a Roberto Rodríguez, mi asesor de seguros, por su excelente atención y seguimiento durante todo el proceso. Tener un asesor que te acompañe cuando más lo necesitas también hace una gran diferencia.\n\nComparto mi experiencia porque muchas veces pensamos: «A mí no me va a pasar», «Seguramente nunca lo voy a necesitar», «Después contrato un seguro». Pero la realidad es que la salud no avisa, no espera y muchas veces las situaciones llegan cuando menos las imaginamos.\n\nSi eres mamá, estás planeando tener hijos o simplemente quieres proteger lo que más amas, considera contar con una póliza de Gastos Médicos Mayores. Porque un seguro no solamente protege tu bolsillo: también te da tranquilidad para enfrentar los momentos difíciles y la posibilidad de concentrarte en lo verdaderamente importante, cuidar de ti y de tu familia.\n\nHoy agradezco haber tomado aquella decisión a tiempo. Mañana, esa decisión podría hacer toda la diferencia para alguien más." },
     { nombre: "Tere y Mauricio", detalle: "Papás de Mateo · Gastos Médicos Mayores", foto: IMG.mateo,
@@ -1544,10 +1550,15 @@ function vcardTexto() {
   // Testimonios (carrusel) + historia completa en una ventana
   $("#quotes").innerHTML = C.testimonios.map((t, i) => {
     const [rol, ramo] = String(t.detalle).split(" · ");
+    // Frase destacada (grande) y, si la cita tenía más, el resto debajo en letra normal
+    const resto = t.destacada ? t.cita.replace(t.destacada, "").replace(/\s+/g, " ").trim() : "";
     return slideDe(i, C.testimonios.length, `
     <figure class="quote glass">
       <span class="mark" aria-hidden="true">&ldquo;</span>
-      <blockquote>${esc(t.cita)}</blockquote>
+      <blockquote>
+        <p class="q-hl">${esc(t.destacada || t.cita)}</p>
+        ${resto ? `<p class="q-sub">${esc(resto)}</p>` : ""}
+      </blockquote>
       ${ramo ? `<span class="tag">${esc(ramo)}</span>` : ""}
       <figcaption class="who">
         ${t.foto ? `<img src="${t.foto}" alt="" width="56" height="56">` : ""}

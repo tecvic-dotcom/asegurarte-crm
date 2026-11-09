@@ -313,6 +313,8 @@ export function Landing({ negocio, popupActivo, heroTitulo, heroCta }: LandingPr
               />
               <div className="px-1 pt-5 sm:px-0 md:pt-0">
                 <Icon icon="flat-color-icons:feedback" width={36} className="opacity-80" />
+                {/* Frase destacada: palabras textuales del cliente, en grande; abajo, su historia completa */}
+                {t.destacada && <p className="mt-4 font-display text-xl leading-snug text-ink sm:text-2xl">“{t.destacada}”</p>}
                 <TextoTestimonio texto={t.texto} />
                 <div className="mt-6 border-t border-[var(--line)] pt-4">
                   <p className="font-display text-ink">{t.nombre}</p>
@@ -433,6 +435,8 @@ export function Landing({ negocio, popupActivo, heroTitulo, heroCta }: LandingPr
             {/* Formulario «Cotiza tu seguro»: el mismo de /roberto. Llega al CRM como «Sitio web» (en el mensaje queda «Desde: landing»). */}
             <FormularioCotizacion
               onEnviar={enviarCotizacionServidor}
+              titulo="Solicita tu asesoría sin costo"
+              nota="Cuéntame qué necesitas y te escribo por WhatsApp para platicar tus opciones."
               origen="landing"
               valoresIniciales={{ tipoSeguro: "gmm", paraQuien: "familia" }}
               onExito={dispararConversionLead}
