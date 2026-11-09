@@ -360,7 +360,10 @@ export function Landing({ negocio, popupActivo, heroTitulo, heroCta }: LandingPr
                     style={{ objectPosition: f.pos }}
                   />
                 </a>
-                <figcaption className="px-3 py-2.5 text-xs text-ink-soft sm:text-sm">{f.pie}</figcaption>
+                <figcaption className="px-3 py-2.5 text-xs text-ink-soft sm:text-sm">
+                  {f.pie}
+                  {f.anio ? ` · ${f.anio}` : ""}
+                </figcaption>
               </motion.figure>
             ))}
           </div>

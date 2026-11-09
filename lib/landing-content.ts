@@ -48,6 +48,8 @@ export interface FotoReconocimiento {
   /** Archivo en /tarjeta/reconocimientos/<id>.webp|jpg (los mismos de la tarjeta /roberto). */
   id: string;
   pie: string;
+  /** Año del reconocimiento (se muestra junto al nombre). */
+  anio?: string;
   alt: string;
   /** Qué parte de la foto se ve en el recuadro (object-position). */
   pos: string;
@@ -153,11 +155,11 @@ export const CONTENIDO: LandingContent = {
     texto: "A lo largo de mi trayectoria he tenido la oportunidad de recibir reconocimientos por mi desempeño y compromiso en el sector asegurador. Cada logro representa años de aprendizaje, preparación y dedicación a mis clientes.",
     enlace: "/roberto#trayectoria",
     fotos: [
-      { id: "entrega", pie: "Entrega de reconocimientos 2026", alt: "Cuatro agentes sostienen sus reconocimientos enmarcados en la entrega de reconocimientos 2026", pos: "50% 65%" },
-      { id: "mesa-campeones", pie: "Mesa de Campeones Vida", alt: "Roberto Rodríguez frente al letrero «Mesa de Campeones Vida: tu lugar entre los mejores»", pos: "86% 50%" },
-      { id: "rompe-paradigmas", pie: "Reconocimiento «Rompe paradigmas»", alt: "Roberto Rodríguez con su reconocimiento «Rompe paradigmas»", pos: "50% 50%" },
-      { id: "escenario", pie: "Reconocimiento Agente ALFA", alt: "Roberto Rodríguez recibiendo la placa «Reconocimiento Agente ALFA» en el escenario", pos: "50% 50%" },
-      { id: "congreso-agentes", pie: "Congreso Nacional de Agentes", alt: "Entrega de reconocimientos en el Congreso Nacional de Agentes", pos: "40% 50%" },
+      { id: "entrega", pie: "Agente ALFA", anio: "2026", alt: "Cuatro agentes sostienen sus reconocimientos enmarcados en la entrega de reconocimientos 2026", pos: "50% 65%" },
+      { id: "mesa-campeones", pie: "Mesa de Campeones Vida", anio: "2020", alt: "Roberto Rodríguez frente al letrero «Mesa de Campeones Vida: tu lugar entre los mejores»", pos: "86% 50%" },
+      { id: "rompe-paradigmas", pie: "Reconocimiento «Rompe paradigmas»", anio: "2018", alt: "Roberto Rodríguez con su reconocimiento «Rompe paradigmas»", pos: "50% 50%" },
+      { id: "escenario", pie: "Agente ALFA", anio: "2025", alt: "Roberto Rodríguez recibiendo la placa «Reconocimiento Agente ALFA» en el escenario", pos: "50% 50%" },
+      { id: "congreso-agentes", pie: "Congreso Nacional de Agentes", anio: "2019", alt: "Entrega de reconocimientos en el Congreso Nacional de Agentes", pos: "40% 50%" },
       { id: "recibiendo", pie: "Entrega de premios campaña Salud", alt: "Roberto Rodríguez junto a un compañero con un obsequio en la entrega de premios de la campaña Salud", pos: "50% 40%" },
     ],
   },
