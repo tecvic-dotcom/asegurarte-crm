@@ -69,7 +69,7 @@ export interface FilaEvento {
 export const SECCIONES_TARJETA: ReadonlyArray<{ id: string; nombre: string }> = [
   // En el orden en que salen en la tarjeta (rediseño de 9 secciones, nov 2026). Los id viejos se conservan para no perder el histórico.
   { id: "proteger", nombre: "¿Qué necesitas proteger? (mosaicos)" },
-  { id: "seguros", nombre: "Soluciones de seguros (carrusel)" },
+  { id: "seguros", nombre: "Soluciones de seguros (sección retirada el 8 nov 2026: solo histórico)" },
   { id: "promociones", nombre: "Promociones (solo se ve mientras hay una campaña vigente)" },
   { id: "quien", nombre: "Por qué asesorarte conmigo" },
   { id: "opiniones", nombre: "Testimonios" },
