@@ -273,6 +273,11 @@ h2{font:800 clamp(27px,7.4vw,34px)/1.12 var(--display);letter-spacing:-.01em;mar
 .sub-k + .lead{margin-top:10px}
 /* «Cotiza tu seguro» al final de cada bloque: lleva a la sección de cotización */
 .sec-cta{margin-top:30px}
+/* Mensaje + botón al terminar los testimonios */
+.cta-card{margin-top:28px;padding:22px 20px 20px;border-radius:var(--r)}
+.cta-card h3{margin:0;font:800 clamp(20px,5.4vw,23px)/1.25 var(--display);letter-spacing:-.005em;text-wrap:balance;color:var(--ink)}
+.cta-card p{margin:10px 0 0;color:var(--ink-soft);font-size:16px}
+.cta-card .btn{margin-top:18px}
 
 /* Carruseles: se deslizan con el dedo (scroll-snap), con flechas y puntos. Sin avance automático ni librerías. */
 .car{margin-top:24px}
@@ -939,7 +944,12 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
           <div class="car-track" id="quotes" tabindex="0" aria-label="Testimonios de clientes: desliza para ver más"></div>
           <div class="car-ctl"></div>
         </div>
-        <a class="btn btn-primary btn-caps btn-big block sec-cta" href="#cotizacion" data-ev="cotizar" data-d="testimonios"><svg class="ic" aria-hidden="true"><use href="#i-quote"/></svg>Cotiza tu seguro</a>
+        <!-- Después de leer los testimonios, el siguiente paso (también en computadora: es un mensaje propio, no el botón repetido de las demás secciones) -->
+        <div class="cta-card glass">
+          <h3>¿Te gustaría contar con este mismo acompañamiento?</h3>
+          <p>Conversemos sobre lo que necesitas proteger. Te ayudaré a encontrar una solución adecuada para ti.</p>
+          <a class="btn btn-primary btn-caps btn-big block" href="#cotizacion" data-ev="cotizar" data-d="testimonios"><svg class="ic" aria-hidden="true"><use href="#i-quote"/></svg>Quiero una asesoría personalizada</a>
+        </div>
       </section>
 
       <!-- 6 · Trayectoria y reconocimientos (junto a los testimonios: «Confío en tu experiencia») -->
@@ -1803,7 +1813,7 @@ function vcardTexto() {
 
   // Entrada suave de los bloques al aparecer en pantalla (nada queda oculto si el navegador no puede observar o la persona prefiere sin movimiento)
   if ("IntersectionObserver" in window && !reducido) {
-    const rv = [...document.querySelectorAll(".sec > .eyebrow, .sec > h2, .sec > .lead, .sub > .sub-k, .sub > .sub-t, .sub > .lead, .sec > .chips, .sec-cta, .teaser, .regalo, .car, .aviso-ia, .faq details, .acc details, .res a, .cta > *, .card, .share")];
+    const rv = [...document.querySelectorAll(".sec > .eyebrow, .sec > h2, .sec > .lead, .sub > .sub-k, .sub > .sub-t, .sub > .lead, .sec > .chips, .sec-cta, .cta-card, .teaser, .regalo, .car, .aviso-ia, .faq details, .acc details, .res a, .cta > *, .card, .share")];
     rv.forEach((x) => x.classList.add("rv"));
     const ioR = new IntersectionObserver((ens) => ens.forEach((en) => { if (en.isIntersecting) { en.target.classList.add("in"); ioR.unobserve(en.target); } }), { threshold: 0.12, rootMargin: "0px 0px -6% 0px" });
     rv.forEach((x) => ioR.observe(x));

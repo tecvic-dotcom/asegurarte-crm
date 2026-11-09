@@ -323,6 +323,15 @@ export function Landing({ negocio, popupActivo, heroTitulo, heroCta }: LandingPr
               </div>
             </motion.div>
           ))}
+
+          {/* Después de leer las historias, el siguiente paso */}
+          <motion.div {...aparecer} className="glass-highlight mx-auto mt-10 max-w-4xl rounded-[28px] p-6 text-center sm:p-10">
+            <h3 className="font-display text-2xl text-ink sm:text-3xl">{c.ctaTestimonios.titulo}</h3>
+            <p className="mx-auto mt-3 max-w-xl text-lg text-ink-soft">{c.ctaTestimonios.texto}</p>
+            <a href="#cotizacion" className="btn-primary mt-6 text-lg">
+              {c.ctaTestimonios.boton}
+            </a>
+          </motion.div>
         </section>
 
         {/* 6. TRAYECTORIA Y RECONOCIMIENTOS (junto a los testimonios) */}

@@ -80,6 +80,8 @@ export interface LandingContent {
     cedula: string;
     foto: { src: string; ancho: number; alto: number; alt: string };
   };
+  /** Mensaje y botón al terminar los testimonios. */
+  ctaTestimonios: { titulo: string; texto: string; boton: string };
   /** 6 · Herramientas y recursos. */
   recursos: { titulo: string; texto: string; items: Recurso[] };
   /** 7 · Trayectoria y reconocimientos (mismas fotos y pies que la tarjeta). */
@@ -128,6 +130,12 @@ export const CONTENIDO: LandingContent = {
     nota: "Mi objetivo es que cada cliente comprenda qué está contratando, por qué lo necesita y cómo puede ayudarle.",
     cedula: "Agente de seguros · Cédula CNSF V394637",
     foto: { src: "/tarjeta/img/roberto-900.jpg", ancho: 900, alto: 934, alt: "Roberto Rodríguez, asesor de seguros, con traje azul" },
+  },
+
+  ctaTestimonios: {
+    titulo: "¿Te gustaría contar con este mismo acompañamiento?",
+    texto: "Conversemos sobre lo que necesitas proteger. Te ayudaré a encontrar una solución adecuada para ti.",
+    boton: "Quiero una asesoría personalizada",
   },
 
   recursos: {
