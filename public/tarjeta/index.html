@@ -503,6 +503,12 @@ dialog.story[open]{animation:subir .28s ease-out}
   background:linear-gradient(180deg,var(--brand-2),var(--brand));box-shadow:0 0 0 4px var(--bg-2),0 8px 20px -8px rgba(42,34,245,.8)}
 .step h3{margin:0 0 2px;font:700 17px/1.3 var(--display);color:var(--ink)}
 .step p{margin:0;color:var(--ink-soft);font-size:16px}
+/* «Así te ayudo» (a la vista, sobre el fondo de la página: el aro de los números usa --bg, no el de la tarjeta del acordeón) */
+#ayuda .step .num{box-shadow:0 0 0 4px var(--bg),0 8px 20px -8px rgba(42,34,245,.8)}
+.llevas{margin-top:28px;padding:18px 18px 20px;border-radius:var(--r)}
+.llevas h3{margin:0;font:700 17px/1.3 var(--display);color:var(--ink)}
+.llevas p.nota{margin:16px 0 0;padding-left:14px;border-left:3px solid var(--brand-2);color:var(--ink)}
+.sub > .acc{margin-top:0}
 
 /* ---------- Entrada suave al hacer scroll (solo opacidad y desplazamiento; la clase .rv la pone el script) ---------- */
 .rv{opacity:0;transform:translateY(20px);transition:opacity .6s ease var(--d,0s),transform .6s cubic-bezier(.2,.7,.2,1) var(--d,0s)}
@@ -844,8 +850,8 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
       <a href="#promociones" data-promo-nav hidden><svg class="ic" aria-hidden="true"><use href="#i-promo"/></svg><span class="lbl">Promociones</span></a>
       <a href="#quien"><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg><span class="lbl">Por qué yo</span></a>
       <a href="#opiniones"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg><span class="lbl">Testimonios</span></a>
-      <a href="#herramientas"><svg class="ic" aria-hidden="true"><use href="#i-tools"/></svg><span class="lbl">Recursos</span></a>
       <a href="#trayectoria"><svg class="ic" aria-hidden="true"><use href="#i-award"/></svg><span class="lbl">Trayectoria</span></a>
+      <a href="#herramientas"><svg class="ic" aria-hidden="true"><use href="#i-tools"/></svg><span class="lbl">Recursos</span></a>
       <a href="#faq"><svg class="ic" aria-hidden="true"><use href="#i-help"/></svg><span class="lbl">FAQ</span></a>
       <a href="#cotizacion" class="nav-cta" data-ev="cotizar" data-d="menu"><svg class="ic" aria-hidden="true"><use href="#i-quote"/></svg><span class="lbl">Cotizar</span></a>
     </div>
@@ -884,8 +890,8 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
           <a href="#promociones" data-promo-nav hidden><svg class="ic" aria-hidden="true"><use href="#i-promo"/></svg><span class="lbl">Promociones</span></a>
           <a href="#quien"><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg><span class="lbl">Por qué yo</span></a>
           <a href="#opiniones"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg><span class="lbl">Testimonios</span></a>
-          <a href="#herramientas"><svg class="ic" aria-hidden="true"><use href="#i-tools"/></svg><span class="lbl">Recursos</span></a>
           <a href="#trayectoria"><svg class="ic" aria-hidden="true"><use href="#i-award"/></svg><span class="lbl">Trayectoria</span></a>
+          <a href="#herramientas"><svg class="ic" aria-hidden="true"><use href="#i-tools"/></svg><span class="lbl">Recursos</span></a>
           <a href="#faq"><svg class="ic" aria-hidden="true"><use href="#i-help"/></svg><span class="lbl">FAQ</span></a>
           <a href="#cotizacion" class="nav-cta" data-ev="cotizar" data-d="menu"><svg class="ic" aria-hidden="true"><use href="#i-quote"/></svg><span class="lbl">Cotizar</span></a>
         </div>
@@ -895,7 +901,7 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
       <section class="sec" id="proteger" aria-labelledby="h-proteger">
         <p class="eyebrow">Empieza aquí</p>
         <h2 id="h-proteger">¿Qué necesitas proteger?</h2>
-        <p class="lead">Toca lo que quieres proteger y cotiza aquí mismo, sin pasos de más.</p>
+        <p class="lead">Una enfermedad, un accidente, la pérdida de ingresos o la llegada del retiro pueden generar incertidumbre financiera en tu familia. Toca lo que quieres proteger y cotiza aquí mismo, sin pasos de más.</p>
         <div class="chips tiles" id="chips" role="group" aria-label="Qué necesitas proteger"></div>
         <!-- Al tocar un mosaico, public/tarjeta/cotizacion-form.js abre aquí el formulario de ese ramo, con lo que cubre (los textos salen de CONFIG.productos) -->
         <div class="ramo-panel" id="ramoPanel" hidden role="region" aria-labelledby="rp-t"></div>
@@ -912,7 +918,19 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
         <p class="eyebrow" data-c="quienSoy.titulo"></p>
         <h2 id="h-quien">¿Por qué asesorarte conmigo?</h2>
         <p class="lead">Una asesoría personalizada, clara y enfocada en las necesidades reales de cada persona o familia.</p>
-        <div class="acc" id="acc"></div>
+        <section class="sub sub0" id="ayuda" aria-labelledby="h-ayuda">
+          <p class="sub-k" data-c="comoAyudo.kicker"></p>
+          <h3 class="sub-t" id="h-ayuda" data-c="comoAyudo.titulo"></h3>
+          <ol class="steps" id="ayudaPasos"></ol>
+          <div class="glass llevas">
+            <h3 data-c="comoAyudo.llevasTitulo"></h3>
+            <ul class="checks" id="ayudaLlevas"></ul>
+            <p class="nota" data-c="comoAyudo.nota"></p>
+          </div>
+        </section>
+        <div class="sub" role="group" aria-label="Conóceme">
+          <div class="acc" id="acc"></div>
+        </div>
         <a class="btn btn-primary btn-caps btn-big block sec-cta" href="#cotizacion" data-ev="cotizar" data-d="por-que-yo"><svg class="ic" aria-hidden="true"><use href="#i-quote"/></svg>Cotiza tu seguro</a>
       </section>
 
@@ -927,7 +945,31 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
         <a class="btn btn-primary btn-caps btn-big block sec-cta" href="#cotizacion" data-ev="cotizar" data-d="testimonios"><svg class="ic" aria-hidden="true"><use href="#i-quote"/></svg>Cotiza tu seguro</a>
       </section>
 
-      <!-- 6 · Herramientas y recursos: la guía y la calculadora, los recursos y los videos -->
+      <!-- 6 · Trayectoria y reconocimientos (junto a los testimonios: «Confío en tu experiencia») -->
+      <section class="sec" id="trayectoria" aria-labelledby="h-trayectoria">
+        <p class="eyebrow">Trayectoria</p>
+        <h2 id="h-trayectoria">Trayectoria y reconocimientos</h2>
+        <section class="sub sub0" id="reconocimientos" aria-labelledby="h-trayectoria">
+          <p class="sub-k" data-c="reconocimientos.titulo"></p>
+          <p class="lead" data-c="reconocimientos.texto"></p>
+        <div class="car car-fotos" id="carReco" role="group" aria-roledescription="carrusel" aria-label="Fotos de reconocimientos">
+          <div class="car-track" id="reco" tabindex="0" aria-label="Fotos de reconocimientos: desliza para ver más"></div>
+          <div class="car-ctl"></div>
+        </div>
+        </section>
+        <section class="sub" id="eventos" aria-labelledby="h-eventos">
+          <p class="sub-k">Eventos</p>
+          <h3 class="sub-t" id="h-eventos" data-c="eventos.titulo"></h3>
+          <p class="lead" data-c="eventos.texto"></p>
+        <div class="car car-fotos" id="carEventos" role="group" aria-roledescription="carrusel" aria-label="Video y fotos del evento">
+          <div class="car-track" id="fotos" tabindex="0" aria-label="Video y fotos del evento: desliza para ver más"></div>
+          <div class="car-ctl"></div>
+        </div>
+        <p class="aviso-ia" id="avisoIaEv"></p>
+        </section>
+      </section>
+
+      <!-- 7 · Herramientas y recursos: la guía y la calculadora, los recursos y los videos (van DESPUÉS de la confianza: testimonios y trayectoria) -->
       <section class="sec" id="herramientas" aria-labelledby="h-herramientas">
         <p class="eyebrow">Aprende y calcula</p>
         <h2 id="h-herramientas">Herramientas y recursos</h2>
@@ -986,30 +1028,6 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
         <p class="aviso-ia" id="avisoIa"></p>
         </section>
         <a class="btn btn-primary btn-caps btn-big block sec-cta" href="#cotizacion" data-ev="cotizar" data-d="herramientas"><svg class="ic" aria-hidden="true"><use href="#i-quote"/></svg>Cotiza tu seguro</a>
-      </section>
-
-      <!-- 7 · Trayectoria y reconocimientos -->
-      <section class="sec" id="trayectoria" aria-labelledby="h-trayectoria">
-        <p class="eyebrow">Trayectoria</p>
-        <h2 id="h-trayectoria">Trayectoria y reconocimientos</h2>
-        <section class="sub sub0" id="reconocimientos" aria-labelledby="h-trayectoria">
-          <p class="sub-k" data-c="reconocimientos.titulo"></p>
-          <p class="lead" data-c="reconocimientos.texto"></p>
-        <div class="car car-fotos" id="carReco" role="group" aria-roledescription="carrusel" aria-label="Fotos de reconocimientos">
-          <div class="car-track" id="reco" tabindex="0" aria-label="Fotos de reconocimientos: desliza para ver más"></div>
-          <div class="car-ctl"></div>
-        </div>
-        </section>
-        <section class="sub" id="eventos" aria-labelledby="h-eventos">
-          <p class="sub-k">Eventos</p>
-          <h3 class="sub-t" id="h-eventos" data-c="eventos.titulo"></h3>
-          <p class="lead" data-c="eventos.texto"></p>
-        <div class="car car-fotos" id="carEventos" role="group" aria-roledescription="carrusel" aria-label="Video y fotos del evento">
-          <div class="car-track" id="fotos" tabindex="0" aria-label="Video y fotos del evento: desliza para ver más"></div>
-          <div class="car-ctl"></div>
-        </div>
-        <p class="aviso-ia" id="avisoIaEv"></p>
-        </section>
       </section>
 
       <!-- 8 · Preguntas frecuentes -->
@@ -1195,20 +1213,29 @@ const CONFIG = {
         { p: "Ayudo a las personas a reducir la incertidumbre financiera que puede surgir ante una enfermedad, un accidente, la pérdida de ingresos o la llegada del retiro." },
         { p: "Muchas familias trabajan durante años para construir un patrimonio, pero no cuentan con una estrategia integral para protegerlo." },
         { p: "Mi trabajo consiste en identificar esos riesgos y ayudarlas a tomar medidas preventivas para evitar que un imprevisto comprometa su estabilidad económica y el futuro de sus seres queridos." }
-      ] },
-      { icono: "steps", titulo: "¿Cómo lo hago?", contenido: [
-        { p: "A través de una asesoría personalizada, clara y enfocada en las necesidades reales de cada persona o familia." },
-        { intro: "Mi proceso de trabajo consiste en:" },
-        { pasos: [
-          { titulo: "Conocer", texto: "Entiendo la situación familiar, económica y las prioridades del cliente." },
-          { titulo: "Diagnosticar", texto: "Identifico riesgos, necesidades de protección y posibles áreas de oportunidad." },
-          { titulo: "Diseñar", texto: "Presento alternativas de seguros y soluciones financieras acordes con sus objetivos y capacidad económica." },
-          { titulo: "Implementar", texto: "Acompaño al cliente en la selección y contratación de las soluciones adecuadas." },
-          { titulo: "Dar seguimiento", texto: "Reviso sus necesidades a medida que cambian sus circunstancias y lo oriento cuando necesita utilizar sus coberturas." }
-        ] },
-        { nota: "Mi objetivo es que cada cliente comprenda qué está contratando, por qué lo necesita y cómo puede ayudarle." }
       ] }
     ]
+  },
+
+  // «Así te ayudo»: el proceso de trabajo y lo que te llevas, A LA VISTA en «¿Por qué asesorarte conmigo?» (antes estaba dentro del acordeón).
+  // Los pasos y la nota son los mismos textos de «¿Cómo lo hago?»; «lo que te llevas» sale de textos ya publicados (landing y paso «Diseñar»).
+  comoAyudo: {
+    kicker: "Así te ayudo",
+    titulo: "Mi proceso de trabajo",
+    pasos: [
+      { titulo: "Conocer", texto: "Entiendo la situación familiar, económica y las prioridades del cliente." },
+      { titulo: "Diagnosticar", texto: "Identifico riesgos, necesidades de protección y posibles áreas de oportunidad." },
+      { titulo: "Diseñar", texto: "Presento alternativas de seguros y soluciones financieras acordes con sus objetivos y capacidad económica." },
+      { titulo: "Implementar", texto: "Acompaño al cliente en la selección y contratación de las soluciones adecuadas." },
+      { titulo: "Dar seguimiento", texto: "Reviso sus necesidades a medida que cambian sus circunstancias y lo oriento cuando necesita utilizar sus coberturas." }
+    ],
+    llevasTitulo: "Lo que te llevas de tu asesoría",
+    llevas: [
+      "Un diagnóstico claro de qué tipo de seguro necesita tu familia hoy.",
+      "Alternativas de seguros acordes con tus objetivos y tu capacidad económica.",
+      "Respuestas directas a tus dudas, sin compromiso de comprar nada."
+    ],
+    nota: "Mi objetivo es que cada cliente comprenda qué está contratando, por qué lo necesita y cómo puede ayudarle."
   },
 
   productos: [
@@ -1429,6 +1456,10 @@ function vcardTexto() {
       <summary><span class="ico">${ic(b.icono)}</span><span class="tt">${esc(b.titulo)}</span><span class="mas" aria-hidden="true"></span></summary>
       <div class="ans">${b.contenido.map(pieza).join("")}</div>
     </details>`).join("");
+
+  // Así te ayudo: el proceso de trabajo y lo que te llevas, a la vista
+  $("#ayudaPasos").innerHTML = C.comoAyudo.pasos.map((p, i) => `<li class="step"><span class="num">${i + 1}</span><div><h3>${esc(p.titulo)}</h3><p>${esc(p.texto)}</p></div></li>`).join("");
+  $("#ayudaLlevas").innerHTML = C.comoAyudo.llevas.map((x) => `<li>${ic("check")}<span>${esc(x)}</span></li>`).join("");
 
   // Regalo (guía gratis): cerrado se ve como la franja de la portada. Con el ratón encima se despliega (con una pequeña espera para que no
   // salte al pasar el cursor mientras se hace scroll); un clic o toque lo deja fijo abierto o cerrado, que es lo que usa el celular.

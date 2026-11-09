@@ -67,19 +67,20 @@ export interface FilaEvento {
 }
 
 export const SECCIONES_TARJETA: ReadonlyArray<{ id: string; nombre: string }> = [
-  // En el orden en que salen en la tarjeta (rediseño de 9 secciones, nov 2026). Los id viejos se conservan para no perder el histórico.
+  // En el orden en que salen en la tarjeta (rediseño de 9 secciones, nov 2026; confianza antes de herramientas desde el 8 nov). Los id viejos se conservan para no perder el histórico.
   { id: "proteger", nombre: "¿Qué necesitas proteger? (mosaicos)" },
   { id: "seguros", nombre: "Soluciones de seguros (sección retirada el 8 nov 2026: solo histórico)" },
   { id: "promociones", nombre: "Promociones (solo se ve mientras hay una campaña vigente)" },
   { id: "quien", nombre: "Por qué asesorarte conmigo" },
+  { id: "ayuda", nombre: "Así te ayudo (proceso de trabajo y lo que te llevas)" },
   { id: "opiniones", nombre: "Testimonios" },
+  { id: "trayectoria", nombre: "Trayectoria y reconocimientos" },
+  { id: "reconocimientos", nombre: "Reconocimientos" },
+  { id: "eventos", nombre: "Eventos" },
   { id: "herramientas", nombre: "Herramientas y recursos (toda la sección)" },
   { id: "calculadora", nombre: "Calculadora (¿cuánta suma asegurada?)" },
   { id: "recursos", nombre: "Recursos gratuitos (guía Dinero Bajo Control y guías)" },
   { id: "videos", nombre: "Contenido educativo (videos)" },
-  { id: "trayectoria", nombre: "Trayectoria y reconocimientos" },
-  { id: "reconocimientos", nombre: "Reconocimientos" },
-  { id: "eventos", nombre: "Eventos" },
   { id: "faq", nombre: "Preguntas frecuentes" },
   { id: "cotizacion", nombre: "Cotiza tu seguro (cotización y contacto)" },
   { id: "asesoria", nombre: "Asesoría (botones «Quiero una asesoría» y «Agendar»)" },

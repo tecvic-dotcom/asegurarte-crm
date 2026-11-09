@@ -32,15 +32,15 @@ const aparecer = {
 /**
  * Orden de la página (el mismo de /roberto, adaptado a la campaña de bebé):
  *  1 Inicio · 2 ¿Qué necesitas proteger? · 3 Cómo funciona · 4 ¿Por qué asesorarte conmigo? · 5 Testimonios
- *  6 Herramientas y recursos · 7 Trayectoria y reconocimientos · 8 Preguntas frecuentes · 9 Cotiza tu seguro y contacto.
+ *  6 Trayectoria y reconocimientos · 7 Herramientas y recursos · 8 Preguntas frecuentes · 9 Cotiza tu seguro y contacto.
  */
 const MENU = [
   { id: "proteger", texto: "Qué proteger" },
   { id: "como-funciona", texto: "Cómo funciona" },
   { id: "quien", texto: "Por qué yo" },
   { id: "opiniones", texto: "Testimonios" },
-  { id: "recursos", texto: "Recursos" },
   { id: "trayectoria", texto: "Trayectoria" },
+  { id: "recursos", texto: "Recursos" },
   { id: "faq", texto: "FAQ" },
 ];
 const IDS_MENU = MENU.map((m) => m.id);
@@ -323,36 +323,7 @@ export function Landing({ negocio, popupActivo, heroTitulo, heroCta }: LandingPr
           ))}
         </section>
 
-        {/* 6. HERRAMIENTAS Y RECURSOS */}
-        <section id="recursos" className="scroll-mt-24 pt-24">
-          <motion.div {...aparecer} className="mx-auto max-w-3xl text-center">
-            <span className="chip">Aprende y calcula</span>
-            <h2 className="mt-4 font-display text-3xl sm:text-4xl">{c.recursos.titulo}</h2>
-            <p className="mt-3 text-lg text-ink-soft">{c.recursos.texto}</p>
-          </motion.div>
-          <div className="mt-10 grid gap-5 sm:grid-cols-3">
-            {c.recursos.items.map((r, i) => (
-              <motion.a
-                key={r.url}
-                href={r.url}
-                {...aparecer}
-                transition={{ duration: 0.5, delay: i * 0.08 }}
-                className="glass lift group flex items-start gap-4 rounded-3xl p-6"
-              >
-                <Icon icon={r.icono} width={40} className="shrink-0" />
-                <span className="min-w-0">
-                  <span className="block font-display text-lg text-ink">{r.titulo}</span>
-                  <span className="mt-1 block text-sm text-ink-soft">{r.texto}</span>
-                  <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-brand-2">
-                    Abrir <Icon icon="flat-color-icons:right" width={16} />
-                  </span>
-                </span>
-              </motion.a>
-            ))}
-          </div>
-        </section>
-
-        {/* 7. TRAYECTORIA Y RECONOCIMIENTOS */}
+        {/* 6. TRAYECTORIA Y RECONOCIMIENTOS (junto a los testimonios) */}
         <section id="trayectoria" className="scroll-mt-24 pt-24">
           <motion.div {...aparecer} className="mx-auto max-w-3xl text-center">
             <span className="chip">Mi trayectoria</span>
@@ -386,6 +357,35 @@ export function Landing({ negocio, popupActivo, heroTitulo, heroCta }: LandingPr
             <a href={c.trayectoria.enlace} className="btn-ghost">
               Ver mi trayectoria completa <Icon icon="flat-color-icons:right" width={18} />
             </a>
+          </div>
+        </section>
+
+        {/* 7. HERRAMIENTAS Y RECURSOS (después de la confianza: testimonios y trayectoria) */}
+        <section id="recursos" className="scroll-mt-24 pt-24">
+          <motion.div {...aparecer} className="mx-auto max-w-3xl text-center">
+            <span className="chip">Aprende y calcula</span>
+            <h2 className="mt-4 font-display text-3xl sm:text-4xl">{c.recursos.titulo}</h2>
+            <p className="mt-3 text-lg text-ink-soft">{c.recursos.texto}</p>
+          </motion.div>
+          <div className="mt-10 grid gap-5 sm:grid-cols-3">
+            {c.recursos.items.map((r, i) => (
+              <motion.a
+                key={r.url}
+                href={r.url}
+                {...aparecer}
+                transition={{ duration: 0.5, delay: i * 0.08 }}
+                className="glass lift group flex items-start gap-4 rounded-3xl p-6"
+              >
+                <Icon icon={r.icono} width={40} className="shrink-0" />
+                <span className="min-w-0">
+                  <span className="block font-display text-lg text-ink">{r.titulo}</span>
+                  <span className="mt-1 block text-sm text-ink-soft">{r.texto}</span>
+                  <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-brand-2">
+                    Abrir <Icon icon="flat-color-icons:right" width={16} />
+                  </span>
+                </span>
+              </motion.a>
+            ))}
           </div>
         </section>
 
