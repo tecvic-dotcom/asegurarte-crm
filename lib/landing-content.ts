@@ -149,8 +149,8 @@ export const CONTENIDO: LandingContent = {
   },
 
   trayectoria: {
-    titulo: "Trayectoria y reconocimientos",
-    texto: "Algunos de los reconocimientos que he recibido a lo largo de mi trayectoria.",
+    titulo: "Experiencia y trayectoria respaldadas por resultados",
+    texto: "A lo largo de mi trayectoria he tenido la oportunidad de recibir reconocimientos por mi desempeño y compromiso en el sector asegurador. Cada logro representa años de aprendizaje, preparación y dedicación a mis clientes.",
     enlace: "/roberto#trayectoria",
     fotos: [
       { id: "entrega", pie: "Entrega de reconocimientos 2026", alt: "Cuatro agentes sostienen sus reconocimientos enmarcados en la entrega de reconocimientos 2026", pos: "50% 65%" },

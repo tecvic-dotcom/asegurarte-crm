@@ -549,6 +549,17 @@ dialog.story[open]{animation:subir .28s ease-out}
 .reel-cap .t{font:700 15px/1.28 var(--display);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .reel-cap .d{font:600 12.5px/1.3 var(--body);color:var(--ink-mute)}
 .foto .cap{font-size:14px;color:#fff}
+/* Reconocimientos: fotos más grandes (1 y un poco más en celular, 2 en pantallas anchas) y el nombre y los datos DEBAJO, en letra normal */
+.car-reco .car-slide{flex-basis:min(84%,340px)}
+@media (min-width:720px){ .car-reco .car-slide{flex-basis:calc((100% - 14px) / 2)} .car-reco .foto{aspect-ratio:4/3} }
+.car-reco .foto::after{display:none}
+.car-reco .foto .zoom{position:absolute;right:10px;bottom:10px;z-index:1;display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:rgba(8,10,28,.72);border:1px solid rgba(255,255,255,.35);color:#fff}
+.car-reco .foto .zoom .ic{width:18px;height:18px;stroke-width:2}
+.reco{margin:0}
+.reco-cap{display:grid;gap:4px;padding:10px 2px 0}
+.reco-cap strong{font:700 16px/1.3 var(--display);color:var(--ink)}
+.reco-cap .meta{font:600 13px/1.3 var(--body);color:var(--brand-2)}
+.reco-cap .exp{font-size:15px;color:var(--ink-soft)}
 .foto{cursor:zoom-in}
 .foto.es-video{cursor:pointer}
 .aviso-ia{margin:12px 0 0;font-size:13.5px;color:var(--ink-mute);max-width:60ch}
@@ -956,10 +967,11 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
       <section class="sec" id="trayectoria" aria-labelledby="h-trayectoria">
         <p class="eyebrow">Trayectoria</p>
         <h2 id="h-trayectoria">Trayectoria y reconocimientos</h2>
-        <section class="sub sub0" id="reconocimientos" aria-labelledby="h-trayectoria">
-          <p class="sub-k" data-c="reconocimientos.titulo"></p>
+        <section class="sub sub0" id="reconocimientos" aria-labelledby="h-reco">
+          <p class="sub-k" data-c="reconocimientos.kicker"></p>
+          <h3 class="sub-t" id="h-reco" data-c="reconocimientos.titulo"></h3>
           <p class="lead" data-c="reconocimientos.texto"></p>
-        <div class="car car-fotos" id="carReco" role="group" aria-roledescription="carrusel" aria-label="Fotos de reconocimientos">
+        <div class="car car-fotos car-reco" id="carReco" role="group" aria-roledescription="carrusel" aria-label="Fotos de reconocimientos">
           <div class="car-track" id="reco" tabindex="0" aria-label="Fotos de reconocimientos: desliza para ver más"></div>
           <div class="car-ctl"></div>
         </div>
@@ -1325,8 +1337,11 @@ const CONFIG = {
 
   // Reconocimientos (archivos en /tarjeta/reconocimientos/<id>.jpg|webp, completos; «pos» = qué parte se ve en la tarjeta 4:5, la ventana los muestra enteros)
   reconocimientos: {
-    titulo: "Reconocimientos a mi trabajo",
-    texto: "Algunos de los reconocimientos que he recibido a lo largo de mi trayectoria.",
+    kicker: "Reconocimientos",
+    titulo: "Experiencia y trayectoria respaldadas por resultados",
+    texto: "A lo largo de mi trayectoria he tenido la oportunidad de recibir reconocimientos por mi desempeño y compromiso en el sector asegurador. Cada logro representa años de aprendizaje, preparación y dedicación a mis clientes.",
+    // Cada foto puede llevar, además del nombre (`pie`): `anio`, `otorgado` (quién lo entregó, sin nombrar aseguradoras) y `explica` (qué representa y qué significa para el cliente).
+    // Se muestran debajo de la foto SOLO cuando tienen texto: los datos los confirma Roberto, no se inventan.
     fotos: [
       { id: "entrega", pie: "Entrega de reconocimientos 2026", alt: "Cuatro agentes sostienen sus reconocimientos enmarcados en la entrega de reconocimientos 2026", pos: "50% 65%" },
       { id: "mesa-campeones", pie: "Mesa de Campeones Vida", alt: "Roberto Rodríguez frente al letrero «Mesa de Campeones Vida: tu lugar entre los mejores»", pos: "86% 50%" },
@@ -1784,9 +1799,21 @@ function vcardTexto() {
     if (bt.dataset.v) abrirVideo(evV, bt); else abrirFoto(evF[+bt.dataset.f], bt, "eventos");
   });
 
-  // Reconocimientos
+  // Reconocimientos: foto grande (toca para ampliarla completa) y, DEBAJO, su nombre y, si los hay, año, quién lo entregó y qué representa
   const rcF = C.reconocimientos.fotos;
-  $("#reco").innerHTML = rcF.map((f, i) => slideDe(i, rcF.length, botonFoto(f, i, "reconocimientos"))).join("");
+  const botonReco = (f, i) => `
+    <figure class="reco">
+      <button type="button" class="foto" data-f="${i}" aria-label="Ampliar foto: ${esc(f.pie)}">
+        <picture><source type="image/webp" srcset="${ruta(`/tarjeta/reconocimientos/${f.id}.webp`)}"><img src="${ruta(`/tarjeta/reconocimientos/${f.id}.jpg`)}" alt="${esc(f.alt)}" width="720" height="900" loading="lazy" decoding="async"${f.pos ? ` style="object-position:${f.pos}"` : ""}></picture>
+        <span class="zoom" aria-hidden="true">${ic("zoom")}</span>
+      </button>
+      <figcaption class="reco-cap">
+        <strong>${esc(f.pie)}</strong>
+        ${f.anio || f.otorgado ? `<span class="meta">${[f.anio, f.otorgado].filter(Boolean).map(esc).join(" · ")}</span>` : ""}
+        ${f.explica ? `<span class="exp">${esc(f.explica)}</span>` : ""}
+      </figcaption>
+    </figure>`;
+  $("#reco").innerHTML = rcF.map((f, i) => slideDe(i, rcF.length, botonReco(f, i))).join("");
   carrusel($("#carReco"), "reconocimientos");
   $("#reco").addEventListener("click", (e) => { const bt = e.target.closest(".foto"); if (bt) abrirFoto(rcF[+bt.dataset.f], bt, "reconocimientos"); });
 
