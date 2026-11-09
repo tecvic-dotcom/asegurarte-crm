@@ -143,6 +143,17 @@ export async function listarVideosPublicos(): Promise<VideoPublico[]> {
   }
 }
 
+/** Los videos VISIBLES con esos ids (para los destacados de la tarjeta). Lanza si la base falla. */
+export async function videosPublicosPorId(ids: string[]): Promise<VideoPublico[]> {
+  if (!ids.length) return [];
+  if (cloudReady && adminDb) {
+    const { data, error } = await adminDb.from(TABLA).select("*").eq("visible", true).in("id", ids);
+    if (error) throw errorDeBase(error);
+    return (data ?? []).map((r) => aPublico(aVideo(normalizar(r))));
+  }
+  return (await listarVideos()).filter((v) => v.visible && ids.includes(v.id)).map(aPublico);
+}
+
 // ---- Subida ----
 
 /** Genera el id del video y los permisos de un solo uso para subir el .mp4 y la portada directo a Supabase. */

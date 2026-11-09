@@ -1709,7 +1709,10 @@ function vcardTexto() {
   // Solo se aceptan archivos del cajón público de Supabase (o de la tarjeta en modo demo): nada más entra a la página
   const urlValida = (u) => typeof u === "string" && (/^https:\/\/[a-z0-9-]+\.supabase\.co\/storage\/v1\/object\/public\/tarjeta-videos\/[\w./-]+$/i.test(u) || /^\/tarjeta\/reels\/[\w-]+\.(mp4|jpg)$/.test(u));
   // Los 3 videos destacados: cada uno con su beneficio y un botón. El botón abre el mosaico de «¿Qué necesitas proteger?» (panel con el formulario) o lleva a la cotización.
-  const destacados = C.videos.destacados.map((d) => ({ ...(fijos.find((v) => v.id === d.id) || {}), ...d })).filter((v) => v.titulo && v.beneficio);
+  // Videos que la tarjeta conoce por id: los fijos y el del evento (los tuyos subidos desde el CRM llegan completos en la respuesta de la API)
+  const conocidos = [...fijos, C.eventos.video];
+  const armarDestacados = (lista) => lista.map((d) => ({ ...(conocidos.find((v) => v.id === d.id) || {}), ...d })).filter((v) => v.titulo && v.beneficio);
+  let destacados = armarDestacados(C.videos.destacados);
   const pintarDestacados = () => {
     $("#destacados").innerHTML = destacados.map((v, i) => `
       <article class="dest glass">
@@ -1721,7 +1724,7 @@ function vcardTexto() {
         <div class="dest-body">
           <h4 class="dest-t">${esc(v.titulo)}</h4>
           <p class="dest-b">${esc(v.beneficio)}</p>
-          ${v.ia === false ? "" : `<p class="dest-ia">Creado con apoyo de inteligencia artificial</p>`}
+          ${v.real ? `<p class="dest-ia">${esc(C.eventos.avisoIa)}</p>` : v.ia === false ? "" : `<p class="dest-ia">Creado con apoyo de inteligencia artificial</p>`}
           <a class="btn btn-primary dest-cta" href="${v.ramo ? "#proteger" : "#cotizacion"}"${v.ramo ? ` data-ramo="${esc(v.ramo)}"` : ""} data-ev="cotizar" data-d="videos">${esc(v.boton)}</a>
         </div>
       </article>`).join("");
@@ -1743,9 +1746,15 @@ function vcardTexto() {
     const ps = j && j.portadas && typeof j.portadas === "object" ? j.portadas : {};
     const portadas = {};
     Object.keys(ps).forEach((id) => { if (fijos.some((v) => v.id === id) || (C.eventos.video && C.eventos.video.id === id)) { if (urlValida(ps[id])) portadas[id] = ps[id]; } });
+    // Los destacados que elegiste en el CRM («Videos de la tarjeta» → «Videos destacados»), hasta 3; sin ninguno (o si algo falla) quedan los 3 de fábrica
+    const ramos = ["", ...C.intereses.map((i) => i.id)];
+    const delCrm = armarDestacados(((j && j.destacados) || []).filter((d) => d && typeof d.id === "string" && typeof d.beneficio === "string" && ramos.includes(d.ramo || "")
+      && (!d.src || urlValida(d.src)) && (!d.poster || urlValida(d.poster))).slice(0, 3)
+      .map((d) => ({ ...d, ramo: d.ramo || "", boton: typeof d.boton === "string" && d.boton ? d.boton : "Solicita asesoría", ...(d.src ? { dur: Math.max(1, +d.dur || 1) } : {}) })));
     // Si la persona ya abrió algo, no se le cambia la pantalla: lo verá en su próxima visita
-    if (!Object.keys(portadas).length || document.querySelector("dialog[open]")) return;
+    if ((!delCrm.length && !Object.keys(portadas).length) || document.querySelector("dialog[open]")) return;
     portadasCRM = portadas;
+    if (delCrm.length) destacados = delCrm;
     pintarDestacados();
     const evImg = document.querySelector(".foto.es-video img");   // el video del evento también puede tener portada nueva
     if (evImg && portadas[C.eventos.video.id]) evImg.src = portadas[C.eventos.video.id];

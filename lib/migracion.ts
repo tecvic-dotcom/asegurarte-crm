@@ -95,6 +95,9 @@ export const MENSAJE_MIGRACION_VIDEOS_INTERESES =
 export const MENSAJE_MIGRACION_PROMOS =
   "Falta un paso para publicar promociones en tu tarjeta: abre Supabase → SQL Editor → New query, pega el archivo supabase/migrations/0023_tarjeta_promos.sql y dale Run (si aún no corriste la 0020, córrela primero: ahí se crea el cajón de archivos).";
 
+export const MENSAJE_MIGRACION_DESTACADOS =
+  "Falta un paso para elegir los videos destacados de tu tarjeta: abre Supabase → SQL Editor → New query, pega el archivo supabase/migrations/0026_tarjeta_destacados.sql y dale Run.";
+
 /** La base no tiene aún la columna «intereses» de tarjeta_videos (falta correr la migración 0022). */
 export function faltaColumnaIntereses(error: { code?: string; message?: string } | null | undefined): boolean {
   return faltaMigracion(error) && /intereses/i.test(error?.message ?? "");

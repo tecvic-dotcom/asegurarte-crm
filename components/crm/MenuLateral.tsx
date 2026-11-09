@@ -64,7 +64,7 @@ export const GRUPOS_MENU: GrupoMenu[] = [
       { id: "crecimiento", nombre: "Crecimiento", pista: "Producción por año y ramo", icono: "flat-color-icons:line-chart" },
       { id: "polizas", nombre: "Pólizas", pista: "Adjunta nuevas y renovaciones", icono: "flat-color-icons:file" },
       { id: "tarjeta", nombre: "Tarjeta web", pista: "Qué toca la gente en tu tarjeta", icono: "flat-color-icons:globe" },
-      { id: "videos-tarjeta", nombre: "Videos de la tarjeta", pista: "Sube un video y sale solo", icono: "flat-color-icons:film-reel" },
+      { id: "videos-tarjeta", nombre: "Videos de la tarjeta", pista: "Elige los 3 videos de tu tarjeta", icono: "flat-color-icons:film-reel" },
       { id: "promos-tarjeta", nombre: "Promociones de la tarjeta", pista: "Las campañas del mes, con fechas", icono: "flat-color-icons:advertising" },
     ],
   },

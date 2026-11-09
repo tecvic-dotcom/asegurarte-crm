@@ -5,8 +5,10 @@ import { Icon } from "@iconify/react";
 import {
   crmConfirmarPortada,
   crmCrearVideo,
+  crmDestacados,
   crmEditarVideo,
   crmEliminarVideo,
+  crmGuardarDestacados,
   crmPrepararPortada,
   crmPrepararVideo,
   crmQuitarPortada,
@@ -17,6 +19,7 @@ import {
 } from "@/lib/api";
 import { comprimirVideo, ErrorVideo, navegadorComprime, portadaDeImagen, portadaDelVideo } from "@/lib/comprimir-video";
 import { INTERESES_TARJETA, MAX_CLAVE, MAX_SEGUNDOS_VIDEO, MAX_TITULO, mmss, type VideoFijo, type VideoTarjeta } from "@/lib/tarjeta-videos-reglas";
+import { BOTONES_DESTACADO, MAX_BENEFICIO, MAX_DESTACADOS, type DestacadoCRM } from "@/lib/tarjeta-destacados-reglas";
 import { fechaCorta } from "@/lib/fechas";
 import { AvisoMigracion } from "./panel/AvisoMigracion";
 
@@ -98,16 +101,225 @@ function SelectorIntereses({ valor, onCambio, disabled, nombre }: { valor: strin
   );
 }
 
+/** La casilla «Destacado en la tarjeta» de cada video: marca/desmarca; el beneficio y el botón se completan en el panel de arriba. */
+function CasillaDestacado({ id, marcado, guardado, lleno, onCambio }: { id: string; marcado: boolean; guardado: boolean; lleno: boolean; onCambio: () => void }) {
+  const bloqueado = !marcado && lleno;
+  return (
+    <label className={`mt-2 flex items-start gap-2 text-sm ${bloqueado ? "text-ink-mute" : "text-ink-soft"}`}>
+      <input
+        id={`dest-${id}`}
+        type="checkbox"
+        checked={marcado}
+        disabled={bloqueado}
+        onChange={onCambio}
+        className="mt-0.5 h-4 w-4 accent-[var(--brand-2)]"
+      />
+      <span>
+        <strong className="text-ink">Destacado en la tarjeta</strong>
+        <span className="block text-xs text-ink-mute">
+          {bloqueado
+            ? `Ya hay ${MAX_DESTACADOS} destacados. Quita uno para poner este.`
+            : marcado && !guardado
+              ? "Completa su beneficio en «Videos destacados» (arriba) y pulsa «Guardar destacados»."
+              : marcado
+                ? "Se ve en tu tarjeta."
+                : "Solo los destacados se ven en la tarjeta."}
+        </span>
+      </span>
+    </label>
+  );
+}
+
+interface InfoVideo {
+  titulo: string;
+  poster: string;
+  oculto: boolean;
+}
+
 /**
- * Videos de tu tarjeta: sube un video desde el celular o la computadora y sale solo, primero, en el carrusel «Videos» de
- * www.especialistaenasegurarte.lat/roberto. El video se comprime en tu propio aparato antes de subirse (no gasta tus datos de más).
- * Cada video (los que subes y los fijos de siempre) tiene su botón para subirle su PORTADA.
+ * Videos destacados: los únicos que se ven en tu tarjeta (hasta 3). Aquí escribes la línea de beneficio de cada uno, eliges a dónde lleva su botón
+ * y su orden. La casilla «Destacado» de cada video de abajo agrega o quita un video de esta lista.
+ */
+function PanelDestacados({
+  borrador,
+  guardados,
+  onCambio,
+  infoDe,
+  guardando,
+  onGuardar,
+  fallo,
+  listo,
+  migracion,
+  onRecargar,
+}: {
+  borrador: DestacadoCRM[];
+  guardados: DestacadoCRM[];
+  onCambio: (n: DestacadoCRM[]) => void;
+  infoDe: (id: string) => InfoVideo;
+  guardando: boolean;
+  onGuardar: () => void;
+  fallo: string;
+  listo: string;
+  migracion: ErrorCRM | null;
+  onRecargar: () => void;
+}) {
+  const hayCambios = JSON.stringify(borrador) !== JSON.stringify(guardados);
+  const faltaBeneficio = borrador.some((d) => !d.beneficio.trim());
+  const cambiar = (i: number, c: Partial<DestacadoCRM>) => onCambio(borrador.map((d, k) => (k === i ? { ...d, ...c } : d)));
+  const mover = (i: number, d: -1 | 1) => {
+    const j = i + d;
+    if (j < 0 || j >= borrador.length) return;
+    const n = [...borrador];
+    [n[i], n[j]] = [n[j], n[i]];
+    onCambio(n);
+  };
+
+  if (migracion) {
+    return (
+      <AvisoMigracion
+        onListo={onRecargar}
+        archivo={migracion.archivo}
+        que="los videos destacados de tu tarjeta"
+        detalle="Tu libreta en la nube (Supabase) necesita una repisa nueva para guardar cuáles son tus videos destacados. Se hace una sola vez, y mientras tanto tu tarjeta sigue mostrando los 3 de siempre."
+      />
+    );
+  }
+
+  return (
+    <div className="glass-strong rounded-2xl p-4 sm:p-5">
+      <h3 className="flex items-center gap-2 font-display text-base text-ink">
+        <Icon icon="flat-color-icons:like" width={20} aria-hidden /> Videos destacados {`(${borrador.length} de ${MAX_DESTACADOS})`}
+      </h3>
+      <p className="mt-1 text-sm text-ink-soft">
+        Son los <strong className="text-ink">únicos videos que se ven</strong> en tu tarjeta, en «Ideas claras sobre seguros y dinero». Cada uno lleva debajo una línea de beneficio y un botón. Los demás
+        quedan para tus redes. Para destacar un video, marca su casilla <strong className="text-ink">«Destacado en la tarjeta»</strong> en las listas de abajo.
+      </p>
+      {!borrador.length ? (
+        <p className="mt-3 rounded-xl bg-bg-3 p-3 text-sm text-ink-soft">
+          Todavía no hay destacados guardados: mientras tanto tu tarjeta muestra los 3 que trae de fábrica (el testimonio, «¿Y si mañana no pudieras trabajar?» y «¿Los seguros son un lujo o una herramienta?»).
+        </p>
+      ) : (
+        <ol className="mt-3 space-y-3">
+          {borrador.map((d, i) => {
+            const info = infoDe(d.video_id);
+            return (
+              <li key={d.video_id} className="rounded-xl border border-line p-3">
+                <div className="flex gap-3">
+                  <div className="relative block h-24 w-[54px] shrink-0 overflow-hidden rounded-lg bg-bg-3">
+                    {info.poster ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={info.poster} alt="" className="h-full w-full object-cover" loading="lazy" />
+                    ) : (
+                      <Icon icon="flat-color-icons:film-reel" width={24} className="absolute inset-0 m-auto" aria-hidden />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1 space-y-2.5">
+                    <p className="font-semibold text-ink">
+                      {i + 1}. {info.titulo}
+                    </p>
+                    {info.oculto && <p className="text-xs font-semibold text-amber">Este video está OCULTO: no se verá en la tarjeta hasta que lo muestres.</p>}
+                    <div>
+                      <label className="field-label" htmlFor={`dest-b-${d.video_id}`}>
+                        Beneficio (qué gana quien lo ve)
+                      </label>
+                      <input
+                        id={`dest-b-${d.video_id}`}
+                        className="field-input"
+                        value={d.beneficio}
+                        maxLength={MAX_BENEFICIO}
+                        disabled={guardando}
+                        onChange={(e) => cambiar(i, { beneficio: e.target.value })}
+                        placeholder="Ej. Qué pasa con el ingreso de tu familia si un día no puedes trabajar."
+                      />
+                      <p className="mt-1 text-xs text-ink-mute">
+                        {d.beneficio.length}/{MAX_BENEFICIO} · Una línea, en lenguaje sencillo.
+                      </p>
+                    </div>
+                    <div>
+                      <label className="field-label" htmlFor={`dest-r-${d.video_id}`}>
+                        Botón debajo del video
+                      </label>
+                      <select id={`dest-r-${d.video_id}`} className="field-input" value={d.ramo} disabled={guardando} onChange={(e) => cambiar(i, { ramo: e.target.value })}>
+                        {BOTONES_DESTACADO.map((b) => (
+                          <option key={b.ramo || "asesoria"} value={b.ramo}>
+                            {b.texto}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="mt-1 text-xs text-ink-mute">
+                        {d.ramo ? "Abre el mosaico de ese seguro en tu tarjeta, con lo que cubre y su formulario." : "Baja al formulario «Solicita tu asesoría sin costo»."}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <button type="button" disabled={guardando || i === 0} onClick={() => mover(i, -1)} className="btn-ghost px-3 py-1.5 text-xs" aria-label={`Subir ${info.titulo}`}>
+                        ↑ Subir
+                      </button>
+                      <button
+                        type="button"
+                        disabled={guardando || i === borrador.length - 1}
+                        onClick={() => mover(i, 1)}
+                        className="btn-ghost px-3 py-1.5 text-xs"
+                        aria-label={`Bajar ${info.titulo}`}
+                      >
+                        ↓ Bajar
+                      </button>
+                      <button
+                        type="button"
+                        disabled={guardando}
+                        onClick={() => onCambio(borrador.filter((x) => x.video_id !== d.video_id))}
+                        className="btn-ghost px-3 py-1.5 text-xs"
+                      >
+                        Quitar de destacados
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      )}
+      {fallo && (
+        <p className="mt-3 text-sm font-semibold" style={{ color: "var(--err, #ff8f8f)" }} role="alert">
+          {fallo}
+        </p>
+      )}
+      {listo && !fallo && (
+        <p className="mt-3 text-sm font-semibold text-ink" role="status">
+          ✓ {listo}{" "}
+          <a href="/roberto#videos" target="_blank" rel="noopener" className="text-brand-2 underline">
+            Ver mi tarjeta
+          </a>
+        </p>
+      )}
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <button type="button" onClick={onGuardar} disabled={guardando || !hayCambios || faltaBeneficio} className="btn-primary px-5 py-2.5 text-sm">
+          {guardando ? "Guardando…" : "Guardar destacados"}
+        </button>
+        {hayCambios && faltaBeneficio && <span className="text-xs text-ink-mute">Escribe la línea de beneficio de cada video para poder guardar.</span>}
+        {!hayCambios && !listo && <span className="text-xs text-ink-mute">Sin cambios por guardar.</span>}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Videos de tu tarjeta: eliges los 3 DESTACADOS que se ven en www.especialistaenasegurarte.lat/roberto (cada uno con su beneficio y su botón), subes videos
+ * nuevos desde el celular o la computadora (se comprimen en tu propio aparato antes de subirse) y les cambias la PORTADA.
  */
 export function TarjetaVideos() {
   const [videos, setVideos] = useState<VideoTarjeta[] | null>(null);
   const [fijos, setFijos] = useState<VideoFijo[] | null>(null);
   const [cloud, setCloud] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+
+  // Videos destacados: `destacados` = lo guardado; `borrador` = lo que estás editando (se guarda con el botón)
+  const [destacados, setDestacados] = useState<DestacadoCRM[]>([]);
+  const [borrador, setBorrador] = useState<DestacadoCRM[]>([]);
+  const [migDest, setMigDest] = useState<ErrorCRM | null>(null);
+  const [guardandoDest, setGuardandoDest] = useState(false);
+  const [falloDest, setFalloDest] = useState("");
+  const [listoDest, setListoDest] = useState("");
 
   const [archivo, setArchivo] = useState<File | null>(null);
   const [imagenPortada, setImagenPortada] = useState<File | null>(null);
@@ -136,11 +348,70 @@ export function TarjetaVideos() {
     [],
   );
 
+  const cargarDestacados = useCallback(
+    () =>
+      crmDestacados().then(
+        (d) => {
+          setDestacados(d);
+          setBorrador(d);
+          setMigDest(null);
+        },
+        (e: unknown) => {
+          if (e instanceof ErrorCRM && e.migracion) setMigDest(e);
+          else setFalloDest(e instanceof Error ? e.message : "No pude leer tus videos destacados.");
+        },
+      ),
+    [],
+  );
+
   useEffect(() => {
     void cargar();
-  }, [cargar]);
+    void cargarDestacados();
+  }, [cargar, cargarDestacados]);
 
   const ocupado = fase !== "reposo";
+
+  /** Nombre, portada y si está oculto, de un video destacado (uno tuyo o uno fijo). */
+  const infoDe = (id: string): InfoVideo => {
+    const v = videos?.find((x) => x.id === id);
+    if (v) return { titulo: v.titulo, poster: v.poster, oculto: !v.visible };
+    const f = fijos?.find((x) => x.id === id);
+    if (f) return { titulo: f.titulo, poster: f.poster, oculto: false };
+    return { titulo: videos && fijos ? "(video que ya no existe)" : "Cargando…", poster: "", oculto: false };
+  };
+
+  /** Marca o desmarca «Destacado» en un video: lo agrega al borrador (sin beneficio todavía) o lo quita. */
+  function alternarDestacado(id: string) {
+    setListoDest("");
+    setFalloDest("");
+    if (borrador.some((d) => d.video_id === id)) {
+      setBorrador(borrador.filter((d) => d.video_id !== id));
+    } else if (borrador.length < MAX_DESTACADOS) {
+      setBorrador([...borrador, { video_id: id, beneficio: "", ramo: "" }]);
+    }
+  }
+
+  async function guardarDestacados() {
+    if (guardandoDest) return;
+    setGuardandoDest(true);
+    setFalloDest("");
+    setListoDest("");
+    try {
+      const g = await crmGuardarDestacados(borrador);
+      setDestacados(g);
+      setBorrador(g);
+      setListoDest("Destacados guardados. Se ven en tu tarjeta en ~1 minuto.");
+    } catch (e) {
+      if (e instanceof ErrorCRM && e.migracion) setMigDest(e);
+      else setFalloDest(e instanceof Error ? e.message : "No pude guardar tus destacados. Intenta de nuevo.");
+    } finally {
+      setGuardandoDest(false);
+    }
+  }
+
+  const estaMarcado = (id: string) => borrador.some((d) => d.video_id === id);
+  const estaGuardado = (id: string) => destacados.some((d) => d.video_id === id);
+  const lleno = borrador.length >= MAX_DESTACADOS;
 
   async function publicar() {
     if (!archivo || ocupado) return;
@@ -180,7 +451,7 @@ export function TarjetaVideos() {
       setIntereses([]);
       if (entrada.current) entrada.current.value = "";
       if (entradaPortada.current) entradaPortada.current.value = "";
-      setListo(`«${nuevo.titulo}» ya está en tu tarjeta (puede tardar hasta 1 minuto en verse).`);
+      setListo(`«${nuevo.titulo}» ya se subió. Para que se vea en tu tarjeta, márcalo como «Destacado» en la lista de abajo.`);
       if (sinIntereses) {
         setFallo("El video quedó publicado, pero los chips que marcaste no se guardaron: falta un paso en Supabase (SQL Editor → pega supabase/migrations/0022_tarjeta_videos_intereses.sql → Run). Luego márcalos con «Editar». Mientras tanto la tarjeta usa la palabra clave.");
       }
@@ -222,13 +493,30 @@ export function TarjetaVideos() {
           <Icon icon="flat-color-icons:film-reel" width={22} aria-hidden /> Videos de la tarjeta
         </h2>
         <p className="mt-1 text-sm text-ink-soft">
-          Sube un video y sale solo, <strong className="text-ink">primero</strong> en el carrusel «Videos» de{" "}
-          <strong className="text-ink">www.especialistaenasegurarte.lat/roberto</strong>. Se comprime en tu aparato antes de subirse.
-          Cada video tiene su botón <strong className="text-ink">«Subir portada»</strong>: elige la imagen vertical (las de «Portadas Instagram» sirven) y se ve en la tarjeta en
-          ~1 minuto. Tus videos fijos de siempre se quedan después de los nuevos y también puedes cambiarles la portada.
+          Tu tarjeta (<strong className="text-ink">www.especialistaenasegurarte.lat/roberto</strong>) muestra solo <strong className="text-ink">3 videos destacados</strong>: los eliges aquí abajo en
+          «Videos destacados». Puedes subir videos nuevos (se comprimen en tu aparato antes de subirse) y darles una portada con el botón{" "}
+          <strong className="text-ink">«Subir portada»</strong>: elige la imagen vertical (las de «Portadas Instagram» sirven). Un video nuevo no se ve en la tarjeta hasta que lo marques como
+          «Destacado».
         </p>
         {!cloud && <p className="mt-1 text-xs font-semibold text-amber">MODO DEMOSTRACIÓN: no se sube nada de verdad.</p>}
       </div>
+
+      <PanelDestacados
+        borrador={borrador}
+        guardados={destacados}
+        onCambio={(n) => {
+          setBorrador(n);
+          setListoDest("");
+          setFalloDest("");
+        }}
+        infoDe={infoDe}
+        guardando={guardandoDest}
+        onGuardar={() => void guardarDestacados()}
+        fallo={falloDest}
+        listo={listoDest}
+        migracion={migDest}
+        onRecargar={() => void cargarDestacados()}
+      />
 
       <div className="glass rounded-2xl p-4 sm:p-5">
         <h3 className="font-display text-base text-ink">Subir un video nuevo</h3>
@@ -354,13 +642,14 @@ export function TarjetaVideos() {
         {!videos ? (
           <div className="mt-3 h-20 animate-pulse rounded-xl bg-bg-3/70" aria-label="Cargando tus videos" />
         ) : !videos.length ? (
-          <p className="mt-3 text-sm text-ink-mute">Todavía no has subido videos desde aquí. El primero que subas saldrá al inicio del carrusel.</p>
+          <p className="mt-3 text-sm text-ink-mute">Todavía no has subido videos desde aquí. Cuando subas uno, márcalo como «Destacado» para que se vea en tu tarjeta.</p>
         ) : (
           <ul className="mt-3 space-y-3">
             {videos.map((v) => (
               <FilaVideo
                 key={v.id}
                 v={v}
+                destacado={migDest ? undefined : { marcado: estaMarcado(v.id), guardado: estaGuardado(v.id), lleno, onCambio: () => alternarDestacado(v.id) }}
                 onCambio={(n) => setVideos((prev) => (prev ?? []).map((x) => (x.id === n.id ? n : x)))}
                 onQuitar={() => setVideos((prev) => (prev ?? []).filter((x) => x.id !== v.id))}
               />
@@ -372,14 +661,20 @@ export function TarjetaVideos() {
       <div className="glass rounded-2xl p-4 sm:p-5">
         <h3 className="font-display text-base text-ink">Videos fijos de la tarjeta {fijos && `(${fijos.length})`}</h3>
         <p className="mt-1 text-sm text-ink-soft">
-          Los de siempre (Gastos médicos, Maternidad, Ahorro…). Aquí puedes subirle a cada uno su portada; si te arrepientes, «Volver a la original».
+          Los de siempre (Gastos médicos, Maternidad, Ahorro…). Ya no se ven en la tarjeta salvo que los marques como «Destacado». Aquí también puedes subirle a cada uno su portada; si te arrepientes,
+          «Volver a la original».
         </p>
         {!fijos ? (
           <div className="mt-3 h-20 animate-pulse rounded-xl bg-bg-3/70" aria-label="Cargando los videos fijos" />
         ) : (
           <ul className="mt-3 space-y-3">
             {fijos.map((f) => (
-              <FilaFijo key={f.id} f={f} onCambio={(n) => setFijos((prev) => (prev ?? []).map((x) => (x.id === n.id ? n : x)))} />
+              <FilaFijo
+                key={f.id}
+                f={f}
+                destacado={migDest ? undefined : { marcado: estaMarcado(f.id), guardado: estaGuardado(f.id), lleno, onCambio: () => alternarDestacado(f.id) }}
+                onCambio={(n) => setFijos((prev) => (prev ?? []).map((x) => (x.id === n.id ? n : x)))}
+              />
             ))}
           </ul>
         )}
@@ -389,7 +684,9 @@ export function TarjetaVideos() {
 }
 
 /** Una fila de video FIJO: su portada actual y el botón para subirle otra. */
-function FilaFijo({ f, onCambio }: { f: VideoFijo; onCambio: (f: VideoFijo) => void }) {
+type PropsDestacado = { marcado: boolean; guardado: boolean; lleno: boolean; onCambio: () => void };
+
+function FilaFijo({ f, onCambio, destacado }: { f: VideoFijo; onCambio: (f: VideoFijo) => void; destacado?: PropsDestacado }) {
   const [trabajando, setTrabajando] = useState(false);
   const [fallo, setFallo] = useState("");
   const [listo, setListo] = useState("");
@@ -443,6 +740,7 @@ function FilaFijo({ f, onCambio }: { f: VideoFijo; onCambio: (f: VideoFijo) => v
               </button>
             )}
           </div>
+          {destacado && <CasillaDestacado id={f.id} marcado={destacado.marcado} guardado={destacado.guardado} lleno={destacado.lleno} onCambio={destacado.onCambio} />}
           {trabajando && (
             <p className="mt-2 text-xs font-semibold text-ink" role="status">
               Subiendo la portada…
@@ -464,7 +762,7 @@ function FilaFijo({ f, onCambio }: { f: VideoFijo; onCambio: (f: VideoFijo) => v
   );
 }
 
-function FilaVideo({ v, onCambio, onQuitar }: { v: VideoTarjeta; onCambio: (v: VideoTarjeta) => void; onQuitar: () => void }) {
+function FilaVideo({ v, onCambio, onQuitar, destacado }: { v: VideoTarjeta; onCambio: (v: VideoTarjeta) => void; onQuitar: () => void; destacado?: PropsDestacado }) {
   const [editando, setEditando] = useState(false);
   const [titulo, setTitulo] = useState(v.titulo);
   const [clave, setClave] = useState(v.clave);
@@ -560,6 +858,7 @@ function FilaVideo({ v, onCambio, onQuitar }: { v: VideoTarjeta; onCambio: (v: V
               </button>
             )}
           </div>
+          {destacado && <CasillaDestacado id={v.id} marcado={destacado.marcado} guardado={destacado.guardado} lleno={destacado.lleno} onCambio={destacado.onCambio} />}
           {listo && !trabajando && (
             <p className="mt-2 text-xs font-semibold text-ink" role="status">
               ✓ {listo}

@@ -6,6 +6,7 @@
  */
 import type { ResumenTarjeta } from "./tarjeta-reglas";
 import type { CambiosVideo, DatosNuevoVideo, PermisoPortada, PermisoSubida, VideoFijo, VideoTarjeta } from "./tarjeta-videos-reglas";
+import type { DestacadoCRM } from "./tarjeta-destacados-reglas";
 import type { CambiosPromo, DatosNuevaPromo, PermisoPromo, PermisoVideoPromo, PromoTarjeta } from "./tarjeta-promos-reglas";
 import type {
   Lead,
@@ -501,6 +502,18 @@ export async function crmCrearVideo(datos: DatosNuevoVideo): Promise<{ video: Vi
 export async function crmEditarVideo(id: string, cambios: CambiosVideo): Promise<VideoTarjeta> {
   const data = await jsonOErrorCRM(await postJSON("/api/crm/tarjeta-videos", { accion: "editar", id, cambios }));
   return (data as { video: VideoTarjeta }).video;
+}
+
+/** Los videos destacados de la tarjeta (hasta 3, en orden). Si falta la migración 0026, lanza ErrorCRM con `migracion`. */
+export async function crmDestacados(): Promise<DestacadoCRM[]> {
+  const res = await fetch("/api/crm/tarjeta-destacados", { cache: "no-store" });
+  return ((await jsonOErrorCRM(res)) as { destacados: DestacadoCRM[] }).destacados;
+}
+
+/** Guarda la lista completa de destacados (reemplaza lo anterior, en el orden que se manda). */
+export async function crmGuardarDestacados(lista: DestacadoCRM[]): Promise<DestacadoCRM[]> {
+  const res = await fetch("/api/crm/tarjeta-destacados", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ destacados: lista }) });
+  return ((await jsonOErrorCRM(res)) as { destacados: DestacadoCRM[] }).destacados;
 }
 
 export async function crmEliminarVideo(id: string): Promise<void> {
