@@ -9,6 +9,11 @@
  */
 (function () {
   "use strict";
+  // Si llegan con #cotizacion (p. ej. desde el botón «Cotizar en línea» de la calculadora), al terminar de cargar se vuelve a alinear la sección:
+  // las imágenes y las fuentes mueven el contenido después del salto del navegador y el ancla se queda corta.
+  if (location.hash === "#cotizacion") window.addEventListener("load", function () {
+    setTimeout(function () { var sec = document.getElementById("cotizacion"); if (sec) sec.scrollIntoView({ block: "start" }); }, 200);
+  });
   var T = window.__tarjeta, R = window.CotizacionReglas, host = document.getElementById("cotForm");
   if (!T || !R || !host) return;
   if (!(T.C.cotizacionEnLinea === true || /[?&]cotizacion=1(&|$)/.test(location.search))) return;

@@ -590,6 +590,11 @@ dialog.vid[open]{animation:subir .25s ease-out}
 
 .tools{display:grid;gap:12px;margin-top:20px}
 .tools .teaser{margin-top:0}
+.sub > .teaser{margin-top:18px}
+.tool-next{margin:12px 0 0;font-size:14.5px;line-height:1.5;color:var(--ink-soft)}
+.tool-next a{color:var(--brand-2);font-weight:600;text-underline-offset:3px}
+.res{margin-top:16px}
+.tools + .res{margin-top:14px}
 .acc summary{min-height:68px;justify-content:flex-start;font-size:17px}
 .acc .ico{width:40px;height:40px;border-radius:12px;background:var(--glass-2);border:1px solid var(--line-strong);color:var(--brand-2);display:grid;place-items:center;flex:none}
 .acc .ico .ic{width:20px;height:20px}
@@ -939,7 +944,25 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
       <section class="sec" id="herramientas" aria-labelledby="h-herramientas">
         <p class="eyebrow">Aprende y calcula</p>
         <h2 id="h-herramientas">Herramientas y recursos</h2>
-        <div class="tools">
+        <!-- 6a · Calculadora: es la herramienta comercial; termina en una asesoría (WhatsApp, cita o cotización) -->
+        <section class="sub sub0" id="calculadora" aria-labelledby="h-calc">
+          <p class="sub-k">Calculadora</p>
+          <h3 class="sub-t" id="h-calc">Calcula cuánta protección necesita tu familia</h3>
+          <p class="lead">En 3 pasos te doy una cifra de referencia de cuánto cubrir. Con ella platicamos qué protección te conviene.</p>
+          <a class="teaser" href="https://www.especialistaenasegurarte.lat/escudo" data-ev="recurso" data-d="Escudo Familiar (inicio)">
+            <span class="ico"><svg class="ic" aria-hidden="true"><use href="#i-calc"/></svg></span>
+            <span class="t"><strong>¿Cuánta suma asegurada necesito?</strong><span>Calcula tu «Escudo Familiar» en 3 pasos · 1 minuto</span></span>
+            <svg class="ic go" aria-hidden="true"><use href="#i-arrow"/></svg>
+          </a>
+
+          <p class="tool-next">Cuando tengas tu cifra, la platicamos. <a href="#cotizacion" data-ev="cotizar" data-d="calculadora">Cotiza tu seguro</a></p>
+        </section>
+
+        <!-- 6b · Recursos gratuitos: la guía de regalo y las guías por ramo -->
+        <section class="sub" id="recursos" aria-labelledby="h-recursos">
+          <p class="sub-k">Recursos gratuitos</p>
+          <h3 class="sub-t" id="h-recursos">Aprende a proteger mejor tu futuro</h3>
+          <div class="tools">
           <div class="regalo" id="regaloCard">
             <h3 class="reg-h" id="h-regalo">
               <button class="reg-top" type="button" id="regTop" aria-expanded="false" aria-controls="regBody">
@@ -960,19 +983,13 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
               <p class="reg-nota">Se instala en tu celular y funciona sin internet. Lo que anotas se queda en tu teléfono.</p>
             </div></div>
           </div>
-          <a class="teaser" href="https://www.especialistaenasegurarte.lat/escudo" data-ev="recurso" data-d="Escudo Familiar (inicio)">
-            <span class="ico"><svg class="ic" aria-hidden="true"><use href="#i-calc"/></svg></span>
-            <span class="t"><strong>¿Cuánta suma asegurada necesito?</strong><span>Calcula tu «Escudo Familiar» en 3 pasos · 1 minuto</span></span>
-            <svg class="ic go" aria-hidden="true"><use href="#i-arrow"/></svg>
-          </a>
-        </div>
-        <section class="sub" id="recursos" aria-labelledby="h-recursos">
-          <p class="sub-k">Recursos</p>
-          <h3 class="sub-t" id="h-recursos">Aprende a proteger mejor tu futuro</h3>
-        <div class="res" id="res"></div>
+          </div>
+          <div class="res" id="res"></div>
         </section>
+
+        <!-- 6c · Contenido educativo: los videos -->
         <section class="sub" id="videos" aria-labelledby="h-videos">
-          <p class="sub-k">Videos</p>
+          <p class="sub-k">Contenido educativo</p>
           <h3 class="sub-t" id="h-videos">Ideas claras sobre seguros y dinero</h3>
           <p class="lead">Toca uno para verlo aquí mismo, sin salir de la tarjeta.</p>
         <div class="car car-reels" id="carReels" role="group" aria-roledescription="carrusel" aria-label="Videos">
@@ -981,6 +998,7 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
         </div>
         <p class="aviso-ia" id="avisoIa"></p>
         </section>
+        <a class="btn btn-primary btn-caps btn-big block sec-cta" href="#cotizacion" data-ev="cotizar" data-d="herramientas"><svg class="ic" aria-hidden="true"><use href="#i-quote"/></svg>Cotiza tu seguro</a>
       </section>
 
       <!-- 7 · Trayectoria y reconocimientos -->
@@ -1855,7 +1873,7 @@ function vcardTexto() {
         <span class="t"><strong>${esc(r.titulo)}</strong>${r.texto ? `<span>${esc(r.texto)}</span>` : ""}</span>
         <svg class="ic go" aria-hidden="true"><use href="#i-arrow"/></svg>
       </a>`).join("");
-  } else { $("#recursos").hidden = true; }
+  } else { $("#res").hidden = true; }
 
   // Datos de contacto
   const filas = [

@@ -73,9 +73,10 @@ export const SECCIONES_TARJETA: ReadonlyArray<{ id: string; nombre: string }> = 
   { id: "promociones", nombre: "Promociones (solo se ve mientras hay una campaña vigente)" },
   { id: "quien", nombre: "Por qué asesorarte conmigo" },
   { id: "opiniones", nombre: "Testimonios" },
-  { id: "herramientas", nombre: "Herramientas y recursos (guía Dinero Bajo Control y calculadora)" },
-  { id: "recursos", nombre: "Recursos (guías y otros)" },
-  { id: "videos", nombre: "Videos" },
+  { id: "herramientas", nombre: "Herramientas y recursos (toda la sección)" },
+  { id: "calculadora", nombre: "Calculadora (¿cuánta suma asegurada?)" },
+  { id: "recursos", nombre: "Recursos gratuitos (guía Dinero Bajo Control y guías)" },
+  { id: "videos", nombre: "Contenido educativo (videos)" },
   { id: "trayectoria", nombre: "Trayectoria y reconocimientos" },
   { id: "reconocimientos", nombre: "Reconocimientos" },
   { id: "eventos", nombre: "Eventos" },
@@ -93,6 +94,8 @@ export const LUGAR_COTIZAR: Record<string, string> = {
   soluciones: "Al final de «Soluciones de seguros»",
   "por-que-yo": "Al final de «¿Por qué asesorarte conmigo?»",
   testimonios: "Al final de «Testimonios»",
+  calculadora: "Debajo de la calculadora",
+  herramientas: "Al final de «Herramientas y recursos»",
 };
 
 const LUGAR_WA: Record<string, string> = {
