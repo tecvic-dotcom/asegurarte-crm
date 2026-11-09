@@ -549,6 +549,20 @@ dialog.story[open]{animation:subir .28s ease-out}
 .reel-cap .t{font:700 15px/1.28 var(--display);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .reel-cap .d{font:600 12.5px/1.3 var(--body);color:var(--ink-mute)}
 .foto .cap{font-size:14px;color:#fff}
+/* Videos destacados: portada a la izquierda y texto + botón a la derecha en celular; 3 columnas en pantallas anchas */
+.dest-grid{display:grid;gap:16px;margin-top:22px}
+.dest{display:grid;grid-template-columns:116px minmax(0,1fr);gap:14px;align-items:start;padding:14px;border-radius:var(--r)}
+.dest .reel{width:100%}
+.dest-body{min-width:0;display:grid;gap:8px;align-content:start}
+.dest-t{margin:0;font:700 16px/1.28 var(--display);color:var(--ink)}
+.dest-b{margin:0;color:var(--ink-soft);font-size:15px;line-height:1.45}
+.dest-ia{margin:0;font-size:12.5px;color:var(--ink-mute)}
+.dest-cta{min-height:46px;margin-top:4px;padding:0 14px;font-size:14px;letter-spacing:.04em;text-transform:uppercase}
+/* 3 columnas en tableta (720–999) y en pantallas muy anchas (≥1280); en laptops angostas (1000–1279) la columna de contenido es corta y las tarjetas van en fila */
+@media (min-width:720px) and (max-width:999px){ .dest-grid{grid-template-columns:repeat(3,minmax(0,1fr))} .dest{grid-template-columns:minmax(0,1fr)} }
+@media (min-width:1280px){ .dest-grid{grid-template-columns:repeat(3,minmax(0,1fr))} .dest{grid-template-columns:minmax(0,1fr)} }
+.dest-mas{display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px;margin-top:20px;color:var(--ink-soft);font-size:15px}
+.dest-mas[hidden]{display:none}
 /* Reconocimientos: fotos más grandes (1 y un poco más en celular, 2 en pantallas anchas) y el nombre y los datos DEBAJO, en letra normal */
 .car-reco .car-slide{flex-basis:min(84%,340px)}
 @media (min-width:720px){ .car-reco .car-slide{flex-basis:calc((100% - 14px) / 2)} .car-reco .foto{aspect-ratio:4/3} }
@@ -1045,12 +1059,9 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
         <section class="sub" id="videos" aria-labelledby="h-videos">
           <p class="sub-k">Contenido educativo</p>
           <h3 class="sub-t" id="h-videos">Ideas claras sobre seguros y dinero</h3>
-          <p class="lead">Toca uno para verlo aquí mismo, sin salir de la tarjeta.</p>
-        <div class="car car-reels" id="carReels" role="group" aria-roledescription="carrusel" aria-label="Videos">
-          <div class="car-track" id="reels" tabindex="0" aria-label="Videos: desliza para ver más"></div>
-          <div class="car-ctl"></div>
-        </div>
-        <p class="aviso-ia" id="avisoIa"></p>
+          <p class="lead">Tres videos para empezar. Toca uno para verlo aquí mismo, sin salir de la tarjeta.</p>
+        <div class="dest-grid" id="destacados"></div>
+        <div class="dest-mas" id="destMas"><span>Hay más videos en mis redes</span><div class="social" id="socialVideos"></div></div>
         </section>
         <a class="btn btn-primary btn-caps btn-big block sec-cta" href="#cotizacion" data-ev="cotizar" data-d="herramientas"><svg class="ic" aria-hidden="true"><use href="#i-quote"/></svg>Cotiza tu seguro</a>
       </section>
@@ -1296,15 +1307,22 @@ const CONFIG = {
   // Videos (archivos en /tarjeta/reels/<id>.mp4 y <id>.jpg). «clave» = la palabra que se dice al final del video: viaja en el mensaje de WhatsApp.
   videos: {
     aviso: "Estos videos se crearon con apoyo de inteligencia artificial.",
-    // Los videos que subes desde el CRM traen los chips que marcaste («¿A quién le sirve este video?»). Esta tabla es solo el RESPALDO para los que no tienen
-    // ninguno marcado: se deducen de su palabra clave (así «Mi casa» recomienda el de HOGAR). Claves en mayúsculas y sin acentos (al buscar se quitan).
-    tagsPorClave: {
-      HOGAR: ["casa"], CASA: ["casa"],
-      AUTO: ["auto"], AUTOS: ["auto"],
-      FAMILIA: ["familia"], VIDA: ["familia"], ESCUDO: ["familia"], SOCIOS: ["familia"], PAREJA: ["familia"], BEBE: ["familia", "salud"],
-      DINERO: ["retiro"], AHORRO: ["retiro"], RETIRO: ["retiro"],
-      LISTA: ["salud"], SALUD: ["salud"], EVALUACION: ["salud"], "GASTOS MEDICOS": ["salud", "familia"], SEGURO: ["salud", "familia"]
-    },
+    // Videos destacados (auditoría 13): solo 3, cada uno ligado a una necesidad, con una línea de beneficio y un botón; el resto del contenido vive en las redes.
+    // `id` = uno de la lista de abajo; si el video NO está en la lista (p. ej. uno subido desde el CRM) se escriben aquí sus datos completos (titulo, dur, clave, src, poster, ia).
+    // `ramo` = mosaico de «¿Qué necesitas proteger?» que abre el botón (salud, familia…); sin `ramo`, el botón lleva al formulario de cotización.
+    destacados: [
+      { id: "ce9d0925-4565-40b2-a14c-26167bef38ef", titulo: "“No permitas que lo inesperado decida por el futuro de tu familia.”", dur: 146, clave: "GASTOS MEDICOS", ia: false,
+        src: "https://ypgugeekboyubudcsntx.supabase.co/storage/v1/object/public/tarjeta-videos/v/ce9d0925-4565-40b2-a14c-26167bef38ef.mp4",
+        poster: "https://ypgugeekboyubudcsntx.supabase.co/storage/v1/object/public/tarjeta-videos/v/ce9d0925-4565-40b2-a14c-26167bef38ef.jpg",
+        beneficio: "Una familia cuenta lo que vivió ante un derrame cerebral y cómo su póliza de gastos médicos mayores hizo posible la atención que necesitaba.",
+        boton: "Conoce gastos médicos", ramo: "salud" },
+      { id: "amar-familia",
+        beneficio: "Qué pasa con el ingreso de tu familia si un día no puedes trabajar y cómo armar un escudo familiar.",
+        boton: "Conoce seguro de vida", ramo: "familia" },
+      { id: "seguro-o-lujo",
+        beneficio: "Si crees que un seguro es un lujo, mira cómo verlo como una herramienta y qué conviene priorizar.",
+        boton: "Solicita asesoría" }
+    ],
     lista: [
       { id: "gastos-medicos", tags: ["salud", "familia"], titulo: "Todo estaba bien… hasta que sonó el teléfono", tema: "Gastos médicos", clave: "GASTOS MÉDICOS", dur: 46 },
       { id: "maternidad", tags: ["familia", "salud"], titulo: "¿Planean tener un bebé? Esto casi nadie lo dice", tema: "Maternidad", clave: "BEBÉ", dur: 39 },
@@ -1686,44 +1704,47 @@ function vcardTexto() {
 
   // Videos: los fijos de siempre + los que subes desde el CRM (salen primero). Se piden al abrir la tarjeta; si algo falla, quedan los fijos.
   const fijos = C.videos.lista;
-  $("#avisoIa").textContent = C.videos.aviso;
-  const pintarReels = () => {
-    const rd = C.videos.lista;
-    $("#carReels").innerHTML = '<div class="car-track" id="reels" tabindex="0" aria-label="Videos: desliza para ver más"></div><div class="car-ctl"></div>';
-    $("#reels").innerHTML = rd.map((v, i) => slideDe(i, rd.length, `
-      <div class="reel-card">
-      <button type="button" class="reel" data-i="${i}" aria-label="Ver video: ${esc(v.titulo)} (${mm(v.dur)})">
-        ${posterDe(v) ? `<img src="${esc(posterDe(v))}" alt="" width="540" height="960" loading="lazy" decoding="async">` : ""}
-        <span class="play" aria-hidden="true"><svg class="ic"><use href="#i-tri"/></svg></span>
-        <span class="dur" aria-hidden="true">${mm(v.dur)}</span>
-      </button>
-      <button type="button" class="reel-cap" data-i="${i}" tabindex="-1" aria-hidden="true"><span class="t">${esc(v.titulo)}</span>${v.tema ? `<span class="d">${esc(v.tema)}</span>` : ""}</button>
-      </div>`)).join("");
-    carrusel($("#carReels"), "videos");
-    $("#reels").addEventListener("click", (e) => { const bt = e.target.closest(".reel, .reel-cap"); if (bt) abrirVideo(C.videos.lista[+bt.dataset.i], bt.closest(".car-slide").querySelector(".reel")); });
-  };
-  pintarReels();
   // Solo se aceptan archivos del cajón público de Supabase (o de la tarjeta en modo demo): nada más entra a la página
   const urlValida = (u) => typeof u === "string" && (/^https:\/\/[a-z0-9-]+\.supabase\.co\/storage\/v1\/object\/public\/tarjeta-videos\/[\w./-]+$/i.test(u) || /^\/tarjeta\/reels\/[\w-]+\.(mp4|jpg)$/.test(u));
-  // Los chips que marcaste al subir el video (CRM → «¿A quién le sirve este video?»); si no marcaste ninguno, se deducen de su palabra clave
-  const interesesDe = (v) => {
-    const ids = C.intereses.map((i) => i.id);
-    const marcados = (Array.isArray(v.intereses) ? v.intereses : []).filter((t) => ids.includes(t));
-    return marcados.length ? marcados : C.videos.tagsPorClave[String(v.clave || "").normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toUpperCase()] || [];
+  // Los 3 videos destacados: cada uno con su beneficio y un botón. El botón abre el mosaico de «¿Qué necesitas proteger?» (panel con el formulario) o lleva a la cotización.
+  const destacados = C.videos.destacados.map((d) => ({ ...(fijos.find((v) => v.id === d.id) || {}), ...d })).filter((v) => v.titulo && v.beneficio);
+  const pintarDestacados = () => {
+    $("#destacados").innerHTML = destacados.map((v, i) => `
+      <article class="dest glass">
+        <button type="button" class="reel" data-i="${i}" aria-label="Ver video: ${esc(v.titulo)} (${mm(v.dur)})">
+          ${posterDe(v) ? `<img src="${esc(posterDe(v))}" alt="" width="540" height="960" loading="lazy" decoding="async">` : ""}
+          <span class="play" aria-hidden="true"><svg class="ic"><use href="#i-tri"/></svg></span>
+          <span class="dur" aria-hidden="true">${mm(v.dur)}</span>
+        </button>
+        <div class="dest-body">
+          <h4 class="dest-t">${esc(v.titulo)}</h4>
+          <p class="dest-b">${esc(v.beneficio)}</p>
+          ${v.ia === false ? "" : `<p class="dest-ia">Creado con apoyo de inteligencia artificial</p>`}
+          <a class="btn btn-primary dest-cta" href="${v.ramo ? "#proteger" : "#cotizacion"}"${v.ramo ? ` data-ramo="${esc(v.ramo)}"` : ""} data-ev="cotizar" data-d="videos">${esc(v.boton)}</a>
+        </div>
+      </article>`).join("");
   };
+  pintarDestacados();
+  $("#destacados").addEventListener("click", (e) => {
+    const bt = e.target.closest(".reel");
+    if (bt) { abrirVideo(destacados[+bt.dataset.i], bt); return; }
+    const cta = e.target.closest(".dest-cta");
+    if (!cta || !cta.dataset.ramo) return;   // sin «ramo»: el enlace va directo a la cotización
+    e.preventDefault();
+    const chip = document.querySelector(`#chips .chip[data-v="${cta.dataset.ramo}"]`);
+    if (!chip) { location.hash = "#proteger"; return; }
+    // Si ya está abierto, solo se baja a su panel (tocar otra vez el mosaico lo cerraría)
+    if (chip.getAttribute("aria-pressed") === "true") $("#ramoPanel").scrollIntoView({ behavior: reducido ? "auto" : "smooth", block: "center" }); else chip.click();
+  });
+  // Portadas subidas desde el CRM para los videos fijos (solo direcciones del cajón público)
   fetch("/api/tarjeta/videos", { cache: "no-cache" }).then((r) => (r.ok ? r.json() : { videos: [] })).then((j) => {
-    // Portadas subidas desde el CRM para los videos fijos (solo direcciones del cajón público)
     const ps = j && j.portadas && typeof j.portadas === "object" ? j.portadas : {};
     const portadas = {};
     Object.keys(ps).forEach((id) => { if (fijos.some((v) => v.id === id) || (C.eventos.video && C.eventos.video.id === id)) { if (urlValida(ps[id])) portadas[id] = ps[id]; } });
-    const hayPortadas = Object.keys(portadas).length > 0;
-    const nuevos = ((j && j.videos) || []).filter((v) => v && typeof v.titulo === "string" && urlValida(v.src) && (!v.poster || urlValida(v.poster)))
-      .map((v) => ({ id: String(v.id), titulo: v.titulo, tema: "", dur: Math.max(1, +v.dur || 1), clave: v.clave || "", tags: interesesDe(v), src: v.src, poster: v.poster || "", ia: v.ia !== false }));
-    // Si la persona ya movió el carrusel o abrió algo, no se le cambia la pantalla: lo verá en su próxima visita
-    if ((!nuevos.length && !hayPortadas) || $("#reels").scrollLeft > 10 || document.querySelector("dialog[open]")) return;
+    // Si la persona ya abrió algo, no se le cambia la pantalla: lo verá en su próxima visita
+    if (!Object.keys(portadas).length || document.querySelector("dialog[open]")) return;
     portadasCRM = portadas;
-    C.videos.lista = [...nuevos, ...fijos];
-    pintarReels();
+    pintarDestacados();
     const evImg = document.querySelector(".foto.es-video img");   // el video del evento también puede tener portada nueva
     if (evImg && portadas[C.eventos.video.id]) evImg.src = portadas[C.eventos.video.id];
   }).catch(() => {});
@@ -1840,7 +1861,7 @@ function vcardTexto() {
 
   // Entrada suave de los bloques al aparecer en pantalla (nada queda oculto si el navegador no puede observar o la persona prefiere sin movimiento)
   if ("IntersectionObserver" in window && !reducido) {
-    const rv = [...document.querySelectorAll(".sec > .eyebrow, .sec > h2, .sec > .lead, .sub > .sub-k, .sub > .sub-t, .sub > .lead, .sec > .chips, .sec-cta, .cta-card, .teaser, .regalo, .car, .aviso-ia, .faq details, .acc details, .res a, .cta > *, .card, .share")];
+    const rv = [...document.querySelectorAll(".sec > .eyebrow, .sec > h2, .sec > .lead, .sub > .sub-k, .sub > .sub-t, .sub > .lead, .sec > .chips, .sec-cta, .cta-card, .dest, .dest-mas, .teaser, .regalo, .car, .aviso-ia, .faq details, .acc details, .res a, .cta > *, .card, .share")];
     rv.forEach((x) => x.classList.add("rv"));
     const ioR = new IntersectionObserver((ens) => ens.forEach((en) => { if (en.isIntersecting) { en.target.classList.add("in"); ioR.unobserve(en.target); } }), { threshold: 0.12, rootMargin: "0px 0px -6% 0px" });
     rv.forEach((x) => ioR.observe(x));
@@ -1882,6 +1903,7 @@ function vcardTexto() {
   $("#social").innerHTML = redes.filter((r) => r[0] !== "whatsapp").map(([, i, n, u]) => `<a href="${esc(u)}" target="_blank" rel="noopener" aria-label="${n}" title="${n}" data-ev="red" data-d="${n}">${ic(i)}</a>`).join("");
   const canales = redes.filter((r) => r[0] !== "whatsapp"); // WhatsApp ya es el botón principal: las filas son solo canales
   if (canales.length) $("#socialHero").innerHTML = canales.map(([, i, n, u]) => `<a href="${esc(u)}" target="_blank" rel="noopener" aria-label="${n}" title="${n}" data-ev="red" data-d="${n}">${ic(i)}</a>`).join(""); else $("#heroSocial").hidden = true;
+  if (canales.length) $("#socialVideos").innerHTML = $("#socialHero").innerHTML; else $("#destMas").hidden = true;   // «Hay más videos en mis redes»
 
   // Cédula
   if (C.cedulaCNSF) $("#ced").textContent = "Cédula CNSF " + C.cedulaCNSF; else $("#ced").hidden = true;
