@@ -582,3 +582,20 @@ dialog.agenda-cita[open] { animation: agenda-subir 0.25s ease-out; }
   .agenda-cita-x { top: 8px; right: 8px; }
 }
 @media (prefers-reduced-motion: reduce) { dialog.agenda-cita[open] { animation: none; } }
+
+/* Íconos de línea de las tarjetas «Qué ganas con tu asesoría» (components/captura/IconoLinea.tsx): mismo trazo que /cotiza y un movimiento propio al pasar el ratón o tocar */
+.il { display: block; width: 50px; height: 50px; margin: 0 auto; fill: none; stroke: #fff; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; overflow: visible; }
+.il-card { border: 1.5px solid rgba(91, 123, 255, 0.35); }
+.il-card:hover, .il-card:focus-within { border-color: #5b7bff; box-shadow: 0 16px 44px rgba(42, 34, 245, 0.4); }
+@media (prefers-reduced-motion: no-preference) {
+  .il-card:hover .il-reloj, .il-card:active .il-reloj { animation: il-suena 0.7s ease-in-out; }
+  .il-card:hover .il-aguja, .il-card:active .il-aguja { transform-box: view-box; transform-origin: 32px 35px; animation: il-gira 0.9s ease-in-out; }
+  .il-card:hover .il-bebe, .il-card:active .il-bebe { animation: il-mece 0.8s ease-in-out; }
+  .il-card:hover .il-escudo, .il-card:active .il-escudo { animation: il-late 0.8s ease-in-out; }
+  .il-card:hover .il-trazo, .il-card:active .il-trazo { stroke-dasharray: 40; animation: il-dibuja 0.6s ease-out; }
+}
+@keyframes il-suena { 0%, 100% { transform: rotate(0); } 15% { transform: rotate(-9deg); } 30% { transform: rotate(9deg); } 45% { transform: rotate(-6deg); } 60% { transform: rotate(6deg); } 75% { transform: rotate(-2deg); } }
+@keyframes il-gira { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+@keyframes il-mece { 0%, 100% { transform: translateX(0) rotate(0); } 35% { transform: translateX(7px) rotate(-4deg); } 70% { transform: translateX(-2px) rotate(2deg); } }
+@keyframes il-late { 0%, 100% { transform: scale(1); } 25% { transform: scale(1.16); } 50% { transform: scale(1.03); } 70% { transform: scale(1.1); } }
+@keyframes il-dibuja { from { stroke-dashoffset: 40; } to { stroke-dashoffset: 0; } }

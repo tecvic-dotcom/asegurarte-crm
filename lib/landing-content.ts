@@ -6,9 +6,12 @@
  * nazca protegido por la póliza de la mamá.
  * (Sin server-only: lo usa el componente cliente de la landing.)
  */
+import type { DibujoLinea } from "@/components/captura/IconoLinea";
 
 export interface Beneficio {
-  icono: string; // ícono Iconify a color (flat-color-icons:*)
+  icono: string; // ícono Iconify a color (flat-color-icons:*); se usa si no hay «dibujo»
+  /** Ícono de línea blanco con animación propia (components/captura/IconoLinea.tsx). */
+  dibujo?: DibujoLinea;
   titulo: string;
   texto: string;
 }
@@ -190,16 +193,19 @@ export const CONTENIDO: LandingContent = {
   beneficios: [
     {
       icono: "flat-color-icons:alarm-clock",
+      dibujo: "reloj",
       titulo: "Evitas el periodo de espera",
       texto: "Sabrás con tiempo qué póliza necesitas antes de que el reloj de las aseguradoras juegue en tu contra.",
     },
     {
       icono: "flat-color-icons:family",
+      dibujo: "bebe",
       titulo: "Tu bebé queda protegido desde el día uno",
       texto: "Te decimos qué seguro cubre a tu hijo recién nacido, sin letras chiquitas ni sorpresas de último momento.",
     },
     {
       icono: "flat-color-icons:privacy",
+      dibujo: "escudo",
       titulo: "Decides con claridad, no con presión",
       texto: "Te explico tus opciones en español sencillo. Tú decides qué hacer con tu información, sin tecnicismos.",
     },

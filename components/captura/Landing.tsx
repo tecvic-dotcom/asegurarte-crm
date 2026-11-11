@@ -9,6 +9,7 @@ import { enviarCotizacionServidor } from "@/lib/cotizacion-cliente";
 import { dispararConversionLead } from "@/lib/pixels";
 import { FormularioCotizacion } from "./FormularioCotizacion";
 import { FormularioGuia } from "./FormularioGuia";
+import { IconoLinea } from "./IconoLinea";
 import { PopupActividad } from "./PopupActividad";
 import { AgendaCita } from "./AgendaCita";
 import { Logo } from "@/components/ui/Logo";
@@ -185,9 +186,9 @@ export function Landing({ negocio, popupActivo, heroTitulo, heroCta }: LandingPr
                   key={b.titulo}
                   {...aparecer}
                   transition={{ duration: 0.5, delay: i * 0.08 }}
-                  className="glass card-3d lift rounded-3xl p-6 text-center"
+                  className="glass card-3d lift il-card rounded-3xl p-6 text-center"
                 >
-                  <Icon icon={b.icono} width={46} className="mx-auto" />
+                  {b.dibujo ? <IconoLinea nombre={b.dibujo} /> : <Icon icon={b.icono} width={46} className="mx-auto" />}
                   <h3 className="mt-4 font-display text-xl text-ink">{b.titulo}</h3>
                   <p className="mt-2 text-sm text-ink-soft">{b.texto}</p>
                 </motion.div>
