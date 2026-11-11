@@ -406,13 +406,53 @@ h2{font:800 clamp(27px,7.4vw,34px)/1.12 var(--display);letter-spacing:-.01em;mar
 /* ¿Qué necesitas proteger?: mosaicos grandes con ícono (es el mismo botón .chip, en otro tamaño) */
 .chips.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:24px}
 @media (min-width:480px){ .chips.tiles{grid-template-columns:repeat(3,minmax(0,1fr))} }
-.tiles .chip{position:relative;flex-direction:column;justify-content:center;gap:9px;min-height:100px;padding:16px 8px 14px;border-radius:20px;text-align:center;font:700 15.5px/1.2 var(--display)}
-.tiles .chip .ico{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;background:var(--glass-2);border:1px solid var(--line-strong);color:var(--brand-2);transition:background .15s,color .15s,border-color .15s}
-.tiles .chip .ico .ic{display:block;width:22px;height:22px;stroke-width:1.7}
+/* Estilo de /cotiza: ícono de línea blanco y grande, nombre y «● Cotizar»; entran uno tras otro y cada ícono tiene su propio movimiento */
+.tiles .chip{position:relative;flex-direction:column;justify-content:center;gap:9px;min-height:128px;padding:18px 8px 14px;border-radius:24px;text-align:center;font:700 16px/1.2 var(--display);
+  background:linear-gradient(180deg,rgba(16,21,54,.96),rgba(10,12,28,.96));border:1.5px solid rgba(91,123,255,.35);box-shadow:0 14px 36px rgba(0,0,0,.4);
+  transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease,background .15s}
+.tiles .chip:hover,.tiles .chip:focus-visible{transform:translateY(-3px);border-color:var(--brand-2);box-shadow:0 16px 44px rgba(42,34,245,.45)}
+.tiles .chip:focus-visible{outline:3px solid var(--brand-2);outline-offset:3px}
+.tiles .chip:active{transform:scale(.97)}
+.tiles .chip .ico{display:grid;place-items:center;width:auto;height:auto;background:none;border:0;color:#fff}
+.tiles .chip .ico .ic{display:block;width:40px;height:40px;stroke-width:1.5}
+.ti{display:block;width:46px;height:46px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
+.ti .rueda{fill:var(--bg-3,#0a0c1c)}
+.tiles .chip .cz{display:inline-flex;align-items:center;gap:6px;font:600 13px/1.3 var(--body);color:rgba(242,244,255,.7);white-space:nowrap}
+.tiles .chip .cz::before{content:"";width:8px;height:8px;border-radius:50%;background:#25D366;box-shadow:0 0 0 0 rgba(37,211,102,.6)}
 .tiles .chip .ok{position:absolute;top:9px;right:9px;display:none;place-items:center;width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.24)}
 .tiles .chip .ok .ic{display:block;width:12px;height:12px;stroke-width:3.2}
+.tiles .chip[aria-pressed="true"]{background:linear-gradient(180deg,var(--brand-2),var(--brand));border-color:transparent;box-shadow:0 16px 44px rgba(42,34,245,.45)}
 .tiles .chip[aria-pressed="true"] .ok{display:grid}
-.tiles .chip[aria-pressed="true"] .ico{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.4);color:#fff}
+.tiles .chip[aria-pressed="true"] .cz{color:#fff}
+.tiles .chip[aria-pressed="true"] .ti .rueda{fill:var(--brand)}
+.tiles .chip[aria-pressed="true"] .cz::before{animation:t-ping 1s ease-out infinite}
+.rp-head .ico .ti{width:28px;height:28px;stroke-width:4}
+.rp-head .ico .ti .rueda{fill:var(--brand)}
+@media (min-width:1240px){ .tiles .chip{min-height:122px;padding:16px 2px 12px;font-size:14px;letter-spacing:-.01em} .ti{width:42px;height:42px} .tiles .chip .cz{font-size:12px} }
+@media (prefers-reduced-motion:no-preference){
+  .chips.tiles.rv:not(.in) .chip{opacity:0}
+  .chips.tiles.rv.in .chip{animation:t-entra .55s cubic-bezier(.2,.8,.2,1) backwards}
+  .chips.tiles.rv.in .chip:nth-child(2){animation-delay:.08s} .chips.tiles.rv.in .chip:nth-child(3){animation-delay:.16s}
+  .chips.tiles.rv.in .chip:nth-child(4){animation-delay:.24s} .chips.tiles.rv.in .chip:nth-child(5){animation-delay:.32s}
+  .chips.tiles.rv.in .chip:nth-child(6){animation-delay:.40s}
+  .chip:hover .ti-auto,.chip:focus-visible .ti-auto,.chip[aria-pressed="true"] .ti-auto{animation:t-maneja .7s ease-in-out}
+  .chip:hover .ti-casa,.chip:focus-visible .ti-casa,.chip[aria-pressed="true"] .ti-casa{animation:t-brinca .6s ease-in-out}
+  .chip:hover .ti-familia,.chip:focus-visible .ti-familia,.chip[aria-pressed="true"] .ti-familia{animation:t-late .8s ease-in-out}
+  .chip:hover .ti-familia .trazo,.chip[aria-pressed="true"] .ti-familia .trazo{stroke-dasharray:40;animation:t-dibuja .6s ease-out}
+  .chip:hover .ti-salud,.chip:focus-visible .ti-salud,.chip[aria-pressed="true"] .ti-salud{animation:t-pulso .7s ease-in-out}
+  .chip:hover .ti-retiro .trazo,.chip:focus-visible .ti-retiro .trazo,.chip[aria-pressed="true"] .ti-retiro .trazo{animation:t-sube .7s ease-in-out}
+  .chip:hover .ti-impuestos .trazo,.chip:focus-visible .ti-impuestos .trazo,.chip[aria-pressed="true"] .ti-impuestos .trazo{stroke-dasharray:40;animation:t-dibuja .6s ease-out}
+  .chip:hover .ti-impuestos,.chip:focus-visible .ti-impuestos,.chip[aria-pressed="true"] .ti-impuestos{animation:t-hoja .6s ease-in-out}
+}
+@keyframes t-entra{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes t-maneja{0%,100%{transform:translateX(0)}45%{transform:translateX(9px)}}
+@keyframes t-brinca{0%,100%{transform:translateY(0)}40%{transform:translateY(-7px)}70%{transform:translateY(1px)}}
+@keyframes t-late{0%,100%{transform:scale(1)}25%{transform:scale(1.16)}50%{transform:scale(1.03)}70%{transform:scale(1.1)}}
+@keyframes t-pulso{0%,100%{transform:scale(1) rotate(0)}50%{transform:scale(1.14) rotate(90deg)}}
+@keyframes t-sube{0%,100%{transform:translateY(0)}45%{transform:translateY(-8px)}}
+@keyframes t-hoja{0%,100%{transform:rotate(0)}30%{transform:rotate(-7deg)}65%{transform:rotate(4deg)}}
+@keyframes t-dibuja{from{stroke-dashoffset:40}to{stroke-dashoffset:0}}
+@keyframes t-ping{0%{box-shadow:0 0 0 0 rgba(37,211,102,.7)}100%{box-shadow:0 0 0 9px rgba(37,211,102,0)}}
 .cta .btn{margin-top:22px}
 .cta .note{margin:12px 0 0;text-align:center;font-size:13.5px;color:var(--ink-mute)}
 
@@ -781,6 +821,8 @@ footer .legal a{color:var(--ink-soft);text-underline-offset:2px}
 /* Tamaños mayores: el contenido aprovecha el ancho (antes se quedaba en 680 px y sobraba la mitad de la pantalla) */
 @media (min-width:1100px){
   :root{--ancho:760px}
+}
+@media (min-width:1240px){
   .chips.tiles{grid-template-columns:repeat(6,minmax(0,1fr))}
 }
 @media (min-width:1400px){ :root{--ancho:880px} }
@@ -1637,7 +1679,17 @@ function vcardTexto() {
   const slideDe = (i, total, html) => `<div class="car-slide" role="group" aria-roledescription="diapositiva" aria-label="${i + 1} de ${total}">${html}</div>`;
 
   // Mosaicos de «¿Qué necesitas proteger?»: aquí se dibujan; al tocar uno, public/tarjeta/cotizacion-form.js abre ahí mismo el formulario de ese ramo
-  $("#chips").innerHTML = C.intereses.map((t) => `<button type="button" class="chip" aria-pressed="false" data-v="${esc(t.id)}"><span class="ico">${ic(t.icono || "shield")}</span><span class="tx">${esc(t.texto)}</span><span class="ok">${ic("check")}</span></button>`).join("");
+  // Íconos de línea grandes, del mismo trazo que /cotiza (en el SVG mismo para que cada parte pueda moverse); si se agrega un interés sin dibujo propio, usa el ícono normal
+  const tileSvg = {
+    salud: '<path d="M25 9 H39 V25 H55 V39 H39 V55 H25 V39 H9 V25 H25 Z"/>',
+    familia: '<path d="M32 54 C14 42 8 32 8 24 C8 17 13 12 20 12 C25 12 29 15 32 19 C35 15 39 12 44 12 C51 12 56 17 56 24 C56 32 50 42 32 54 Z"/><path class="trazo" d="M22 29 L29.5 36 L42 22"/>',
+    retiro: '<rect x="8" y="45" width="30" height="9" rx="4.5"/><rect x="8" y="36" width="30" height="9" rx="4.5"/><rect x="8" y="27" width="30" height="9" rx="4.5"/><g class="trazo"><path d="M50 52 V14"/><path d="M42 22 L50 14 L58 22"/></g>',
+    casa: '<path d="M8 32 L32 12 L56 32"/><path d="M15 27 V52 H49 V27"/><path d="M27 52 V39 H37 V52"/>',
+    auto: '<path d="M15 34 L21 22 Q22.5 19.5 26 19.5 H38 Q41.5 19.5 43 22 L49 34"/><rect x="7" y="34" width="50" height="14" rx="5"/><path d="M32 20 V34"/><circle class="rueda" cx="19" cy="48" r="5.5"/><circle class="rueda" cx="45" cy="48" r="5.5"/>',
+    impuestos: '<path d="M14 8 H38 L50 20 V56 H14 Z"/><path d="M38 8 V20 H50"/><circle cx="24" cy="31" r="3.5"/><circle cx="40" cy="47" r="3.5"/><path class="trazo" d="M42 28 L22 50"/>'
+  };
+  const tileIco = (t) => tileSvg[t.id] ? `<svg class="ti ti-${t.id}" viewBox="0 0 64 64" aria-hidden="true">${tileSvg[t.id]}</svg>` : ic(t.icono || "shield");
+  $("#chips").innerHTML = C.intereses.map((t) => `<button type="button" class="chip" aria-pressed="false" data-v="${esc(t.id)}"><span class="ico">${tileIco(t)}</span><span class="tx">${esc(t.texto)}</span><span class="cz" aria-hidden="true">Cotizar</span><span class="ok">${ic("check")}</span></button>`).join("");
   $("#waAsesoria").href = wa(C.mensajes.asesoria);   // cotizacion-form.js le suma lo que marquen en los mosaicos
 
   // Testimonios (carrusel) + historia completa en una ventana
