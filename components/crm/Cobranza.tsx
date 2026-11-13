@@ -24,6 +24,7 @@ import {
   DIAS_AVISO,
   DIAS_RENOVACION,
   ICONO_ESTADO,
+  esDeDana,
   esPrimerPago,
   estadoDe,
   etiquetaEstado,
@@ -47,6 +48,8 @@ interface CobranzaProps {
   /** Una póliza que ya existe, para abrirla de entrada en su formulario de edición (desde el expediente del cliente). */
   abrir?: Poliza | null;
   onAbrirUsado?: () => void;
+  /** Abre a Dana (cobranza de Autos con Chubb). */
+  onAbrirDana?: () => void;
 }
 
 type Formulario = { poliza: Poliza | null; inicial: Partial<DatosPoliza> | null };
@@ -73,7 +76,7 @@ const FILTROS: Record<FiltroCobro, { titulo: string; motivos: MotivoCobro[]; vac
  * riesgo y el mensaje de WhatsApp listo. Tú lo envías; Valeri no manda nada sola.
  * No usa IA: trabaja con reglas fijas, sin costo.
  */
-export function Cobranza({ prefill, onPrefillUsado, abrir = null, onAbrirUsado }: CobranzaProps) {
+export function Cobranza({ prefill, onPrefillUsado, abrir = null, onAbrirUsado, onAbrirDana }: CobranzaProps) {
   const [polizas, setPolizas] = useState<Poliza[] | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const [form, setForm] = useState<Formulario | null>(() => (prefill ? { poliza: null, inicial: prefill } : abrir ? { poliza: abrir, inicial: null } : null));
@@ -107,6 +110,9 @@ export function Cobranza({ prefill, onPrefillUsado, abrir = null, onAbrirUsado }
     crmMensajesCobro().then(setMensajes, () => undefined);
   }, [cargar]);
 
+  // Autos con Chubb = Dana. Si alguna se coló aquí, Valeri no la cobra ni la cuenta: solo te avisa para que la borres.
+  const deDana = useMemo(() => (polizas ?? []).filter(esDeDana), [polizas]);
+  const deValeri = useMemo(() => (polizas ?? []).filter((p) => !esDeDana(p)), [polizas]);
   const pendientes = useMemo(() => (polizas ? listaDeHoy(polizas, hoy) : []), [polizas, hoy]);
   const mostradas = useMemo(() => {
     if (!filtro) return pendientes;
@@ -117,10 +123,10 @@ export function Cobranza({ prefill, onPrefillUsado, abrir = null, onAbrirUsado }
   // Pólizas pagadas = al corriente: ya cubrieron el recibo de este periodo; primero las que antes vuelven a tocar.
   const pagadas = useMemo(
     () =>
-      (polizas ?? [])
+      deValeri
         .filter((p) => estadoDe(p, hoy).estado === "al_corriente")
         .sort((a, b) => (a.fecha_limite_pago ?? "").localeCompare(b.fecha_limite_pago ?? "") || a.asegurado.localeCompare(b.asegurado, "es")),
-    [polizas, hoy],
+    [deValeri, hoy],
   );
   const cuentaFiltro = filtro === "pagadas" ? pagadas.length : mostradas.length;
 
@@ -132,10 +138,10 @@ export function Cobranza({ prefill, onPrefillUsado, abrir = null, onAbrirUsado }
   const resumen = useMemo(() => (polizas ? resumenCobranza(polizas, hoy) : null), [polizas, hoy]);
   const cartera = useMemo(() => {
     const q = busca.trim().toLowerCase();
-    return (polizas ?? [])
+    return deValeri
       .filter((p) => !q || [p.asegurado, p.numero, p.aseguradora, p.whatsapp].some((x) => x.toLowerCase().includes(q)))
       .sort((a, b) => a.asegurado.localeCompare(b.asegurado, "es"));
-  }, [polizas, busca]);
+  }, [deValeri, busca]);
 
   function avisar(texto: string) {
     setAviso(texto);
@@ -307,6 +313,41 @@ export function Cobranza({ prefill, onPrefillUsado, abrir = null, onAbrirUsado }
           <p className="mx-auto mt-4 max-w-md text-xs text-ink-mute">
             ¿Tienes tu cartera en Excel? Pídele a Claude Code: “carga mi cartera de este Excel en Valeri”. Y cuando cierres una venta, en el expediente del cliente ganado toca “Agregar a cobranza”.
           </p>
+        </div>
+      )}
+
+      {deDana.length > 0 && (
+        <div
+          className="rounded-2xl border bg-bg-3/70 p-4 text-sm text-ink-soft"
+          style={{ borderColor: "color-mix(in srgb, var(--amber) 55%, transparent)" }}
+          role="status"
+          data-testid="aviso-polizas-de-dana"
+        >
+          <p>
+            <strong className="text-ink">
+              {deDana.length === 1 ? "Esta póliza de Autos con Chubb la lleva Dana" : `Estas ${deDana.length} pólizas de Autos con Chubb las lleva Dana`}
+            </strong>
+            , no Valeri. Por eso no la{deDana.length === 1 ? "" : "s"} cobro ni la{deDana.length === 1 ? "" : "s"} cuento: Dana sabe qué recibos están pagados por tu Excel de
+            Chubb. Bórrala{deDana.length === 1 ? "" : "s"} de aquí para no tenerla{deDana.length === 1 ? "" : "s"} repetida{deDana.length === 1 ? "" : "s"}.
+          </p>
+          <ul className="mt-3 space-y-2">
+            {deDana.map((p) => (
+              <li key={p.id} data-testid="poliza-de-dana" className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line bg-glass px-3 py-2">
+                <span className="min-w-0">
+                  <span className="block font-medium text-ink">{p.asegurado}</span>
+                  <span className="block text-xs text-ink-mute">{["Autos", p.numero || null, p.aseguradora].filter(Boolean).join(" · ")}</span>
+                </span>
+                <button type="button" onClick={() => abrirFormulario({ poliza: p, inicial: null })} className="btn-ghost px-3 py-2 text-xs">
+                  <Icon icon="flat-color-icons:full-trash" width={16} aria-hidden /> Abrir para borrar
+                </button>
+              </li>
+            ))}
+          </ul>
+          {onAbrirDana && (
+            <button type="button" onClick={onAbrirDana} className="btn-ghost mt-3 px-3 py-2 text-xs" data-testid="abrir-dana-desde-valeri">
+              <Icon icon="flat-color-icons:automotive" width={16} aria-hidden /> Ver su cobranza en Dana
+            </button>
+          )}
         </div>
       )}
 

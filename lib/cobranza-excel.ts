@@ -14,6 +14,7 @@ import {
   estadoDe,
   etiquetaEstado,
   listaDeHoy,
+  polizasDeValeri,
   montoDelProximoPago,
   recordadaHoy,
   resumenCobranza,
@@ -387,6 +388,8 @@ function hojaResumen(polizas: Poliza[], hoy: string): Hoja {
 }
 
 /** Las tres hojas del Excel de cobranza, listas para `crearXlsx`. */
-export function hojasCobranza(polizas: Poliza[], hoy: string): Hoja[] {
+export function hojasCobranza(todas: Poliza[], hoy: string): Hoja[] {
+  // Las de Autos con Chubb las lleva Dana (su propio Excel): aquí no se cuentan ni se cobran.
+  const polizas = polizasDeValeri(todas);
   return [hojaResumen(polizas, hoy), hojaPorCobrar(polizas, hoy), hojaCartera(polizas, hoy)];
 }

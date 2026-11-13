@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Icon } from "@iconify/react";
 import { RAMOS } from "@/lib/ramos";
-import { FORMAS_PAGO, validarPoliza } from "@/lib/cobranza-reglas";
+import { AVISO_POLIZA_DE_DANA, FORMAS_PAGO, esDeDana, validarPoliza } from "@/lib/cobranza-reglas";
 import type { DatosPoliza, FormaPago, Poliza, Ramo } from "@/lib/types";
 
 /** Lo que se captura en pantalla (todo como texto, igual que lo escribes). */
@@ -131,6 +131,20 @@ export function FormularioPoliza({
             ))}
           </div>
           <p className="mt-2 text-xs text-ink-mute">Si es otra póliza distinta del mismo cliente, sigue llenando este formulario.</p>
+        </div>
+      )}
+
+      {esDeDana({ ramo: c.ramo || null, aseguradora: c.aseguradora }) && (
+        <div
+          className="mb-4 rounded-xl border p-3 text-sm text-ink-soft"
+          style={{ borderColor: "color-mix(in srgb, var(--amber) 55%, transparent)" }}
+          role="status"
+          data-testid="aviso-formulario-dana"
+        >
+          <p>
+            <strong className="text-ink">Esta va con Dana.</strong> {AVISO_POLIZA_DE_DANA}
+            {poliza && onBorrar ? " Como ya está aquí, lo correcto es borrarla («Borrar póliza», abajo)." : ""}
+          </p>
         </div>
       )}
 

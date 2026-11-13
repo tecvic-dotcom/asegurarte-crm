@@ -416,6 +416,7 @@ export function CRMApp({ sesion, inicial, onLogout }: CRMAppProps) {
               onPrefillUsado={() => setPolizaNueva(null)}
               abrir={polizaAEditar}
               onAbrirUsado={() => setPolizaAEditar(null)}
+              onAbrirDana={() => elegir("dana")}
             />
           )}
 

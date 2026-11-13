@@ -11,6 +11,22 @@ import { normCorreo, normWhatsapp } from "./normalize";
 import { esRamo } from "./ramos";
 import type { DatosPoliza, EstadoCobro, FormaPago, Poliza, Ramo, ResumenCobranza } from "./types";
 
+/**
+ * Las pólizas de Autos con Chubb no las cobra Valeri: las lleva Dana desde tu Excel de Chubb (ahí está la verdad de sus recibos).
+ * Si una se coló en Valeri, Valeri la aparta: no la cobra, no la cuenta y te avisa para que la borres.
+ */
+export function esDeDana(p: Pick<Poliza, "ramo" | "aseguradora">): boolean {
+  return p.ramo === "autos" && /chubb/i.test(p.aseguradora ?? "");
+}
+
+/** Solo las pólizas que sí cobra Valeri. */
+export function polizasDeValeri<T extends Pick<Poliza, "ramo" | "aseguradora">>(polizas: T[]): T[] {
+  return polizas.filter((p) => !esDeDana(p));
+}
+
+export const AVISO_POLIZA_DE_DANA =
+  "Las pólizas de Autos con Chubb las lleva Dana desde tu Excel de Chubb; no se capturan en Valeri. Si esta es de AXA, cambia la aseguradora.";
+
 /** Días antes de la fecha límite en que Valeri empieza a avisarte. */
 export const DIAS_AVISO = 15;
 /** Días antes de la renovación en que Valeri te sugiere llamar. */
@@ -140,7 +156,7 @@ export interface PendienteCobro {
 /** Cada póliza aparece UNA vez, con su motivo más urgente. Las ya recordadas hoy, al final. */
 export function listaDeHoy(polizas: Poliza[], hoy: string): PendienteCobro[] {
   const lista: PendienteCobro[] = [];
-  for (const p of polizas) {
+  for (const p of polizasDeValeri(polizas)) {
     const { estado, dias } = estadoDe(p, hoy);
     if (estado === "cancelada") continue;
     let motivo: MotivoCobro | null = null;
@@ -178,7 +194,7 @@ export function listaDeHoy(polizas: Poliza[], hoy: string): PendienteCobro[] {
  */
 export function listaDeRenovaciones(polizas: Poliza[], hoy: string): PendienteCobro[] {
   const lista: PendienteCobro[] = [];
-  for (const p of polizas) {
+  for (const p of polizasDeValeri(polizas)) {
     if (p.estatus_manual === "cancelada" || !p.renovacion) continue;
     const r = diasEntre(hoy, p.renovacion);
     if (r < 0 || r > DIAS_RENOVACION) continue;
@@ -342,7 +358,7 @@ export function ligaWhatsApp(p: Poliza, texto: string): string | null {
 // ----------------------------------------------------------------------------
 
 export function resumenCobranza(polizas: Poliza[], hoy: string): ResumenCobranza {
-  const activas = polizas.filter((p) => p.estatus_manual !== "cancelada");
+  const activas = polizasDeValeri(polizas).filter((p) => p.estatus_manual !== "cancelada");
   let vencidas = 0;
   let montoVencido = 0;
   let porVencer = 0;
@@ -444,6 +460,7 @@ export function validarPoliza(entrada: unknown): ResultadoPoliza {
   const ramoCrudo = e.ramo === undefined || e.ramo === null || e.ramo === "" ? null : e.ramo;
   if (ramoCrudo !== null && !esRamo(ramoCrudo)) return { ok: false, error: "El ramo no es válido." };
   const ramo = ramoCrudo as Ramo | null;
+  if (esDeDana({ ramo, aseguradora: String(e.aseguradora ?? "") })) return { ok: false, error: AVISO_POLIZA_DE_DANA };
 
   const forma = e.forma_pago ?? "anual";
   if (!FORMAS_PAGO.some((f) => f.id === forma)) return { ok: false, error: "La forma de pago no es válida." };
