@@ -17,7 +17,7 @@ const KEYLEN = 32;
 const DIGEST = "sha256";
 
 export const COOKIE_SESION = "acm_sess";
-export const SESION_MAX_AGE = 60 * 60 * 24 * 7; // 7 días
+export const SESION_MAX_AGE = 60 * 60 * 12; // 12 horas: después vuelve a pedir contraseña y código
 
 function secret(): string | null {
   const s = process.env.APP_SESSION_SECRET;
@@ -62,11 +62,13 @@ export function verifyPassword(password: string, hash: string, salt: string): bo
  * Firma la sesión en un token `payload.firma`. Null si no hay secreto.
  * Solo se llama cuando la persona YA pasó contraseña + código del 2FA: la marca `mfa` queda dentro de la
  * firma y `leerSesion` la exige, así una cookie vieja (de antes del 2FA) o a medias no abre nada.
+ * El vencimiento (`exp`) también va firmado: aunque alguien copie la cookie, deja de servir a las 12 horas.
  */
 export function firmarSesion(sesion: Sesion): string | null {
   const sec = secret();
   if (!sec) return null;
-  const payload = Buffer.from(JSON.stringify({ ...sesion, mfa: true })).toString("base64url");
+  const exp = Date.now() + SESION_MAX_AGE * 1000;
+  const payload = Buffer.from(JSON.stringify({ ...sesion, mfa: true, exp })).toString("base64url");
   const firma = createHmac("sha256", sec).update(payload).digest("base64url");
   return `${payload}.${firma}`;
 }
@@ -82,8 +84,13 @@ export function leerSesion(token: string | null | undefined): Sesion | null {
   const b = Buffer.from(esperado);
   if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
   try {
-    const { mfa, ...sesion } = JSON.parse(Buffer.from(payload, "base64url").toString()) as Sesion & { mfa?: boolean };
-    return mfa === true ? sesion : null; // sin la marca del 2FA no es una sesión válida
+    const { mfa, exp, ...sesion } = JSON.parse(Buffer.from(payload, "base64url").toString()) as Sesion & {
+      mfa?: boolean;
+      exp?: number;
+    };
+    if (mfa !== true) return null; // sin la marca del 2FA no es una sesión válida
+    if (typeof exp !== "number" || exp <= Date.now()) return null; // vencida (o de antes de que hubiera vencimiento)
+    return sesion;
   } catch {
     return null;
   }
