@@ -84,8 +84,6 @@ const DATOS: [string, React.ReactNode][] = [
       Roberto Javier Rodríguez González
       <br />
       RFC: ROGR771202921
-      <br />
-      Domicilio: Trinidad Dávila 740, colonia Jerónimo Siller, C.P. 66250, San Pedro Garza García, Nuevo León.
     </>,
   ],
   [
