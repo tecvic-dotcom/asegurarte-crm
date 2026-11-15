@@ -100,14 +100,6 @@ const SABER_ANTES = [
 const DATOS: [string, React.ReactNode][] = [
   ["Producto", "Libro digital «De la Agenda al Algoritmo» en PDF, con sus dos bonos en PDF."],
   [
-    "Proveedor",
-    <>
-      Roberto Javier Rodríguez González
-      <br />
-      RFC: ROGR771202921
-    </>,
-  ],
-  [
     "Contacto",
     <>
       Correo:{" "}
@@ -386,7 +378,7 @@ export default function LibroPage() {
           <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 [&::-webkit-details-marker]:hidden">
             <span>
               <span className="block font-display text-xl text-ink sm:text-2xl">Datos de la venta</span>
-              <span className="mt-1 block text-sm text-ink-mute">Proveedor, contacto, precio, entrega, licencia y garantía</span>
+              <span className="mt-1 block text-sm text-ink-mute">Contacto, precio, entrega, licencia y garantía</span>
             </span>
             <span className="mas" aria-hidden="true" />
           </summary>
