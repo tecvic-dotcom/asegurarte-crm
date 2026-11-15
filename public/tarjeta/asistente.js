@@ -12,6 +12,9 @@
    ===================================================================================================== */
 (function () {
   "use strict";
+  // INTERRUPTOR: false = asistente apagado en todas las páginas (pausa temporal pedida por Roberto el 2026-11-14). Para encenderlo: true.
+  const ACTIVO = false;
+  if (!ACTIVO) return;
   if (window.__asistenteRR) return;
   window.__asistenteRR = true;
 
