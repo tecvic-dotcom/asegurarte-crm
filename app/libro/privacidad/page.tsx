@@ -28,7 +28,7 @@ export default function Page() {
             </div>
             <div className="grid gap-1 px-4 py-3 sm:grid-cols-[14rem_1fr]">
               <dt className="font-semibold text-ink">{"Domicilio"}</dt>
-              <dd>{"Trinidad Dávila 740, colonia Jerónimo Siller, C.P. 66250, San Pedro Garza García, Nuevo León."}</dd>
+              <dd>{"América #520, colonia Centro, C.P. 64000, Monterrey, Nuevo León."}</dd>
             </div>
             <div className="grid gap-1 px-4 py-3 sm:grid-cols-[14rem_1fr]">
               <dt className="font-semibold text-ink">{"Correo para asuntos de privacidad"}</dt>
