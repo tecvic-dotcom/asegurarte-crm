@@ -33,7 +33,7 @@ export default function Page() {
         </section>
         <section>
           <h2 className="font-display text-xl text-ink">{"3 · Precio y pago"}</h2>
-          <p>{"El precio es de "}<strong>{"USD $29.99"}</strong>{" (dólares estadounidenses) "}<strong>{"más impuestos"}</strong>{", en un solo pago. En México se suma el IVA y Hotmart convierte el total a pesos con el tipo de cambio del día; como ejemplo, el 14 de noviembre de 2026 el total era de $680.92 MXN, IVA incluido. El monto exacto es el que verás en la página de compra antes de pagar. La compra se hace en "}<strong>{"Hotmart"}</strong>{", que procesa el pago con los medios que muestre en ese momento. El autor no recibe ni guarda los datos de tu tarjeta."}</p>
+          <p>{"El precio es de "}<strong>{"USD $29.99"}</strong>{" (dólares estadounidenses) "}<strong>{"más impuestos"}</strong>{", en un solo pago. En México se suma el IVA y Hotmart convierte el total a pesos con el tipo de cambio del día. El monto exacto es el que verás en la página de compra antes de pagar. La compra se hace en "}<strong>{"Hotmart"}</strong>{", que procesa el pago con los medios que muestre en ese momento. El autor no recibe ni guarda los datos de tu tarjeta."}</p>
         </section>
         <section>
           <h2 className="font-display text-xl text-ink">{"4 · Entrega"}</h2>

@@ -106,8 +106,7 @@ const DATOS: [string, React.ReactNode][] = [
     "Precio total",
     <>
       <strong className="text-ink">USD $29.99</strong> (dólares estadounidenses) <strong className="text-ink">más impuestos</strong>. Pago único. En
-      México se suma el IVA y Hotmart te muestra el total en pesos antes de pagar; como ejemplo, el 14 de noviembre de 2026 el total era de $680.92
-      MXN, IVA incluido, y puede variar con el tipo de cambio. Los medios de pago son los que Hotmart te muestre al comprar.
+      México se suma el IVA y Hotmart te muestra el total en pesos antes de pagar. Los medios de pago son los que Hotmart te muestre al comprar.
     </>,
   ],
   [
@@ -209,8 +208,7 @@ export default function LibroPage() {
             USD $29.99 <span className="text-2xl text-ink-soft">+ impuestos</span>
           </p>
           <p className="mt-1 text-sm text-ink-mute">
-            En México: $680.92 MXN con IVA incluido (14 de noviembre de 2026; varía con el tipo de cambio). Pago único · garantía de 7 días
-            naturales
+            Pago único · garantía de 7 días naturales
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <BotonComprar grande />
