@@ -24,7 +24,7 @@ export default function Page() {
         </section>
         <section>
           <h2 className="font-display text-xl text-ink">{"1 · Quién vende"}</h2>
-          <p>{"El libro lo vende Roberto Javier Rodríguez González, RFC ROGR771202921, con domicilio en América #520, colonia Centro, C.P. 64000, Monterrey, Nuevo León. Puedes escribirnos a "}<a href="mailto:rdz.roberto@outlook.com" className="text-brand-2 underline">rdz.roberto@outlook.com</a>{" o al 81 8280 0234, de lunes a viernes, de 9:00 a 18:00 h."}</p>
+          <p>{"El libro lo vende Roberto Javier Rodríguez González, con domicilio en América #520, colonia Centro, C.P. 64000, Monterrey, Nuevo León. Puedes escribirnos a "}<a href="mailto:rdz.roberto@outlook.com" className="text-brand-2 underline">rdz.roberto@outlook.com</a>{" o al 81 8280 0234, de lunes a viernes, de 9:00 a 18:00 h."}</p>
         </section>
         <section>
           <h2 className="font-display text-xl text-ink">{"2 · Qué compras"}</h2>
