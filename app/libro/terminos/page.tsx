@@ -28,7 +28,7 @@ export default function Page() {
         </section>
         <section>
           <h2 className="font-display text-xl text-ink">{"2 · Qué compras"}</h2>
-          <p>{"Compras un libro digital en PDF, «De la Agenda al Algoritmo», con su bono «Mi primera oficina inteligente con IA», también en PDF. Es un producto digital: no se envía nada físico. Puedes verlo en computadora, tableta o celular con cualquier lector de PDF."}</p>
+          <p>{"Compras un libro digital en PDF, «De la Agenda al Algoritmo», con sus bonos «Mi primera oficina inteligente con IA» y «100 prompts de seguros para redes sociales», también en PDF. Es un producto digital: no se envía nada físico. Puedes verlo en computadora, tableta o celular con cualquier lector de PDF."}</p>
           <p>{"Para seguir los pasos del libro necesitas una computadora con Windows, internet y un plan de pago de Claude, que "}<strong>{"no está incluido"}</strong>{" en esta compra ni lo vende el autor. Antes de contratarlo, revisa sus condiciones vigentes."}</p>
         </section>
         <section>
@@ -37,7 +37,7 @@ export default function Page() {
         </section>
         <section>
           <h2 className="font-display text-xl text-ink">{"4 · Entrega"}</h2>
-          <p>{"Recibes acceso al libro y a su bono cuando se confirma tu pago, en el área de miembros de Hotmart. Hotmart te envía por correo los datos para entrar. Si pasadas 24 horas no lo tienes, revisa tu carpeta de correo no deseado y escríbenos: te ayudamos a recibirlo."}</p>
+          <p>{"Recibes acceso al libro y a sus bonos cuando se confirma tu pago, en el área de miembros de Hotmart. Hotmart te envía por correo los datos para entrar. Si pasadas 24 horas no lo tienes, revisa tu carpeta de correo no deseado y escríbenos: te ayudamos a recibirlo."}</p>
         </section>
         <section>
           <h2 className="font-display text-xl text-ink">{"5 · Comprobante fiscal"}</h2>
@@ -45,8 +45,8 @@ export default function Page() {
         </section>
         <section>
           <h2 className="font-display text-xl text-ink">{"6 · Licencia de uso"}</h2>
-          <p>{"Al comprar el libro recibes una licencia personal, no exclusiva e intransferible para leerlo y aplicarlo. Puedes adaptar sus plantillas y mensajes en tu práctica profesional. No puedes revenderlo ni redistribuirlo, completo o por partes, ni compartir copias de él."}</p>
-          <p>{"El libro y su bono son obra protegida por derechos de autor. El autor conserva todos los derechos que no se te otorgan aquí. Los nombres de las herramientas que menciona pertenecen a sus dueños, y su mención no implica afiliación ni respaldo."}</p>
+          <p>{"Al comprar el libro recibes una licencia personal, no exclusiva e intransferible para leerlo y aplicarlo, junto con sus bonos. Puedes adaptar sus plantillas y mensajes en tu práctica profesional. No puedes revenderlo ni redistribuirlo, completo o por partes, ni compartir copias de él."}</p>
+          <p>{"El libro y sus bonos son obra protegida por derechos de autor. El autor conserva todos los derechos que no se te otorgan aquí. Los nombres de las herramientas que menciona pertenecen a sus dueños, y su mención no implica afiliación ni respaldo."}</p>
         </section>
         <section>
           <h2 className="font-display text-xl text-ink">{"7 · Garantía y reembolsos"}</h2>

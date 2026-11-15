@@ -16,7 +16,7 @@ export default function Page() {
       </a>
       <h1 className="mt-6 font-display text-3xl sm:text-4xl">{"Aviso de privacidad"}</h1>
       <p className="mt-2 text-base text-ink-soft">{"Compra de «De la Agenda al Algoritmo»"}</p>
-      <p className="mt-1 text-sm text-ink-mute">{"Última actualización: 6 de noviembre de 2026"}</p>
+      <p className="mt-1 text-sm text-ink-mute">{"Última actualización: 14 de noviembre de 2026"}</p>
 
       <div className="prose-acm mt-8 space-y-6 text-ink-soft">
         <section>
@@ -51,7 +51,7 @@ export default function Page() {
           <h2 className="font-display text-xl text-ink">{"3 · Para qué los usamos"}</h2>
           <p>{"Usamos tus datos solo para lo siguiente:"}</p>
           <ul className="list-disc space-y-1 pl-5">
-            <li>{"Darte acceso al libro y a su bono."}</li>
+            <li>{"Darte acceso al libro y a sus bonos."}</li>
             <li>{"Confirmar tu compra y atender tus dudas, reclamaciones y reembolsos."}</li>
             <li>{"Emitir o gestionar tu comprobante fiscal, y cumplir las obligaciones que las leyes nos imponen."}</li>
             <li>{"Cuidar la seguridad de la venta y prevenir fraudes."}</li>

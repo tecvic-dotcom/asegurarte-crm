@@ -52,6 +52,27 @@ const INCLUYE = [
   "Una hoja de seguimiento de los siete escalones, para marcar tus avances.",
 ];
 
+const BONOS = [
+  {
+    etiqueta: "Bono 1",
+    titulo: "Mi primera oficina inteligente con IA",
+    texto:
+      "la guía visual de una página «Mi primera oficina inteligente con IA», que muestra cómo debe quedar tu espacio de trabajo al terminar los tres primeros escalones (PDF).",
+    img: "/img/libro/bono.webp",
+    alto: 900,
+    alt: "Bono «Mi primera oficina inteligente con IA»: así debería verse tu espacio de trabajo al terminar los tres primeros escalones",
+  },
+  {
+    etiqueta: "Bono 2",
+    titulo: "100 prompts de seguros para redes sociales",
+    texto:
+      "la guía «100 prompts de seguros para redes sociales», con 100 instrucciones listas para copiar y pegar en tu herramienta de inteligencia artificial: borradores de publicaciones, anuncios, carruseles y campañas para tus redes, ordenados en ocho temas (PDF de 12 páginas).",
+    img: "/img/libro/bono-100-prompts.webp",
+    alto: 932,
+    alt: "Portada del bono «100 prompts de seguros para redes sociales»",
+  },
+];
+
 const PARA_TI = [
   "Eres agente de seguros con experiencia y quieres sumar la tecnología sin dejar de ser tú.",
   "Sientes que las redes sociales y la computadora «no son lo tuyo», aunque en tu oficio te defiendes de maravilla.",
@@ -77,7 +98,7 @@ const SABER_ANTES = [
 ];
 
 const DATOS: [string, React.ReactNode][] = [
-  ["Producto", "Libro digital «De la Agenda al Algoritmo» en PDF, con su bono en PDF."],
+  ["Producto", "Libro digital «De la Agenda al Algoritmo» en PDF, con sus dos bonos en PDF."],
   [
     "Proveedor",
     <>
@@ -229,23 +250,25 @@ export default function LibroPage() {
         </Seccion>
 
         <Seccion titulo="Qué incluye" id="incluye">
-          <div className="mt-4 grid items-start gap-8 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-            <div>
-              <Lista items={INCLUYE} />
-              <p className="glass-soft mt-6 rounded-2xl p-5">
-                <strong className="text-ink">Bono:</strong> la guía visual de una página «Mi primera oficina inteligente con IA», que muestra cómo debe
-                quedar tu espacio de trabajo al terminar los tres primeros escalones (PDF).
-              </p>
-            </div>
-            {/* eslint-disable-next-line @next/next/no-img-element -- imagen estática ya optimizada (WebP 720 px) */}
-            <img
-              src="/img/libro/bono.webp"
-              alt="Bono «Mi primera oficina inteligente con IA»: así debería verse tu espacio de trabajo al terminar los tres primeros escalones"
-              width={720}
-              height={900}
-              loading="lazy"
-              className="mx-auto w-full max-w-xs rounded-2xl border border-line"
-            />
+          <Lista items={INCLUYE} />
+          <h3 className="mt-10 font-display text-xl text-ink sm:text-2xl">Bonos incluidos</h3>
+          <div className="mt-4 grid gap-6 sm:grid-cols-2">
+            {BONOS.map((b) => (
+              <div key={b.titulo} className="glass-soft flex flex-col gap-4 rounded-2xl p-5">
+                {/* eslint-disable-next-line @next/next/no-img-element -- imágenes estáticas ya optimizadas (WebP 720 px) */}
+                <img
+                  src={b.img}
+                  alt={b.alt}
+                  width={720}
+                  height={b.alto}
+                  loading="lazy"
+                  className="mx-auto w-full max-w-[16rem] rounded-xl border border-line"
+                />
+                <p className="text-base">
+                  <strong className="text-ink">{b.etiqueta}:</strong> {b.texto}
+                </p>
+              </div>
+            ))}
           </div>
         </Seccion>
 
@@ -315,7 +338,7 @@ export default function LibroPage() {
         {/* ---------- Cierre de compra ---------- */}
         <div className="glass-strong rounded-[28px] p-6 text-center sm:p-10">
           <p className="font-display text-3xl text-ink sm:text-4xl">De la Agenda al Algoritmo</p>
-          <p className="mt-2 text-ink-soft">Libro en PDF + bono · USD $29.99 más impuestos · garantía de 7 días naturales</p>
+          <p className="mt-2 text-ink-soft">Libro en PDF + 2 bonos · USD $29.99 más impuestos · garantía de 7 días naturales</p>
           <div className="mt-6 flex justify-center">
             <BotonComprar grande />
           </div>
