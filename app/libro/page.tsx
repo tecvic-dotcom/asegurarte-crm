@@ -367,7 +367,7 @@ export default function LibroPage() {
           <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 [&::-webkit-details-marker]:hidden">
             <span>
               <span className="block font-display text-xl text-ink sm:text-2xl">Datos de la venta</span>
-              <span className="mt-1 block text-sm text-ink-mute">Proveedor, contacto, precio, entrega, licencia, garantía y documentos</span>
+              <span className="mt-1 block text-sm text-ink-mute">Proveedor, contacto, precio, entrega, licencia y garantía</span>
             </span>
             <span className="mas" aria-hidden="true" />
           </summary>
@@ -379,18 +379,6 @@ export default function LibroPage() {
                   <dd>{v}</dd>
                 </div>
               ))}
-              <div className="grid gap-1 px-5 py-4 sm:grid-cols-[12rem_minmax(0,1fr)] sm:gap-6">
-                <dt className="font-semibold text-ink">Documentos</dt>
-                <dd>
-                  <a href="/libro/terminos" className="text-brand-2 underline">
-                    Términos de venta
-                  </a>
-                  <br />
-                  <a href="/libro/privacidad" className="text-brand-2 underline">
-                    Aviso de privacidad
-                  </a>
-                </dd>
-              </div>
             </dl>
           </div>
         </details>
