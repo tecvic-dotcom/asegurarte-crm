@@ -8,6 +8,7 @@ import { useEffect, useRef } from "react";
  */
 export function ImagenAmpliable({
   src,
+  srcGrande,
   alt,
   width,
   height,
@@ -15,8 +16,11 @@ export function ImagenAmpliable({
   botonClassName = "",
   prioridad = false,
   fondoBlanco = false,
+  lupa = true,
 }: {
   src: string;
+  /** Versión de mayor resolución para el visor (si no hay, usa src). */
+  srcGrande?: string;
   alt: string;
   width: number;
   height: number;
@@ -24,6 +28,7 @@ export function ImagenAmpliable({
   botonClassName?: string;
   prioridad?: boolean;
   fondoBlanco?: boolean;
+  lupa?: boolean;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
 
@@ -62,6 +67,7 @@ export function ImagenAmpliable({
           fetchPriority={prioridad ? "high" : undefined}
           className={className}
         />
+        {lupa && (
         <span
           aria-hidden="true"
           className="absolute right-3 bottom-3 flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-bg/80 text-white shadow-lg backdrop-blur transition-transform duration-200 group-hover:scale-110"
@@ -71,6 +77,7 @@ export function ImagenAmpliable({
             <path d="m20 20-3.5-3.5M11 8v6M8 11h6" />
           </svg>
         </span>
+        )}
       </button>
 
       <dialog
@@ -84,12 +91,11 @@ export function ImagenAmpliable({
         <div className="relative flex h-dvh w-screen items-center justify-center p-4 sm:p-10" onClick={() => ref.current?.close()}>
           {/* eslint-disable-next-line @next/next/no-img-element -- la misma imagen, ya descargada */}
           <img
-            src={src}
+            src={srcGrande ?? src}
             alt={alt}
-            width={width}
-            height={height}
+            loading="lazy"
             onClick={(e) => e.stopPropagation()}
-            className={`max-h-full w-auto max-w-full rounded-2xl object-contain shadow-2xl ${fondoBlanco ? "bg-white p-2 sm:p-4" : ""}`}
+            className={`h-auto max-h-full w-auto max-w-full rounded-2xl object-contain shadow-2xl ${fondoBlanco ? "bg-white p-2 sm:p-4" : ""}`}
           />
           <button
             type="button"

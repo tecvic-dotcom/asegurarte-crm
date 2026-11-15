@@ -1,7 +1,7 @@
 import { PRECIO, PRECIO_NOTA } from "@/lib/libro";
 import { BotonComprar } from "./BotonComprar";
 import { Eyebrow } from "./ui";
-import { ImagenAmpliable } from "./ImagenAmpliable";
+import { PaqueteLibro } from "./PaqueteLibro";
 
 const DATOS_RAPIDOS = ["7 escalones", "Más de 160 páginas", "2 bonos incluidos", "Sin saber programar"];
 
@@ -45,15 +45,7 @@ export function BookHero() {
         </div>
       </div>
 
-      <ImagenAmpliable
-        src="/img/libro/libro-3d.webp"
-        alt="Portada del libro «De la Agenda al Algoritmo», de Roberto Rodríguez"
-        width={900}
-        height={900}
-        prioridad
-        botonClassName="order-1 mx-auto max-w-[11.5rem] sm:max-w-sm md:order-2 md:max-w-none"
-        className="w-full rounded-[24px] shadow-[0_40px_90px_-40px_rgba(42,34,245,0.8)]"
-      />
+      <PaqueteLibro prioridad className="order-1 mx-auto w-full max-w-[22rem] sm:max-w-md md:order-2 md:max-w-none" />
     </header>
   );
 }

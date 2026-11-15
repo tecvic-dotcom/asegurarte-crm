@@ -1,7 +1,9 @@
 import { Eyebrow, Lista, Titulo } from "./ui";
+import { ImagenAmpliable } from "./ImagenAmpliable";
+import { PORTADAS } from "./PaqueteLibro";
 
 /**
- * Qué incluye la compra: el paquete (libro + 2 bonos) como imagen, la lista de lo que trae y lo que se necesita aparte.
+ * Qué incluye la compra: libro + bono 1 + bono 2 en tres tarjetas con su portada (se amplían), lo que trae el libro y lo que se necesita aparte.
  * Los textos son los de la ficha de venta revisada por el abogado (venta.js): si cambia la ficha, cambiar aquí lo mismo.
  */
 const INCLUYE = [
@@ -12,7 +14,7 @@ const INCLUYE = [
   "Una hoja de seguimiento de los siete escalones, para marcar tus avances.",
 ];
 
-const BONOS = [
+const BONOS_TEXTO = [
   {
     etiqueta: "Bono 1",
     titulo: "Mi primera oficina inteligente con IA",
@@ -26,6 +28,17 @@ const BONOS = [
   },
 ];
 
+const PIEZAS = [
+  {
+    etiqueta: "El libro",
+    titulo: "De la Agenda al Algoritmo",
+    texto: "Siete escalones para armar tu oficina digital con un asistente de inteligencia artificial, de preparar tu computadora a un plan de 90 días (PDF de más de 160 páginas).",
+    portada: PORTADAS.libro,
+    bono: false,
+  },
+  ...BONOS_TEXTO.map((b, i) => ({ ...b, etiqueta: `${b.etiqueta} · incluido`, portada: i === 0 ? PORTADAS.bono1 : PORTADAS.bono2, bono: true })),
+];
+
 export function BookBundle() {
   return (
     <section id="incluye" className="scroll-mt-6">
@@ -35,53 +48,46 @@ export function BookBundle() {
         <p className="mt-4">Un libro con todo lo necesario para practicar, más dos bonos que van incluidos siempre.</p>
       </div>
 
-      {/* Paquete: los dos bonos detrás, el libro al frente */}
-      <div className="relative mx-auto mt-10 flex max-w-2xl items-end justify-center" aria-hidden="true">
-        {/* eslint-disable-next-line @next/next/no-img-element -- imágenes estáticas ya optimizadas */}
-        <img
-          src="/img/libro/bono.webp"
-          alt=""
-          width={720}
-          height={900}
-          loading="lazy"
-          className="relative z-0 -mr-10 w-[30%] -rotate-6 rounded-xl border border-white/15 shadow-2xl sm:-mr-14"
-        />
-        {/* eslint-disable-next-line @next/next/no-img-element -- imágenes estáticas ya optimizadas */}
-        <img
-          src="/img/libro/libro-3d.webp"
-          alt=""
-          width={900}
-          height={900}
-          loading="lazy"
-          className="relative z-10 w-[48%] rounded-[22px] shadow-[0_40px_90px_-30px_rgba(42,34,245,0.9)]"
-        />
-        {/* eslint-disable-next-line @next/next/no-img-element -- imágenes estáticas ya optimizadas */}
-        <img
-          src="/img/libro/bono-100-prompts.webp"
-          alt=""
-          width={720}
-          height={932}
-          loading="lazy"
-          className="relative z-0 -ml-10 w-[30%] rotate-6 rounded-xl border border-white/15 shadow-2xl sm:-ml-14"
-        />
-      </div>
-      <p className="sr-only">Imagen del paquete: el libro «De la Agenda al Algoritmo» al centro y las portadas de los dos bonos a los lados.</p>
-
-      <div className="mt-12 grid gap-6 lg:grid-cols-[minmax(0,6fr)_minmax(0,5fr)]">
-        <div className="glass rounded-[24px] p-6 sm:p-8">
-          <h3 className="font-display text-xl text-ink sm:text-2xl">El libro</h3>
-          <Lista items={INCLUYE} />
-        </div>
-        <div className="flex flex-col gap-4">
-          {BONOS.map((b) => (
-            <div key={b.titulo} className="glass-strong rounded-[24px] p-6">
-              <span className="inline-block rounded-full bg-amber/15 px-3 py-1 text-xs font-bold uppercase tracking-wider text-amber">
-                {b.etiqueta} · incluido
+      {/* El paquete en tres tarjetas: libro + bono 1 + bono 2, cada uno con su portada grande */}
+      <ul className="mt-10 grid gap-8 md:grid-cols-3 md:gap-6">
+        {PIEZAS.map((pz, i) => (
+          <li
+            key={pz.titulo}
+            className={`relative flex flex-col rounded-[24px] ${pz.bono ? "glass-strong ring-1 ring-amber/40" : "glass"}`}
+          >
+            {i > 0 && (
+              <span
+                aria-hidden="true"
+                className="absolute -top-7 left-1/2 z-10 flex h-10 w-10 -translate-x-1/2 items-center justify-center rounded-full border border-white/20 bg-bg-3 font-display text-2xl text-ink md:top-1/3 md:-left-6 md:translate-x-0"
+              >
+                +
               </span>
-              <h3 className="mt-3 font-display text-lg text-ink sm:text-xl">{b.titulo}</h3>
-              <p className="mt-2 text-base">{b.texto}</p>
+            )}
+            <div className="rounded-t-[24px] bg-[radial-gradient(circle_at_50%_45%,rgba(42,34,245,0.35),transparent_70%)] px-6 pt-8 pb-6">
+              <ImagenAmpliable
+                {...pz.portada}
+                className="mx-auto block h-64 w-auto rounded-lg border border-white/10 shadow-[0_24px_50px_-18px_rgba(0,0,0,0.9)] sm:h-72"
+              />
             </div>
-          ))}
+            <div className="flex flex-1 flex-col p-6 pt-2">
+              <span
+                className={`self-start rounded-full px-3 py-1 text-xs font-bold tracking-wider uppercase ${
+                  pz.bono ? "bg-amber text-[#1a1300]" : "bg-brand/30 text-ink"
+                }`}
+              >
+                {pz.etiqueta}
+              </span>
+              <h3 className="mt-3 font-display text-xl text-ink">{pz.titulo}</h3>
+              <p className="mt-2 text-base">{pz.texto}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      <div className="glass mt-8 rounded-[24px] p-6 sm:p-8">
+        <h3 className="font-display text-xl text-ink sm:text-2xl">Dentro del libro</h3>
+        <div className="sm:columns-2 sm:gap-10 [&_li]:break-inside-avoid">
+          <Lista items={INCLUYE} />
         </div>
       </div>
 
