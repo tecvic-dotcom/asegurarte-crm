@@ -123,11 +123,7 @@ const DATOS: [string, React.ReactNode][] = [
     "Garantía y reembolso",
     <>
       <strong className="text-ink">7 días naturales</strong> desde tu compra para pedir que te devuelvan el precio pagado, desde Hotmart, sin necesidad de
-      explicar tus razones. Descargar el libro no te hace perder esta garantía ni los derechos que la ley te da como consumidor. Más detalle en los{" "}
-      <a href="/libro/terminos" className="text-brand-2 underline">
-        términos de venta
-      </a>
-      .
+      explicar tus razones. Descargar el libro no te hace perder esta garantía ni los derechos que la ley te da como consumidor.
     </>,
   ],
   ["Comprobante fiscal", "Hotmart emite el comprobante fiscal de tu compra con los datos que captures al pagar."],
