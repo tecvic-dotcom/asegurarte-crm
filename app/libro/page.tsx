@@ -8,8 +8,11 @@ import type { Metadata } from "next";
  * si cambia la ficha (venta.js), cambiar aquí lo mismo. No agregar promesas, testimonios ni nombres de aseguradoras.
  */
 
-// Enlace de pago de Hotmart. Mientras esté vacío, el botón dice «Muy pronto» y no lleva a ningún lado.
-const CHECKOUT_URL = "https://pay.hotmart.com/V108500398J";
+// Enlace de pago de Hotmart. VENTA_ABIERTA = false: los botones dicen «Muy pronto a la venta» y no llevan a ningún lado.
+// APAGADO (2026-11-14) hasta que el libro esté cargado en Hotmart: para abrir la venta, poner true y publicar.
+const VENTA_ABIERTA = false;
+const CHECKOUT_HOTMART = "https://pay.hotmart.com/V108500398J";
+const CHECKOUT_URL = VENTA_ABIERTA ? CHECKOUT_HOTMART : "";
 
 // Cada edición nueva agrega una fila; debe coincidir con el «Registro de ediciones» del Anexo F.
 const EDICIONES = [{ edicion: "Primera edición", fecha: "Noviembre de 2026", cambios: "Versión inicial del libro." }];
