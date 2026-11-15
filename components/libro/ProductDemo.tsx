@@ -1,4 +1,5 @@
 import { Eyebrow, Titulo } from "./ui";
+import { ImagenAmpliable } from "./ImagenAmpliable";
 
 /**
  * Demostración: tres figuras tomadas del libro (proyectos/ebook-mano-derecha-digital/img), todas con datos inventados.
@@ -43,17 +44,15 @@ export function ProductDemo() {
       <ul className="mt-10 grid gap-6 md:grid-cols-3">
         {MUESTRAS.map((m) => (
           <li key={m.img} className="glass flex flex-col overflow-hidden rounded-[22px]">
-            <a href={m.img} target="_blank" rel="noopener" className="group block bg-white p-3" aria-label={`Ver en grande: ${m.titulo}`}>
-              {/* eslint-disable-next-line @next/next/no-img-element -- imágenes estáticas ya optimizadas (WebP 1200 px) */}
-              <img
-                src={m.img}
-                alt={m.alt}
-                width={1200}
-                height={m.alto}
-                loading="lazy"
-                className="w-full transition-transform duration-300 group-hover:scale-[1.02]"
-              />
-            </a>
+            <ImagenAmpliable
+              src={m.img}
+              alt={m.alt}
+              width={1200}
+              height={m.alto}
+              fondoBlanco
+              botonClassName="overflow-hidden bg-white p-3"
+              className="w-full transition-transform duration-300 group-hover:scale-[1.02]"
+            />
             <div className="flex flex-1 flex-col p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-2">{m.escalon}</p>
               <h3 className="mt-2 font-display text-xl text-ink">{m.titulo}</h3>

@@ -1,5 +1,6 @@
 import { PRECIO, PRECIO_NOTA } from "@/lib/libro";
 import { BotonComprar } from "./BotonComprar";
+import { ImagenAmpliable } from "./ImagenAmpliable";
 
 /** Oferta final: resumen del paquete, precio y botón. */
 const RESUMEN = [
@@ -18,14 +19,13 @@ export function FinalOffer() {
     <section id="comprar" className="glass-strong scroll-mt-6 overflow-hidden rounded-[28px]">
       <div className="grid md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
         <div className="flex items-center justify-center bg-[radial-gradient(circle_at_50%_40%,rgba(42,34,245,0.35),transparent_70%)] p-6 sm:p-10">
-          {/* eslint-disable-next-line @next/next/no-img-element -- imagen estática ya optimizada */}
-          <img
+          <ImagenAmpliable
             src="/img/libro/libro-3d.webp"
             alt="Portada del libro «De la Agenda al Algoritmo»"
             width={900}
             height={900}
-            loading="lazy"
-            className="w-full max-w-[15rem] rounded-[22px] md:max-w-xs"
+            botonClassName="max-w-[15rem] md:max-w-xs"
+            className="w-full rounded-[22px]"
           />
         </div>
         <div className="p-6 sm:p-10">
