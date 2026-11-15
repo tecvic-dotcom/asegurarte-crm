@@ -16,7 +16,7 @@ const EDICIONES = [{ edicion: "Primera edición", fecha: "Noviembre de 2026", ca
 
 const TITULO = "De la Agenda al Algoritmo · Libro para agentes de seguros";
 const DESCRIPCION =
-  "Libro paso a paso para agentes de seguros que quieren usar la inteligencia artificial en su trabajo de todos los días, sin saber programar. PDF, USD $29.99, garantía de 7 días.";
+  "Libro paso a paso para agentes de seguros que quieren usar la inteligencia artificial en su trabajo de todos los días, sin saber programar. PDF, USD $29.99 más impuestos, garantía de 7 días.";
 
 export const metadata: Metadata = {
   title: TITULO,
@@ -105,8 +105,9 @@ const DATOS: [string, React.ReactNode][] = [
   [
     "Precio total",
     <>
-      <strong className="text-ink">USD $29.99</strong> (dólares estadounidenses), con todos los impuestos incluidos. Pago único. Los medios de pago son
-      los que Hotmart te muestre al comprar. Si pagas en pesos u otra moneda, el tipo de cambio lo aplica Hotmart o tu banco.
+      <strong className="text-ink">USD $29.99</strong> (dólares estadounidenses) <strong className="text-ink">más impuestos</strong>. Pago único. En
+      México se suma el IVA y Hotmart te muestra el total en pesos antes de pagar; como ejemplo, el 14 de noviembre de 2026 el total era de $680.92
+      MXN, IVA incluido, y puede variar con el tipo de cambio. Los medios de pago son los que Hotmart te muestre al comprar.
     </>,
   ],
   [
@@ -204,15 +205,20 @@ export default function LibroPage() {
           <p className="mt-4 text-lg text-ink-soft sm:text-xl">
             Integra tu experiencia en seguros con el poder de la Inteligencia Artificial y la prospección digital en tu etapa de mayor experiencia.
           </p>
-          <p className="mt-6 font-display text-4xl text-ink">USD $29.99</p>
-          <p className="mt-1 text-sm text-ink-mute">Pago único en dólares · impuestos incluidos · garantía de 7 días naturales</p>
+          <p className="mt-6 font-display text-4xl text-ink">
+            USD $29.99 <span className="text-2xl text-ink-soft">+ impuestos</span>
+          </p>
+          <p className="mt-1 text-sm text-ink-mute">
+            En México: $680.92 MXN con IVA incluido (14 de noviembre de 2026; varía con el tipo de cambio). Pago único · garantía de 7 días
+            naturales
+          </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <BotonComprar grande />
             <a href="#incluye" className="btn-ghost">
               Ver qué incluye
             </a>
           </div>
-          <p className="mt-4 text-sm text-ink-mute">El pago se hace en Hotmart. Acceso inmediato cuando se confirma tu pago.</p>
+          <p className="mt-4 text-sm text-ink-mute">El pago se hace en Hotmart, que te muestra el total en pesos antes de pagar. Acceso inmediato cuando se confirma tu pago.</p>
         </div>
       </header>
 
@@ -317,7 +323,7 @@ export default function LibroPage() {
         {/* ---------- Cierre de compra ---------- */}
         <div className="glass-strong rounded-[28px] p-6 text-center sm:p-10">
           <p className="font-display text-3xl text-ink sm:text-4xl">De la Agenda al Algoritmo</p>
-          <p className="mt-2 text-ink-soft">Libro en PDF + bono · USD $29.99 con impuestos incluidos · garantía de 7 días naturales</p>
+          <p className="mt-2 text-ink-soft">Libro en PDF + bono · USD $29.99 más impuestos · garantía de 7 días naturales</p>
           <div className="mt-6 flex justify-center">
             <BotonComprar grande />
           </div>
