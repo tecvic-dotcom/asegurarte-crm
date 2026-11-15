@@ -284,8 +284,33 @@ export default function LibroPage() {
 
         <Seccion titulo="Sobre el autor">
           <p className="mt-4">
-            Roberto Rodríguez es agente de seguros. Escribió este libro con lo que aprendió al incorporar un asistente de inteligencia artificial a su
-            propio trabajo.
+            Con más de 15 años de experiencia en el sector asegurador, Roberto Rodríguez ha dedicado su trayectoria profesional a ayudar a personas,
+            familias y empresarios a proteger su patrimonio y construir un futuro financiero más seguro.
+          </p>
+          <p className="mt-4">
+            A lo largo de su carrera ha comprendido que uno de los mayores desafíos para los asesores de seguros no es la falta de experiencia o
+            conocimiento, sino la necesidad de adaptarse a un entorno donde la tecnología está transformando la manera de trabajar, organizar
+            información y desarrollar negocios.
+          </p>
+          <p className="mt-4">
+            Convencido de que la inteligencia artificial no viene a reemplazar la experiencia humana, sino a potenciarla, Roberto comparte en{" "}
+            <em>De la Agenda al Algoritmo</em> una metodología práctica de siete escalones para acompañar a otros profesionales del sector asegurador
+            en su transformación digital.
+          </p>
+          <p className="mt-4">
+            A través de instrucciones sencillas y ejercicios progresivos, muestra cómo comenzar desde cero con herramientas como Visual Studio Code y
+            Claude, avanzando hacia una nueva forma de organizar y administrar la actividad profesional con ayuda de la inteligencia artificial.
+          </p>
+          <p className="mt-4">Su filosofía es clara:</p>
+          <blockquote className="glass-soft mt-4 rounded-2xl border-l-4 border-brand-2 p-5 font-display text-xl text-ink">
+            «La experiencia es tu mayor activo. La inteligencia artificial es la herramienta que puede llevarla al siguiente nivel».
+          </blockquote>
+          <p className="mt-4">
+            Con este libro, Roberto busca demostrar que no es necesario ser programador ni experto en tecnología para comenzar a aprovechar las
+            oportunidades de la inteligencia artificial.
+          </p>
+          <p className="mt-4">
+            Porque el futuro del asesor de seguros no consiste en elegir entre experiencia y tecnología, sino en aprender a combinar ambas.
           </p>
         </Seccion>
 
