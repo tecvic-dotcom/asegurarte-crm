@@ -327,29 +327,6 @@ export default function LibroPage() {
           </div>
         </div>
 
-        <Seccion titulo="Datos de la venta">
-          <dl className="mt-4 divide-y divide-line rounded-2xl border border-line text-base">
-            {DATOS.map(([k, v]) => (
-              <div key={k} className="grid gap-1 px-5 py-4 sm:grid-cols-[12rem_minmax(0,1fr)] sm:gap-6">
-                <dt className="font-semibold text-ink">{k}</dt>
-                <dd>{v}</dd>
-              </div>
-            ))}
-            <div className="grid gap-1 px-5 py-4 sm:grid-cols-[12rem_minmax(0,1fr)] sm:gap-6">
-              <dt className="font-semibold text-ink">Documentos</dt>
-              <dd>
-                <a href="/libro/terminos" className="text-brand-2 underline">
-                  Términos de venta
-                </a>
-                <br />
-                <a href="/libro/privacidad" className="text-brand-2 underline">
-                  Aviso de privacidad
-                </a>
-              </dd>
-            </div>
-          </dl>
-        </Seccion>
-
         {/* ---------- Actualizaciones (enlace del Anexo F, para quien ya compró) ---------- */}
         <Seccion titulo="Actualizaciones del libro" id="actualizaciones">
           <p className="mt-4">
@@ -387,7 +364,49 @@ export default function LibroPage() {
           </p>
         </Seccion>
 
-        <p className="text-sm text-ink-mute">© 2026 Roberto Rodríguez. Todos los derechos reservados.</p>
+        {/* ---------- Datos de la venta: al final y contraídos (quien quiera verlos da clic) ---------- */}
+        <details className="group scroll-mt-6 rounded-2xl border border-line" id="datos">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 [&::-webkit-details-marker]:hidden">
+            <span>
+              <span className="block font-display text-xl text-ink sm:text-2xl">Datos de la venta</span>
+              <span className="mt-1 block text-sm text-ink-mute">Proveedor, contacto, precio, entrega, licencia, garantía y documentos</span>
+            </span>
+            <span className="mas" aria-hidden="true" />
+          </summary>
+          <div className="border-t border-line px-1 pb-1">
+            <dl className="divide-y divide-line text-base">
+              {DATOS.map(([k, v]) => (
+                <div key={k} className="grid gap-1 px-5 py-4 sm:grid-cols-[12rem_minmax(0,1fr)] sm:gap-6">
+                  <dt className="font-semibold text-ink">{k}</dt>
+                  <dd>{v}</dd>
+                </div>
+              ))}
+              <div className="grid gap-1 px-5 py-4 sm:grid-cols-[12rem_minmax(0,1fr)] sm:gap-6">
+                <dt className="font-semibold text-ink">Documentos</dt>
+                <dd>
+                  <a href="/libro/terminos" className="text-brand-2 underline">
+                    Términos de venta
+                  </a>
+                  <br />
+                  <a href="/libro/privacidad" className="text-brand-2 underline">
+                    Aviso de privacidad
+                  </a>
+                </dd>
+              </div>
+            </dl>
+          </div>
+        </details>
+
+        <p className="text-sm text-ink-mute">
+          © 2026 Roberto Rodríguez. Todos los derechos reservados. ·{" "}
+          <a href="/libro/terminos" className="underline hover:text-ink-soft">
+            Términos de venta
+          </a>{" "}
+          ·{" "}
+          <a href="/libro/privacidad" className="underline hover:text-ink-soft">
+            Aviso de privacidad
+          </a>
+        </p>
       </div>
     </main>
   );
