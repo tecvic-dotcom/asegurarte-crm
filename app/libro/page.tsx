@@ -61,6 +61,7 @@ const SABER_ANTES = [
 
 const DATOS: [string, React.ReactNode][] = [
   ["Producto", "Libro digital «De la Agenda al Algoritmo» en PDF, con sus dos bonos en PDF."],
+  ["ISBN", "978-970-95706-0-1 (libro digital en PDF, primera edición, noviembre de 2026)."],
   [
     "Contacto",
     <>
