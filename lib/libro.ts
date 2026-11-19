@@ -2,10 +2,10 @@
  * Datos de venta del libro «De la Agenda al Algoritmo» que comparten app/libro/page.tsx y components/libro/*.
  *
  * VENTA_ABIERTA = false: los botones dicen «Muy pronto a la venta», la liga de Hotmart no sale en el HTML
- * y no aparece el botón fijo del celular. APAGADO (2026-11-14) hasta que el libro esté cargado en Hotmart.
+ * y no aparece el botón fijo del celular. Estuvo APAGADO del 2026-11-14 al 2026-11-19; ENCENDIDO el 2026-11-19 (venta abierta en Hotmart).
  * Para abrir la venta: poner true + quitar `hidden` de los 2 <a class="nav-libro"> en public/tarjeta/index.html, y publicar juntos.
  */
-export const VENTA_ABIERTA = false;
+export const VENTA_ABIERTA = true;
 const CHECKOUT_HOTMART = "https://pay.hotmart.com/V108500398J";
 export const CHECKOUT_URL = VENTA_ABIERTA ? CHECKOUT_HOTMART : "";
 
