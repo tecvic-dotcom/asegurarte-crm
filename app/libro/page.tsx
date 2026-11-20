@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { BotonInicio } from "@/components/ui/BotonInicio";
 import { BookHero } from "@/components/libro/BookHero";
+import { VideoAutor } from "@/components/libro/VideoAutor";
 import { ProblemSection } from "@/components/libro/ProblemSection";
 import { TransformationSection } from "@/components/libro/TransformationSection";
 import { SevenSteps } from "@/components/libro/SevenSteps";
@@ -118,6 +119,7 @@ export default function LibroPage() {
         <BookHero />
 
         <div className="mt-20 space-y-24 text-base leading-relaxed text-ink-soft sm:mt-28 sm:space-y-32 sm:text-lg">
+          <VideoAutor />
           <ProblemSection />
           <TransformationSection />
           <SevenSteps />

@@ -1,6 +1,7 @@
 import { Eyebrow, Lista, Titulo } from "./ui";
 import { ImagenAmpliable } from "./ImagenAmpliable";
 import { PORTADAS } from "./PaqueteLibro";
+import { VideoPromo } from "./VideoPromo";
 
 /**
  * Qué incluye la compra: libro + bono 1 + bono 2 en tres tarjetas con su portada (se amplían), lo que trae el libro y lo que se necesita aparte.
@@ -84,11 +85,13 @@ export function BookBundle() {
         ))}
       </ul>
 
-      <div className="glass mt-8 rounded-[24px] p-6 sm:p-8">
-        <h3 className="font-display text-xl text-ink sm:text-2xl">Dentro del libro</h3>
-        <div className="sm:columns-2 sm:gap-10 [&_li]:break-inside-avoid">
+      {/* «Dentro del libro» con el reel de los bonos al lado */}
+      <div className="glass mt-8 grid items-center gap-8 rounded-[24px] p-6 sm:p-8 md:grid-cols-[minmax(0,7fr)_minmax(0,4fr)] md:gap-10">
+        <div>
+          <h3 className="font-display text-xl text-ink sm:text-2xl">Dentro del libro</h3>
           <Lista items={INCLUYE} />
         </div>
+        <VideoPromo id="bonos" titulo="Compras un libro. Te llevas tres." duracion="0:35" />
       </div>
 
       <div className="glass-soft mt-6 rounded-[24px] p-6 sm:p-8">

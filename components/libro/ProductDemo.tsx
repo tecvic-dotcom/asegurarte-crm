@@ -1,9 +1,10 @@
 import { Eyebrow, Titulo } from "./ui";
 import { ImagenAmpliable } from "./ImagenAmpliable";
+import { VideoPromo } from "./VideoPromo";
 
 /**
  * Demostración: tres figuras tomadas del libro (proyectos/ebook-mano-derecha-digital/img), todas con datos inventados.
- * Cuando Roberto grabe el video de 30–45 s de su pantalla, va arriba de estas tarjetas.
+ * Arriba de las tarjetas va el reel «Lo que vas a construir» (5 resultados de los ejercicios, datos inventados).
  */
 const MUESTRAS = [
   {
@@ -38,8 +39,13 @@ export function ProductDemo() {
       <div className="mx-auto max-w-3xl text-center">
         <Eyebrow>Demostración</Eyebrow>
         <Titulo>Lo que vas a construir</Titulo>
-        <p className="mt-4">Tres imágenes tal como vienen en el libro. Todo con datos inventados, para que practiques sin arriesgar nada.</p>
+        <p className="mt-4">
+          Mira en video los cinco resultados que logras con los ejercicios. Abajo, tres imágenes tal como vienen en el libro. Todo con datos inventados,
+          para que practiques sin arriesgar nada.
+        </p>
       </div>
+
+      <VideoPromo id="construir" titulo="5 cosas que vas a construir con IA" duracion="0:48" nota="Datos de ejemplo inventados" className="mt-10" />
 
       <ul className="mt-10 grid gap-6 md:grid-cols-3">
         {MUESTRAS.map((m) => (
