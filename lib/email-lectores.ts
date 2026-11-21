@@ -2,6 +2,7 @@ import "server-only";
 import { Resend } from "resend";
 import { CORREO_CONTACTO } from "./libro";
 import { TITULO_GUIA_IA, URL_GUIA_IA } from "./lectores-reglas";
+import { DESPEDIDA_ULTIMO, SERIE_LECTORES, type Bloque } from "./secuencia-lectores";
 import type { Lector } from "./lectores";
 
 /**
@@ -92,3 +93,73 @@ export async function enviarBienvenidaLector(lector: Lector): Promise<boolean> {
   }
 }
 
+
+// ---- Serie de 5 correos (lib/secuencia-lectores.ts) ----
+
+/** **negritas** → <strong> (después de escapar el texto). */
+const negritasHtml = (t: string): string => esc(t).replace(/\*\*(.+?)\*\*/g, '<strong style="color:#101536;">$1</strong>');
+const sinMarcas = (t: string): string => t.replace(/\*\*(.+?)\*\*/g, "$1");
+
+function bloqueHtml(b: Bloque): string {
+  if (typeof b === "string") return `<p style="margin:0 0 16px;">${negritasHtml(b)}</p>`;
+  return `<ul style="margin:0 0 16px;padding-left:22px;">${b.lista.map((i) => `<li style="margin:0 0 8px;">${negritasHtml(i)}</li>`).join("")}</ul>`;
+}
+
+function bloqueTexto(b: Bloque): string {
+  return typeof b === "string" ? sinMarcas(b) : b.lista.map((i) => `- ${sinMarcas(i)}`).join("\n");
+}
+
+/** Liga a /libro con la marca del correo que la trajo (para saber qué correo vende). */
+function ligaLibro(n: number): string {
+  return `${SITIO}/libro?utm_source=correo&utm_medium=email&utm_campaign=serie-guia-ia&utm_content=correo-${n}`;
+}
+
+/** Manda el correo número `n` (1–5) de la serie. Devuelve true si Resend lo aceptó. */
+export async function enviarCorreoSerie(lector: Lector, n: number): Promise<boolean> {
+  const apiKey = process.env.RESEND_API_KEY;
+  const c = SERIE_LECTORES[n - 1];
+  if (!apiKey || !c) return false;
+  const primer = lector.nombre.split(/\s+/)[0] ?? "";
+  const ultimo = n === SERIE_LECTORES.length;
+  const liga = ligaLibro(n);
+
+  const html = envolver(
+    `<p style="margin:0 0 16px;">Hola${primer ? ` ${esc(primer)}` : ""}:</p>
+${c.bloques.map(bloqueHtml).join("\n")}
+${c.boton ? `<p style="margin:6px 0 22px;"><a href="${esc(liga)}" style="display:inline-block;background:#2a22f5;color:#ffffff;text-decoration:none;font-weight:bold;padding:12px 20px;border-radius:10px;">${esc(c.boton)}</a></p>` : ""}
+${ultimo ? `<p style="margin:0 0 16px;">${esc(DESPEDIDA_ULTIMO)}</p>` : ""}
+<p style="margin:0;">Roberto</p>`,
+    lector,
+  );
+  const texto = [
+    `Hola${primer ? ` ${primer}` : ""}:`,
+    "",
+    ...c.bloques.flatMap((b) => [bloqueTexto(b), ""]),
+    ...(c.boton ? [`${c.boton}: ${liga}`, ""] : []),
+    ...(ultimo ? [DESPEDIDA_ULTIMO, ""] : []),
+    "Roberto",
+    "",
+    `Para no recibir más correos sobre el libro: ${ligaBaja(lector)}`,
+  ].join("\n");
+
+  try {
+    const { error } = await new Resend(apiKey).emails.send({
+      from: DESDE,
+      to: lector.correo,
+      replyTo: CORREO_CONTACTO,
+      subject: c.asunto,
+      html,
+      text: texto,
+      headers: cabecerasBaja(lector),
+      tags: [{ name: "tipo", value: `serie-guia-ia-${n}` }],
+    });
+    if (error) {
+      console.error(`[email-lectores] correo ${n}:`, error.message);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error(`[email-lectores] correo ${n}:`, e instanceof Error ? e.message : e);
+    return false;
+  }
+}

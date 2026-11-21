@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 /**
- * Aviso de privacidad de la GUÍA GRATUITA del libro (/guia-ia). BORRADOR de RORO (2026-11-21) basado en el aviso de compra del libro
- * (/libro/privacidad, revisado por el abogado): PENDIENTE de que el abogado lo revise antes de encender la secuencia de correos.
+ * Aviso de privacidad de la GUÍA GRATUITA del libro (/guia-ia). Redactado por RORO el 2026-11-21 a partir del aviso de compra del libro
+ * (/libro/privacidad). APROBADO por el abogado el 2026-11-21. Si se cambia, que lo vuelva a revisar.
  */
 export const metadata: Metadata = {
   title: "Aviso de privacidad · Guía gratuita · De la Agenda al Algoritmo",
