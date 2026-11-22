@@ -9,6 +9,17 @@ export const VENTA_ABIERTA = true;
 const CHECKOUT_HOTMART = "https://pay.hotmart.com/V108500398J";
 export const CHECKOUT_URL = VENTA_ABIERTA ? CHECKOUT_HOTMART : "";
 
+/**
+ * Ligas para compartir fuera del sitio (reels, correos, afiliados): /comprar lleva a la principal,
+ * /comprar/hotmart y /comprar/whop a cada una (app/comprar/[[...plataforma]]/route.ts).
+ * Liga vacía o venta cerrada → manda a /libro. Lo que vaya después de «?» pasa tal cual (Hotmart lee ?src=tiktok).
+ */
+export const PLATAFORMAS: Record<string, string> = {
+  hotmart: CHECKOUT_HOTMART,
+  whop: "", // pegar aquí la liga de pago de Whop cuando el producto esté publicado
+};
+export const PLATAFORMA_PRINCIPAL = "hotmart";
+
 /** Precio tal como se muestra (Hotmart suma el IVA aparte). Si cambia, cambiar también ficha y términos (venta.js). */
 export const PRECIO = "USD $29.99";
 export const PRECIO_NOTA = "más impuestos";
