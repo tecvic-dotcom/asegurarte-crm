@@ -16,7 +16,7 @@ export const CHECKOUT_URL = VENTA_ABIERTA ? CHECKOUT_HOTMART : "";
  */
 export const PLATAFORMAS: Record<string, string> = {
   hotmart: CHECKOUT_HOTMART,
-  whop: "", // pegar aquí la liga de pago de Whop cuando el producto esté publicado
+  whop: "https://whop.com/de-la-agenda-al-algoritmo/de-la-agenda-al-algoritmo-2-bonos/",
 };
 export const PLATAFORMA_PRINCIPAL = "hotmart";
 
