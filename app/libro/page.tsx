@@ -12,6 +12,7 @@ import { AuthorSection } from "@/components/libro/AuthorSection";
 import { FAQSection } from "@/components/libro/FAQSection";
 import { FinalOffer } from "@/components/libro/FinalOffer";
 import { StickyBuyButton } from "@/components/libro/StickyBuyButton";
+import { GuiaGratisCTA } from "@/components/libro/GuiaGratisCTA";
 import { Lista } from "@/components/libro/ui";
 import { CORREO_CONTACTO } from "@/lib/libro";
 
@@ -131,6 +132,7 @@ export default function LibroPage() {
 
           <div className="space-y-8">
             <FinalOffer />
+            <GuiaGratisCTA />
 
             <section className="glass-soft rounded-[24px] p-6 sm:p-8">
               <h2 className="font-display text-xl text-ink sm:text-2xl">Lo que debes saber antes de comprar</h2>
