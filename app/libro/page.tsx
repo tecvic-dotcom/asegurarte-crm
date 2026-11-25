@@ -13,6 +13,7 @@ import { FAQSection } from "@/components/libro/FAQSection";
 import { FinalOffer } from "@/components/libro/FinalOffer";
 import { StickyBuyButton } from "@/components/libro/StickyBuyButton";
 import { GuiaGratisCTA } from "@/components/libro/GuiaGratisCTA";
+import { PromoBlackFriday } from "@/components/libro/PromoBlackFriday";
 import { Lista } from "@/components/libro/ui";
 import { CORREO_CONTACTO } from "@/lib/libro";
 
@@ -116,6 +117,9 @@ export default function LibroPage() {
     <>
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
         <BotonInicio />
+
+        {/* Black Friday 2026: se muestra sola del 26 al 29 de noviembre (ver el componente) */}
+        <PromoBlackFriday />
 
         <BookHero />
 
