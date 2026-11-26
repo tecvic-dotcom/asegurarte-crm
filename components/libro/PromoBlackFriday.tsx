@@ -7,11 +7,12 @@ import { ImagenAmpliable } from "./ImagenAmpliable";
 /**
  * Black Friday 2026 del libro: 50% con el código ALGORITMO50 (cupón en Hotmart y en Whop).
  * Se enciende y se apaga sola en el navegador de cada visitante, sin volver a publicar:
- *   del jueves 26 nov 2026 00:00 al lunes 30 nov 2026 00:00, hora de Monterrey (UTC−6, sin horario de verano).
+ *   del miércoles 25 nov 2026 00:00 al lunes 30 nov 2026 00:00, hora de Monterrey (UTC−6, sin horario de verano).
+ *   (Iba a empezar el 26; Roberto la adelantó el 25 porque ya le preguntaban.)
  * Para verla antes de la fecha: /libro?vistaPromo=1
  * Pasada la promoción se puede borrar este archivo y su línea en app/libro/page.tsx.
  */
-const INICIO = Date.UTC(2026, 10, 26, 6, 0, 0); // 26 nov 00:00 en Monterrey
+const INICIO = Date.UTC(2026, 10, 25, 6, 0, 0); // 25 nov 00:00 en Monterrey (adelantada)
 const FIN = Date.UTC(2026, 10, 30, 6, 0, 0); // 30 nov 00:00 en Monterrey = termina el domingo 29 a la medianoche
 const CODIGO = "ALGORITMO50";
 
@@ -66,7 +67,7 @@ export function PromoBlackFriday() {
         className="mx-auto w-full max-w-[20rem] rounded-2xl shadow-2xl sm:max-w-sm md:max-w-none"
       />
       <div>
-        <p className="text-sm font-extrabold tracking-[0.18em] text-[#ffa23a] uppercase">Black Friday · del 26 al 29 de noviembre</p>
+        <p className="text-sm font-extrabold tracking-[0.18em] text-[#ffa23a] uppercase">Black Friday · ya empezó, hasta el domingo 29</p>
         <h2 className="mt-3 font-display text-[1.9rem] leading-[1.1] text-ink sm:text-[2.5rem]">
           El libro y sus 2 bonos al <span className="text-[#ff8a1e]">50% de descuento</span>
         </h2>
