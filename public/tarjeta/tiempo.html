@@ -129,7 +129,7 @@ button{font:inherit;color:inherit}
 .chica .pin .palo{width:6px;height:60px}
 .chica .pin.retiro .palo{height:210px}
 .chica .pin.fin .cartel{left:-70px;width:140px}   /* angosto: que su plano no cruce el estuche */
-.chica .pin.fin .palo{height:250px}
+.chica .pin.fin .palo{height:350px}   /* siempre por encima del letrero de Retiro */
 .pin.hoy .et{border-color:#ff5a5a}
 .pin.hoy .palo{background:linear-gradient(#ff5a5a,rgba(255,90,90,.2))}
 .pin.retiro .et{border-color:var(--brand-2);box-shadow:0 0 24px rgba(91,123,255,.55)}
@@ -601,7 +601,7 @@ window.TiempoPDF = (function () {
   const escena = $("escena"), escala = $("escala"), piso = $("piso");
   function ajustar() {
     const w = escena.clientWidth, s = Math.min(1, w / 1260);
-    const chica = w < 640, tilt = chica ? 40 : 50, extra = chica ? 200 : 0;   // en celular, espacio arriba para los letreros grandes
+    const chica = w < 640, tilt = chica ? 40 : 50, extra = chica ? 290 : 0;   // en celular, espacio arriba para los letreros grandes
     escena.classList.toggle("chica", chica);
     escala.style.top = Math.round(extra * s) + "px";
     piso.style.setProperty("--tilt", tilt + "deg");
