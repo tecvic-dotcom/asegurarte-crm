@@ -72,6 +72,7 @@ const paginasEstaticas: Record<string, string> = {
   "/seguro-de-vida-con-ahorro": "vida-ahorro.html",
   "/empresarios": "empresarios.html",
   "/cotiza": "cotiza.html",
+  "/tiempo": "tiempo.html",
 };
 
 const securityHeaders = (scriptSrc: string = SCRIPT_SRC_APP) => [
@@ -144,6 +145,8 @@ const nextConfig: NextConfig = {
       { source: "/empresarios", destination: "/tarjeta/empresarios.html" },
       // Anuncio para los grupos de WhatsApp: 4 seguros que abren WhatsApp con el mensaje listo (noindex)
       { source: "/cotiza", destination: "/tarjeta/cotiza.html" },
+      // «El tiempo que no puedes comprar»: cinta de vida, capital para la familia y diagnóstico en PDF (fuente: proyectos/tiempo-que-no-puedes-comprar, se arma con publicar.cjs)
+      { source: "/tiempo", destination: "/tarjeta/tiempo.html" },
       { source: "/semana/:path*", destination: "/tarjeta/semana/:path*" },
     ];
   },

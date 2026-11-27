@@ -1,0 +1,835 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#06070f">
+<title>El tiempo que no puedes comprar · Roberto Rodríguez</title>
+<meta name="description" content="Mide en una cinta cuánto tiempo te queda para construir y cuánto necesitaría tu familia si faltaras. Herramienta gratuita de Roberto Rodríguez, especialista en seguros en Monterrey.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="El tiempo que no puedes comprar">
+<meta property="og:description" content="Descubre cuántos años te quedan para construir y cuánto necesitaría tu familia si faltaras. Gratis, sin registro y con tu diagnóstico en PDF.">
+<meta property="og:url" content="https://www.especialistaenasegurarte.lat/tiempo">
+<meta property="og:image" content="https://www.especialistaenasegurarte.lat/tarjeta/img/roberto-og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://www.especialistaenasegurarte.lat/tiempo">
+<link rel="preload" href="/tarjeta/fonts/anton-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/tarjeta/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/tarjeta/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+@font-face{font-family:'Anton';font-style:normal;font-weight:400;font-display:swap;src:url(/tarjeta/fonts/anton-latin.woff2) format('woff2')}
+@font-face{font-family:'Inter';font-style:normal;font-weight:400 700;font-display:swap;src:url(/tarjeta/fonts/inter-latin.woff2) format('woff2')}
+@font-face{font-family:'Montserrat';font-style:normal;font-weight:600 900;font-display:swap;src:url(/tarjeta/fonts/montserrat-latin.woff2) format('woff2')}
+html,body{margin:0}
+body{padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
+[hidden]{display:none!important}
+img{max-width:100%}
+/* Una sola columna en celular; en tablet (≥900 px) la cinta arriba a todo lo ancho y abajo datos | diagnóstico.
+   Marca Asegur-Arte: azul-noche, azul royal con resplandor, Anton cursiva para la marca, Montserrat títulos, Inter texto.
+   La cinta es amarilla como una real: es el único color cálido de la página. */
+:root{
+  --bg:#06070f; --bg-2:#0a0c1c; --bg-3:#101536;
+  --ink:#f2f4ff; --ink-soft:#b8bedd; --ink-mute:#7d83a8;
+  --brand:#2a22f5; --brand-2:#5b7bff;
+  --ok:#34d399; --warn:#ffc24b; --err:#ff8f8f;
+  --tape:#ffcf3a; --tape-dark:#d99a00;
+  --line:rgba(180,192,255,.10); --line-strong:rgba(180,192,255,.22);
+  --glass:rgba(120,140,255,.05); --glass-2:rgba(120,140,255,.10);
+  --wa:#25D366; --wa-hover:#45E07F; --wa-ink:#04230F;
+  --display:"Montserrat", ui-sans-serif, system-ui, sans-serif;
+  --body:"Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --logo:"Anton", Impact, "Arial Narrow", sans-serif;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{background:var(--bg)}
+body{background:var(--bg);color:var(--ink);font:400 16.5px/1.55 var(--body);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:
+  radial-gradient(900px 600px at 8% -10%,rgba(42,34,245,.30),transparent 60%),
+  radial-gradient(800px 640px at 100% 10%,rgba(91,123,255,.16),transparent 60%),var(--bg)}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--brand-2);outline-offset:3px;border-radius:8px}
+button{font:inherit;color:inherit}
+
+.wrap{max-width:1080px;margin:0 auto;padding-block:18px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;gap:18px}
+
+/* Encabezado */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.logo{display:inline-flex;flex-direction:column;line-height:1;font-family:var(--logo);font-style:italic;letter-spacing:.025em;text-decoration:none;user-select:none}
+.logo .l1{font-size:19px}
+.logo .l2{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:7px;margin-top:4px;font-size:11.5px}
+.logo b{font-weight:400;font-size:25px;color:var(--brand-2)}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:7px 13px;border-radius:999px;border:1px solid var(--line-strong);background:var(--glass);
+  font:600 12px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);white-space:nowrap}
+.chip::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--brand-2);box-shadow:0 0 10px var(--brand-2)}
+
+/* Portada */
+.hero{text-align:center;padding-top:10px}
+.hero h1{margin:0;font:400 clamp(38px,9.5vw,74px)/.98 var(--logo);font-style:italic;letter-spacing:.01em;text-transform:uppercase;text-wrap:balance}
+.hero h1 span{color:var(--brand-2);text-shadow:0 0 28px rgba(91,123,255,.55)}
+.hero p{margin:14px auto 0;max-width:44ch;color:var(--ink-soft);font-size:clamp(16px,2.4vw,19px);text-wrap:balance}
+
+/* Escena 3D de la cinta */
+.escena{position:relative;width:100%;margin-top:4px;overflow-x:clip}   /* la perspectiva agranda lo cercano: que no empuje la página de lado */
+.escala{position:absolute;left:50%;top:0;width:1300px;height:470px;transform-origin:50% 0;perspective:1700px;perspective-origin:50% 10%}
+.piso{position:absolute;inset:0;transform-style:preserve-3d;transform-origin:50% 55%;transform:rotateX(var(--tilt,50deg)) rotateZ(-5deg)}
+.piso *{transform-style:preserve-3d}
+.sombra{position:absolute;left:30px;top:150px;width:1240px;height:200px;border-radius:50%;
+  background:radial-gradient(closest-side,rgba(0,0,0,.65),transparent);filter:blur(18px)}
+.tira{position:absolute;left:40px;top:170px;width:1000px;height:110px;transform:translateZ(3px);transition:clip-path .7s cubic-bezier(.3,.7,.2,1)}
+.tira svg{display:block;width:100%;height:100%;filter:drop-shadow(0 6px 0 var(--tape-dark))}
+.tira.recorte{transition:clip-path .7s cubic-bezier(.3,.7,.2,1),transform 1s cubic-bezier(.4,1.4,.5,1),filter 1s}
+.tira.recorte.cae{transform:translate3d(-14px,118px,3px) rotateZ(-3deg);filter:grayscale(.9) brightness(.55)}
+.sin-trans .tira{transition:none!important}
+.corte{position:absolute;top:160px;width:0;height:130px;border-left:3px dashed #ff5a5a;transform:translateZ(5px);transition:left .7s cubic-bezier(.3,.7,.2,1),opacity .4s}
+.barra{position:absolute;top:298px;height:14px;border-radius:7px;transform:translateZ(2px);transition:left .7s cubic-bezier(.3,.7,.2,1),width .7s cubic-bezier(.3,.7,.2,1),opacity .4s}
+.barra.construir{background:var(--brand-2);box-shadow:0 0 22px 2px rgba(91,123,255,.8)}
+.barra.disfrutar{background:var(--ok);box-shadow:0 0 18px rgba(52,211,153,.6)}
+/* Estuche (caja 3D) */
+.caja{position:absolute;left:1040px;top:140px;width:210px;height:170px}
+.cara{position:absolute;border-radius:14px;backface-visibility:hidden}
+.cara.frente{left:0;top:10px;width:210px;height:160px;transform-origin:50% 100%;transform:rotateX(-90deg);
+  background:linear-gradient(170deg,#4a5cff,var(--brand) 55%,#1a14b0);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  box-shadow:inset 0 0 0 3px rgba(255,255,255,.12)}
+.cara.frente .rr{font:400 74px/1 var(--logo);font-style:italic;color:#fff;letter-spacing:.02em;text-shadow:0 3px 0 rgba(0,0,0,.25)}
+.cara.frente .mm{font:400 19px/1 var(--logo);font-style:italic;color:#c9d3ff;letter-spacing:.04em}
+.cara.arriba{left:0;top:0;width:210px;height:170px;transform:translateZ(160px);background:linear-gradient(150deg,#2b2fa8,#151a66)}
+/* Pantalla del estuche: años que faltan para el retiro */
+.pantalla{position:absolute;left:12px;top:12px;width:186px;height:146px;border-radius:16px;background:radial-gradient(120% 90% at 50% 40%,#0d1240,#04051a 70%);
+  box-shadow:inset 0 3px 10px rgba(0,0,0,.9),0 0 0 3px rgba(255,255,255,.07),0 0 26px rgba(91,123,255,.35);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;overflow:hidden}
+.pantalla b{font:900 88px/.86 var(--display);color:#a9bcff;letter-spacing:-.02em;font-variant-numeric:tabular-nums;
+  text-shadow:0 0 12px rgba(91,123,255,.95),0 0 30px rgba(91,123,255,.6)}
+.pantalla span{margin-top:6px;font:800 15px/1.1 var(--display);letter-spacing:.08em;text-transform:uppercase;color:#dfe5ff}
+.pantalla small{margin-top:4px;font:700 14px/1 var(--body);color:#8f98c9}
+.pantalla.llego b{color:var(--ok);text-shadow:0 0 14px rgba(52,211,153,.9)}
+.cara.izq{left:0;top:0;width:160px;height:170px;transform-origin:0 50%;transform:rotateY(-90deg);background:linear-gradient(90deg,#0f1370,#1d1fa0)}
+.cara.izq::after{content:"";position:absolute;left:4px;top:28px;width:18px;height:118px;border-radius:6px;background:#05061a}
+.cara.der{left:50px;top:0;width:160px;height:170px;transform-origin:100% 50%;transform:rotateY(90deg);background:#11157a}
+/* Letreros que miran a la cámara */
+.pin{position:absolute;top:170px;width:0;height:0;transition:left .7s cubic-bezier(.3,.7,.2,1),opacity .4s}
+.pin .cartel{position:absolute;left:-90px;bottom:0;width:180px;transform-origin:50% 100%;transform:rotateZ(5deg) rotateX(calc(-1 * var(--tilt,50deg)));
+  display:flex;flex-direction:column;align-items:center}
+.pin .et{padding:9px 16px 8px;border-radius:12px;font:800 25px/1 var(--display);letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;color:#fff;
+  background:rgba(10,12,28,.92);border:2px solid var(--line-strong)}
+.pin .et b{font-weight:900}
+.pin .palo{width:3px;height:70px;background:linear-gradient(var(--line-strong),transparent)}
+.pin.hoy .et{border-color:#ff5a5a}
+.pin.hoy .palo{background:linear-gradient(#ff5a5a,rgba(255,90,90,.2))}
+.pin.retiro .et{border-color:var(--brand-2);box-shadow:0 0 24px rgba(91,123,255,.55)}
+.pin.retiro .palo{background:linear-gradient(var(--brand-2),rgba(91,123,255,.2))}
+.pin.fin .et{border-color:var(--ok);font-size:20px}
+.pin.fin .palo{background:linear-gradient(var(--ok),rgba(52,211,153,.2))}
+.oculto{opacity:0}
+
+/* Leyenda de la cinta */
+.leyenda{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 22px;margin:0;padding:0;list-style:none;font-size:15px;color:var(--ink-soft)}
+.leyenda li{display:flex;align-items:center;gap:9px;white-space:nowrap}
+@media (max-width:440px){.chip{display:none}.leyenda{flex-direction:column;align-items:flex-start;padding-left:12px}}
+.leyenda i{width:22px;height:8px;border-radius:4px;flex:none}
+.leyenda b{color:var(--ink);font-variant-numeric:tabular-nums}
+.l-vivido i{background:#6f6a55}
+.l-construir i{background:var(--brand-2);box-shadow:0 0 10px var(--brand-2)}
+.l-disfrutar i{background:var(--ok)}
+
+/* Paneles */
+.grid{display:grid;gap:18px}
+@media (min-width:900px){.grid{grid-template-columns:minmax(0,5fr) minmax(0,6fr);align-items:stretch}
+  .grid > form{display:flex;flex-direction:column}
+  .grid > form > details{margin-bottom:22px}
+  .grid > form > .aviso{margin:0 0 22px}
+  .grid > form #otra{margin-top:auto}}
+.panel{border-radius:22px;padding:24px 20px;background:linear-gradient(160deg,var(--glass-2),var(--glass));border:1px solid var(--line);
+  -webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);box-shadow:0 24px 60px -28px rgba(0,0,0,.75);min-width:0}
+@media (min-width:600px){.panel{padding:28px}}
+.panel h2{margin:0;font:800 21px/1.2 var(--display)}
+.cab{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.ejemplo{padding:5px 10px;border-radius:999px;background:rgba(255,194,75,.12);color:var(--warn);font:600 12.5px/1 var(--body);border:1px solid rgba(255,194,75,.3)}
+.campo + .campo{margin-top:22px}
+.campo > label,.campo > .lbl{display:block;font-weight:600;font-size:16px;margin-bottom:9px}
+.hint{display:block;font-weight:400;font-size:14px;color:var(--ink-mute);margin-top:2px}
+.stepper{display:flex;align-items:center;gap:10px}
+.stp{flex:none;width:54px;height:54px;border-radius:14px;border:1px solid var(--line-strong);background:var(--glass);font:600 26px/1 var(--display);cursor:pointer;display:grid;place-items:center;-webkit-tap-highlight-color:transparent}
+.stp:hover{border-color:var(--brand-2);background:var(--glass-2)}
+.stp:active{transform:scale(.96)}
+.caja-num{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;min-height:54px;border-radius:14px;border:1px solid var(--line-strong);background:rgba(6,7,15,.55)}
+.caja-num:focus-within,.money:focus-within{border-color:var(--brand-2);box-shadow:0 0 0 3px rgba(91,123,255,.25)}
+.caja-num input{width:3ch;border:0;background:transparent;color:var(--ink);font:800 28px/1 var(--display);text-align:center;outline:none;font-variant-numeric:tabular-nums}
+.caja-num span{color:var(--ink-mute);font-weight:600}
+.money{display:flex;align-items:center;gap:6px;min-height:54px;padding:0 16px;border-radius:14px;border:1px solid var(--line-strong);background:rgba(6,7,15,.55)}
+.money span{color:var(--ink-mute);font:700 20px/1 var(--display)}
+.money input{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font:700 22px/1 var(--display);outline:none;font-variant-numeric:tabular-nums}
+.money input::placeholder{color:var(--ink-mute);font-weight:500}
+.rango-cab{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:12px}
+.rango-cab label{font-weight:600}
+.rango-cab output{font:800 19px/1 var(--display);color:var(--brand-2);white-space:nowrap;font-variant-numeric:tabular-nums}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:30px;background:transparent;margin:0;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:999px;background:linear-gradient(90deg,var(--brand) 0,var(--brand-2) var(--p,50%),rgba(180,192,255,.16) var(--p,50%))}
+input[type=range]::-moz-range-track{height:8px;border-radius:999px;background:linear-gradient(90deg,var(--brand) 0,var(--brand-2) var(--p,50%),rgba(180,192,255,.16) var(--p,50%))}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;margin-top:-10px;border-radius:50%;background:#fff;border:5px solid var(--brand-2);box-shadow:0 0 14px rgba(91,123,255,.7)}
+input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#fff;border:5px solid var(--brand-2)}
+.extremos{display:flex;justify-content:space-between;font-size:13px;color:var(--ink-mute);margin-top:2px}
+details{margin-top:22px;border-top:1px solid var(--line);padding-top:16px}
+summary{cursor:pointer;font-weight:600;color:var(--ink-soft);list-style:none;display:flex;align-items:center;gap:8px;min-height:32px}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"+";display:grid;place-items:center;width:24px;height:24px;border-radius:8px;border:1px solid var(--line-strong);font-weight:700;color:var(--brand-2)}
+details[open] summary::before{content:"−"}
+details .campo:first-of-type{margin-top:16px}
+.aviso{margin:14px 0 0;padding:12px 14px;border-radius:12px;font-size:14.5px;line-height:1.45;background:rgba(255,194,75,.08);border:1px solid rgba(255,194,75,.25);color:#ffe2a6}
+.aviso:empty{display:none}
+
+/* Diagnóstico */
+.diag .etq{margin:0;font:700 12.5px/1.2 var(--display);letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft)}
+.cifra{margin:8px 0 0;font:900 clamp(40px,8vw,60px)/1 var(--display);letter-spacing:-.02em;font-variant-numeric:tabular-nums;
+  background:linear-gradient(100deg,#fff,var(--brand-2) 75%);-webkit-background-clip:text;background-clip:text;color:transparent;word-break:break-word}
+.explica{margin:14px 0 0;font:800 clamp(19px,2.4vw,23px)/1.3 var(--display);letter-spacing:-.005em;text-wrap:pretty;
+  background:linear-gradient(100deg,#fff,var(--brand-2) 75%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.vacio{margin:8px 0 0;color:var(--ink-soft)}
+.datos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:20px 0 0}
+.dato.verde{grid-column:1 / -1;display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 12px}
+.dato.verde span{margin:0}
+.dato{padding:12px 14px;border-radius:14px;background:rgba(6,7,15,.5);border:1px solid var(--line);min-width:0}
+.dato b{display:block;font:800 clamp(20px,3.4vw,26px)/1.1 var(--display);font-variant-numeric:tabular-nums;white-space:nowrap}
+.dato span{display:block;margin-top:5px;font-size:13px;line-height:1.35;color:var(--ink-mute)}
+.dato.azul b{color:var(--brand-2)}
+.dato.verde b{color:var(--ok)}
+@media (max-width:420px){.datos{grid-template-columns:1fr}.dato{display:flex;align-items:baseline;gap:10px}.dato span{margin:0}}
+.libro{margin:18px 0 0;display:flex;flex-direction:column;gap:9px;font-size:15px}
+.libro .fila{display:flex;align-items:baseline;gap:8px}
+.libro .fila .l{color:var(--ink-soft)}
+.libro .fila .rel{flex:1;border-bottom:1px dotted var(--line-strong);transform:translateY(-4px);min-width:16px}
+.libro .fila .v{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.libro .fila.menos .v{color:var(--ok)}
+.libro .fila.total{padding-top:10px;border-top:1px solid var(--line-strong);font-weight:700}
+.libro .fila.total .l{color:var(--ink)}
+.libro .fila.total .v{color:var(--brand-2);font-size:17px}
+.frase{margin:20px 0 0;padding:16px 16px;border-radius:18px;text-align:center;background:linear-gradient(160deg,rgba(42,34,245,.22),rgba(42,34,245,.06));border:1px solid rgba(91,123,255,.25)}
+.frase strong{display:block;font:400 clamp(22px,4.4vw,30px)/1.1 var(--logo);font-style:italic;text-transform:uppercase;letter-spacing:.02em}
+.frase span{display:block;margin-top:8px;font-size:14.5px;font-style:italic;color:var(--ink-soft)}
+.acciones{display:flex;flex-direction:column;gap:10px;margin-top:20px}
+.btn{display:flex;align-items:center;justify-content:center;gap:10px;min-height:58px;padding:0 20px;border-radius:16px;font:800 16.5px/1.2 var(--display);text-decoration:none;cursor:pointer;border:0;text-align:center}
+.btn-wa{background:var(--wa);color:var(--wa-ink);box-shadow:0 10px 30px -10px rgba(37,211,102,.6)}
+.btn-wa:hover{background:var(--wa-hover)}
+.btn-pdf{background:linear-gradient(160deg,#4a5cff,var(--brand));color:#fff;box-shadow:0 10px 30px -12px rgba(42,34,245,.8)}
+.btn-pdf:hover{background:linear-gradient(160deg,#5b6cff,#3a32ff)}
+.btn-pdf:disabled{opacity:.45;cursor:not-allowed}
+.estado{margin:-4px 0 0;font-size:14px;text-align:center;color:var(--ink-soft)}
+.estado:empty{display:none}
+.estado.mal{color:var(--err)}
+.lbl-pdf{font-weight:600;font-size:15px}
+.lbl-pdf span{font-weight:400;color:var(--ink-mute)}
+.pdf-fila{display:flex;flex-wrap:wrap;gap:10px;margin-top:-2px}
+.pdf-fila .texto{flex:1 1 190px;width:auto;min-width:0}
+.pdf-fila .btn{flex:1 1 190px;min-height:52px}
+#otra{width:100%;margin-top:22px}
+/* Reiniciar: borde con degradado azul y resplandor; más discreto que PDF y WhatsApp, pero se nota */
+.btn-otra{position:relative;min-height:56px;color:#fff;font-weight:800;letter-spacing:.01em;
+  background:linear-gradient(var(--bg-2),var(--bg-2)) padding-box,linear-gradient(110deg,var(--brand-2),var(--brand) 45%,var(--ok)) border-box;
+  border:2px solid transparent;box-shadow:0 0 24px -6px rgba(91,123,255,.7);transition:box-shadow .2s,transform .15s}
+.btn-otra svg{color:var(--brand-2);transition:transform .5s cubic-bezier(.3,.7,.2,1)}
+.btn-otra:hover{box-shadow:0 0 32px -4px rgba(91,123,255,.9)}
+.btn-otra:hover svg{transform:rotate(180deg)}
+.btn-otra:active{transform:scale(.98)}
+.texto{width:100%;min-height:52px;padding:0 16px;border-radius:14px;border:1px solid var(--line-strong);background:rgba(6,7,15,.55);color:var(--ink);font:600 17px/1 var(--body);outline:none}
+.texto:focus{border-color:var(--brand-2);box-shadow:0 0 0 3px rgba(91,123,255,.25)}
+.texto::placeholder{color:var(--ink-mute);font-weight:400}
+.btn-sec{background:transparent;border:1px solid var(--line-strong);color:var(--ink-soft);font-weight:700;min-height:50px}
+.btn-sec:hover{border-color:var(--brand-2);color:var(--ink)}
+.btn svg{width:22px;height:22px;flex:none}
+.nota{margin:0 auto;max-width:80ch;text-align:center;font-size:13px;line-height:1.5;color:var(--ink-mute)}
+.pie{text-align:center;font-size:13px;color:var(--ink-mute)}
+
+@media (prefers-reduced-motion:reduce){.tira,.tira.recorte,.corte,.barra,.pin{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="logo" href="/roberto" aria-label="Roberto Rodríguez, especialista en Asegur-Arte"><span class="l1">ROBERTO RODRIGUEZ</span><span class="l2"><span>ESPECIALISTA EN</span><b>Asegur-Arte</b></span></a>
+    <span class="chip">Herramienta gratuita</span>
+  </header>
+
+  <section class="hero">
+    <h1>El tiempo que <span>no puedes comprar</span></h1>
+    <p>No puedes comprar más tiempo, pero sí puedes proteger lo que construyes con él.</p>
+  </section>
+
+  <div class="escena" id="escena" role="img" aria-label="Cinta métrica de tu vida en años">
+    <div class="escala" id="escala">
+      <div class="piso" id="piso">
+        <div class="sombra"></div>
+        <div class="tira recorte" id="recorte" aria-hidden="true"></div>
+        <div class="tira" id="restante" aria-hidden="true"></div>
+        <div class="corte oculto" id="corte"></div>
+        <div class="barra construir oculto" id="bConstruir"></div>
+        <div class="barra disfrutar oculto" id="bDisfrutar"></div>
+        <div class="caja" aria-hidden="true">
+          <div class="cara arriba"><div class="pantalla" id="pantalla"><b id="cuenta">--</b><span id="cuentaT">años para tu retiro</span><small id="cuentaA">a los 65</small></div></div>
+          <div class="cara izq"></div>
+          <div class="cara der"></div>
+          <div class="cara frente"><span class="rr">RR</span><span class="mm">Asegur-Arte</span></div>
+        </div>
+        <div class="pin hoy oculto" id="pHoy"><div class="cartel"><span class="et">Hoy · <b id="pHoyN">35</b></span><span class="palo"></span></div></div>
+        <div class="pin retiro oculto" id="pRetiro"><div class="cartel"><span class="et">Retiro · <b id="pRetiroN">65</b></span><span class="palo"></span></div></div>
+        <div class="pin fin oculto" id="pFin"><div class="cartel"><span class="et">85</span><span class="palo"></span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <ul class="leyenda" id="leyenda">
+    <li class="l-vivido"><i></i>Ya viviste <b id="lgViv">—</b></li>
+    <li class="l-construir"><i></i>Tiempo para construir <b id="lgCon">—</b></li>
+    <li class="l-disfrutar"><i></i>Tiempo para disfrutar <b id="lgDis">—</b></li>
+  </ul>
+
+  <div class="grid">
+    <form class="panel" id="form" autocomplete="off" novalidate>
+      <div class="cab"><h2>Tus datos</h2><span class="ejemplo" id="pillEjemplo">Datos de ejemplo: cámbialos por los tuyos</span></div>
+
+      <div class="campo">
+        <label for="edad">¿Qué edad tienes?</label>
+        <div class="stepper">
+          <button type="button" class="stp" data-edad="-1" aria-label="Restar un año">−</button>
+          <div class="caja-num"><input id="edad" inputmode="numeric" maxlength="2" value="35" aria-describedby="avisoEdad"><span>años</span></div>
+          <button type="button" class="stp" data-edad="1" aria-label="Sumar un año">+</button>
+        </div>
+      </div>
+
+      <div class="campo">
+        <div class="rango-cab"><label for="retiro">¿A qué edad te quieres retirar?</label><output id="retiroOut" for="retiro">65 años</output></div>
+        <input type="range" id="retiro" min="50" max="75" step="1" value="65">
+        <div class="extremos"><span>50</span><span>75</span></div>
+      </div>
+
+      <div class="campo">
+        <label for="ingreso">Tu ingreso mensual<span class="hint">Lo que hoy entra a tu casa gracias a tu trabajo</span></label>
+        <div class="money"><span>$</span><input id="ingreso" inputmode="numeric" placeholder="25,000" value="25,000"></div>
+      </div>
+
+      <div class="campo">
+        <div class="rango-cab"><label for="anios">¿Cuántos años necesitaría tu familia tu ingreso?</label><output id="aniosOut" for="anios">10 años</output></div>
+        <input type="range" id="anios" min="1" max="30" step="1" value="10">
+        <div class="extremos"><span>1</span><span>30</span></div>
+        <span class="hint">Piensa en cuánto falta para que tus hijos terminen la escuela o para que tu pareja se reacomode.</span>
+      </div>
+
+      <details id="mas">
+        <summary>Afinar con deudas y ahorros (opcional)</summary>
+        <div class="campo">
+          <label for="deudas">Deudas pendientes<span class="hint">Tarjetas, auto, hipoteca</span></label>
+          <div class="money"><span>$</span><input id="deudas" inputmode="numeric" placeholder="0"></div>
+        </div>
+        <div class="campo">
+          <label for="ahorros">Ahorros o seguros de vida que ya tienes</label>
+          <div class="money"><span>$</span><input id="ahorros" inputmode="numeric" placeholder="0"></div>
+        </div>
+      </details>
+
+      <p class="aviso" id="avisoEdad" aria-live="polite"></p>
+      <button type="button" class="btn btn-otra" id="otra">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 21v-5h5"/></svg>
+        Empezar con otra persona
+      </button>
+    </form>
+
+    <section class="panel diag" aria-live="polite" aria-labelledby="tDiag">
+      <h2 id="tDiag" class="etq">Tu diagnóstico</h2>
+      <div id="conDatos">
+        <p class="cifra" id="capital">$0</p>
+        <p class="explica" id="explica"></p>
+
+        <div class="datos">
+          <div class="dato azul"><b id="dAnios">—</b><span id="dAniosT">para construir</span></div>
+          <div class="dato"><b id="dLunes">—</b><span>semanas de trabajo por delante</span></div>
+          <div class="dato verde"><b id="dGenera">—</b><span>vas a generar con tu ingreso de hoy</span></div>
+        </div>
+
+        <div class="libro" id="libro"></div>
+      </div>
+      <p class="vacio" id="sinDatos" hidden>Escribe tu edad y tu ingreso mensual para ver tu diagnóstico.</p>
+
+      <div class="frase">
+        <strong>Que tu amor dure más que tu tiempo</strong>
+        <span>Porque tu presencia es invaluable, pero tu protección puede trascender tu ausencia.</span>
+      </div>
+
+      <div class="acciones">
+        <label class="lbl-pdf" for="nombre">¿A nombre de quién va el PDF? <span>(opcional)</span></label>
+        <div class="pdf-fila">
+          <input id="nombre" class="texto" maxlength="40" autocomplete="off" placeholder="Nombre y apellido">
+          <button type="button" class="btn btn-pdf" id="pdfBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 12v6"/><path d="m9 15 3 3 3-3"/></svg>
+            Descargar PDF
+          </button>
+        </div>
+        <p class="estado" id="pdfEstado" aria-live="polite"></p>
+        <a class="btn btn-wa" id="waBtn" href="https://wa.me/528182800234" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.3-.4.8-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2l-.2-.2Z"/></svg>
+          Revisar mi diagnóstico con Roberto
+        </a>
+      </div>
+    </section>
+  </div>
+
+  <p class="nota">Cálculo orientativo a valor de hoy, sin inflación ni rendimientos. No es una cotización. Los gastos finales son un estimado de $60,000 y el horizonte de planeación llega a los 85 años. Lo que escribes no sale de este aparato; solo viaja si tú mandas el mensaje por WhatsApp.</p>
+
+  <p class="pie">Roberto Rodríguez · Especialista en Asegur-Arte · Monterrey, N. L.</p>
+</div>
+
+<script src="/tarjeta/semana/vendor/jspdf.umd.min.js"></script>
+<script>
+/* Diagnóstico en PDF (hoja Carta, una página). Se arma en el aparato con jsPDF; nada viaja a un servidor.
+   Fuente Helvetica de jsPDF: solo caracteres de Windows-1252 (por eso «-» en vez del signo menos). */
+window.TiempoPDF = (function () {
+  "use strict";
+  const C = { noche: [6, 7, 15], royal: [42, 34, 245], azul: [91, 123, 255], verde: [15, 140, 98], verdeC: [52, 211, 153], tinta: [20, 22, 40],
+    gris: [96, 102, 132], grisC: [214, 218, 232], cinta: [255, 207, 58], vivido: [178, 174, 162], fondoAzul: [237, 240, 255], rojo: [205, 28, 32],
+    blanco: [255, 255, 255], suave: [184, 190, 221], lila: [201, 211, 255], metal: [160, 165, 180], marron: [92, 74, 0] };
+  const fmt = new Intl.NumberFormat("es-MX", { maximumFractionDigits: 0 });
+  const dinero = (n) => "$" + fmt.format(Math.max(0, Math.round(n)));
+  const anios = (n) => n + (n === 1 ? " año" : " años");
+
+  function armar(jsPDF, d) {
+    const doc = new jsPDF({ unit: "pt", format: "letter" });
+    const W = 612, M = 40, AN = W - 2 * M;
+    const fill = (c) => doc.setFillColor(c[0], c[1], c[2]);
+    const ink = (c) => doc.setTextColor(c[0], c[1], c[2]);
+    const draw = (c) => doc.setDrawColor(c[0], c[1], c[2]);
+    const font = (estilo, tam) => { doc.setFont("helvetica", estilo); doc.setFontSize(tam); };
+    doc.setProperties({ title: "Diagnóstico · El tiempo que no puedes comprar", author: "Roberto Rodríguez · Especialista en Asegur-Arte" });
+
+    /* Texto de marca: Anton cursiva si la página la pudo cargar (en el sitio), si no Helvetica cursiva negrita.
+       Anton no trae cursiva: se inclina 14° sin mover la línea base, igual que en el PDF de Dinero Bajo Control. */
+    const hayAnton = Boolean(d.anton);
+    if (hayAnton) { doc.addFileToVFS("Anton-Regular.ttf", d.anton); doc.addFont("Anton-Regular.ttf", "Anton", "normal"); }
+    const H = doc.internal.pageSize.getHeight(), SK = Math.tan((14 * Math.PI) / 180);
+    function marca(t, x, y, tamA, tamH, color, align) {
+      ink(color);
+      if (!hayAnton) { font("bolditalic", tamH); doc.text(t, x, y, align ? { align } : undefined); return; }
+      doc.setFont("Anton", "normal"); doc.setFontSize(tamA);
+      doc.internal.write("q 1 0 " + SK.toFixed(4) + " 1 " + (-SK * (H - y)).toFixed(3) + " 0 cm");
+      doc.text(t, x, y, align ? { align } : undefined);
+      doc.internal.write("Q");
+    }
+    const anchoMarca = (t, tamA, tamH) => {
+      if (hayAnton) { doc.setFont("Anton", "normal"); doc.setFontSize(tamA); } else font("bolditalic", tamH);
+      return doc.getTextWidth(t);
+    };
+
+    /* Encabezado */
+    fill(C.noche); doc.rect(0, 0, W, 96, "F");
+    marca("ROBERTO RODRIGUEZ", M, 40, 21, 16, C.blanco);
+    marca("ESPECIALISTA EN", M, 65, 10, 8, C.blanco);
+    const w1 = anchoMarca("ESPECIALISTA EN ", 10, 8);
+    marca("Asegur-Arte", M + w1 + 2, 66, 24, 18, C.azul);
+    font("bold", 8); ink(C.suave); doc.text("DIAGNÓSTICO PERSONAL", W - M, 38, { align: "right" });
+    font("normal", 10); ink(C.blanco); doc.text(d.fecha, W - M, 54, { align: "right" });
+    if (d.nombre) { font("bold", 11); doc.text("Para: " + d.nombre, W - M, 72, { align: "right" }); }
+
+    /* Título */
+    marca("EL TIEMPO QUE ", M, 138, 34, 25, C.tinta);
+    const w2 = anchoMarca("EL TIEMPO QUE ", 34, 25);
+    marca("NO PUEDES COMPRAR", M + w2, 138, 34, 25, C.royal);
+    font("normal", 11); ink(C.gris); doc.text("No puedes comprar más tiempo, pero sí puedes proteger lo que construyes con él.", M, 158);
+
+    /* Tus datos */
+    const datos = [["TU EDAD", anios(d.edad)], ["RETIRO DESEADO", anios(d.retiro)], ["INGRESO MENSUAL", dinero(d.ingreso)], ["INGRESO A PROTEGER", anios(d.plazo)]];
+    const cw = (AN - 30) / 4;
+    datos.forEach((x, i) => {
+      const bx = M + i * (cw + 10);
+      draw(C.grisC); doc.setLineWidth(0.8); doc.roundedRect(bx, 176, cw, 50, 8, 8, "S");
+      font("bold", 7.5); ink(C.gris); doc.text(x[0], bx + 12, 193);
+      font("bold", 15); ink(C.tinta); doc.text(x[1], bx + 12, 215);
+    });
+
+    /* Cinta de vida */
+    const K = AN / 90, xa = (a) => M + a * K, TY = 278, TH = 30;
+    font("bold", 8); ink(C.gris); doc.text("TU CINTA DE VIDA, EN AÑOS", M, 250);
+    fill(C.vivido); doc.rect(M, TY, d.edad * K, TH, "F");
+    fill(C.cinta); doc.rect(xa(d.edad), TY, (90 - d.edad) * K, TH, "F");
+    fill(C.metal); doc.rect(M, TY, 5, TH, "F");
+    draw(C.tinta);
+    for (let i = 1; i < 90; i++) {
+      const x = xa(i), dec = i % 10 === 0, cin = i % 5 === 0, l = dec ? 11 : cin ? 8 : 4.5;
+      doc.setLineWidth(dec ? 1 : 0.5);
+      doc.line(x, TY, x, TY + l); doc.line(x, TY + TH, x, TY + TH - l);
+      if (dec) { font("bold", 9.5); ink(i === 50 ? C.rojo : C.tinta); doc.text(String(i), x, TY + TH / 2 + 3.4, { align: "center" }); }
+      else if (cin) { font("normal", 6); ink(C.marron); doc.text(String(i), x, TY + TH / 2 + 2, { align: "center" }); }
+    }
+    draw(C.rojo); doc.setLineWidth(1.3); doc.setLineDashPattern([3, 2], 0);
+    doc.line(xa(d.edad), TY - 6, xa(d.edad), TY + TH + 8);
+    doc.setLineDashPattern([], 0);
+    const finConstruir = Math.max(d.retiro, d.edad);
+    if (d.construir > 0) { fill(C.azul); doc.roundedRect(xa(d.edad), TY + TH + 6, d.construir * K, 5, 2.5, 2.5, "F"); }
+    if (d.disfrutar > 0) { fill(C.verdeC); doc.roundedRect(xa(finConstruir), TY + TH + 6, d.disfrutar * K, 5, 2.5, 2.5, "F"); }
+    font("bold", 8.5);
+    ink(C.rojo); doc.text("HOY · " + d.edad, xa(d.edad), TY - 9, { align: "center" });
+    if (d.retiro > d.edad) {
+      const cerca = (d.retiro - d.edad) * K < 52;
+      ink(C.royal); doc.text("RETIRO · " + d.retiro, xa(d.retiro), cerca ? TY + TH + 22 : TY - 9, { align: "center" });
+    }
+    ink(C.verde); doc.text(String(d.horizonte), xa(d.horizonte), TY - 9, { align: "center" });
+    const ley = [[C.vivido, "Ya viviste " + anios(d.edad)], [C.azul, "Tiempo para construir: " + anios(d.construir)], [C.verdeC, "Tiempo para disfrutar: " + anios(d.disfrutar) + " (hasta los " + d.horizonte + ")"]];
+    let lx = M; font("normal", 8.5);
+    ley.forEach((x) => { fill(x[0]); doc.rect(lx, 343, 10, 5, "F"); ink(C.gris); doc.text(x[1], lx + 14, 348); lx += 14 + doc.getTextWidth(x[1]) + 18; });
+
+    /* Capital */
+    fill(C.fondoAzul); doc.roundedRect(M, 364, AN, 84, 10, 10, "F");
+    font("bold", 8); ink(C.royal); doc.text("CAPITAL PARA QUE TU FAMILIA SIGA ADELANTE", M + 16, 383);
+    font("bold", 30); ink(C.tinta); doc.text(dinero(d.capital), M + 16, 414);
+    font("bold", 10.5); ink(C.royal);
+    doc.text(doc.splitTextToSize(d.explica, AN - 32).slice(0, 2), M + 16, 432);
+
+    /* Tres datos */
+    const tiles = [[anios(d.construir), "para construir", C.royal], [fmt.format(d.semanas), "semanas de trabajo por delante", C.tinta], [dinero(d.genera), "vas a generar con tu ingreso de hoy", C.verde]];
+    const tw = (AN - 20) / 3;
+    tiles.forEach((t, i) => {
+      const bx = M + i * (tw + 10);
+      draw(C.grisC); doc.setLineWidth(0.8); doc.roundedRect(bx, 462, tw, 56, 8, 8, "S");
+      font("bold", 17); ink(t[2]); doc.text(t[0], bx + 12, 487);
+      font("normal", 8.5); ink(C.gris); doc.text(t[1], bx + 12, 505);
+    });
+
+    /* Cómo se calcula */
+    font("bold", 9); ink(C.tinta); doc.text("Cómo se calcula", M, 542);
+    const filas = [["Tu ingreso durante " + anios(d.plazo), dinero(d.proteccion)], ["Deudas a cubrir", dinero(d.deudas)], ["Gastos finales (estimado)", dinero(d.gastosFinales)]];
+    if (d.ahorros) filas.push(["Ahorros y seguros que ya tienes", "- " + dinero(d.ahorros), true]);
+    let y = 560;
+    filas.forEach((f) => {
+      font("normal", 9.5); ink(C.gris); doc.text(f[0], M, y);
+      font("bold", 9.5); ink(f[2] ? C.verde : C.tinta); doc.text(f[1], W - M, y, { align: "right" });
+      draw(C.grisC); doc.setLineWidth(0.5); doc.line(M, y + 6, W - M, y + 6);
+      y += 18;
+    });
+    font("bold", 10.5); ink(C.tinta); doc.text("Capital para tu familia", M, y + 2);
+    ink(C.royal); doc.text(dinero(d.capital), W - M, y + 2, { align: "right" });
+
+    /* Frase de marca */
+    const fy = y + 20;
+    fill(C.noche); doc.roundedRect(M, fy, AN, 52, 10, 10, "F");
+    marca("QUE TU AMOR DURE MÁS QUE TU TIEMPO", W / 2, fy + 25, 20, 15, C.blanco, "center");
+    font("italic", 9); ink(C.lila); doc.text("Porque tu presencia es invaluable, pero tu protección puede trascender tu ausencia.", W / 2, fy + 39, { align: "center" });
+
+    /* Llamado a WhatsApp con enlace */
+    const cy = fy + 76, cta = "Revisa tu diagnóstico con Roberto por WhatsApp: " + d.telefono;
+    font("bold", 11); ink(C.tinta); doc.text(cta, W / 2, cy, { align: "center" });
+    const cwid = doc.getTextWidth(cta);
+    doc.link(W / 2 - cwid / 2, cy - 10, cwid, 14, { url: d.waUrl });
+
+    /* Nota y pie */
+    font("normal", 7.2); ink(C.gris);
+    doc.text(doc.splitTextToSize(d.nota, AN), M, cy + 18);
+    font("normal", 7.5); doc.text("Roberto Rodríguez · Especialista en Asegur-Arte · Monterrey, N. L.", W / 2, 778, { align: "center" });
+    return doc;
+  }
+  return { armar };
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+  /* ---- Reglas (las mismas de /escudo para el capital) ---- */
+  const GASTOS_FINALES = 60000;
+  const HORIZONTE = 85, ANIOS_CINTA = 90;
+  const EDAD_MIN = 18, EDAD_MAX = 75, EDAD_MAX_VIDA = 64;   // 64 = edad límite para contratar seguro de vida (igual que /escudo)
+  const WHATSAPP = "528182800234";
+  const ORIGEN = "Te escribo desde El tiempo que no puedes comprar.";
+
+  /* ---- Geometría de la cinta (px sin escalar) ---- */
+  const TX = 40, TW = 1000, TH = 110, K = TW / ANIOS_CINTA;
+  const xDe = (anio) => TX + anio * K;
+
+  const $ = (id) => document.getElementById(id);
+  const fmt = new Intl.NumberFormat("es-MX", { maximumFractionDigits: 0 });
+  const dinero = (n) => "$" + fmt.format(Math.max(0, Math.round(n)));
+  const anios = (n) => n + (n === 1 ? " año" : " años");
+  const leer = (id) => parseInt(($(id).value || "").replace(/\D/g, ""), 10) || 0;
+  const reducir = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---- Dibujo de la cinta en SVG ---- */
+  function svgCinta() {
+    let s = '<svg viewBox="0 0 ' + TW + " " + TH + '" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+      '<defs><linearGradient id="gC" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe27a"/><stop offset=".45" stop-color="#ffcf3a"/><stop offset="1" stop-color="#f0b400"/></linearGradient>' +
+      '<linearGradient id="gM" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8b90a3"/><stop offset=".5" stop-color="#e6e8f0"/><stop offset="1" stop-color="#9da2b5"/></linearGradient></defs>' +
+      '<rect width="' + TW + '" height="' + TH + '" rx="3" fill="url(#gC)"/>' +
+      '<rect y="2" width="' + TW + '" height="3" fill="#fff3b8" opacity=".7"/>';
+    // El «5» no lleva número: ese lugar es de la palabra AÑOS.
+    for (let i = 1; i <= ANIOS_CINTA; i++) {
+      const x = (i * K).toFixed(2), d = i % 10 === 0, m = i % 5 === 0;
+      const l = d ? 36 : m ? 24 : 13, w = d ? 2.8 : 1.8;
+      s += '<line x1="' + x + '" y1="0" x2="' + x + '" y2="' + l + '" stroke="#17140a" stroke-width="' + w + '"/>' +
+           '<line x1="' + x + '" y1="' + TH + '" x2="' + x + '" y2="' + (TH - l) + '" stroke="#17140a" stroke-width="' + w + '"/>';
+      if (d && i < ANIOS_CINTA) s += '<text x="' + x + '" y="' + (TH / 2 + 13) + '" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-weight="800" font-size="36" fill="' + (i === 50 ? "#c8161d" : "#17140a") + '">' + i + "</text>";
+      else if (m && i > 5 && i < ANIOS_CINTA) s += '<text x="' + x + '" y="' + (TH / 2 + 8) + '" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-weight="700" font-size="20" fill="#5c4a00">' + i + "</text>";
+    }
+    s += '<rect x="0" y="0" width="16" height="' + TH + '" fill="url(#gM)"/><circle cx="8" cy="24" r="3" fill="#5a5e6e"/><circle cx="8" cy="' + (TH - 24) + '" r="3" fill="#5a5e6e"/>' +
+         '<text x="28" y="' + (TH / 2 + 6) + '" font-family="Inter,Arial,sans-serif" font-weight="800" font-size="15" letter-spacing="1.5" fill="#5c4a00">AÑOS</text></svg>';
+    return s;
+  }
+  const svg = svgCinta();
+  $("restante").innerHTML = svg;
+  $("recorte").innerHTML = svg;
+
+  /* ---- Escala y ángulo según el ancho ---- */
+  const escena = $("escena"), escala = $("escala"), piso = $("piso");
+  function ajustar() {
+    const w = escena.clientWidth, s = Math.min(1, w / 1260);
+    const tilt = w < 640 ? 40 : 50;
+    piso.style.setProperty("--tilt", tilt + "deg");
+    escala.style.transform = "translateX(-50%) scale(" + s + ")";
+    escena.style.height = Math.round((w < 640 ? 500 : 470) * s) + "px";
+  }
+  window.addEventListener("resize", ajustar);
+  ajustar();
+
+  /* ---- Estado de la cinta: T = cuánto falta por sacar (intro), corte = año del recorte ---- */
+  let sacar = 0, corteAnio = 0, cayo = false;
+  function pintarTira() {
+    const c = corteAnio * K;                         // px desde el gancho
+    $("restante").style.transform = "translate3d(" + sacar + "px,0,3px)";
+    $("restante").style.clipPath = "inset(-10px " + sacar + "px -10px " + c + "px)";
+    $("recorte").style.clipPath = "inset(-10px " + (TW - c) + "px -10px 0)";
+  }
+
+  function marca(el, anio, visible) {
+    el.style.left = xDe(anio) + "px";
+    el.classList.toggle("oculto", !visible);
+  }
+
+  /* ---- Cálculo ---- */
+  function calcular() {
+    const edad = parseInt($("edad").value, 10);
+    const edadOk = edad >= EDAD_MIN && edad <= EDAD_MAX;
+    const retiro = parseInt($("retiro").value, 10);
+    const ingreso = leer("ingreso"), plazo = parseInt($("anios").value, 10);
+    const deudas = leer("deudas"), ahorros = leer("ahorros");
+    const construir = edadOk ? Math.max(0, retiro - edad) : 0;
+    const disfrutar = edadOk ? Math.max(0, HORIZONTE - Math.max(retiro, edad)) : 0;
+    const proteccion = ingreso * 12 * plazo;
+    const necesidad = proteccion + deudas + GASTOS_FINALES;
+    return { edad, edadOk, retiro, ingreso, plazo, deudas, ahorros, construir, disfrutar,
+      semanas: construir * 52, genera: ingreso * 12 * construir, proteccion, necesidad, capital: Math.max(0, necesidad - ahorros) };
+  }
+
+  /* El número de la pantalla corre del valor anterior al nuevo */
+  let cuentaVal = null, cuentaAnim = 0;
+  function contar(n) {
+    const el = $("cuenta");
+    cancelAnimationFrame(cuentaAnim);
+    if (n === null) { cuentaVal = null; el.textContent = "--"; return; }
+    const desde = cuentaVal === null ? 0 : cuentaVal;
+    cuentaVal = n;
+    if (reducir || desde === n) { el.textContent = n; return; }
+    const t0 = performance.now(), dur = Math.min(900, 120 + Math.abs(n - desde) * 25);
+    const paso = (t) => {
+      const p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = Math.round(desde + (n - desde) * e);
+      if (p < 1) cuentaAnim = requestAnimationFrame(paso);
+    };
+    cuentaAnim = requestAnimationFrame(paso);
+  }
+
+  function explica(c) {
+    return c.capital > 0
+      ? "Es lo que tu familia necesitaría si mañana faltaras: " + anios(c.plazo) + " de tu ingreso, tus deudas y los gastos finales, menos lo que ya tienes."
+      : "Tus ahorros y seguros (" + dinero(c.ahorros) + ") ya cubren lo que tu familia necesitaría (" + dinero(c.necesidad) + "). Vale la pena revisar que sigan vigentes.";
+  }
+  function mensajeWa(c) {
+    return "Hola Roberto, hice mi diagnóstico de El tiempo que no puedes comprar. Tengo " + c.edad + " años y me quiero retirar a los " + c.retiro + ". " +
+      (c.capital > 0
+        ? "Me salió que mi familia necesitaría " + dinero(c.capital) + " para seguir adelante. Quiero que me ayudes a revisarlo."
+        : "Me salió que mis ahorros y seguros ya cubren lo que mi familia necesitaría, pero quiero revisarlo contigo.") + " " + ORIGEN;
+  }
+
+  function pintar() {
+    const c = calcular();
+
+    // Cinta
+    corteAnio = c.edadOk && sacar === 0 ? c.edad : 0;   // mientras la cinta sale del estuche no hay recorte
+    pintarTira();
+    if (c.edadOk && !cayo && sacar === 0) {
+      cayo = true;
+      requestAnimationFrame(() => requestAnimationFrame(() => $("recorte").classList.add("cae")));
+    }
+    if (!c.edadOk) { cayo = false; $("recorte").classList.remove("cae"); }
+    marca($("corte"), corteAnio, c.edadOk && sacar === 0);
+    marca($("pHoy"), corteAnio, c.edadOk && sacar === 0);
+    $("pHoyN").textContent = c.edadOk ? c.edad : "";
+    const listo = sacar === 0;
+    marca($("pRetiro"), c.retiro, listo && (!c.edadOk || c.retiro > c.edad));
+    $("pRetiroN").textContent = c.retiro;
+    marca($("pFin"), HORIZONTE, listo);
+    const desde = c.edadOk ? c.edad : 0, hastaR = Math.max(c.retiro, desde);
+    const bc = $("bConstruir"), bd = $("bDisfrutar");
+    bc.style.left = xDe(desde) + "px"; bc.style.width = Math.max(0, (hastaR - desde) * K) + "px";
+    bd.style.left = xDe(hastaR) + "px"; bd.style.width = Math.max(0, (HORIZONTE - hastaR) * K) + "px";
+    bc.classList.toggle("oculto", !listo || !c.edadOk || c.construir === 0);
+    bd.classList.toggle("oculto", !listo || !c.edadOk || c.disfrutar === 0);
+
+    // Pantalla del estuche
+    const llego = c.edadOk && c.construir === 0;
+    $("pantalla").classList.toggle("llego", llego && listo);
+    $("cuentaA").textContent = "a los " + c.retiro;
+    if (!listo || !c.edadOk) { contar(null); $("cuentaT").textContent = "años para tu retiro"; }
+    else if (llego) { contar(0); $("cuentaT").textContent = "ya llegaste a tu retiro"; }
+    else { contar(c.construir); $("cuentaT").textContent = (c.construir === 1 ? "año" : "años") + " para tu retiro"; }
+
+    // Leyenda
+    $("lgViv").textContent = c.edadOk ? anios(c.edad) : "—";
+    $("lgCon").textContent = c.edadOk ? anios(c.construir) : "—";
+    $("lgDis").textContent = c.edadOk ? anios(c.disfrutar) + " (hasta los " + HORIZONTE + ")" : "—";
+
+    // Avisos
+    let aviso = "";
+    const edadTxt = $("edad").value.trim();
+    if (edadTxt && !c.edadOk) aviso = "Escribe una edad entre " + EDAD_MIN + " y " + EDAD_MAX + " años.";
+    else if (c.edadOk && c.retiro <= c.edad) aviso = "Ya llegaste a la edad que elegiste para retirarte. Mueve la barra si piensas trabajar unos años más.";
+    else if (c.edadOk && c.edad > EDAD_MAX_VIDA) aviso = "Después de los " + EDAD_MAX_VIDA + " años ya no se contrata un seguro de vida nuevo, pero hay otras formas de proteger a tu familia. Platícalo con Roberto.";
+    $("avisoEdad").textContent = aviso;
+
+    // Diagnóstico
+    const hay = c.edadOk && c.ingreso > 0;
+    $("conDatos").hidden = !hay;
+    $("sinDatos").hidden = hay;
+    $("pdfBtn").disabled = !hay;
+    if (!hay) { $("waBtn").href = "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent("Hola Roberto, quiero revisar cómo proteger a mi familia. " + ORIGEN); return; }
+
+    $("capital").textContent = dinero(c.capital);
+    $("explica").textContent = explica(c);
+    $("dAnios").textContent = anios(c.construir);
+    $("dLunes").textContent = fmt.format(c.semanas);
+    $("dGenera").textContent = dinero(c.genera);
+
+    const filas = [
+      ["Tu ingreso durante " + anios(c.plazo), dinero(c.proteccion)],
+      ["Deudas a cubrir", dinero(c.deudas)],
+      ["Gastos finales (estimado)", dinero(GASTOS_FINALES)],
+    ];
+    if (c.ahorros) filas.push(["Ahorros y seguros que ya tienes", "− " + dinero(c.ahorros), true]);
+    $("libro").innerHTML = filas.map((f) => '<div class="fila' + (f[2] ? " menos" : "") + '"><span class="l">' + f[0] + '</span><span class="rel"></span><span class="v">' + f[1] + "</span></div>").join("") +
+      '<div class="fila total"><span class="l">Capital para tu familia</span><span class="rel"></span><span class="v">' + dinero(c.capital) + "</span></div>";
+
+    $("waBtn").href = "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(mensajeWa(c));
+  }
+
+  /* ---- Entradas ---- */
+  let esEjemplo = true;
+  function yaNoEsEjemplo() { if (esEjemplo) { esEjemplo = false; $("pillEjemplo").hidden = true; } }
+
+  const edad = $("edad");
+  edad.addEventListener("input", () => { edad.value = edad.value.replace(/\D/g, "").slice(0, 2); yaNoEsEjemplo(); pintar(); });
+  edad.addEventListener("focus", () => { try { edad.select(); } catch (e) {} });
+  document.querySelectorAll("[data-edad]").forEach((b) => b.addEventListener("click", () => {
+    const base = parseInt(edad.value, 10);
+    edad.value = String(isNaN(base) ? 30 : Math.min(EDAD_MAX, Math.max(EDAD_MIN, base + parseInt(b.dataset.edad, 10))));
+    yaNoEsEjemplo(); pintar();
+  }));
+
+  document.querySelectorAll(".money input").forEach((el) => {
+    el.addEventListener("input", () => {
+      const pos = el.selectionStart ?? el.value.length;
+      const antes = el.value.slice(0, pos).replace(/\D/g, "").length;
+      const limpio = el.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "").slice(0, 9);
+      el.value = limpio ? fmt.format(Number(limpio)) : "";
+      let p = 0, d = 0;
+      while (p < el.value.length && d < antes) { if (/\d/.test(el.value[p])) d++; p++; }
+      try { el.setSelectionRange(p, p); } catch (e) {}
+      yaNoEsEjemplo(); pintar();
+    });
+    el.addEventListener("focus", () => { try { el.select(); } catch (e) {} });
+  });
+
+  function rangos() {
+    document.querySelectorAll("input[type=range]").forEach((r) => r.style.setProperty("--p", ((r.value - r.min) / (r.max - r.min)) * 100 + "%"));
+    $("retiroOut").textContent = anios(parseInt($("retiro").value, 10));
+    $("aniosOut").textContent = anios(parseInt($("anios").value, 10));
+  }
+  document.querySelectorAll("input[type=range]").forEach((r) => r.addEventListener("input", () => { rangos(); yaNoEsEjemplo(); pintar(); }));
+  $("form").addEventListener("submit", (e) => e.preventDefault());
+
+  $("otra").addEventListener("click", () => {
+    edad.value = ""; $("ingreso").value = ""; $("nombre").value = ""; avisar(""); $("deudas").value = ""; $("ahorros").value = "";
+    $("retiro").value = 65; $("anios").value = 10; $("mas").open = false;
+    yaNoEsEjemplo(); rangos(); pintar();
+    window.scrollTo({ top: 0, behavior: reducir ? "auto" : "smooth" });
+    setTimeout(() => edad.focus({ preventScroll: true }), reducir ? 0 : 500);
+  });
+
+  /* ---- PDF: dentro de claude.ai se guarda con la capacidad «downloads»; en el sitio, con un enlace de descarga normal ---- */
+  const ANTON_URL = "/tarjeta/semana/vendor/Anton-Regular.ttf";   // en el sitio: /tarjeta/semana/vendor/Anton-Regular.ttf (lo pone publicar.cjs)
+  let antonB64 = null;
+  async function cargarAnton() {
+    if (!ANTON_URL || antonB64) return antonB64;
+    try {
+      const r = await fetch(ANTON_URL);
+      if (!r.ok) throw new Error("fuente");
+      const b = new Uint8Array(await r.arrayBuffer());
+      let t = "";
+      for (let i = 0; i < b.length; i += 0x8000) t += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000));
+      antonB64 = btoa(t);
+    } catch (e) { antonB64 = null; }   // sin la Anton el PDF sale igual, con Helvetica
+    return antonB64;
+  }
+
+  let descargas = null;
+  if (window.claude && typeof window.claude.use === "function") {
+    window.claude.use("downloads").then((d) => { descargas = d; }).catch(() => {});
+  }
+  function avisar(txt, mal) { const e = $("pdfEstado"); e.textContent = txt; e.classList.toggle("mal", Boolean(mal)); }
+  function nombreArchivo(nombre) {
+    const limpio = nombre.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^A-Za-z0-9 ]/g, "").trim().replace(/ +/g, "-");
+    return "Diagnostico-El-tiempo-que-no-puedes-comprar" + (limpio ? "-" + limpio : "") + ".pdf";
+  }
+  $("pdfBtn").addEventListener("click", async () => {
+    const c = calcular();
+    if (!(c.edadOk && c.ingreso > 0)) return;
+    const lib = window.jspdf && window.jspdf.jsPDF;
+    if (!lib || !window.TiempoPDF) { avisar("No se pudo preparar el PDF. Revisa tu conexión a internet e inténtalo de nuevo.", true); return; }
+    const nombre = $("nombre").value.replace(/\s+/g, " ").trim().slice(0, 40);
+    const anton = await cargarAnton();
+    const doc = window.TiempoPDF.armar(lib, Object.assign({}, c, {
+      nombre, anton, horizonte: HORIZONTE, gastosFinales: GASTOS_FINALES, explica: explica(c),
+      fecha: new Intl.DateTimeFormat("es-MX", { dateStyle: "long" }).format(new Date()),
+      telefono: "81 8280 0234", waUrl: "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(mensajeWa(c)),
+      nota: "Cálculo orientativo a valor de hoy, sin inflación ni rendimientos. No es una cotización: la prima y la suma asegurada se definen con tus datos reales. Los gastos finales son un estimado de $60,000 y el horizonte de planeación llega a los 85 años. Este PDF se generó en tu aparato; tus datos no se enviaron a ningún servidor.",
+    }));
+    const blob = doc.output("blob"), archivo = nombreArchivo(nombre);
+    if (descargas) {
+      try { await descargas.save({ filename: archivo, data: blob }); avisar("Listo, tu PDF se guardó."); }
+      catch (e) {
+        const code = e && e.code;
+        if (code === "declined") avisar("");
+        else if (code === "rate_limited") avisar("Espera un momento e inténtalo otra vez.", true);
+        else if (code === "host_unavailable") avisar("Esta app no puede guardar archivos. Abre la página en el navegador para descargar el PDF.", true);
+        else avisar("No se pudo guardar el PDF aquí.", true);
+      }
+      return;
+    }
+    if (window.claude) { avisar("Aquí no se pueden descargar archivos. Abre la página en el navegador.", true); return; }
+    const url = URL.createObjectURL(blob), a = document.createElement("a");
+    a.href = url; a.download = archivo; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    avisar("Listo, tu PDF se descargó.");
+  });
+
+  /* ---- Entrada: la cinta sale del estuche y luego se corta lo ya vivido ---- */
+  rangos();
+  if (reducir) { sacar = 0; pintar(); return; }
+  piso.classList.add("sin-trans");
+  sacar = TW - 30; pintar();
+  const t0 = performance.now(), DUR = 1600;
+  function paso(t) {
+    const p = Math.min(1, (t - t0) / DUR), e = 1 - Math.pow(1 - p, 3);
+    sacar = Math.round((TW - 30) * (1 - e));
+    pintarTira();
+    if (p < 1) requestAnimationFrame(paso);
+    else { sacar = 0; piso.classList.remove("sin-trans"); setTimeout(pintar, 250); }
+  }
+  requestAnimationFrame(paso);
+})();
+</script>
+</body>
+</html>
